@@ -138,10 +138,15 @@ desc, or no model, are skipped/blocked.
    - Scanned invoice/DO photos saved locally to `delivery_orders/` (gitignored).
    - Rolling auto-cleanup prunes photos older than 3 days from oldest to newest.
    - "Recent DOs" button & modal in Stock In with badge count, thumbnails, and full-resolution lightbox viewer with download support.
-9. **Indoor + Outdoor Sets & Non-Serial Parts**:
+9. [DONE] **Scan Results Drag-to-Select & Multi-Row Actions**:
+   - Holding left-click and dragging across table rows enables fast multi-row selection with smooth emerald/green highlighting (`scan-row-selected`) and synchronized checkboxes.
+   - Initial click detects target row state: dragging from an unselected row selects all hovered rows; dragging from a selected row deselects them.
+   - Header Select-All checkbox with indeterminate state support.
+   - Real-time selection badge and action buttons: "Commit Selected (X) to Available Stock →", "Delete Selected (X)", or "Commit All to Available Stock →".
+10. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-10. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+11. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have

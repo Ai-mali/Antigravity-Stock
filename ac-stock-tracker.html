@@ -859,6 +859,51 @@ body.theme-light .table-scroll-10 thead th {
   vertical-align: middle;
 }
 
+/* Scan Results Drag Selection & Highlight */
+body.no-select-drag {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+#scan-results-tbody tr {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s ease;
+}
+
+#scan-results-tbody tr.scan-row-selected {
+  background: rgba(38, 208, 124, 0.13) !important;
+}
+
+#scan-results-tbody tr.scan-row-selected td:first-child {
+  border-left: 3px solid var(--green-bright);
+}
+
+#scan-results-tbody tr.scan-row-selected:hover {
+  background: rgba(38, 208, 124, 0.19) !important;
+}
+
+body.theme-light #scan-results-tbody tr.scan-row-selected {
+  background: rgba(19, 122, 95, 0.11) !important;
+}
+
+body.theme-light #scan-results-tbody tr.scan-row-selected td:first-child {
+  border-left: 3px solid #137a5f;
+}
+
+body.theme-light #scan-results-tbody tr.scan-row-selected:hover {
+  background: rgba(19, 122, 95, 0.17) !important;
+}
+
+.scan-select-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--green-bright);
+  cursor: pointer;
+  vertical-align: middle;
+  border-radius: 4px;
+}
+
 /* Stock In Screen Layout */
 .stock-in-layout {
   display: grid;
@@ -2332,8 +2377,13 @@ body.theme-light .autocomplete-dropdown {
 
         <!-- Right column: Scan Results -->
         <div class="card" style="display:flex; flex-direction:column;">
-          <div class="card-header">
-            <span class="card-title">Scan Results</span>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="card-title">Scan Results</span>
+              <span style="font-size:11px; color:var(--text-sub);" title="Hold left-click and drag over rows to select multiple fast">
+                (Hold &amp; drag left-click to select fast)
+              </span>
+            </div>
             <div style="display:flex; gap:6px;">
               <button class="btn-circle" onclick="addScanRowManual()" title="Add Model Row">+</button>
               <button class="btn-circle" onclick="downloadScanCsv()" title="Export CSV">&#11015;</button>
@@ -2349,9 +2399,12 @@ body.theme-light .autocomplete-dropdown {
             </div>
           </div>
           <div class="table-container stock-in-table-scroll" style="flex:1;">
-            <table class="data-table">
+            <table class="data-table" id="scan-results-table">
               <thead>
                 <tr>
+                  <th style="width:38px; text-align:center;">
+                    <input type="checkbox" id="scan-select-all" class="scan-select-checkbox" onchange="toggleSelectAllScans(this.checked)" title="Select / Deselect All Rows">
+                  </th>
                   <th style="width:44px; text-align:center;">No</th>
                   <th style="width:130px; white-space:nowrap;">Model <span id="scan-hdr-model-cnt" style="opacity:.6;">(0)</span></th>
                   <th>Serial <span id="scan-hdr-serial-cnt" style="opacity:.6;">(0)</span></th>
@@ -2362,9 +2415,21 @@ body.theme-light .autocomplete-dropdown {
               <tbody id="scan-results-tbody"></tbody>
             </table>
           </div>
-          <div style="padding:14px 18px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-            <span style="font-size:12px; color:var(--text-muted);" id="scan-summary-label">Total: 5 models &middot; 12 serialized units</span>
-            <button class="btn btn-primary" onclick="commitAllScansToStock()">Commit All to Available Stock &rarr;</button>
+          <div style="padding:14px 18px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:12px; color:var(--text-muted);" id="scan-summary-label">Total: 5 models &middot; 12 serialized units</span>
+              <span id="scan-selected-badge" class="badge badge-green" style="display:none; font-size:11px; padding:2px 8px;">0 selected</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-ghost btn-sm" id="btn-delete-selected-scans" onclick="deleteSelectedScans()" style="display:none; color:#f87171; border-color:rgba(239, 68, 68, 0.35);" title="Remove selected rows from scan list">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>Delete Selected</span>
+              </button>
+              <button class="btn btn-primary" id="btn-commit-scans" onclick="commitSelectedOrAllScans()">Commit All to Available Stock &rarr;</button>
+            </div>
           </div>
         </div>
       </div>
@@ -3208,13 +3273,23 @@ function switchTab(tab) {
 /* =========================================================
    1. STOCK IN SCREEN LOGIC
    ========================================================= */
+let selectedScanIndices = new Set();
+let isDraggingScanSelect = false;
+let dragSelectTargetState = true;
+
 function renderScanResultsTable() {
   const tbody = document.getElementById('scan-results-tbody');
   tbody.innerHTML = '';
+
+  // Prune any invalid indices if scans list shrank
+  for (const idx of selectedScanIndices) {
+    if (idx >= DB.scans.length) selectedScanIndices.delete(idx);
+  }
   
   let totalSerials = 0;
   DB.scans.forEach((row, idx) => {
     totalSerials += row.serials.length;
+    const isSelected = selectedScanIndices.has(idx);
     const serialChips = row.serials.length
       ? row.serials.map(s => '<span class="scan-serial-badge">' + s + '</span>').join('')
       : `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
@@ -3223,10 +3298,18 @@ function renderScanResultsTable() {
       : '';
 
     const tr = document.createElement('tr');
-    if (row.sev === 'error') tr.className = 'scan-row-error';
-    else if (row.sev === 'warn') tr.className = 'scan-row-warn';
+    tr.dataset.idx = idx;
+    let trCls = [];
+    if (isSelected) trCls.push('scan-row-selected');
+    if (row.sev === 'error') trCls.push('scan-row-error');
+    else if (row.sev === 'warn') trCls.push('scan-row-warn');
+    if (trCls.length) tr.className = trCls.join(' ');
+
     tr.innerHTML = `
-      <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no}</td>
+      <td style="text-align:center; width:38px;">
+        <input type="checkbox" class="scan-row-check scan-select-checkbox" data-idx="${idx}" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); setScanRowSelected(${idx}, this.checked);">
+      </td>
+      <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no !== undefined ? row.no : (idx + 1)}</td>
       <td style="font-weight:700; white-space:nowrap; width:130px;">${row.model || '<span style="color:var(--text-muted);">\u2014</span>'}</td>
       <td><div class="scan-serials-wrap">${serialChips}</div></td>
       <td class="mono" style="color:var(--text-muted); text-align:right; white-space:nowrap; width:70px;">${row.qty}</td>
@@ -3248,11 +3331,152 @@ function renderScanResultsTable() {
     tbody.appendChild(tr);
   });
 
-  document.getElementById('scan-hdr-model-cnt').textContent = '(' + DB.scans.length + ')';
-  document.getElementById('scan-hdr-serial-cnt').textContent = '(' + totalSerials + ')';
-  document.getElementById('scan-hdr-qty-cnt').textContent = '(' + totalSerials + ')';
-  document.getElementById('scan-summary-label').textContent = 'Total: ' + DB.scans.length + ' models \u00b7 ' + totalSerials + ' serialized units';
+  const hdrM = document.getElementById('scan-hdr-model-cnt');
+  const hdrS = document.getElementById('scan-hdr-serial-cnt');
+  const hdrQ = document.getElementById('scan-hdr-qty-cnt');
+  const sumL = document.getElementById('scan-summary-label');
+  if (hdrM) hdrM.textContent = '(' + DB.scans.length + ')';
+  if (hdrS) hdrS.textContent = '(' + totalSerials + ')';
+  if (hdrQ) hdrQ.textContent = '(' + totalSerials + ')';
+  if (sumL) sumL.textContent = 'Total: ' + DB.scans.length + ' models \u00b7 ' + totalSerials + ' serialized units';
+
+  updateScanSelectionUI();
 }
+
+function setScanRowSelected(idx, isSelected) {
+  if (idx < 0 || idx >= DB.scans.length) return;
+  if (isSelected) {
+    selectedScanIndices.add(idx);
+  } else {
+    selectedScanIndices.delete(idx);
+  }
+
+  const tbody = document.getElementById('scan-results-tbody');
+  if (tbody) {
+    const tr = tbody.querySelector(`tr[data-idx="${idx}"]`);
+    if (tr) {
+      if (isSelected) tr.classList.add('scan-row-selected');
+      else tr.classList.remove('scan-row-selected');
+      const chk = tr.querySelector('.scan-row-check');
+      if (chk) chk.checked = isSelected;
+    }
+  }
+  updateScanSelectionUI();
+}
+
+function toggleSelectAllScans(checked) {
+  if (checked) {
+    DB.scans.forEach((_, i) => selectedScanIndices.add(i));
+  } else {
+    selectedScanIndices.clear();
+  }
+  const tbody = document.getElementById('scan-results-tbody');
+  if (tbody) {
+    const rows = tbody.querySelectorAll('tr[data-idx]');
+    rows.forEach(tr => {
+      const idx = parseInt(tr.dataset.idx, 10);
+      const isSel = selectedScanIndices.has(idx);
+      if (isSel) tr.classList.add('scan-row-selected');
+      else tr.classList.remove('scan-row-selected');
+      const chk = tr.querySelector('.scan-row-check');
+      if (chk) chk.checked = isSel;
+    });
+  }
+  updateScanSelectionUI();
+}
+
+function updateScanSelectionUI() {
+  const total = DB.scans.length;
+  const count = selectedScanIndices.size;
+  const selectAll = document.getElementById('scan-select-all');
+  const badge = document.getElementById('scan-selected-badge');
+  const btnCommit = document.getElementById('btn-commit-scans');
+  const btnDelete = document.getElementById('btn-delete-selected-scans');
+
+  if (selectAll) {
+    if (total === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else if (count === total) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else if (count > 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = true;
+    } else {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    }
+  }
+
+  if (badge) {
+    if (count > 0) {
+      badge.style.display = 'inline-flex';
+      badge.textContent = `${count} selected`;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if (btnDelete) {
+    btnDelete.style.display = count > 0 ? 'inline-flex' : 'none';
+    const span = btnDelete.querySelector('span');
+    if (span) span.textContent = `Delete Selected (${count})`;
+  }
+
+  if (btnCommit) {
+    if (count > 0 && count < total) {
+      btnCommit.textContent = `Commit Selected (${count}) to Available Stock \u2192`;
+    } else {
+      btnCommit.textContent = `Commit All to Available Stock \u2192`;
+    }
+  }
+}
+
+function initScanResultsDragSelect() {
+  const tbody = document.getElementById('scan-results-tbody');
+  if (!tbody) return;
+
+  tbody.addEventListener('mousedown', e => {
+    if (e.button !== 0) return; // Only main left click
+    // Ignore clicks on buttons, links, actions cell, or warning icons
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.actions-cell') || e.target.closest('.scan-warn-icon')) {
+      return;
+    }
+
+    const tr = e.target.closest('tr');
+    if (!tr || tr.dataset.idx === undefined) return;
+    const idx = parseInt(tr.dataset.idx, 10);
+    if (isNaN(idx)) return;
+
+    // Prevent default browser text selection
+    e.preventDefault();
+
+    const isAlreadySel = selectedScanIndices.has(idx);
+    dragSelectTargetState = !isAlreadySel;
+    isDraggingScanSelect = true;
+    document.body.classList.add('no-select-drag');
+
+    setScanRowSelected(idx, dragSelectTargetState);
+  });
+
+  tbody.addEventListener('mouseover', e => {
+    if (!isDraggingScanSelect) return;
+    const tr = e.target.closest('tr');
+    if (!tr || tr.dataset.idx === undefined) return;
+    const idx = parseInt(tr.dataset.idx, 10);
+    if (isNaN(idx)) return;
+
+    setScanRowSelected(idx, dragSelectTargetState);
+  });
+}
+
+window.addEventListener('mouseup', () => {
+  if (isDraggingScanSelect) {
+    isDraggingScanSelect = false;
+    document.body.classList.remove('no-select-drag');
+  }
+});
 
 function handleDropzoneClick(e) {
   if (e && (e.target.closest('button') || e.target.closest('.dropzone-file-bar'))) return;
@@ -3689,36 +3913,77 @@ async function commitScanRow(idx) {
   }
 }
 
-async function commitAllScansToStock() {
+function deleteSelectedScans() {
+  if (!selectedScanIndices.size) return;
+  const count = selectedScanIndices.size;
+  const sorted = Array.from(selectedScanIndices).sort((a, b) => b - a);
+  sorted.forEach(idx => {
+    if (idx >= 0 && idx < DB.scans.length) {
+      DB.scans.splice(idx, 1);
+    }
+  });
+  selectedScanIndices.clear();
+  renderScanResultsTable();
+  showToast(`Removed ${count} row(s) from scan results.`);
+}
+
+async function commitSelectedOrAllScans() {
   if (!DB.scans.length) {
     showToast('No scanned rows to commit.');
     return;
   }
+
+  const hasSpecificSelection = selectedScanIndices.size > 0 && selectedScanIndices.size < DB.scans.length;
+  const indices = hasSpecificSelection
+    ? Array.from(selectedScanIndices).sort((a, b) => b - a)
+    : DB.scans.map((_, i) => i).reverse();
+
   let done = 0, skipped = 0;
-  let i = 0;
-  while (i < DB.scans.length) {
+  for (const i of indices) {
     const row = DB.scans[i];
-    if ((!row.serials.length && !row.desc) || !row.model) { skipped++; i++; continue; }
+    if (!row) continue;
+    if ((!row.serials.length && !row.desc) || !row.model) {
+      skipped++;
+      continue;
+    }
     try {
       const res = await apiPost('/api/stock-in', {
-        ...scanBatchFields(), model: row.model, serials: commitSerialsOf(row)
+        ...scanBatchFields(),
+        model: row.model,
+        serials: commitSerialsOf(row)
       });
       if (res.needs_brand) {
         const brand = await askBrand(row.model);
-        if (!brand) { skipped++; i++; continue; }
-        continue;  // retry the same row
+        if (!brand) {
+          skipped++;
+          continue;
+        }
+        const retryRes = await apiPost('/api/stock-in', {
+          ...scanBatchFields(),
+          model: row.model,
+          serials: commitSerialsOf(row),
+          brand
+        });
+        reportCommit(row, retryRes);
+      } else {
+        reportCommit(row, res);
       }
-      reportCommit(row, res);
       DB.scans.splice(i, 1);
-      renderScanResultsTable();
       done++;
     } catch (e) {
       showToast(`Row ${row.no || i + 1} failed: ${e.message}`);
-      skipped++; i++;
+      skipped++;
     }
   }
+
+  selectedScanIndices.clear();
+  renderScanResultsTable();
   await refreshData();
   showToast(`Committed ${done} row(s)` + (skipped ? `, skipped ${skipped}` : '') + '.');
+}
+
+async function commitAllScansToStock() {
+  return commitSelectedOrAllScans();
 }
 
 /* ---- Assign Brand modal (new model encountered during commit) ---- */
@@ -5256,6 +5521,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch(e){}
   await refreshData();
   await loadConfig();
+  initScanResultsDragSelect();
   switchTab('stock-in');
 });
 </script>
