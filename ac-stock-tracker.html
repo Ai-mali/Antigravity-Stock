@@ -949,30 +949,21 @@ body.theme-light #scan-results-tbody tr.scan-row-selected:hover {
   background: rgba(19, 122, 95, 0.17) !important;
 }
 
-/* Duplicate Scan Rows Pulse & Badge Animations */
-@keyframes dupe-row-pulse {
-  0%, 100% {
-    background: rgba(239, 68, 68, 0.22);
-  }
-  50% {
-    background: rgba(239, 68, 68, 0.05);
-  }
-}
-
+/* Duplicate Scan Serials & Badge Animations (Row background does NOT blink) */
 #scan-results-tbody tr.scan-row-duplicate-blink {
-  animation: dupe-row-pulse 1.3s ease-in-out infinite !important;
+  background: transparent;
 }
 
 #scan-results-tbody tr.scan-row-duplicate-blink td:first-child {
-  border-left: 4px solid #ef4444 !important;
+  border-left: 3px solid rgba(239, 68, 68, 0.6) !important;
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink {
-  animation: dupe-row-pulse 1.3s ease-in-out infinite !important;
+  background: transparent;
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink td:first-child {
-  border-left: 4px solid #dc2626 !important;
+  border-left: 3px solid #dc2626 !important;
 }
 
 @keyframes dupe-badge-blink {
@@ -982,8 +973,8 @@ body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink td:first-child 
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
   }
   50% {
-    opacity: 0.35;
-    transform: scale(0.96);
+    opacity: 0.38;
+    transform: scale(0.97);
     box-shadow: 0 0 2px rgba(239, 68, 68, 0.15);
   }
 }
@@ -991,12 +982,13 @@ body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink td:first-child 
 .scan-dupe-badge-blink {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   background: #ef4444;
   color: #ffffff;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   padding: 2px 7px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -1004,7 +996,14 @@ body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink td:first-child 
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
   vertical-align: middle;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
+}
+
+.scan-dupe-badge-blink:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.9);
 }
 
 body.theme-light .scan-dupe-badge-blink {
@@ -1016,7 +1015,16 @@ body.theme-light .scan-dupe-badge-blink {
   background: rgba(239, 68, 68, 0.22) !important;
   border: 1px solid rgba(239, 68, 68, 0.65) !important;
   color: #fca5a5 !important;
-  animation: dupe-badge-blink 1.3s ease-in-out infinite;
+  animation: dupe-badge-blink 1.2s ease-in-out infinite;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.scan-serial-badge-dupe:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
 }
 
 body.theme-light .scan-serial-badge-dupe {
@@ -2533,7 +2541,7 @@ body.theme-light .autocomplete-dropdown {
               <thead>
                 <tr>
                   <th style="width:44px; text-align:center;">No</th>
-                  <th style="width:140px; white-space:nowrap;">Model <span id="scan-hdr-model-cnt" style="opacity:.6;">(0)</span></th>
+                  <th style="width:140px; text-align:center; white-space:nowrap;">Model <span id="scan-hdr-model-cnt" style="opacity:.6;">(0)</span></th>
                   <th>Serial <span id="scan-hdr-serial-cnt" style="opacity:.6;">(0)</span></th>
                   <th style="width:70px; text-align:right; white-space:nowrap;">Qty <span id="scan-hdr-qty-cnt" style="opacity:.6;">(0)</span></th>
                   <th style="text-align:right; width:140px; padding-right:14px; white-space:nowrap;">Actions</th>
@@ -3218,6 +3226,47 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- 10. DUPLICATE SERIAL LOCATION MODAL -->
+<div class="modal-overlay" id="duplicate-location-modal">
+  <div class="modal-dialog" style="max-width: 480px; border: 1px solid rgba(239, 68, 68, 0.35); box-shadow: 0 16px 45px rgba(0,0,0,0.7);">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <div class="modal-title" style="color:#ef4444;">Duplicate Serial Location</div>
+          <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+            Existing unit location &amp; history in master record
+          </div>
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeDuplicateLocationModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
+      <!-- Serial Banner -->
+      <div style="background:var(--surface2); border:1px solid rgba(239, 68, 68, 0.28); border-radius:8px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">DUPLICATE SERIAL</div>
+          <div id="dupe-loc-serial" class="mono" style="font-size:16px; font-weight:800; color:#ef4444; margin-top:3px;">—</div>
+        </div>
+        <div id="dupe-loc-status-badge" style="text-align:right;"></div>
+      </div>
+
+      <!-- Record Location Details -->
+      <div id="dupe-loc-details" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn btn-ghost" onclick="closeDuplicateLocationModal()">Dismiss</button>
+      <div id="dupe-loc-action-container"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -3440,6 +3489,280 @@ function markDuplicateScans() {
   });
 }
 
+function locateSerialInSystem(serial) {
+  if (!serial) return null;
+  const target = String(serial).trim().toUpperCase();
+
+  // 1. Check In-Stock Inventory
+  for (const brand in DB.inventory) {
+    const brandData = DB.inventory[brand];
+    for (const model in brandData.models || {}) {
+      const modelData = brandData.models[model];
+      if ((modelData.serials || []).some(s => String(s).trim().toUpperCase() === target)) {
+        const unitMeta = (modelData.units && modelData.units[target]) || {};
+        return {
+          serial: target,
+          status: 'IN_STOCK',
+          statusLabel: 'In Available Stock',
+          brand: brand,
+          model: model,
+          dateIn: unitMeta.dateIn || modelData.dateIn || '—',
+          customer: '—',
+          dateOut: '—',
+          locationDesc: `Currently in Available Stock under ${brand} \u00b7 ${model}.`
+        };
+      }
+    }
+  }
+
+  // 2. Check Sold / Track List
+  if (Array.isArray(DB.trackList)) {
+    const rec = DB.trackList.find(r => String(r.serial).trim().toUpperCase() === target);
+    if (rec) {
+      return {
+        serial: target,
+        status: 'SOLD',
+        statusLabel: 'Sold / Dispatched',
+        brand: rec.brand || DB.brands?.find(b => DB.inventory[b]?.models[rec.model]) || '—',
+        model: rec.model || '—',
+        dateIn: rec.dateIn || '—',
+        customer: rec.customer || '—',
+        dateOut: rec.dateOut || '—',
+        locationDesc: `Sold to customer "${rec.customer || 'Unknown'}" on ${rec.dateOut || '—'}.`
+      };
+    }
+  }
+
+  // 3. Check Returns / RMA
+  if (Array.isArray(DB.returns)) {
+    const ret = DB.returns.find(r => String(r.serial || r.Serial).trim().toUpperCase() === target);
+    if (ret) {
+      return {
+        serial: target,
+        status: 'RETURN',
+        statusLabel: 'Returned / RMA',
+        brand: '—',
+        model: ret.model || ret.Model || '—',
+        dateIn: '—',
+        customer: ret.customer || ret.Customer || '—',
+        dateOut: ret.date || ret.Date || '—',
+        reason: ret.reason || ret.Reason || '—',
+        locationDesc: `Logged under Returns & RMA (${ret.action || ret.Action || 'Quarantined'}).`
+      };
+    }
+  }
+
+  return {
+    serial: target,
+    status: 'UNKNOWN',
+    statusLabel: 'Existing Master Record',
+    brand: '—',
+    model: '—',
+    dateIn: '—',
+    customer: '—',
+    dateOut: '—',
+    locationDesc: `Recorded in daikin_stock.xlsx master record.`
+  };
+}
+
+function showDuplicateLocation(serial, modelHint) {
+  if (!serial) return;
+  const target = String(serial).trim().toUpperCase();
+  const loc = locateSerialInSystem(target);
+
+  const modal = document.getElementById('duplicate-location-modal');
+  if (!modal) return;
+
+  const serialEl = document.getElementById('dupe-loc-serial');
+  const badgeEl = document.getElementById('dupe-loc-status-badge');
+  const detailsEl = document.getElementById('dupe-loc-details');
+  const actionContainer = document.getElementById('dupe-loc-action-container');
+
+  if (serialEl) serialEl.textContent = target;
+
+  let statusBadgeHtml = '';
+  let detailsHtml = '';
+  let actionBtnHtml = '';
+
+  if (loc.status === 'IN_STOCK') {
+    statusBadgeHtml = `
+      <span class="badge badge-green" style="font-size:11px; padding:3px 10px; font-weight:700;">
+        &#9679; IN AVAILABLE STOCK
+      </span>
+    `;
+
+    detailsHtml = `
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Brand</div>
+          <div style="font-size:13px; font-weight:800; color:var(--green-bright); margin-top:2px;">${loc.brand}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Model</div>
+          <div class="mono" style="font-size:13px; font-weight:700; margin-top:2px;">${loc.model}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Current Status</div>
+          <div style="font-size:12px; font-weight:600; color:var(--text); margin-top:2px;">Available for Dispatch</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date Received (In)</div>
+          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${loc.dateIn}</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4; padding:0 2px;">
+        &#128205; This serial already exists in your inventory under <b>${loc.brand} &middot; ${loc.model}</b>. Cannot stock-in the same unit twice.
+      </div>
+    `;
+
+    actionBtnHtml = `
+      <button class="btn btn-primary" onclick="jumpToDuplicateInStock('${loc.brand}', '${loc.model}', '${target}')">
+        View in Available Stock &rarr;
+      </button>
+    `;
+  } else if (loc.status === 'SOLD') {
+    statusBadgeHtml = `
+      <span class="badge" style="background:rgba(129, 140, 248, 0.16); border:1px solid rgba(129, 140, 248, 0.4); color:#a5b4fc; font-size:11px; padding:3px 10px; font-weight:700;">
+        &#9679; SOLD / DISPATCHED
+      </span>
+    `;
+
+    detailsHtml = `
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Brand &middot; Model</div>
+          <div class="mono" style="font-size:13px; font-weight:700; margin-top:2px;">${loc.brand} &middot; ${loc.model}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Customer / Dispatched To</div>
+          <div style="font-size:13px; font-weight:800; color:#38bdf8; margin-top:2px;">${loc.customer}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date Out (Dispatched)</div>
+          <div class="mono" style="font-size:12px; font-weight:600; color:var(--text); margin-top:2px;">${loc.dateOut}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date In (Original)</div>
+          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${loc.dateIn}</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4; padding:0 2px;">
+        &#128205; This serial was previously sold and dispatched to <b>${loc.customer}</b> on <b>${loc.dateOut}</b>.
+      </div>
+    `;
+
+    actionBtnHtml = `
+      <button class="btn btn-primary" onclick="jumpToDuplicateInTrack('${target}')">
+        View in Track List &rarr;
+      </button>
+    `;
+  } else if (loc.status === 'RETURN') {
+    statusBadgeHtml = `
+      <span class="badge badge-yellow" style="font-size:11px; padding:3px 10px; font-weight:700;">
+        &#9679; RETURNED (RMA)
+      </span>
+    `;
+
+    detailsHtml = `
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Model</div>
+          <div class="mono" style="font-size:13px; font-weight:700; margin-top:2px;">${loc.model}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Reason for Return</div>
+          <div style="font-size:12px; font-weight:600; color:#fbbf24; margin-top:2px;">${loc.reason}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Customer</div>
+          <div style="font-size:12px; color:var(--text); margin-top:2px;">${loc.customer}</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Return Date</div>
+          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${loc.dateOut}</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4; padding:0 2px;">
+        &#128205; This serial was logged under Returns &amp; RMA (${loc.locationDesc}).
+      </div>
+    `;
+
+    actionBtnHtml = `
+      <button class="btn btn-primary" onclick="jumpToDuplicateInReturn('${target}')">
+        View in Returns &rarr;
+      </button>
+    `;
+  } else {
+    statusBadgeHtml = `
+      <span class="badge badge-yellow" style="font-size:11px; padding:3px 10px; font-weight:700;">
+        &#9679; RECORD FOUND
+      </span>
+    `;
+
+    detailsHtml = `
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div style="font-size:12.5px; color:var(--text); line-height:1.5;">
+          This serial number exists in the <b>daikin_stock.xlsx</b> master record.
+        </div>
+      </div>
+    `;
+
+    actionBtnHtml = `
+      <button class="btn btn-primary" onclick="closeDuplicateLocationModal()">
+        Understood
+      </button>
+    `;
+  }
+
+  if (badgeEl) badgeEl.innerHTML = statusBadgeHtml;
+  if (detailsEl) detailsEl.innerHTML = detailsHtml;
+  if (actionContainer) actionContainer.innerHTML = actionBtnHtml;
+
+  modal.classList.add('open');
+}
+
+function closeDuplicateLocationModal() {
+  const modal = document.getElementById('duplicate-location-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function jumpToDuplicateInStock(brand, model, serial) {
+  closeDuplicateLocationModal();
+  switchTab('available');
+  if (brand && brand !== '—') {
+    setAvailFilter(brand);
+  } else {
+    setAvailFilter('ALL');
+  }
+  setTimeout(() => {
+    const searchInput = document.getElementById('avail-search');
+    if (searchInput) {
+      searchInput.value = serial;
+      renderAvailable(serial);
+    }
+    showToast(`Showing serial ${serial} in Available Stock (${brand})`, '&#128205;');
+  }, 100);
+}
+
+function jumpToDuplicateInTrack(serial) {
+  closeDuplicateLocationModal();
+  switchTab('track-list');
+  setTimeout(() => {
+    const searchInput = document.getElementById('track-search');
+    if (searchInput) {
+      searchInput.value = serial;
+      renderTrackList();
+    }
+    showToast(`Found serial ${serial} in Track List`, '&#128205;');
+  }, 100);
+}
+
+function jumpToDuplicateInReturn(serial) {
+  closeDuplicateLocationModal();
+  switchTab('return');
+  showToast(`Serial ${serial} located in Returns & RMA`, '&#128205;');
+}
+
 function renderScanResultsTable() {
   const tbody = document.getElementById('scan-results-tbody');
   tbody.innerHTML = '';
@@ -3458,12 +3781,13 @@ function renderScanResultsTable() {
     const serialChips = (row.serials || []).length
       ? row.serials.map(s => {
           const isDupe = dupeSet.has(String(s).trim().toUpperCase()) || row.isDuplicate;
-          return `<span class="scan-serial-badge ${isDupe ? 'scan-serial-badge-dupe' : ''}" ${isDupe ? 'title="DUPLICATE SERIAL \u2014 already in master record"' : ''}>${s}</span>`;
+          return `<span class="scan-serial-badge ${isDupe ? 'scan-serial-badge-dupe' : ''}" ${isDupe ? `onclick="event.stopPropagation(); showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"` : ''}>${s}</span>`;
         }).join('')
       : `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
 
+    const firstDupeSerial = (row.dupeSerials && row.dupeSerials[0]) || (row.serials && row.serials[0]) || '';
     const dupeBadge = row.isDuplicate
-      ? `<span class="scan-dupe-badge-blink" title="${(row.warn || 'DUPLICATE SERIAL').replace(/"/g, '&quot;')}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`
+      ? `<span class="scan-dupe-badge-blink" onclick="event.stopPropagation(); showDuplicateLocation('${firstDupeSerial}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`
       : '';
 
     const warnIcon = row.sev && !row.isDuplicate
@@ -3481,9 +3805,11 @@ function renderScanResultsTable() {
 
     tr.innerHTML = `
       <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no !== undefined ? row.no : (idx + 1)}</td>
-      <td style="font-weight:700; white-space:nowrap; width:140px;">
-        <div>${row.model || '<span style="color:var(--text-muted);">\u2014</span>'}</div>
-        ${dupeBadge ? '<div style="margin-top:4px;">' + dupeBadge + '</div>' : ''}
+      <td style="font-weight:700; white-space:nowrap; width:140px; text-align:center;">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
+          <div>${row.model || '<span style="color:var(--text-muted);">\u2014</span>'}</div>
+          ${dupeBadge}
+        </div>
       </td>
       <td><div class="scan-serials-wrap">${serialChips}</div></td>
       <td class="mono" style="color:var(--text-muted); text-align:right; white-space:nowrap; width:70px;">${row.qty}</td>
@@ -3903,7 +4229,7 @@ function zoomScanRow(idx) {
   wrap.innerHTML = (row.serials || []).length
     ? row.serials.map(s => {
         const isDupe = dupeSet.has(String(s).trim().toUpperCase()) || row.isDuplicate;
-        return '<span class="scan-serial-badge ' + (isDupe ? 'scan-serial-badge-dupe' : '') + '" style="font-size:15px; padding:7px 13px; border-radius:8px;">' + s + (isDupe ? ' (DUPLICATE)' : '') + '</span>';
+        return '<span class="scan-serial-badge ' + (isDupe ? 'scan-serial-badge-dupe' : '') + '" style="font-size:15px; padding:7px 13px; border-radius:8px;" ' + (isDupe ? `onclick="showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')"` : '') + ' title="' + (isDupe ? 'DUPLICATE SERIAL \u2014 Click to view location' : '') + '">' + s + (isDupe ? ' (DUPLICATE)' : '') + '</span>';
       }).join('')
     : '<span style="color:var(--text-sub); font-size:14px;">' + (row.desc || 'No serials') + '</span>';
 

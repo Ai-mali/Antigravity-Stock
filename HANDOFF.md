@@ -145,10 +145,15 @@ desc, or no model, are skipped/blocked.
    - Real-time selection badge and action buttons: "Commit Selected (X) to Available Stock →", "Delete Selected (X)", or "Commit All to Available Stock →".
    - **Batch Brand Assignment**: When multiple rows are committed, selecting a brand in the modal applies to the entire selected batch in one go, eliminating repetitive one-by-one popups. Individual row commit arrow still assigns single models.
    - **Live Brand Badge & High Contrast**: In the Assign Brand modal, replaced static phrase with `"Currently Selected Brand: [Brand Name]"` rendered in a dedicated high-contrast `.brand-display-badge` (electric cyan on dark, deep ocean blue on light) for WCAG AAA readability in both Black and White modes.
-10. [DONE] **Duplicate Serial Retention, Blinking Alert & Row Actions**:
-   - Duplicate serials are **NOT** cleared immediately on commit.
-   - Rows with duplicate serial numbers stay in the Scan Results table with an animated `@keyframes dupe-row-pulse` pulsing effect.
-   - Animated glowing `[⚠️ DUPLICATE]` badge (`.scan-dupe-badge-blink`) blinks continuously on the model row, and duplicate serial badges pulse in warning red (`.scan-serial-badge-dupe`).
+10. [DONE] **Duplicate Serial Retention, Location Popup & Centered Alert**:
+   - Duplicate serials are **NOT** cleared immediately on commit; they stay in the Scan Results table for review.
+   - Row background does **NOT** blink (keeps the table clean and steady); only the duplicate serial numbers and the duplicate badge blink.
+   - The Model code and the animated `[⚠️ DUPLICATE]` badge are **center-aligned** in the Model column.
+   - Clicking either the `[⚠️ DUPLICATE]` badge or any red duplicate serial chip opens the **Duplicate Serial Location** modal (`#duplicate-location-modal`).
+   - The modal details exactly where the duplicate unit is located:
+     - If **In Stock**: Shows Brand, Model, Date In, and provides a `"View in Available Stock →"` button that jumps directly to the unit and filters by brand.
+     - If **Sold**: Shows Brand, Model, Customer Name, and Date Out with a `"View in Track List →"` button that searches and highlights the sold record.
+     - If **Returned**: Shows RMA status, reason, customer, and return date with a `"View in Returns →"` button.
    - Added a direct Trash button (🗑️) in the row's Actions column right next to the Zoom button (🔍), enabling 1-click removal of duplicate or unwanted scan rows.
    - Automatic pre-check `markDuplicateScans()` flags known serials on scan extraction, manual addition, and data refresh.
 11. **Indoor + Outdoor Sets & Non-Serial Parts**:
