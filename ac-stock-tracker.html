@@ -1010,6 +1010,83 @@ body.theme-light .traffic-dot-green {
   box-shadow: 0 0 5px #10b981;
 }
 
+.traffic-dot-red {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  box-shadow: 0 0 5px #ef4444;
+  display: inline-block;
+}
+
+/* Partial duplicate row (amber left border) */
+#scan-results-tbody tr.scan-row-partial td:first-child {
+  border-left: 3.5px solid #f59e0b !important;
+}
+body.theme-light #scan-results-tbody tr.scan-row-partial td:first-child {
+  border-left: 3.5px solid #d97706 !important;
+}
+
+/* Partial duplicate badge (Mixed Ready & Dupe) */
+.scan-partial-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1.5px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  user-select: none;
+  text-transform: uppercase;
+  cursor: help;
+}
+body.theme-light .scan-partial-badge {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.35);
+}
+
+/* Soft green breathing glow for ready serial chips */
+.scan-serial-badge.scan-serial-badge-ready {
+  color: var(--green-bright) !important;
+  border-color: rgba(38, 208, 124, 0.45) !important;
+  background: rgba(38, 208, 124, 0.08) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease;
+  animation: ready-chip-glow 2.4s ease-in-out infinite;
+}
+
+.scan-serial-badge.scan-serial-badge-ready:hover {
+  background: rgba(38, 208, 124, 0.22) !important;
+  border-color: var(--green-bright) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(38, 208, 124, 0.5);
+}
+
+body.theme-light .scan-serial-badge.scan-serial-badge-ready {
+  color: #047857 !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  background: rgba(16, 185, 129, 0.09) !important;
+}
+
+body.theme-light .scan-serial-badge.scan-serial-badge-ready:hover {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #059669 !important;
+}
+
+@keyframes ready-chip-glow {
+  0%, 100% {
+    box-shadow: 0 0 2px rgba(38, 208, 124, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(38, 208, 124, 0.55);
+  }
+}
+
 @keyframes dupe-badge-blink {
   0%, 100% {
     opacity: 1;
@@ -3319,6 +3396,58 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- 11. READY SERIAL ASSIGN & STOCK IN MODAL -->
+<div class="modal-overlay" id="ready-serial-modal">
+  <div class="modal-dialog" style="max-width: 480px; border: 1px solid rgba(38, 208, 124, 0.35); box-shadow: 0 16px 45px rgba(0,0,0,0.7);">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(38, 208, 124, 0.12); border:1px solid rgba(38, 208, 124, 0.35); display:flex; align-items:center; justify-content:center; color:var(--green-bright); flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="modal-title" style="color:var(--green-bright);">Ready to Stock In</div>
+          <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+            Verified unique unit &mdash; assign brand to stock in
+          </div>
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeReadySerialModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
+      <!-- Serial & Model Banner -->
+      <div style="background:var(--surface2); border:1px solid rgba(38, 208, 124, 0.25); border-radius:8px; padding:12px 14px; margin-bottom:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">MODEL CODE</div>
+          <div id="ready-modal-model" class="mono" style="font-size:15px; font-weight:800; color:var(--text); margin-top:3px;">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">SERIAL NUMBER</div>
+          <div id="ready-modal-serial" class="mono" style="font-size:15px; font-weight:800; color:var(--green-bright); margin-top:3px;">—</div>
+        </div>
+      </div>
+
+      <!-- Brand Assignment Section -->
+      <div class="modal-section-title">EXISTING BRANDS</div>
+      <select class="form-select" id="ready-modal-brand-select" style="margin-bottom:14px;" onchange="updateReadyModalBrandLiveDisplay()"></select>
+
+      <div class="modal-section-title">OR CREATE NEW BRAND</div>
+      <input type="text" class="form-input" id="ready-modal-brand-new" placeholder="e.g. DAIKIN" oninput="updateReadyModalBrandLiveDisplay()" autocomplete="off">
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div style="font-size:11.5px; color:var(--text-sub); display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <span>Selected Brand:</span>
+        <span id="ready-modal-brand-display" class="brand-display-badge">—</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" onclick="closeReadySerialModal()">Cancel</button>
+        <button class="btn btn-primary" id="btn-ready-modal-commit" onclick="commitSingleReadySerialFromModal()">&#10003; Assign &amp; Stock In</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -3528,15 +3657,30 @@ function getKnownMasterSerialsSet() {
 
 function markDuplicateScans() {
   const known = getKnownMasterSerialsSet();
-  if (!known.size) return;
   DB.scans.forEach(row => {
     if (!row.serials || !row.serials.length) return;
     const foundDupes = row.serials.filter(ser => known.has(String(ser).trim().toUpperCase()));
     if (foundDupes.length > 0) {
-      row.isDuplicate = true;
       row.dupeSerials = foundDupes;
-      row.warn = `Duplicate serial(s) already in master record: ${foundDupes.join(', ')}`;
-      row.sev = 'error';
+      if (foundDupes.length === row.serials.length) {
+        row.isDuplicate = true; // All serials are duplicate
+        row.isPartialDuplicate = false;
+        row.warn = `Duplicate serial(s) already in master record: ${foundDupes.join(', ')}`;
+        row.sev = 'error';
+      } else {
+        row.isDuplicate = false;
+        row.isPartialDuplicate = true; // Partial duplicate: some good, some duplicate
+        row.warn = `${foundDupes.length} duplicate & ${row.serials.length - foundDupes.length} valid serial(s)`;
+        row.sev = 'warn';
+      }
+    } else {
+      row.isDuplicate = false;
+      row.isPartialDuplicate = false;
+      delete row.dupeSerials;
+      if (row.warn && (row.warn.includes('duplicate') || row.warn.includes('Duplicate'))) {
+        row.warn = '';
+        row.sev = '';
+      }
     }
   });
 }
@@ -3815,6 +3959,135 @@ function jumpToDuplicateInReturn(serial) {
   showToast(`Serial ${serial} located in Returns & RMA`, '&#128205;');
 }
 
+/* ---- Ready Serial modal (Click green chip to stock in single verified unit) ---- */
+let _readyModalRowIdx = null;
+let _readyModalSerial = null;
+
+function openReadySerialModal(rowIdx, serial) {
+  if (rowIdx < 0 || rowIdx >= DB.scans.length) return;
+  const row = DB.scans[rowIdx];
+  if (!row) return;
+
+  _readyModalRowIdx = rowIdx;
+  _readyModalSerial = serial;
+
+  const modelEl = document.getElementById('ready-modal-model');
+  const serialEl = document.getElementById('ready-modal-serial');
+  if (modelEl) modelEl.textContent = row.model || '—';
+  if (serialEl) serialEl.textContent = serial;
+
+  const sel = document.getElementById('ready-modal-brand-select');
+  if (sel) {
+    sel.innerHTML = DB.brands.length
+      ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
+      : '<option value="">— no brands yet —</option>';
+    
+    // Auto-select existing brand if model is already mapped
+    const existingBrand = (DB.modelBrands && DB.modelBrands[row.model]) || '';
+    if (existingBrand && DB.brands.includes(existingBrand)) {
+      sel.value = existingBrand;
+    }
+  }
+
+  const inp = document.getElementById('ready-modal-brand-new');
+  if (inp) inp.value = '';
+
+  updateReadyModalBrandLiveDisplay();
+
+  const modal = document.getElementById('ready-serial-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeReadySerialModal() {
+  const modal = document.getElementById('ready-serial-modal');
+  if (modal) modal.classList.remove('open');
+  _readyModalRowIdx = null;
+  _readyModalSerial = null;
+}
+
+function updateReadyModalBrandLiveDisplay() {
+  const fresh = (document.getElementById('ready-modal-brand-new')?.value || '').trim().toUpperCase();
+  const selectVal = document.getElementById('ready-modal-brand-select')?.value || '';
+  const chosen = fresh || selectVal || '—';
+  const badge = document.getElementById('ready-modal-brand-display');
+  if (badge) {
+    badge.textContent = chosen;
+  }
+}
+
+async function commitSingleReadySerialFromModal() {
+  if (_readyModalRowIdx === null || !_readyModalSerial) return;
+  const row = DB.scans[_readyModalRowIdx];
+  if (!row) {
+    closeReadySerialModal();
+    return;
+  }
+
+  const serial = _readyModalSerial;
+  const fresh = (document.getElementById('ready-modal-brand-new')?.value || '').trim().toUpperCase();
+  const picked = fresh || document.getElementById('ready-modal-brand-select')?.value;
+
+  if (!picked) {
+    showToast('Please select or enter a brand.', '&#9888;');
+    return;
+  }
+
+  const btnCommit = document.getElementById('btn-ready-modal-commit');
+  if (btnCommit) {
+    btnCommit.disabled = true;
+    btnCommit.textContent = 'Stocking In...';
+  }
+
+  try {
+    const res = await apiPost('/api/stock-in', {
+      ...scanBatchFields(),
+      model: row.model,
+      serials: [serial],
+      brand: picked
+    });
+
+    if (res.added && res.added.length > 0) {
+      // Remove this single serial from the scan row
+      row.serials = (row.serials || []).filter(s => String(s).trim().toUpperCase() !== String(serial).trim().toUpperCase());
+      
+      if (!DB.brands.includes(picked)) {
+        DB.brands.push(picked);
+        renderBrandPills();
+        updateGlobalBadges();
+      }
+
+      showToast(`Committed unit ${serial} (${row.model}) to ${picked}!`, '&#10003;');
+      logLine(`Stocked In: ${row.model} [${serial}] to ${picked}`, 'log-line-ok');
+
+      if (row.serials.length === 0) {
+        // Entire row is now committed!
+        DB.scans.splice(_readyModalRowIdx, 1);
+        selectedScanIndices.delete(_readyModalRowIdx);
+      } else {
+        // Row still has other serials (e.g. the duplicate one)
+        row.qty = row.serials.length + ' PC' + (row.serials.length > 1 ? 'S' : '');
+        markDuplicateScans();
+      }
+
+      closeReadySerialModal();
+      renderScanResultsTable();
+      await refreshData();
+    } else if (res.dupes && res.dupes.length > 0) {
+      showToast(`Serial ${serial} was already in system!`, '&#9888;');
+      markDuplicateScans();
+      renderScanResultsTable();
+      closeReadySerialModal();
+    }
+  } catch (err) {
+    showToast('Failed to stock in: ' + err.message, '&#9888;');
+  } finally {
+    if (btnCommit) {
+      btnCommit.disabled = false;
+      btnCommit.innerHTML = '&#10003; Assign &amp; Stock In';
+    }
+  }
+}
+
 function renderScanResultsTable() {
   const tbody = document.getElementById('scan-results-tbody');
   tbody.innerHTML = '';
@@ -3829,26 +4102,34 @@ function renderScanResultsTable() {
     totalSerials += (row.serials || []).length;
     const isSelected = selectedScanIndices.has(idx);
     const dupeSet = new Set((row.dupeSerials || []).map(s => String(s).trim().toUpperCase()));
+    const validSerials = (row.serials || []).filter(s => !dupeSet.has(String(s).trim().toUpperCase()));
+    const dupeSerials = (row.serials || []).filter(s => dupeSet.has(String(s).trim().toUpperCase()));
+    const isPartial = dupeSerials.length > 0 && validSerials.length > 0;
+    const isAllDupe = (row.serials || []).length > 0 && dupeSerials.length === (row.serials || []).length;
+    const isReady = !isAllDupe && !isPartial && !row.sev && !!(row.model && row.model.trim()) && (!!(row.serials && row.serials.length) || !!row.desc);
 
     const serialChips = (row.serials || []).length
       ? row.serials.map(s => {
-          const isDupe = dupeSet.has(String(s).trim().toUpperCase()) || row.isDuplicate;
-          return `<span class="scan-serial-badge ${isDupe ? 'scan-serial-badge-dupe' : ''}" ${isDupe ? `onclick="event.stopPropagation(); showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"` : ''}>${s}</span>`;
+          const isDupe = dupeSet.has(String(s).trim().toUpperCase());
+          if (isDupe) {
+            return `<span class="scan-serial-badge scan-serial-badge-dupe" onclick="event.stopPropagation(); showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system">${s}</span>`;
+          } else {
+            return `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${s}')" title="READY TO STOCK IN \u2014 Click to review &amp; assign brand">${s}</span>`;
+          }
         }).join('')
       : `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
 
-    const isReady = !row.isDuplicate && !row.sev && !!(row.model && row.model.trim()) && (!!(row.serials && row.serials.length) || !!row.desc);
-
     const firstDupeSerial = (row.dupeSerials && row.dupeSerials[0]) || (row.serials && row.serials[0]) || '';
-    const dupeBadge = row.isDuplicate
-      ? `<span class="scan-dupe-badge-blink" onclick="event.stopPropagation(); showDuplicateLocation('${firstDupeSerial}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`
-      : '';
+    let statusBadge = '';
+    if (isAllDupe) {
+      statusBadge = `<span class="scan-dupe-badge-blink" onclick="event.stopPropagation(); showDuplicateLocation('${firstDupeSerial}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`;
+    } else if (isPartial) {
+      statusBadge = `<span class="scan-partial-badge" title="${validSerials.length} new unit(s) ready, ${dupeSerials.length} duplicate(s)"><span class="traffic-dot-green"></span>${validSerials.length} READY <span style="opacity:0.4; margin:0 2px;">|</span> <span class="traffic-dot-red"></span>${dupeSerials.length} DUP</span>`;
+    } else if (isReady) {
+      statusBadge = `<span class="scan-ready-badge" title="Model & Serials valid \u2014 Ready to Stock In"><span class="traffic-dot-green"></span>READY</span>`;
+    }
 
-    const readyBadge = isReady
-      ? `<span class="scan-ready-badge" title="Model & Serials valid \u2014 Ready to Stock In"><span class="traffic-dot-green"></span>READY</span>`
-      : '';
-
-    const warnIcon = row.sev && !row.isDuplicate
+    const warnIcon = row.sev && !isAllDupe && !isPartial
       ? `<span class="scan-warn-icon ${row.sev === 'error' ? 'warn-red' : 'warn-yellow'}" title="${(row.warn || row.flag || '').replace(/"/g, '&quot;')}" style="display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; font-size:13px; cursor:help; flex-shrink:0;">&#9888;</span>`
       : '';
 
@@ -3856,18 +4137,23 @@ function renderScanResultsTable() {
     tr.dataset.idx = idx;
     let trCls = [];
     if (isSelected) trCls.push('scan-row-selected');
-    if (row.isDuplicate) trCls.push('scan-row-duplicate-blink');
+    if (isAllDupe) trCls.push('scan-row-duplicate-blink');
+    else if (isPartial) trCls.push('scan-row-partial');
     else if (isReady) trCls.push('scan-row-ready');
     else if (row.sev === 'error') trCls.push('scan-row-error');
     else if (row.sev === 'warn') trCls.push('scan-row-warn');
     if (trCls.length) tr.className = trCls.join(' ');
+
+    const commitTooltip = isAllDupe
+      ? 'All serials are duplicates \u2014 cannot commit to stock'
+      : (isPartial ? `Commit ${validSerials.length} valid unit(s) to stock (keep duplicate)` : 'Commit Model to Available Stock');
 
     tr.innerHTML = `
       <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no !== undefined ? row.no : (idx + 1)}</td>
       <td style="font-weight:700; white-space:nowrap; width:140px; text-align:center;">
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
           <div>${row.model || '<span style="color:var(--text-muted);">\u2014</span>'}</div>
-          ${dupeBadge || readyBadge}
+          ${statusBadge}
         </div>
       </td>
       <td><div class="scan-serials-wrap">${serialChips}</div></td>
@@ -3889,7 +4175,7 @@ function renderScanResultsTable() {
           <button class="btn-action-icon" onclick="event.stopPropagation(); editScanRow(${idx})" title="Edit Serials" aria-label="Edit Model Serials">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
           </button>
-          <button class="btn-action-icon btn-action-commit ${row.isDuplicate ? 'btn-action-disabled' : ''}" ${row.isDuplicate ? 'disabled' : `onclick="event.stopPropagation(); commitScanRow(${idx})"`} title="${row.isDuplicate ? 'Duplicate serial \u2014 cannot commit to stock' : 'Commit Model to Available Stock'}" aria-label="Commit Model to Stock">
+          <button class="btn-action-icon btn-action-commit ${isAllDupe ? 'btn-action-disabled' : ''}" ${isAllDupe ? 'disabled' : `onclick="event.stopPropagation(); commitScanRow(${idx})"`} title="${commitTooltip}" aria-label="Commit Model to Stock">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
           </button>
         </div>
@@ -4424,16 +4710,7 @@ function saveEditScanModal() {
     row.warn = `${parsedSerials.length} serials captured but Qty declares ${declaredQty} — serials may be missing or merged from another row`;
   }
 
-  // Check if edited serials match existing master record
-  const known = getKnownMasterSerialsSet();
-  const foundDupes = parsedSerials.filter(s => known.has(s));
-  if (foundDupes.length > 0) {
-    row.isDuplicate = true;
-    row.dupeSerials = foundDupes;
-    row.warn = `Duplicate serial(s) already in master record: ${foundDupes.join(', ')}`;
-    row.sev = 'error';
-  }
-
+  markDuplicateScans();
   renderScanResultsTable();
   closeEditScanModal();
   showToast(`Updated No. ${row.no} \u00b7 ${row.model}`);
@@ -4466,15 +4743,8 @@ function addScanRowManual() {
     .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
   const no = (DB.scans.length + 1) * 10;
   const newRow = { no, model, serials, qty: serials.length + ' PC' + (serials.length > 1 ? 'S' : ''), flag: '', desc: '' };
-  const known = getKnownMasterSerialsSet();
-  const foundDupes = serials.filter(s => known.has(s));
-  if (foundDupes.length > 0) {
-    newRow.isDuplicate = true;
-    newRow.dupeSerials = foundDupes;
-    newRow.warn = `Duplicate serial(s) already in master record: ${foundDupes.join(', ')}`;
-    newRow.sev = 'error';
-  }
   DB.scans.push(newRow);
+  markDuplicateScans();
   renderScanResultsTable();
   showToast('Added manual row ' + model);
 }
@@ -4538,13 +4808,17 @@ async function commitScanRow(idx, assignedBrand = null) {
     reportCommit(row, res);
 
     if (res.dupes && res.dupes.length > 0) {
-      // KEEP IT IN SCAN RESULT SCREEN BLINKING!
+      // KEEP DUPLICATES IN SCAN RESULT SCREEN BLINKING!
       row.isDuplicate = true;
+      row.isPartialDuplicate = false;
       row.dupeSerials = res.dupes;
       row.serials = [...res.dupes];
       row.qty = res.dupes.length + ' PC' + (res.dupes.length > 1 ? 'S' : '');
       row.warn = `Duplicate serial(s) already in master record: ${res.dupes.join(', ')}`;
       row.sev = 'error';
+      if (res.added && res.added.length > 0) {
+        showToast(`Committed ${res.added.length} valid unit(s); kept ${res.dupes.length} duplicate(s) in scan list.`);
+      }
       renderScanResultsTable();
       await refreshData();
       return;
@@ -4635,9 +4909,14 @@ async function commitSelectedOrAllScans() {
 
       reportCommit(row, res);
 
+      if (res.added && res.added.length > 0) {
+        done++;
+      }
+
       if (res.dupes && res.dupes.length > 0) {
-        // KEEP IT IN SCAN RESULT SCREEN BLINKING!
+        // KEEP DUPLICATES IN SCAN RESULT SCREEN BLINKING!
         row.isDuplicate = true;
+        row.isPartialDuplicate = false;
         row.dupeSerials = res.dupes;
         row.serials = [...res.dupes];
         row.qty = res.dupes.length + ' PC' + (res.dupes.length > 1 ? 'S' : '');
@@ -4647,7 +4926,6 @@ async function commitSelectedOrAllScans() {
       } else {
         DB.scans.splice(i, 1);
         selectedScanIndices.delete(i);
-        done++;
       }
     } catch (e) {
       showToast(`Row ${row.no || i + 1} failed: ${e.message}`);

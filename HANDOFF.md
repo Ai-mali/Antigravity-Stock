@@ -169,10 +169,18 @@ desc, or no model, are skipped/blocked.
      - 🟢 **Ready / Good Rows**: Get a vibrant green left border (`border-left: 3.5px solid var(--green-bright)` / `#10b981`), and a clean `[🟢 READY]` status pill under the model name.
      - 🔴 **Duplicate Rows**: Retain their red left border (`border-left: 3.5px solid #ef4444`), blinking duplicate serial chips, and `[⚠️ DUPLICATE]` badge with cursor lock.
    - **Editable Recovery**: When an operator edits a duplicate row via ✏️ and fixes the serials, `saveEditScanModal` re-evaluates the serials and automatically restores the row to 🟢 READY status and re-enables its assign arrow.
-13. **Indoor + Outdoor Sets & Non-Serial Parts**:
+13. [DONE] **Partial Duplicate Auto-Split & Ready Serial Assignment Modal**:
+   - **Per-Serial Duplicate & Ready Distinction**:
+     - Duplicate serial chips blink red (`scan-serial-badge-dupe`) and open the Duplicate Location modal on click.
+     - Valid/ready serial chips glow green (`scan-serial-badge-ready`) with a soft, non-strobe breathing pulse and open the **Ready Serial Modal** on click.
+   - **Partial Duplicate Badge**: Rows containing both new and duplicate serials display a split status badge `[🟢 X READY | 🔴 Y DUP]` and an amber left border (`border-left: 3.5px solid #f59e0b`).
+   - **Dual Action Commit Paths**:
+     - **Path 1 (Green Chip Modal)**: Clicking any green serial chip opens `#ready-serial-modal` (`Ready to Stock In`), displaying Model, Serial, target Brand selector, and an `"Assign & Stock In"` button to commit that single verified unit immediately.
+     - **Path 2 (Row Assign Arrow ▶️)**: The row's assign button remains enabled on partial duplicate rows. Clicking it automatically commits all valid serials in the row to Available Stock and leaves only the duplicate serial(s) behind in the scan results (dropping row quantity and turning into full red `[⚠️ DUPLICATE]`).
+14. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-14. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+15. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have
