@@ -200,7 +200,6 @@ def download_backup(filename: str = ""):
 
 # ------------------------------------------------------------------ stock
 class StockInBody(BaseModel):
-    supplier: str
     model: str
     serials: list[str]
     date_in: str
@@ -213,11 +212,11 @@ def stock_in(body: StockInBody):
     serials = [s.strip().upper() for s in body.serials if s.strip()]
     if body.brand.strip():
         added, dupes = store.stock_in_with_brand(
-            body.supplier, body.model, serials, body.date_in, body.brand)
+            body.model, serials, body.date_in, body.brand)
         needs_brand = False
     else:
         added, dupes, ok = store.stock_in(
-            body.supplier, body.model, serials, body.date_in)
+            body.model, serials, body.date_in)
         needs_brand = not ok
     _saved()
     return {"added": added, "dupes": dupes, "needs_brand": needs_brand}
@@ -273,7 +272,6 @@ class UpdateUnitBody(BaseModel):
     old_serial: str
     new_serial: str
     model: str
-    supplier: str
     brand: str = ""
     date_in: str = ""
 
@@ -289,7 +287,6 @@ def update_inventory_unit(body: UpdateUnitBody):
         old_serial=body.old_serial,
         new_serial=body.new_serial,
         model=body.model,
-        supplier=body.supplier,
         brand=body.brand,
         date_in=body.date_in
     )
@@ -297,7 +294,6 @@ def update_inventory_unit(body: UpdateUnitBody):
         return JSONResponse({"ok": False, "error": err}, status_code=400)
     _saved()
     return {"ok": True, "unit": {
-        "supplier": rec["Supplier"],
         "brand": rec["Brand"],
         "model": rec["Model"],
         "serial": rec["Serial"],

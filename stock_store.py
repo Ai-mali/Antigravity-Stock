@@ -2,7 +2,7 @@
 
 One workbook (daikin_stock.xlsx, next to the app) holds:
   MasterRecord — one row per physical unit:
-      Supplier | Brand | Model | Serial | Date In | Status | Customer | Date Out
+      Brand | Model | Serial | Date In | Status | Customer | Date Out
   Brands       — the brand list (Daikin, LG, Panasonic, ...)
   ModelBrands  — exact full Model string -> Brand (never prefix matching)
   Returns      — Serial | Model | Customer | Reason | Condition | Notes |
@@ -15,6 +15,7 @@ both Available Stock and the Track List but keeps its record.
 
 Existing files from the Type-era schema are migrated automatically:
 sheet Types -> Brands, ModelTypes -> ModelBrands, header Type -> Brand.
+Supplier column is automatically migrated and removed if present.
 """
 
 import datetime
@@ -31,7 +32,7 @@ else:
 BACKUP_DIR = DB_PATH.parent / "backups"
 DO_DIR = DB_PATH.parent / "delivery_orders"
 
-RECORD_HEADER = ["Supplier", "Brand", "Model", "Serial",
+RECORD_HEADER = ["Brand", "Model", "Serial",
                  "Date In", "Status", "Customer", "Date Out"]
 RETURN_HEADER = ["Serial", "Model", "Customer", "Reason",
                  "Condition", "Notes", "Action", "Date"]
@@ -173,7 +174,7 @@ class StockStore:
         else:
             self.wb = Workbook()
             self.wb.active.title = "MasterRecord"
-        self._migrate_type_schema()
+        self._migrate_schema()
         self.recs = self._sheet("MasterRecord", RECORD_HEADER)
         self.brands_sheet = self._sheet("Brands", ["Brand"])
         self.map_sheet = self._sheet("ModelBrands", ["Model", "Brand"])
@@ -184,10 +185,12 @@ class StockStore:
         self.returns, self.activities, self._serial_set = [], [], set()
         for idx, row in enumerate(
                 self.recs.iter_rows(min_row=2, values_only=True), start=2):
-            if not row or row[3] in (None, ""):
+            if not row:
                 continue
             rec = dict(zip(RECORD_HEADER,
                            ("" if v is None else v for v in row)))
+            if not rec.get("Serial"):
+                continue
             rec["_row"] = idx  # Excel row, so updates hit the right cells
             self.records.append(rec)
             self._serial_set.add(str(rec["Serial"]).strip().lower())
@@ -209,17 +212,21 @@ class StockStore:
                 zip(ACTIVITY_HEADER, ("" if v is None else v for v in row))))
         self.save(backup=False)
 
-    def _migrate_type_schema(self):
-        """Rename the Type-era sheets/column to Brand once, in place."""
+    def _migrate_schema(self):
+        """Rename the Type-era sheets/column to Brand, and remove Supplier column if present."""
         names = self.wb.sheetnames
         if "Types" in names and "Brands" not in names:
             self.wb["Types"].title = "Brands"
         if "ModelTypes" in names and "ModelBrands" not in names:
             self.wb["ModelTypes"].title = "ModelBrands"
         if "MasterRecord" in names:
-            hdr = self.wb["MasterRecord"].cell(row=1, column=2).value
+            ws = self.wb["MasterRecord"]
+            first_val = str(ws.cell(row=1, column=1).value or "").strip().lower()
+            if first_val == "supplier":
+                ws.delete_cols(1, 1)
+            hdr = ws.cell(row=1, column=1).value
             if str(hdr or "").strip() == "Type":
-                self.wb["MasterRecord"].cell(row=1, column=2, value="Brand")
+                ws.cell(row=1, column=1, value="Brand")
 
     def _sheet(self, name: str, header: list[str]):
         ws = (self.wb[name] if name in self.wb.sheetnames
@@ -355,7 +362,6 @@ class StockStore:
             s = str(rec["Serial"]).strip()
             m["serials"].append(s)
             m["units"][s] = {
-                "supplier": str(rec.get("Supplier", "")).strip(),
                 "dateIn": str(rec.get("Date In", "")).strip()
             }
         # keep zero-stock brands visible too
@@ -404,12 +410,11 @@ class StockStore:
                       reverse=True)
 
     def in_stock_units(self) -> list[dict]:
-        """Return all physical units currently In Stock, for management table."""
+        """Return all physical units currently In Stock."""
         out = []
         for r in self.records:
             if str(r.get("Status", "")).strip() == IN_STOCK:
                 out.append({
-                    "supplier": str(r.get("Supplier", "")),
                     "brand": str(r.get("Brand", "")),
                     "model": str(r.get("Model", "")),
                     "serial": str(r.get("Serial", "")),
@@ -418,22 +423,22 @@ class StockStore:
         return out
 
     # ---------------------------------------------------------- mutations
-    def stock_in(self, supplier: str, model: str, serials: list[str],
+    def stock_in(self, model: str, serials: list[str],
                  date_in: str):
         """Shared save path for manual entry and scanned rows."""
         serials = [s.strip() for s in serials if s.strip()]
-        if not supplier.strip() or not model.strip() or not serials:
+        if not model.strip() or not serials:
             return [], serials, True
         dupes, new_serials = self._split_dupes(serials)
         brand = self.brand_for(model)
         if not brand:
             return [], dupes, False
-        self._write_rows(supplier.strip(), model.strip(), brand,
+        self._write_rows(model.strip(), brand,
                          new_serials, date_in)
         return new_serials, dupes, True
 
-    def stock_in_with_brand(self, supplier: str, model: str,
-                            serials: list[str], date_in: str, brand: str):
+    def stock_in_with_brand(self, model: str, serials: list[str],
+                            date_in: str, brand: str):
         """Completes stock_in for a Model the user just assigned a Brand."""
         brand = brand.strip()
         if not brand:
@@ -441,7 +446,7 @@ class StockStore:
         self.assign_brand(model, brand)
         dupes, new_serials = self._split_dupes(
             [s.strip() for s in serials if s.strip()])
-        self._write_rows(supplier.strip(), model.strip(), brand,
+        self._write_rows(model.strip(), brand,
                          new_serials, date_in)
         return new_serials, dupes
 
@@ -456,11 +461,11 @@ class StockStore:
             seen.add(s.lower())
         return dupes, new_serials
 
-    def _write_rows(self, supplier, model, brand, serials, date_in):
+    def _write_rows(self, model, brand, serials, date_in):
         for s in serials:
-            self.recs.append([supplier, brand, model, s, date_in,
+            self.recs.append([brand, model, s, date_in,
                               IN_STOCK, "", ""])
-            self.records.append({"Supplier": supplier, "Brand": brand,
+            self.records.append({"Brand": brand,
                                  "Model": model, "Serial": s,
                                  "Date In": date_in, "Status": IN_STOCK,
                                  "Customer": "", "Date Out": "",
@@ -468,7 +473,7 @@ class StockStore:
             self._serial_set.add(s.lower())
         if serials:
             self.log_activity("Stock In", model=model, count=len(serials),
-                              details=f"Supplier: {supplier} | {len(serials)} units added")
+                              details=f"Brand: {brand} | {len(serials)} units added")
             self.save(backup=True)
 
     def stock_out(self, serials: list[str], customer: str, date_out: str):
@@ -485,9 +490,9 @@ class StockStore:
             rec["Date Out"] = date_out
             models_sold.add(str(rec["Model"]))
             row = rec["_row"]
-            self.recs.cell(row=row, column=6, value=SOLD)
-            self.recs.cell(row=row, column=7, value=customer)
-            self.recs.cell(row=row, column=8, value=date_out)
+            self.recs.cell(row=row, column=5, value=SOLD)
+            self.recs.cell(row=row, column=6, value=customer)
+            self.recs.cell(row=row, column=7, value=date_out)
             done.append(str(rec["Serial"]))
         if done:
             model_summary = ", ".join(sorted(models_sold))
@@ -520,20 +525,20 @@ class StockStore:
             rec["Status"] = IN_STOCK
             rec["Customer"] = ""
             rec["Date Out"] = ""
-            self.recs.cell(row=row, column=6, value=IN_STOCK)
+            self.recs.cell(row=row, column=5, value=IN_STOCK)
+            self.recs.cell(row=row, column=6, value="")
             self.recs.cell(row=row, column=7, value="")
-            self.recs.cell(row=row, column=8, value="")
         else:
             rec["Status"] = QUARANTINED
-            self.recs.cell(row=row, column=6, value=QUARANTINED)
+            self.recs.cell(row=row, column=5, value=QUARANTINED)
         self.log_activity("Return", model=str(rec["Model"]), count=1,
                           details=f"Serial: {rec['Serial']} | Customer: {rec['Customer']} | Reason: {reason} | Action: {action_label}")
         self.save(backup=True)
         return rec, None
 
     def update_unit(self, old_serial: str, new_serial: str, model: str,
-                    supplier: str, brand: str = "", date_in: str = "") -> tuple[dict | None, str]:
-        """Edit an In-Stock unit's serial, model, supplier, brand, or date_in.
+                    brand: str = "", date_in: str = "") -> tuple[dict | None, str]:
+        """Edit an In-Stock unit's serial, model, brand, or date_in.
         Creates backup snapshot and logs activity."""
         old_key = old_serial.strip().lower()
         new_s = new_serial.strip()
@@ -558,26 +563,23 @@ class StockStore:
             self._serial_set.add(new_key)
 
         m_str = model.strip()
-        supp_str = supplier.strip()
         b_str = brand.strip() or self.brand_for(m_str) or str(rec.get("Brand", ""))
         d_str = date_in.strip() or str(rec.get("Date In", ""))
 
         rec["Serial"] = new_s
         rec["Model"] = m_str
-        rec["Supplier"] = supp_str
         rec["Brand"] = b_str
         rec["Date In"] = d_str
 
-        # Update cell in openpyxl worksheet
+        # Update cell in openpyxl worksheet (Column 1: Brand, 2: Model, 3: Serial, 4: Date In)
         row = rec["_row"]
-        self.recs.cell(row=row, column=1, value=supp_str)
-        self.recs.cell(row=row, column=2, value=b_str)
-        self.recs.cell(row=row, column=3, value=m_str)
-        self.recs.cell(row=row, column=4, value=new_s)
-        self.recs.cell(row=row, column=5, value=d_str)
+        self.recs.cell(row=row, column=1, value=b_str)
+        self.recs.cell(row=row, column=2, value=m_str)
+        self.recs.cell(row=row, column=3, value=new_s)
+        self.recs.cell(row=row, column=4, value=d_str)
 
         self.log_activity("Unit Edited", model=m_str, count=1,
-                          details=f"Serial: {old_serial} -> {new_s} | Model: {m_str} | Supplier: {supp_str}")
+                          details=f"Serial: {old_serial} -> {new_s} | Model: {m_str} | Brand: {b_str}")
         self.save(backup=True)
         return rec, ""
 
@@ -604,7 +606,7 @@ class StockStore:
                 r["_row"] -= 1
 
         self.log_activity("Unit Deleted", model=str(rec.get("Model", "")), count=1,
-                          details=f"Deleted Serial: {rec.get('Serial', '')} | Model: {rec.get('Model', '')} | Supplier: {rec.get('Supplier', '')}")
+                          details=f"Deleted Serial: {rec.get('Serial', '')} | Model: {rec.get('Model', '')} | Brand: {rec.get('Brand', '')}")
         self.save(backup=True)
         return True, ""
 

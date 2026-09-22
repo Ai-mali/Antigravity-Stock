@@ -33,7 +33,7 @@ from one process, so nothing else to start.
 | GET | `/api/returns` | return records |
 | GET | `/api/brands` | brand list |
 | POST | `/api/scan` | multipart image → parsed rows `{no, model, qty, serials[], desc, flag}` |
-| POST | `/api/stock-in` | `{supplier, model, serials, date_in, brand?}` → `{added, dupes, needs_brand}` |
+| POST | `/api/stock-in` | `{model, serials, date_in, brand?}` → `{added, dupes, needs_brand}` |
 | POST | `/api/models/brand` | assign a Brand to a new Model (exact match, remembered) |
 | POST | `/api/stock-out` | `{serials, customer, date_out}` |
 | POST | `/api/returns` | `{serial, reason, condition, notes, action: restock\|quarantine}` |

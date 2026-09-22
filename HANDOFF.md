@@ -25,7 +25,7 @@ serves both at `http://localhost:8000`.
 | `ac-stock-tracker.html` | The ENTIRE frontend: ~3700 lines, vanilla HTML/CSS/JS, no frameworks. All screens, modals, and logic live here. |
 | `backend.py` | FastAPI app: serves the HTML at `/` + `/ac-stock-tracker.html`, plus all `/api/*` endpoints. Auto-opens the browser. |
 | `scanner.py` | Vision engine: `PROVIDERS` dict (gemini/alibaba/openai/anthropic/deepseek), `PROMPT` sent to the vision model, `parse_scan_json`, per-provider scanners with **multi-key failover**, `list_models` (live model fetch with static fallback). |
-| `stock_store.py` | `StockStore` — openpyxl layer over `daikin_stock.xlsx`. Sheets: `MasterRecord` `Supplier\|Brand\|Model\|Serial\|Date In\|Status\|Customer\|Date Out` (one row per serial), `Brands`, `ModelBrands` (exact Model→Brand), `Returns` `Serial\|Model\|Customer\|Reason\|Condition\|Notes\|Action\|Date`, and `ActivityLog` `Timestamp\|Action\|Model\|Serials Count\|Details\|Status`. Automatic rotating backups in `backups/`, customer history ranking, and warranty tracking. |
+| `stock_store.py` | `StockStore` — openpyxl layer over `daikin_stock.xlsx`. Sheets: `MasterRecord` `Brand\|Model\|Serial\|Date In\|Status\|Customer\|Date Out` (one row per serial), `Brands`, `ModelBrands` (exact Model→Brand), `Returns` `Serial\|Model\|Customer\|Reason\|Condition\|Notes\|Action\|Date`, and `ActivityLog` `Timestamp\|Action\|Model\|Serials Count\|Details\|Status`. Automatic rotating backups in `backups/`, customer history ranking, and warranty tracking. |
 | `requirements.txt` | `fastapi, uvicorn, python-multipart, google-genai, openpyxl` |
 | `git-pull.bat`, `run.bat` | Owner's helpers (`git pull` / `python backend.py`). |
 | `extractor_flowchart.html` | Old flowchart doc — informational only. |
@@ -128,7 +128,7 @@ desc, or no model, are skipped/blocked.
    - Allows operators to cleanly restock mistakenly dispatched serials back into Available Stock with a recorded audit trail.
 7. [DONE] **Direct In-Stock Unit Editing & Deletion (Chips UX)**:
    - Replaced the separate "Manage Inventory Table" modal with direct, contextual actions on every serial chip in Available Stock.
-   - Each serial card features a subtle Pencil ✏️ icon to edit (Serial, Model, Brand, Supplier, Date In) and a Trash 🗑️ icon to delete accidental/duplicate units.
+   - Each serial card features a subtle Pencil ✏️ icon to edit (Serial, Model, Brand, Date In) and a Trash 🗑️ icon to delete accidental/duplicate units.
    - Clicking the card body still copies the serial to clipboard; clicking action buttons is isolated with `event.stopPropagation()`.
    - Dedicated sleek `#edit-unit-modal` for modifying unit details with automatic brand synchronization and staged cart updating.
    - Fixed Image Preview action buttons getting cut off: moved "Recent DOs" to the card header, leaving 3 clean, wrapping action buttons (`Load Image`, `SCAN`, `Clear`).

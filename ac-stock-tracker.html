@@ -1116,10 +1116,11 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 
 /* Scan Results Card Header Inputs */
 .scan-meta-bar {
-  display: grid;
-  grid-template-columns: 1fr 180px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px 18px;
+  padding: 10px 18px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2230,13 +2231,12 @@ body.theme-light .autocomplete-dropdown {
             </div>
           </div>
           <div class="scan-meta-bar">
-            <div>
-              <label class="form-label">SUPPLIER</label>
-              <input type="text" class="form-input" id="scan-supplier" placeholder="SUPPLIER">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <label class="form-label" style="margin-bottom:0; font-size:11px; white-space:nowrap;">DATE IN</label>
+              <input type="date" class="form-input" id="scan-date-in" value="2026-09-18" style="max-width:180px; padding:5px 10px;">
             </div>
-            <div>
-              <label class="form-label">DATE IN</label>
-              <input type="date" class="form-input" id="scan-date-in" value="2026-09-18">
+            <div style="font-size:11px; color:var(--text-sub);">
+              Units are grouped automatically by Brand in Available Stock.
             </div>
           </div>
           <div class="table-container stock-in-table-scroll" style="flex:1;">
@@ -2772,7 +2772,7 @@ body.theme-light .autocomplete-dropdown {
       <div>
         <div class="modal-title">Edit Stock Unit</div>
         <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
-          Correct serial number, model, supplier, or date in.
+          Correct serial number, model, brand, or date in.
         </div>
       </div>
       <button class="btn-circle" onclick="closeEditUnitModal()" title="Close">&#10005;</button>
@@ -2796,15 +2796,9 @@ body.theme-light .autocomplete-dropdown {
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:8px;">
-        <div>
-          <label class="form-label" for="edit-unit-supplier">Supplier</label>
-          <input type="text" class="form-input" id="edit-unit-supplier" placeholder="Supplier name" autocomplete="off">
-        </div>
-        <div>
-          <label class="form-label" for="edit-unit-datein">Date In</label>
-          <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="MM/DD/YYYY or YYYY-MM-DD" autocomplete="off">
-        </div>
+      <div style="margin-bottom:8px;">
+        <label class="form-label" for="edit-unit-datein">Date In</label>
+        <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="MM/DD/YYYY or YYYY-MM-DD" autocomplete="off">
       </div>
     </div>
     <div class="modal-footer">
@@ -3423,10 +3417,8 @@ function addScanRowManual() {
 
 /* ---- real commit: scan row -> backend stock_in (dup check + brand modal) ---- */
 function scanBatchFields() {
-  const s = document.getElementById('scan-supplier');
   const d = document.getElementById('scan-date-in');
   return {
-    supplier: (s && s.value.trim()) || 'Unknown Supplier',
     date_in: (d && d.value) || new Date().toISOString().slice(0, 10)
   };
 }
@@ -4725,16 +4717,6 @@ function openEditUnitModal(serial, model, brand, dateIn) {
     }
   }
 
-  // Look up supplier from DB.inventory[brand]?.models[model]?.units?.[serial]
-  let supplier = '';
-  try {
-    const unitObj = DB.inventory?.[brand]?.models?.[model]?.units?.[serial];
-    if (unitObj && unitObj.supplier) {
-      supplier = unitObj.supplier;
-    }
-  } catch (e) {}
-  document.getElementById('edit-unit-supplier').value = supplier;
-
   // Date in
   let dIn = dateIn || '';
   try {
@@ -4762,7 +4744,6 @@ async function saveEditUnitModal() {
   const newSerial = (document.getElementById('edit-unit-serial').value || '').trim();
   const model = (document.getElementById('edit-unit-model').value || '').trim();
   const brand = (document.getElementById('edit-unit-brand').value || '').trim();
-  const supplier = (document.getElementById('edit-unit-supplier').value || '').trim();
   const dateIn = (document.getElementById('edit-unit-datein').value || '').trim();
 
   if (!newSerial) {
@@ -4780,7 +4761,6 @@ async function saveEditUnitModal() {
       new_serial: newSerial,
       model,
       brand,
-      supplier,
       date_in: dateIn
     });
 

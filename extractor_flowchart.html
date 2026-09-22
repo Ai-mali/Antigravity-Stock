@@ -53,7 +53,7 @@
 
   <div class="group">
     <div class="gtitle">Scan Results table — shared manual + scan entry</div>
-    <div class="node">Batch fields: <b>SUPPLIER</b> + <b>DATE IN</b> (one pair per batch)<div class="lbl">F</div></div>
+    <div class="node">Batch field: <b>DATE IN</b> (one per batch)<div class="lbl">F</div></div>
     <div class="arrow"></div>
     <div class="row2">
       <div class="node"><b>+</b> add row manually<br>(No / Model / Serial / Qty)</div>
@@ -62,7 +62,7 @@
       <div class="node"><b>download</b><br>export CSV</div>
     </div>
     <div class="arrow"></div>
-    <div class="node pending">send_row() — validates Supplier/Model/Serial, then calls
+    <div class="node pending">send_row() — validates Model/Serial, then calls
       <b>stock_store.stock_in()</b> (shared save: duplicate check + new-Type modal + Excel)
       <div class="tag">NOT WIRED YET — waits for Stock Tracker merge</div><div class="lbl">G</div></div>
   </div>
