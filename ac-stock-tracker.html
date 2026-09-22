@@ -1487,22 +1487,21 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   box-shadow: 0 1px 0 var(--border);
 }
 
-/* Actions column & inward-shifted icon buttons */
+/* Actions column & centered icon buttons */
 .actions-cell {
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
-  width: 115px;
+  width: 155px;
   vertical-align: middle;
-  padding-right: 18px !important;
+  padding: 8px 10px !important;
 }
 
 .actions-btn-group {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
   white-space: nowrap;
-  margin-right: 4px;
 }
 
 /* --- Scan row warnings --- */
@@ -2544,7 +2543,7 @@ body.theme-light .autocomplete-dropdown {
                   <th style="width:140px; text-align:center; white-space:nowrap;">Model <span id="scan-hdr-model-cnt" style="opacity:.6;">(0)</span></th>
                   <th>Serial <span id="scan-hdr-serial-cnt" style="opacity:.6;">(0)</span></th>
                   <th style="width:70px; text-align:right; white-space:nowrap;">Qty <span id="scan-hdr-qty-cnt" style="opacity:.6;">(0)</span></th>
-                  <th style="text-align:right; width:140px; padding-right:14px; white-space:nowrap;">Actions</th>
+                  <th style="text-align:center; width:155px; white-space:nowrap;">Action</th>
                 </tr>
               </thead>
               <tbody id="scan-results-tbody"></tbody>
@@ -4427,17 +4426,18 @@ function reportCommit(row, res) {
 // serials to send for a scan row: real serials, or the description as the
 // unit identifier for serial-less parts (expanded when Qty > 1)
 function commitSerialsOf(row) {
-  if (row.serials.length) return row.serials;
+  if (row.serials && row.serials.length) return row.serials;
   if (!row.desc) return [];
   const q = parseInt((String(row.qty).match(/\d+/) || [])[0] || '1', 10) || 1;
   return q > 1 ? Array.from({ length: q }, (_, i) => `${row.desc} #${i + 1}`)
                : [row.desc];
 }
 
-async function commitScanRow(idx) {
+async function commitScanRow(idx, assignedBrand = null) {
   const row = DB.scans[idx];
   if (!row) return;
-  if (!row.serials.length && !row.desc) {
+  const serials = commitSerialsOf(row);
+  if (!serials.length && !row.desc) {
     showToast('Row has no serials \u2014 edit it first.');
     return;
   }
@@ -4446,13 +4446,19 @@ async function commitScanRow(idx) {
     return;
   }
   try {
-    const res = await apiPost('/api/stock-in', {
-      ...scanBatchFields(), model: row.model, serials: commitSerialsOf(row)
-    });
+    const payload = {
+      ...scanBatchFields(),
+      model: row.model,
+      serials: serials
+    };
+    if (assignedBrand) {
+      payload.brand = assignedBrand;
+    }
+    const res = await apiPost('/api/stock-in', payload);
     if (res.needs_brand) {
       const brand = await askBrand(row.model, 1);
       if (!brand) return;  // cancelled — row stays in the list
-      return commitScanRow(idx);  // retry now that the model is mapped
+      return commitScanRow(idx, brand);  // retry now that the model is mapped AND pass the brand!
     }
     reportCommit(row, res);
 
@@ -4470,7 +4476,12 @@ async function commitScanRow(idx) {
     }
 
     DB.scans.splice(idx, 1);
-    selectedScanIndices.delete(idx);
+    const newSelected = new Set();
+    for (const sIdx of selectedScanIndices) {
+      if (sIdx < idx) newSelected.add(sIdx);
+      else if (sIdx > idx) newSelected.add(sIdx - 1);
+    }
+    selectedScanIndices = newSelected;
     renderScanResultsTable();
     await refreshData();
   } catch (e) {
@@ -4578,6 +4589,7 @@ async function commitAllScansToStock() {
 
 /* ---- Assign Brand modal (new model encountered during commit) ---- */
 let _brandResolve = null;
+let _currentBrandModel = null;
 
 function updateBrandModalLiveDisplay() {
   const fresh = (document.getElementById('brand-new')?.value || '').trim().toUpperCase();
@@ -4592,14 +4604,13 @@ function updateBrandModalLiveDisplay() {
 function askBrand(model, batchCount = 1) {
   return new Promise(resolve => {
     _brandResolve = resolve;
-    const modelEl = document.getElementById('brand-modal-model');
+    _currentBrandModel = (model || '').trim().toUpperCase();
     const subEl = document.getElementById('brand-modal-sub');
-    if (modelEl) modelEl.textContent = model || '—';
     if (subEl) {
       if (batchCount > 1) {
-        subEl.innerHTML = `Assign brand for <b>${batchCount} selected items</b> (model <span class="mono" style="color:var(--green-bright); font-weight:700;">${model}</span>). This chosen brand will apply to all selected items in this batch.`;
+        subEl.innerHTML = `Assign brand for <b>${batchCount} selected items</b> (model <span id="brand-modal-model" class="mono" style="color:var(--green-bright); font-weight:700;">${_currentBrandModel}</span>). This chosen brand will apply to all selected items in this batch.`;
       } else {
-        subEl.innerHTML = `New model <span class="mono" style="color:var(--green-bright); font-weight:700;">${model}</span> needs a brand.`;
+        subEl.innerHTML = `New model <span id="brand-modal-model" class="mono" style="color:var(--green-bright); font-weight:700;">${_currentBrandModel}</span> needs a brand.`;
       }
     }
     const sel = document.getElementById('brand-select');
@@ -4622,10 +4633,11 @@ async function closeBrandModal(cancelled) {
   const modal = document.getElementById('brand-modal');
   if (modal) modal.classList.remove('open');
   const resolve = _brandResolve;
+  const model = _currentBrandModel || document.getElementById('brand-modal-model')?.textContent?.trim();
   _brandResolve = null;
+  _currentBrandModel = null;
   if (!resolve) return;
   if (cancelled) return resolve(null);
-  const model = document.getElementById('brand-modal-model')?.textContent;
   const fresh = (document.getElementById('brand-new')?.value || '').trim().toUpperCase();
   const picked = fresh || document.getElementById('brand-select')?.value;
   if (!picked) {

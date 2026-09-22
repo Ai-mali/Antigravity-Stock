@@ -156,10 +156,15 @@ desc, or no model, are skipped/blocked.
      - If **Returned**: Shows RMA status, reason, customer, and return date with a `"View in Returns →"` button.
    - Added a direct Trash button (🗑️) in the row's Actions column right next to the Zoom button (🔍), enabling 1-click removal of duplicate or unwanted scan rows.
    - Automatic pre-check `markDuplicateScans()` flags known serials on scan extraction, manual addition, and data refresh.
-11. **Indoor + Outdoor Sets & Non-Serial Parts**:
+11. [DONE] **Manual Single Assign Fix & Centered "Action" Header**:
+   - Fixed the brand assignment bug where `subEl.innerHTML` previously removed `#brand-modal-model` from DOM, causing single-row assign (`commitScanRow`) to fail silently or get stuck when prompting for a new brand.
+   - Preserved `_currentBrandModel` across modal lifecycle and directly passed the assigned brand to `/api/stock-in` on retry.
+   - Centered the table header word **"Action"** (singular) and horizontally centered the 4 buttons (🗑️ Trash, 🔍 Zoom, ✏️ Edit, ▶️ Assign) directly underneath it with balanced spacing.
+   - Protected row selection state by shifting remaining selected row indices when a single row is committed from the middle of the table.
+12. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-12. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+13. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have
