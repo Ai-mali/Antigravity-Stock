@@ -166,8 +166,15 @@ Owner instruction that still applies: *"the most important is you have
 to make the improvement on my idea — do not agree with me everytime,
 and suggest me good ideas."* Push back constructively.
 
+**MANDATORY PROTOCOL — ASK & PROPOSE OPTIONS FIRST BEFORE IMPLEMENTING**:
+- If a requirement or request is underspecified, ambiguous, or if you can see a superior/pro-level approach or alternative options: **DO NOT assume or rush into code changes**.
+- **Ask the owner first** using the interactive question tool.
+- Present clear choices with your recommended option first, but always provide an option for the owner to write down their own custom thoughts or decision.
+- Wait for the owner's response and approval before implementing code changes.
+
 ## 7. Workflow with the owner
 
+- Always consult and confirm design/workflow options before modifying code when there are choices to make.
 - Commit to `main`, tell him to `git pull` (or run `git-pull.bat`).
 - He tests on his own machine and reports screenshots — diagnose from
   those; root-cause fixes, not workarounds.
