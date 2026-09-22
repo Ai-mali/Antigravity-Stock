@@ -138,11 +138,13 @@ desc, or no model, are skipped/blocked.
    - Scanned invoice/DO photos saved locally to `delivery_orders/` (gitignored).
    - Rolling auto-cleanup prunes photos older than 3 days from oldest to newest.
    - "Recent DOs" button & modal in Stock In with badge count, thumbnails, and full-resolution lightbox viewer with download support.
-9. [DONE] **Scan Results Drag-to-Select & Multi-Row Actions**:
+9. [DONE] **Scan Results Drag-to-Select & Batch Brand Assignment**:
    - Holding left-click and dragging across table rows enables fast multi-row selection with smooth emerald/green highlighting (`scan-row-selected`) and synchronized checkboxes.
    - Initial click detects target row state: dragging from an unselected row selects all hovered rows; dragging from a selected row deselects them.
    - Header Select-All checkbox with indeterminate state support.
    - Real-time selection badge and action buttons: "Commit Selected (X) to Available Stock →", "Delete Selected (X)", or "Commit All to Available Stock →".
+   - **Batch Brand Assignment**: When multiple rows are committed, selecting a brand in the modal applies to the entire selected batch in one go, eliminating repetitive one-by-one popups. Individual row commit arrow still assigns single models.
+   - **Live Brand Badge & High Contrast**: In the Assign Brand modal, replaced static phrase with `"Currently Selected Brand: [Brand Name]"` rendered in a dedicated high-contrast `.brand-display-badge` (electric cyan on dark, deep ocean blue on light) for WCAG AAA readability in both Black and White modes. Applied brand highlighting to Available Stock and Stock Out brand headers.
 10. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.

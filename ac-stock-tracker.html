@@ -795,6 +795,60 @@ main {
   color: var(--red-badge-text);
 }
 
+/* Distinct Brand Display Badge & Brand Tag — High contrast in Dark & Day/Light modes */
+.brand-display-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(14, 165, 233, 0.16);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+  text-transform: uppercase;
+}
+
+body.theme-light .brand-display-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1.5px solid #0284c7;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.18);
+  font-weight: 800;
+}
+
+.brand-name-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+}
+
+body.theme-light .brand-name-tag {
+  color: #0284c7;
+  font-weight: 800;
+}
+
+body.theme-light .pill-filter-btn {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+body.theme-light .pill-filter-btn:hover {
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+body.theme-light .pill-filter-btn.active {
+  background: #116852;
+  border-color: #116852;
+  color: #ffffff;
+}
+
 /* Data Tables */
 .table-container {
   width: 100%;
@@ -2748,22 +2802,27 @@ body.theme-light .autocomplete-dropdown {
 
 <!-- ASSIGN BRAND MODAL (new model -> brand) -->
 <div class="modal-overlay" id="brand-modal">
-  <div class="modal-dialog" style="max-width:420px;">
+  <div class="modal-dialog" style="max-width:440px;">
     <div class="modal-header">
       <div>
         <div class="modal-title">Assign Brand</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">New model <span id="brand-modal-model" class="mono" style="color:var(--green-bright);"></span> needs a brand.</div>
+        <div id="brand-modal-sub" style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+          New model <span id="brand-modal-model" class="mono" style="color:var(--green-bright); font-weight:700;"></span> needs a brand.
+        </div>
       </div>
       <button class="btn-circle" onclick="closeBrandModal(true)">&#10005;</button>
     </div>
     <div class="modal-body">
       <div class="modal-section-title">EXISTING BRANDS</div>
-      <select class="form-select" id="brand-select" style="margin-bottom:14px;"></select>
+      <select class="form-select" id="brand-select" style="margin-bottom:14px;" onchange="updateBrandModalLiveDisplay()"></select>
       <div class="modal-section-title">OR NEW BRAND</div>
-      <input type="text" class="form-input" id="brand-new" placeholder="e.g. MITSUBISHI">
+      <input type="text" class="form-input" id="brand-new" placeholder="e.g. MITSUBISHI" oninput="updateBrandModalLiveDisplay()" autocomplete="off">
     </div>
-    <div class="modal-footer">
-      <div style="font-size:11px; color:var(--text-sub);">Model &rarr; Brand mapping is remembered.</div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div style="font-size:11.5px; color:var(--text-sub); display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <span>Currently Selected Brand:</span>
+        <span id="brand-modal-selected-val" class="brand-display-badge">—</span>
+      </div>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-ghost" onclick="closeBrandModal(true)">Cancel</button>
         <button class="btn btn-primary" onclick="closeBrandModal(false)">&#10003; Assign</button>
@@ -3900,8 +3959,8 @@ async function commitScanRow(idx) {
       ...scanBatchFields(), model: row.model, serials: commitSerialsOf(row)
     });
     if (res.needs_brand) {
-      const brand = await askBrand(row.model);
-      if (!brand) return;  // cancelled \u2014 row stays in the list
+      const brand = await askBrand(row.model, 1);
+      if (!brand) return;  // cancelled — row stays in the list
       return commitScanRow(idx);  // retry now that the model is mapped
     }
     reportCommit(row, res);
@@ -3939,6 +3998,8 @@ async function commitSelectedOrAllScans() {
     : DB.scans.map((_, i) => i).reverse();
 
   let done = 0, skipped = 0;
+  let batchChosenBrand = null; // Stays active for all rows in this selected batch!
+
   for (const i of indices) {
     const row = DB.scans[i];
     if (!row) continue;
@@ -3947,22 +4008,30 @@ async function commitSelectedOrAllScans() {
       continue;
     }
     try {
+      // If a brand was chosen for this batch, pass it automatically so all rows go into the same brand!
+      const reqBrand = batchChosenBrand || '';
       const res = await apiPost('/api/stock-in', {
         ...scanBatchFields(),
         model: row.model,
-        serials: commitSerialsOf(row)
+        serials: commitSerialsOf(row),
+        brand: reqBrand
       });
+
       if (res.needs_brand) {
-        const brand = await askBrand(row.model);
+        // Prompt ONCE for the batch of selected rows
+        const brand = await askBrand(row.model, indices.length);
         if (!brand) {
           skipped++;
           continue;
         }
+        batchChosenBrand = brand; // Remember this chosen brand for all remaining items in the batch!
+
+        // Retry committing this row with the chosen brand
         const retryRes = await apiPost('/api/stock-in', {
           ...scanBatchFields(),
           model: row.model,
           serials: commitSerialsOf(row),
-          brand
+          brand: batchChosenBrand
         });
         reportCommit(row, retryRes);
       } else {
@@ -3988,34 +4057,64 @@ async function commitAllScansToStock() {
 
 /* ---- Assign Brand modal (new model encountered during commit) ---- */
 let _brandResolve = null;
-function askBrand(model) {
+
+function updateBrandModalLiveDisplay() {
+  const fresh = (document.getElementById('brand-new')?.value || '').trim().toUpperCase();
+  const selectVal = document.getElementById('brand-select')?.value || '';
+  const chosen = fresh || selectVal || '—';
+  const badge = document.getElementById('brand-modal-selected-val');
+  if (badge) {
+    badge.textContent = chosen;
+  }
+}
+
+function askBrand(model, batchCount = 1) {
   return new Promise(resolve => {
     _brandResolve = resolve;
-    document.getElementById('brand-modal-model').textContent = model;
+    const modelEl = document.getElementById('brand-modal-model');
+    const subEl = document.getElementById('brand-modal-sub');
+    if (modelEl) modelEl.textContent = model || '—';
+    if (subEl) {
+      if (batchCount > 1) {
+        subEl.innerHTML = `Assign brand for <b>${batchCount} selected items</b> (model <span class="mono" style="color:var(--green-bright); font-weight:700;">${model}</span>). This chosen brand will apply to all selected items in this batch.`;
+      } else {
+        subEl.innerHTML = `New model <span class="mono" style="color:var(--green-bright); font-weight:700;">${model}</span> needs a brand.`;
+      }
+    }
     const sel = document.getElementById('brand-select');
-    sel.innerHTML = DB.brands.length
-      ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
-      : '<option value="">\u2014 no brands yet \u2014</option>';
-    document.getElementById('brand-new').value = '';
-    document.getElementById('brand-modal').classList.add('open');
+    if (sel) {
+      sel.innerHTML = DB.brands.length
+        ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
+        : '<option value="">\u2014 no brands yet \u2014</option>';
+    }
+    const inp = document.getElementById('brand-new');
+    if (inp) inp.value = '';
+
+    updateBrandModalLiveDisplay();
+
+    const modal = document.getElementById('brand-modal');
+    if (modal) modal.classList.add('open');
   });
 }
 
 async function closeBrandModal(cancelled) {
-  document.getElementById('brand-modal').classList.remove('open');
+  const modal = document.getElementById('brand-modal');
+  if (modal) modal.classList.remove('open');
   const resolve = _brandResolve;
   _brandResolve = null;
   if (!resolve) return;
   if (cancelled) return resolve(null);
-  const model = document.getElementById('brand-modal-model').textContent;
-  const fresh = document.getElementById('brand-new').value.trim().toUpperCase();
-  const picked = fresh || document.getElementById('brand-select').value;
+  const model = document.getElementById('brand-modal-model')?.textContent;
+  const fresh = (document.getElementById('brand-new')?.value || '').trim().toUpperCase();
+  const picked = fresh || document.getElementById('brand-select')?.value;
   if (!picked) {
     showToast('Pick or create a brand.');
     return resolve(null);
   }
   try {
-    await apiPost('/api/models/brand', { model, brand: picked });
+    if (model && model !== '—') {
+      await apiPost('/api/models/brand', { model, brand: picked });
+    }
   } catch (e) {
     showToast('Assign failed: ' + e.message);
     return resolve(null);
@@ -4195,8 +4294,8 @@ function renderAvailable(searchTerm = '') {
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleBrandAcc('${brandKey}')">
         <div class="brand-title-group">
-          <span class="brand-color-dot" style="background:${bData.color};"></span>
-          <span style="font-weight:700; font-size:12px; letter-spacing:0.04em;">${brandKey} INVENTORY</span>
+          <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
+          <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-neutral">${brandUnits} Units Total</span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${bData.open ? '&#9650;' : '&#9660;'}</span>
@@ -4312,8 +4411,8 @@ function renderStockOut(searchTerm = '') {
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${brandKey}')">
         <div class="brand-title-group">
-          <span class="brand-color-dot" style="background:${bData.color};"></span>
-          <span style="font-weight:700; font-size:12px; letter-spacing:0.04em;">${brandKey} INVENTORY</span>
+          <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
+          <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-neutral">${brandUnits} Units Total</span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${bData.open ? '&#9650;' : '&#9660;'}</span>
