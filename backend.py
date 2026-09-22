@@ -69,19 +69,48 @@ def reload():
     return {"ok": True}
 
 
-# ------------------------------------------------------------------ scan
+# ------------------------------------------------------------------ scan & delivery orders
 @app.post("/api/scan")
 def scan(file: UploadFile):
     logs: list[str] = []
+    photo_name = ""
     try:
         img = file.file.read()
+        try:
+            from stock_store import save_do_photo
+            photo_name = save_do_photo(img, file.filename or "photo.jpg")
+            logs.append(f"DO Photo archived: {photo_name} (3-day rolling retention)")
+        except Exception as p_ex:
+            logs.append(f"Photo save note: {p_ex}")
+
         rows = scanner.scan_image(img, file.filename or "photo.jpg",
                                   logs.append)
-        return {"ok": True, "rows": rows, "log": logs}
+        return {"ok": True, "rows": rows, "log": logs, "photo": photo_name}
     except Exception as ex:
         logs.append(f"Scan failed: {ex}")
-        return JSONResponse({"ok": False, "log": logs, "error": str(ex)},
+        return JSONResponse({"ok": False, "log": logs, "error": str(ex), "photo": photo_name},
                             status_code=200)
+
+
+@app.get("/api/delivery-orders")
+def get_delivery_orders():
+    from stock_store import list_do_photos
+    return {"photos": list_do_photos()}
+
+
+@app.get("/api/delivery-orders/{filename}")
+def get_delivery_order_photo(filename: str):
+    from stock_store import DO_DIR
+    safe_name = Path(filename).name
+    target = DO_DIR / safe_name
+    if not target.exists() or not target.is_file():
+        return JSONResponse({"ok": False, "error": "Photo not found"}, status_code=404)
+    ext = target.suffix.lower()
+    media_type = ("image/jpeg" if ext in (".jpg", ".jpeg")
+                  else "image/png" if ext == ".png"
+                  else "image/webp" if ext == ".webp"
+                  else "application/octet-stream")
+    return FileResponse(target, media_type=media_type)
 
 
 # ------------------------------------------------------------------ reads
@@ -89,6 +118,12 @@ def scan(file: UploadFile):
 def inventory():
     _fresh()
     return {"inventory": store.inventory(), "brands": store.brands}
+
+
+@app.get("/api/inventory/units")
+def get_in_stock_units():
+    _fresh()
+    return {"units": store.in_stock_units(), "brands": store.brands}
 
 
 @app.get("/api/track")
@@ -232,6 +267,53 @@ def create_return(body: ReturnBody):
     if err:
         return JSONResponse({"ok": False, "error": err}, status_code=404)
     return {"ok": True}
+
+
+class UpdateUnitBody(BaseModel):
+    old_serial: str
+    new_serial: str
+    model: str
+    supplier: str
+    brand: str = ""
+    date_in: str = ""
+
+
+class DeleteUnitBody(BaseModel):
+    serial: str
+
+
+@app.post("/api/inventory/update")
+def update_inventory_unit(body: UpdateUnitBody):
+    _fresh()
+    rec, err = store.update_unit(
+        old_serial=body.old_serial,
+        new_serial=body.new_serial,
+        model=body.model,
+        supplier=body.supplier,
+        brand=body.brand,
+        date_in=body.date_in
+    )
+    if err:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True, "unit": {
+        "supplier": rec["Supplier"],
+        "brand": rec["Brand"],
+        "model": rec["Model"],
+        "serial": rec["Serial"],
+        "dateIn": rec["Date In"]
+    }}
+
+
+@app.post("/api/inventory/delete")
+def delete_inventory_unit(body: DeleteUnitBody):
+    _fresh()
+    ok, err = store.delete_unit(body.serial)
+    if not ok:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True}
+
 
 
 # ------------------------------------------------------------------ config

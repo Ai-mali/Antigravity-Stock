@@ -123,7 +123,23 @@ desc, or no model, are skipped/blocked.
    - Track List displays `Active (Xd left)`, `Expiring Soon (Xd left)`, or `Expired` badges.
    - Warranty filter pills in Track List (`All Warranty`, `🛡️ Active`, `⚠️ Expiring Soon`, `❌ Expired`) and CSV export inclusion.
    - Return (RMA) screen shows live warranty status banner for selected serial.
-6. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+6. [DONE] **Accidental Dispatch / Cancellation restock**:
+   - Added `"Order Cancelled / Wrong Entry"` to Return (RMA) reasons.
+   - Allows operators to cleanly restock mistakenly dispatched serials back into Available Stock with a recorded audit trail.
+7. [DONE] **Manage Inventory Table (Typo & unit correction)**:
+   - "Manage Inventory Table" button in Available Stock view.
+   - Interactive spreadsheet-like modal displaying all In-Stock units with search & brand filter.
+   - Inline editing for Model, Serial Number, Supplier, and Date In.
+   - Deletion of duplicate or accidental entries with confirmation.
+   - Fully backed by `StockStore.update_unit()` and `StockStore.delete_unit()` with pre-save backup snapshots and `ActivityLog` records.
+8. [DONE] **Delivery Order (DO) Photos (3-Day Rolling Auto-Cleanup)**:
+   - Scanned invoice/DO photos saved locally to `delivery_orders/` (gitignored).
+   - Rolling auto-cleanup prunes photos older than 3 days from oldest to newest.
+   - "Recent DOs" button & modal in Stock In with badge count, thumbnails, and full-resolution lightbox viewer with download support.
+9. **Indoor + Outdoor Sets & Non-Serial Parts**:
+   - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
+   - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
+10. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have

@@ -538,6 +538,66 @@ main {
   color: var(--text);
 }
 
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--surface3);
+  border-color: var(--border-light);
+  color: var(--text);
+}
+
+.do-photo-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all .15s ease;
+  cursor: pointer;
+}
+
+.do-photo-card:hover {
+  border-color: var(--green-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+
+.do-photo-thumb {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  background: var(--surface3);
+  border-bottom: 1px solid var(--border);
+}
+
+.do-photo-info {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.do-photo-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.do-photo-meta {
+  font-size: 10.5px;
+  color: var(--text-sub);
+  display: flex;
+  justify-content: space-between;
+}
+
 .btn-danger-ghost {
   background: transparent;
   color: #f87171;
@@ -2070,6 +2130,17 @@ body.theme-light .autocomplete-dropdown {
                   </svg>
                   <span>SCAN</span>
                 </button>
+                <button class="btn-preview-action" onclick="openDoPhotosModal()" title="View Recent Delivery Order Photos (Last 3 Days)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  <span>Recent DOs</span>
+                  <span id="do-photos-badge" class="badge badge-green" style="padding:1px 5px; font-size:10px; margin-left:2px;">0</span>
+                </button>
                 <button class="btn-preview-action btn-clear" onclick="clearPreview(event)" title="Clear Photo Preview">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#f87171;">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -2146,10 +2217,19 @@ body.theme-light .autocomplete-dropdown {
           <div class="view-title">Available Stock</div>
           <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
-          <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
-            <span id="avail-total-big">115</span> Units
+        <div style="display:flex; align-items:center; gap:16px;">
+          <button class="btn btn-secondary btn-sm" onclick="openManageInventoryModal()" title="View and edit all in-stock units in a spreadsheet table">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            Manage Inventory Table
+          </button>
+          <div style="text-align:right;">
+            <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
+            <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
+              <span id="avail-total-big">115</span> Units
+            </div>
           </div>
         </div>
       </div>
@@ -2324,6 +2404,7 @@ body.theme-light .autocomplete-dropdown {
             <div>
               <label class="form-label">Return Reason</label>
               <select class="form-select" id="rma-reason">
+                <option>Order Cancelled / Wrong Entry</option>
                 <option>Defective / Failed Compressor</option>
                 <option>Excess Stock / Cancelled</option>
                 <option>Wrong Model Delivered</option>
@@ -2642,6 +2723,118 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- 7. MANAGE INVENTORY TABLE MODAL -->
+<div class="modal-overlay" id="manage-inventory-modal">
+  <div class="modal-dialog" style="max-width: 980px; max-height: 90vh; display:flex; flex-direction:column;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <span>Manage Inventory Table</span>
+          <span class="badge badge-green" id="mgt-total-badge">0 units</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+          Spreadsheet view of all In-Stock units &middot; Quick edit serials, models, suppliers, or delete accidental entries.
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeManageInventoryModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto; flex:1; padding-bottom:10px; display:flex; flex-direction:column; gap:12px;">
+      <!-- Search & Brand Filter Controls -->
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="display:flex; gap:8px; flex:1; max-width:440px;">
+          <input type="text" id="mgt-search" class="form-input" style="padding:6px 12px; font-size:12px;" placeholder="Search serial, model, or supplier..." oninput="filterManageInventoryTable()">
+          <select id="mgt-brand-filter" class="form-select" style="max-width:140px; padding:6px 10px; font-size:12px;" onchange="filterManageInventoryTable()">
+            <option value="">All Brands</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:11.5px; color:var(--text-sub);" id="mgt-count-label">Showing 0 units</span>
+          <button class="btn btn-ghost btn-sm" onclick="loadManageInventoryUnits(true)">&#8635; Refresh</button>
+        </div>
+      </div>
+
+      <!-- Quick Instruction Banner -->
+      <div style="background:rgba(38,208,124,0.08); border:1px solid rgba(38,208,124,0.2); border-radius:6px; padding:8px 12px; font-size:11.5px; color:var(--text-muted); display:flex; align-items:center; justify-content:space-between;">
+        <span>💡 <b>Tip:</b> Click <b>Edit</b> on any row to fix serial numbers, model names, or suppliers, then click <b>Save</b>. Click <b>Delete</b> to remove duplicate/accidental entries.</span>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="table-container" style="flex:1; max-height:480px; overflow-y:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:100px;">BRAND</th>
+              <th>MODEL</th>
+              <th>SERIAL NUMBER</th>
+              <th>SUPPLIER</th>
+              <th style="width:115px;">DATE IN</th>
+              <th style="text-align:right; width:150px;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="mgt-table-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span style="font-size:11px; color:var(--text-sub);">
+        All edits create an automatic backup snapshot and are logged in Activity Log.
+      </span>
+      <button class="btn btn-ghost" onclick="closeManageInventoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- 8. RECENT DELIVERY ORDER (DO) PHOTOS MODAL -->
+<div class="modal-overlay" id="do-photos-modal">
+  <div class="modal-dialog" style="max-width: 860px; max-height: 88vh; display:flex; flex-direction:column;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <span>Delivery Order Photos (Last 3 Days)</span>
+          <span class="badge badge-green" id="do-modal-badge">0 photos</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+          Scanned Delivery Orders from Daikin warehouse &middot; Auto-cleaned after 3 days
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeDoPhotosModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto; flex:1; padding:16px;">
+      <div id="do-photos-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:16px;"></div>
+      <div id="do-photos-empty" style="display:none; text-align:center; padding:40px 20px; color:var(--text-sub);">
+        <div style="font-size:32px; margin-bottom:8px;">📋</div>
+        <div style="font-size:13px; font-weight:600; color:var(--text);">No Delivery Order photos from the last 3 days</div>
+        <div style="font-size:11.5px; margin-top:4px;">Photos are saved automatically when you scan Delivery Orders in Stock In.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span style="font-size:11px; color:var(--text-sub);">
+        Rolling 3-day retention auto-prunes oldest photos to keep your storage lightweight.
+      </span>
+      <button class="btn btn-ghost" onclick="closeDoPhotosModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- 9. FULLSIZE PHOTO VIEWER MODAL -->
+<div class="modal-overlay" id="photo-viewer-modal" style="z-index:9999;">
+  <div class="modal-dialog" style="max-width: 95vw; max-height: 95vh; background:rgba(15,20,23,0.95); border:1px solid var(--border); display:flex; flex-direction:column;">
+    <div class="modal-header" style="border-bottom:1px solid var(--border);">
+      <div>
+        <div class="modal-title" id="photo-viewer-title" style="font-size:13px;">Delivery Order Photo</div>
+        <div style="font-size:11px; color:var(--text-sub);" id="photo-viewer-sub"></div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <a id="photo-viewer-download" href="#" target="_blank" download class="btn btn-ghost btn-sm">&#11015; Download</a>
+        <button class="btn-circle" onclick="closePhotoViewerModal()">&#10005;</button>
+      </div>
+    </div>
+    <div class="modal-body" style="overflow:auto; flex:1; display:flex; justify-content:center; align-items:center; padding:12px;">
+      <img id="photo-viewer-img" src="" alt="Delivery Order Full Photo" style="max-width:100%; max-height:80vh; object-fit:contain; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -2667,6 +2860,7 @@ const DB = {
   backups: [],      // GET /api/backups
   photoFile: null,  // File picked for scanning
   config: null,     // GET /api/config      (active provider/model)
+  doPhotos: [],     // GET /api/delivery-orders (last 3 days)
 };
 
 /* ---------------- backend API helpers ---------------- */
@@ -2687,20 +2881,23 @@ const apiDel = (p, body) => api(p, {
 });
 
 async function refreshData() {
-  const [inv, trk, ret, cust] = await Promise.all([
+  const [inv, trk, ret, cust, doRes] = await Promise.all([
     apiGet('/api/inventory'),
     apiGet('/api/track'),
     apiGet('/api/returns'),
-    apiGet('/api/customers').catch(() => ({ customers: [] }))
+    apiGet('/api/customers').catch(() => ({ customers: [] })),
+    apiGet('/api/delivery-orders').catch(() => ({ photos: [] }))
   ]);
   DB.inventory = inv.inventory;
   DB.brands = inv.brands;
   DB.trackList = trk.records;
   DB.returns = ret.records;
   DB.customers = cust.customers || [];
+  DB.doPhotos = (doRes && doRes.photos) || [];
   renderBrandPills();
   renderAll();
   updateGlobalBadges();
+  updateDoPhotosBadge();
   renderRecentCustomerChips();
   checkCustomerInputStatus();
 }
@@ -3019,6 +3216,7 @@ async function triggerScanSimulation() {
     } else {
       showToast('Scan failed \u2014 see Status Log.');
     }
+    fetchDoPhotos();
   } catch (e) {
     addLog(`[${new Date().toLocaleTimeString()}] Scan request failed: ${e.message}`, 'log-line-warn');
     showToast('Scan failed \u2014 is backend.py running?');
@@ -4445,6 +4643,316 @@ async function restoreBackupFile(filename) {
   }
 }
 
+/* =========================================================
+   8. MANAGE INVENTORY TABLE MODAL LOGIC
+   ========================================================= */
+let mgtUnits = [];
+let mgtEditingSerial = null;
+
+async function openManageInventoryModal() {
+  const modal = document.getElementById('manage-inventory-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  mgtEditingSerial = null;
+  const sInput = document.getElementById('mgt-search');
+  if (sInput) sInput.value = '';
+  await loadManageInventoryUnits();
+}
+
+function closeManageInventoryModal() {
+  const modal = document.getElementById('manage-inventory-modal');
+  if (modal) modal.classList.remove('open');
+  mgtEditingSerial = null;
+}
+
+async function loadManageInventoryUnits(notify = false) {
+  try {
+    const res = await apiGet('/api/inventory/units');
+    mgtUnits = res.units || [];
+    const bSel = document.getElementById('mgt-brand-filter');
+    if (bSel) {
+      const cur = bSel.value;
+      bSel.innerHTML = '<option value="">All Brands</option>';
+      (res.brands || DB.brands || []).forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        if (b === cur) opt.selected = true;
+        bSel.appendChild(opt);
+      });
+    }
+    const badge = document.getElementById('mgt-total-badge');
+    if (badge) badge.textContent = `${mgtUnits.length} units`;
+    filterManageInventoryTable();
+    if (notify) showToast(`Loaded ${mgtUnits.length} in-stock units`);
+  } catch (e) {
+    showToast('Failed to load inventory units: ' + e.message);
+  }
+}
+
+function filterManageInventoryTable() {
+  const query = (document.getElementById('mgt-search').value || '').trim().toLowerCase();
+  const brand = (document.getElementById('mgt-brand-filter').value || '').trim().toLowerCase();
+
+  const filtered = mgtUnits.filter(u => {
+    if (brand && (u.brand || '').toLowerCase() !== brand) return false;
+    if (!query) return true;
+    return (u.serial || '').toLowerCase().includes(query) ||
+           (u.model || '').toLowerCase().includes(query) ||
+           (u.supplier || '').toLowerCase().includes(query) ||
+           (u.brand || '').toLowerCase().includes(query);
+  });
+
+  const countLabel = document.getElementById('mgt-count-label');
+  if (countLabel) {
+    countLabel.textContent = `Showing ${filtered.length} of ${mgtUnits.length} units`;
+  }
+  renderManageInventoryTable(filtered);
+}
+
+function renderManageInventoryTable(units) {
+  const tbody = document.getElementById('mgt-table-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!units.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px 16px; color:var(--text-sub);">
+      No matching in-stock units found.
+    </td></tr>`;
+    return;
+  }
+
+  const displayList = units.slice(0, 300);
+
+  displayList.forEach(u => {
+    const tr = document.createElement('tr');
+    const isEditing = (mgtEditingSerial === u.serial);
+
+    if (isEditing) {
+      tr.style.background = 'rgba(38, 208, 124, 0.08)';
+      tr.innerHTML = `
+        <td style="font-weight:600; color:var(--green-bright);">${escapeHtml(u.brand || '')}</td>
+        <td>
+          <input type="text" id="mgt-edit-model" class="form-input mono" value="${escapeHtml(u.model || '')}" style="padding:4px 8px; font-size:11.5px;">
+        </td>
+        <td>
+          <input type="text" id="mgt-edit-serial" class="form-input mono" value="${escapeHtml(u.serial || '')}" style="padding:4px 8px; font-size:11.5px; font-weight:700;">
+        </td>
+        <td>
+          <input type="text" id="mgt-edit-supplier" class="form-input" value="${escapeHtml(u.supplier || '')}" style="padding:4px 8px; font-size:11.5px;">
+        </td>
+        <td>
+          <input type="text" id="mgt-edit-datein" class="form-input mono" value="${escapeHtml(u.dateIn || '')}" placeholder="MM/DD/YYYY" style="padding:4px 8px; font-size:11.5px;">
+        </td>
+        <td style="text-align:right;">
+          <div style="display:inline-flex; gap:6px;">
+            <button class="btn btn-primary btn-sm" onclick="saveEditUnit('${escapeHtml(u.serial)}')" style="padding:3px 8px;">Save</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelEditUnit()" style="padding:3px 8px;">Cancel</button>
+          </div>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td style="font-weight:600; color:var(--text-muted); font-size:11.5px;">${escapeHtml(u.brand || '')}</td>
+        <td style="font-weight:600;">${escapeHtml(u.model || '')}</td>
+        <td class="mono" style="font-weight:700; color:var(--green-bright);">${escapeHtml(u.serial || '')}</td>
+        <td style="color:var(--text-muted);">${escapeHtml(u.supplier || '')}</td>
+        <td class="mono" style="color:var(--text-sub); font-size:11.5px;">${escapeHtml(u.dateIn || '')}</td>
+        <td style="text-align:right;">
+          <div style="display:inline-flex; gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="startEditUnit('${escapeHtml(u.serial)}')" style="padding:3px 8px;">Edit</button>
+            <button class="btn btn-danger-ghost btn-sm" onclick="deleteUnitPrompt('${escapeHtml(u.serial)}', '${escapeHtml(u.model)}')" style="padding:3px 8px;">Delete</button>
+          </div>
+        </td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+
+  if (units.length > 300) {
+    const moreTr = document.createElement('tr');
+    moreTr.innerHTML = `<td colspan="6" style="text-align:center; padding:10px; color:var(--text-sub); font-size:11px;">
+      Showing first 300 of ${units.length} units. Use search above to narrow down results.
+    </td>`;
+    tbody.appendChild(moreTr);
+  }
+}
+
+function startEditUnit(serial) {
+  mgtEditingSerial = serial;
+  filterManageInventoryTable();
+  const input = document.getElementById('mgt-edit-serial');
+  if (input) input.focus();
+}
+
+function cancelEditUnit() {
+  mgtEditingSerial = null;
+  filterManageInventoryTable();
+}
+
+async function saveEditUnit(oldSerial) {
+  const newSerial = (document.getElementById('mgt-edit-serial').value || '').trim();
+  const model = (document.getElementById('mgt-edit-model').value || '').trim();
+  const supplier = (document.getElementById('mgt-edit-supplier').value || '').trim();
+  const dateIn = (document.getElementById('mgt-edit-datein').value || '').trim();
+
+  if (!newSerial) {
+    showToast('Serial number cannot be empty.');
+    return;
+  }
+  if (!model) {
+    showToast('Model cannot be empty.');
+    return;
+  }
+
+  try {
+    const res = await apiPost('/api/inventory/update', {
+      old_serial: oldSerial,
+      new_serial: newSerial,
+      model,
+      supplier,
+      date_in: dateIn
+    });
+    if (res.ok) {
+      showToast(`Updated unit ${newSerial} successfully!`);
+      mgtEditingSerial = null;
+      await refreshData();
+      await loadManageInventoryUnits(false);
+    }
+  } catch (e) {
+    showToast('Update failed: ' + e.message);
+  }
+}
+
+async function deleteUnitPrompt(serial, model) {
+  if (!confirm(`Are you sure you want to delete unit "${serial}" (${model})?\n\nThis will remove it from Available Stock and daikin_stock.xlsx.`)) {
+    return;
+  }
+  try {
+    const res = await apiPost('/api/inventory/delete', { serial });
+    if (res.ok) {
+      showToast(`Deleted unit ${serial} from inventory.`);
+      mgtEditingSerial = null;
+      await refreshData();
+      await loadManageInventoryUnits(false);
+    }
+  } catch (e) {
+    showToast('Delete failed: ' + e.message);
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* =========================================================
+   9. DELIVERY ORDER (DO) PHOTOS LOGIC
+   ========================================================= */
+async function fetchDoPhotos(render = false) {
+  try {
+    const res = await apiGet('/api/delivery-orders');
+    DB.doPhotos = res.photos || [];
+    updateDoPhotosBadge();
+    if (render) renderDoPhotosGrid();
+  } catch (e) {
+    console.error('Failed to fetch DO photos:', e);
+  }
+}
+
+function updateDoPhotosBadge() {
+  const badge = document.getElementById('do-photos-badge');
+  const count = (DB.doPhotos || []).length;
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+  const modalBadge = document.getElementById('do-modal-badge');
+  if (modalBadge) modalBadge.textContent = `${count} photos`;
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+async function openDoPhotosModal() {
+  const modal = document.getElementById('do-photos-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  await fetchDoPhotos(true);
+}
+
+function closeDoPhotosModal() {
+  const modal = document.getElementById('do-photos-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function renderDoPhotosGrid() {
+  const grid = document.getElementById('do-photos-grid');
+  const empty = document.getElementById('do-photos-empty');
+  if (!grid || !empty) return;
+  grid.innerHTML = '';
+
+  const photos = DB.doPhotos || [];
+  if (!photos.length) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  photos.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'do-photo-card';
+    const photoUrl = `/api/delivery-orders/${encodeURIComponent(p.filename)}`;
+    const sizeStr = formatBytes(p.size);
+    card.innerHTML = `
+      <img src="${photoUrl}" class="do-photo-thumb" alt="${escapeHtml(p.filename)}" loading="lazy">
+      <div class="do-photo-info">
+        <div class="do-photo-name" title="${escapeHtml(p.filename)}">${escapeHtml(p.filename)}</div>
+        <div class="do-photo-meta">
+          <span>${escapeHtml(p.timestamp)}</span>
+          <span>${sizeStr}</span>
+        </div>
+      </div>
+    `;
+    card.onclick = () => openPhotoViewer(p.filename, p.timestamp, sizeStr);
+    grid.appendChild(card);
+  });
+}
+
+function openPhotoViewer(filename, timestamp, sizeStr) {
+  const modal = document.getElementById('photo-viewer-modal');
+  const img = document.getElementById('photo-viewer-img');
+  const title = document.getElementById('photo-viewer-title');
+  const sub = document.getElementById('photo-viewer-sub');
+  const dl = document.getElementById('photo-viewer-download');
+  if (!modal || !img) return;
+
+  const url = `/api/delivery-orders/${encodeURIComponent(filename)}`;
+  img.src = url;
+  if (title) title.textContent = filename;
+  if (sub) sub.textContent = `${timestamp} \u00b7 ${sizeStr}`;
+  if (dl) {
+    dl.href = url;
+    dl.download = filename;
+  }
+  modal.classList.add('open');
+}
+
+function closePhotoViewerModal() {
+  const modal = document.getElementById('photo-viewer-modal');
+  if (modal) modal.classList.remove('open');
+}
+
 /* Keyboard escape listener & modal backdrop click */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -4452,6 +4960,9 @@ document.addEventListener('keydown', e => {
     closeEditScanModal();
     closeZoomScanModal();
     closeActivityModal();
+    closeManageInventoryModal();
+    closeDoPhotosModal();
+    closePhotoViewerModal();
   }
 });
 document.getElementById('config-modal').addEventListener('click', e => {
@@ -4465,6 +4976,15 @@ document.getElementById('zoom-scan-modal').addEventListener('click', e => {
 });
 document.getElementById('activity-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('activity-modal')) closeActivityModal();
+});
+document.getElementById('manage-inventory-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('manage-inventory-modal')) closeManageInventoryModal();
+});
+document.getElementById('do-photos-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('do-photos-modal')) closeDoPhotosModal();
+});
+document.getElementById('photo-viewer-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('photo-viewer-modal')) closePhotoViewerModal();
 });
 
 /* Day / Dark Theme toggle with state persistence */

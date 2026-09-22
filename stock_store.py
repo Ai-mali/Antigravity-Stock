@@ -29,6 +29,7 @@ if getattr(sys, "frozen", False):
 else:
     DB_PATH = Path(__file__).with_name("daikin_stock.xlsx")
 BACKUP_DIR = DB_PATH.parent / "backups"
+DO_DIR = DB_PATH.parent / "delivery_orders"
 
 RECORD_HEADER = ["Supplier", "Brand", "Model", "Serial",
                  "Date In", "Status", "Customer", "Date Out"]
@@ -96,6 +97,59 @@ def compute_warranty(date_out_str: str, months: int = 12) -> dict:
         "daysRemaining": days_left,
         "months": months
     }
+
+def cleanup_do_photos(days: int = 3) -> int:
+    """Delete delivery order photos older than `days` days, oldest first."""
+    if not DO_DIR.exists():
+        return 0
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=days)
+    deleted = 0
+    photos = sorted(DO_DIR.glob("*.*"), key=lambda p: p.stat().st_mtime)
+    for p in photos:
+        if p.is_file():
+            try:
+                mtime = datetime.datetime.fromtimestamp(p.stat().st_mtime)
+                if mtime < cutoff:
+                    p.unlink()
+                    deleted += 1
+            except Exception:
+                pass
+    return deleted
+
+
+def list_do_photos() -> list[dict]:
+    """List DO photos from the last 3 days, newest first."""
+    cleanup_do_photos(days=3)
+    if not DO_DIR.exists():
+        return []
+    photos = sorted(DO_DIR.glob("*.*"), key=lambda p: p.stat().st_mtime, reverse=True)
+    out = []
+    for p in photos:
+        if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+            st = p.stat()
+            dt = datetime.datetime.fromtimestamp(st.st_mtime)
+            out.append({
+                "filename": p.name,
+                "size": st.st_size,
+                "timestamp": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                "date": dt.strftime("%m/%d/%Y")
+            })
+    return out
+
+
+def save_do_photo(img_bytes: bytes, original_name: str = "do_scan.jpg") -> str:
+    """Save scanned Delivery Order photo locally, prune files older than 3 days, return filename."""
+    DO_DIR.mkdir(parents=True, exist_ok=True)
+    cleanup_do_photos(days=3)
+    ext = Path(original_name).suffix.lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+        ext = ".jpg"
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    clean_stem = "".join(c for c in Path(original_name).stem if c.isalnum() or c in ("-", "_"))[:30] or "scan"
+    dest_name = f"DO_{ts}_{clean_stem}{ext}"
+    dest_path = DO_DIR / dest_name
+    dest_path.write_bytes(img_bytes)
+    return dest_name
 
 
 class StockStore:
@@ -344,6 +398,20 @@ class StockStore:
                       key=lambda x: (x["count"], x["lastDate"]),
                       reverse=True)
 
+    def in_stock_units(self) -> list[dict]:
+        """Return all physical units currently In Stock, for management table."""
+        out = []
+        for r in self.records:
+            if str(r.get("Status", "")).strip() == IN_STOCK:
+                out.append({
+                    "supplier": str(r.get("Supplier", "")),
+                    "brand": str(r.get("Brand", "")),
+                    "model": str(r.get("Model", "")),
+                    "serial": str(r.get("Serial", "")),
+                    "dateIn": str(r.get("Date In", ""))
+                })
+        return out
+
     # ---------------------------------------------------------- mutations
     def stock_in(self, supplier: str, model: str, serials: list[str],
                  date_in: str):
@@ -457,6 +525,83 @@ class StockStore:
                           details=f"Serial: {rec['Serial']} | Customer: {rec['Customer']} | Reason: {reason} | Action: {action_label}")
         self.save(backup=True)
         return rec, None
+
+    def update_unit(self, old_serial: str, new_serial: str, model: str,
+                    supplier: str, brand: str = "", date_in: str = "") -> tuple[dict | None, str]:
+        """Edit an In-Stock unit's serial, model, supplier, brand, or date_in.
+        Creates backup snapshot and logs activity."""
+        old_key = old_serial.strip().lower()
+        new_s = new_serial.strip()
+        new_key = new_s.lower()
+
+        if not new_s:
+            return None, "Serial number cannot be empty"
+        if not model.strip():
+            return None, "Model cannot be empty"
+
+        rec = next((r for r in self.records
+                    if str(r.get("Serial", "")).strip().lower() == old_key
+                    and str(r.get("Status", "")).strip() == IN_STOCK), None)
+        if not rec:
+            return None, f"Unit with serial '{old_serial}' not found in stock"
+
+        # Check duplicate if serial changed
+        if new_key != old_key:
+            if new_key in self._serial_set:
+                return None, f"Serial '{new_s}' already exists in records"
+            self._serial_set.discard(old_key)
+            self._serial_set.add(new_key)
+
+        m_str = model.strip()
+        supp_str = supplier.strip()
+        b_str = brand.strip() or self.brand_for(m_str) or str(rec.get("Brand", ""))
+        d_str = date_in.strip() or str(rec.get("Date In", ""))
+
+        rec["Serial"] = new_s
+        rec["Model"] = m_str
+        rec["Supplier"] = supp_str
+        rec["Brand"] = b_str
+        rec["Date In"] = d_str
+
+        # Update cell in openpyxl worksheet
+        row = rec["_row"]
+        self.recs.cell(row=row, column=1, value=supp_str)
+        self.recs.cell(row=row, column=2, value=b_str)
+        self.recs.cell(row=row, column=3, value=m_str)
+        self.recs.cell(row=row, column=4, value=new_s)
+        self.recs.cell(row=row, column=5, value=d_str)
+
+        self.log_activity("Unit Edited", model=m_str, count=1,
+                          details=f"Serial: {old_serial} -> {new_s} | Model: {m_str} | Supplier: {supp_str}")
+        self.save(backup=True)
+        return rec, ""
+
+    def delete_unit(self, serial: str) -> tuple[bool, str]:
+        """Delete an In-Stock unit from MasterRecord.
+        Creates backup snapshot and logs activity."""
+        key = serial.strip().lower()
+        idx = next((i for i, r in enumerate(self.records)
+                    if str(r.get("Serial", "")).strip().lower() == key
+                    and str(r.get("Status", "")).strip() == IN_STOCK), None)
+        if idx is None:
+            return False, f"Unit with serial '{serial}' not found in stock"
+
+        rec = self.records.pop(idx)
+        self._serial_set.discard(key)
+        row = rec["_row"]
+
+        # Delete from openpyxl sheet
+        self.recs.delete_rows(row, 1)
+
+        # Shift _row for all subsequent records
+        for r in self.records:
+            if r.get("_row", 0) > row:
+                r["_row"] -= 1
+
+        self.log_activity("Unit Deleted", model=str(rec.get("Model", "")), count=1,
+                          details=f"Deleted Serial: {rec.get('Serial', '')} | Model: {rec.get('Model', '')} | Supplier: {rec.get('Supplier', '')}")
+        self.save(backup=True)
+        return True, ""
 
     # ---------------------------------------------------------- brands
     def assign_brand(self, model: str, brand: str):

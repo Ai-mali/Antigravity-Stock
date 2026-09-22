@@ -6,3 +6,4 @@ daikin_stock.xlsx
 backups/
 *.exe
 dist/
+delivery_orders/
