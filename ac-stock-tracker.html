@@ -949,21 +949,65 @@ body.theme-light #scan-results-tbody tr.scan-row-selected:hover {
   background: rgba(19, 122, 95, 0.17) !important;
 }
 
-/* Duplicate Scan Serials & Badge Animations (Row background does NOT blink) */
+/* Traffic Light: Good / Ready Row (Green) */
+#scan-results-tbody tr.scan-row-ready td:first-child {
+  border-left: 3.5px solid var(--green-bright) !important;
+}
+body.theme-light #scan-results-tbody tr.scan-row-ready td:first-child {
+  border-left: 3.5px solid #10b981 !important;
+}
+
+/* Traffic Light: Duplicate Row (Red) & Locked from selection */
 #scan-results-tbody tr.scan-row-duplicate-blink {
   background: transparent;
+  cursor: not-allowed !important;
 }
 
 #scan-results-tbody tr.scan-row-duplicate-blink td:first-child {
-  border-left: 3px solid rgba(239, 68, 68, 0.6) !important;
+  border-left: 3.5px solid #ef4444 !important;
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink {
   background: transparent;
+  cursor: not-allowed !important;
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-duplicate-blink td:first-child {
-  border-left: 3px solid #dc2626 !important;
+  border-left: 3.5px solid #dc2626 !important;
+}
+
+/* Traffic Light: Ready Badge */
+.scan-ready-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  border-radius: 4px;
+  background: rgba(38, 208, 124, 0.12);
+  color: var(--green-bright);
+  border: 1px solid rgba(38, 208, 124, 0.32);
+  user-select: none;
+  text-transform: uppercase;
+}
+body.theme-light .scan-ready-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.traffic-dot-green {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--green-bright);
+  box-shadow: 0 0 5px var(--green-bright);
+  display: inline-block;
+}
+body.theme-light .traffic-dot-green {
+  background-color: #10b981;
+  box-shadow: 0 0 5px #10b981;
 }
 
 @keyframes dupe-badge-blink {
@@ -1571,6 +1615,15 @@ tr.key-row:active .drag-handle { cursor: grabbing; }
   color: #ffffff;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(17, 104, 82, 0.55), 0 0 10px rgba(38, 208, 124, 0.3);
+}
+
+.btn-action-icon.btn-action-disabled,
+.btn-action-icon:disabled {
+  opacity: 0.22 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  filter: grayscale(1) !important;
 }
 
 /* Light theme overrides */
@@ -3784,9 +3837,15 @@ function renderScanResultsTable() {
         }).join('')
       : `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
 
+    const isReady = !row.isDuplicate && !row.sev && !!(row.model && row.model.trim()) && (!!(row.serials && row.serials.length) || !!row.desc);
+
     const firstDupeSerial = (row.dupeSerials && row.dupeSerials[0]) || (row.serials && row.serials[0]) || '';
     const dupeBadge = row.isDuplicate
       ? `<span class="scan-dupe-badge-blink" onclick="event.stopPropagation(); showDuplicateLocation('${firstDupeSerial}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`
+      : '';
+
+    const readyBadge = isReady
+      ? `<span class="scan-ready-badge" title="Model & Serials valid \u2014 Ready to Stock In"><span class="traffic-dot-green"></span>READY</span>`
       : '';
 
     const warnIcon = row.sev && !row.isDuplicate
@@ -3798,6 +3857,7 @@ function renderScanResultsTable() {
     let trCls = [];
     if (isSelected) trCls.push('scan-row-selected');
     if (row.isDuplicate) trCls.push('scan-row-duplicate-blink');
+    else if (isReady) trCls.push('scan-row-ready');
     else if (row.sev === 'error') trCls.push('scan-row-error');
     else if (row.sev === 'warn') trCls.push('scan-row-warn');
     if (trCls.length) tr.className = trCls.join(' ');
@@ -3807,7 +3867,7 @@ function renderScanResultsTable() {
       <td style="font-weight:700; white-space:nowrap; width:140px; text-align:center;">
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
           <div>${row.model || '<span style="color:var(--text-muted);">\u2014</span>'}</div>
-          ${dupeBadge}
+          ${dupeBadge || readyBadge}
         </div>
       </td>
       <td><div class="scan-serials-wrap">${serialChips}</div></td>
@@ -3829,7 +3889,7 @@ function renderScanResultsTable() {
           <button class="btn-action-icon" onclick="event.stopPropagation(); editScanRow(${idx})" title="Edit Serials" aria-label="Edit Model Serials">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
           </button>
-          <button class="btn-action-icon btn-action-commit" onclick="event.stopPropagation(); commitScanRow(${idx})" title="Commit Model to Available Stock" aria-label="Commit Model to Stock">
+          <button class="btn-action-icon btn-action-commit ${row.isDuplicate ? 'btn-action-disabled' : ''}" ${row.isDuplicate ? 'disabled' : `onclick="event.stopPropagation(); commitScanRow(${idx})"`} title="${row.isDuplicate ? 'Duplicate serial \u2014 cannot commit to stock' : 'Commit Model to Available Stock'}" aria-label="Commit Model to Stock">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
           </button>
         </div>
@@ -3867,6 +3927,9 @@ function deleteScanRowDirect(idx) {
 
 function setScanRowSelected(idx, isSelected) {
   if (idx < 0 || idx >= DB.scans.length) return;
+  const row = DB.scans[idx];
+  if (row && row.isDuplicate) return; // Locked: duplicate rows cannot be selected!
+
   if (isSelected) {
     selectedScanIndices.add(idx);
   } else {
@@ -3886,7 +3949,9 @@ function setScanRowSelected(idx, isSelected) {
 
 function toggleSelectAllScans(checked) {
   if (checked) {
-    DB.scans.forEach((_, i) => selectedScanIndices.add(i));
+    DB.scans.forEach((row, i) => {
+      if (!row.isDuplicate) selectedScanIndices.add(i);
+    });
   } else {
     selectedScanIndices.clear();
   }
@@ -3905,6 +3970,8 @@ function toggleSelectAllScans(checked) {
 
 function updateScanSelectionUI() {
   const total = DB.scans.length;
+  const validTotal = DB.scans.filter(r => !r.isDuplicate).length;
+  const dupeCount = total - validTotal;
   const count = selectedScanIndices.size;
   const selectAll = document.getElementById('scan-select-all');
   const badge = document.getElementById('scan-selected-badge');
@@ -3912,10 +3979,10 @@ function updateScanSelectionUI() {
   const btnDelete = document.getElementById('btn-delete-selected-scans');
 
   if (selectAll) {
-    if (total === 0) {
+    if (validTotal === 0) {
       selectAll.checked = false;
       selectAll.indeterminate = false;
-    } else if (count === total) {
+    } else if (count === validTotal) {
       selectAll.checked = true;
       selectAll.indeterminate = false;
     } else if (count > 0) {
@@ -3943,8 +4010,12 @@ function updateScanSelectionUI() {
   }
 
   if (btnCommit) {
-    if (count > 0 && count < total) {
+    if (count > 0) {
       btnCommit.textContent = `Commit Selected (${count}) to Available Stock \u2192`;
+    } else if (validTotal > 0) {
+      btnCommit.textContent = dupeCount > 0
+        ? `Commit Valid (${validTotal}) to Available Stock \u2192`
+        : `Commit All to Available Stock \u2192`;
     } else {
       btnCommit.textContent = `Commit All to Available Stock \u2192`;
     }
@@ -3966,6 +4037,8 @@ function initScanResultsDragSelect() {
     if (!tr || tr.dataset.idx === undefined) return;
     const idx = parseInt(tr.dataset.idx, 10);
     if (isNaN(idx)) return;
+    const row = DB.scans[idx];
+    if (row && row.isDuplicate) return; // Locked: duplicate rows cannot be selected!
 
     // Prevent default browser text selection
     e.preventDefault();
@@ -3984,6 +4057,8 @@ function initScanResultsDragSelect() {
     if (!tr || tr.dataset.idx === undefined) return;
     const idx = parseInt(tr.dataset.idx, 10);
     if (isNaN(idx)) return;
+    const row = DB.scans[idx];
+    if (row && row.isDuplicate) return; // Locked: duplicate rows cannot be selected!
 
     setScanRowSelected(idx, dragSelectTargetState);
   });
@@ -4509,10 +4584,16 @@ async function commitSelectedOrAllScans() {
     return;
   }
 
-  const hasSpecificSelection = selectedScanIndices.size > 0 && selectedScanIndices.size < DB.scans.length;
+  // Only non-duplicate rows can be committed
+  const hasSpecificSelection = selectedScanIndices.size > 0;
   const indices = hasSpecificSelection
-    ? Array.from(selectedScanIndices).sort((a, b) => b - a)
-    : DB.scans.map((_, i) => i).reverse();
+    ? Array.from(selectedScanIndices).filter(i => i >= 0 && i < DB.scans.length && !DB.scans[i].isDuplicate).sort((a, b) => b - a)
+    : DB.scans.map((r, i) => (!r.isDuplicate ? i : -1)).filter(i => i >= 0).reverse();
+
+  if (!indices.length) {
+    showToast('No valid rows to commit. Resolve or delete duplicates first.', '&#9888;');
+    return;
+  }
 
   let done = 0, skipped = 0, dupeCount = 0;
   let batchChosenBrand = null; // Stays active for all rows in this selected batch!

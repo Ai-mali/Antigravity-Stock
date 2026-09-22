@@ -161,10 +161,18 @@ desc, or no model, are skipped/blocked.
    - Preserved `_currentBrandModel` across modal lifecycle and directly passed the assigned brand to `/api/stock-in` on retry.
    - Centered the table header word **"Action"** (singular) and horizontally centered the 4 buttons (🗑️ Trash, 🔍 Zoom, ✏️ Edit, ▶️ Assign) directly underneath it with balanced spacing.
    - Protected row selection state by shifting remaining selected row indices when a single row is committed from the middle of the table.
-12. **Indoor + Outdoor Sets & Non-Serial Parts**:
+12. [DONE] **Duplicate Row Selection Lock, Disabled Assign & Traffic Light System (Option 2)**:
+   - **Selection Lock for Duplicates**: Duplicate rows are completely locked from selection (click & drag selection ignores them, and "Select All" excludes them).
+   - **Disabled Manual Assign on Duplicates**: The manual assign arrow (▶️) is disabled (`opacity: 0.22`, `cursor: not-allowed`, `pointer-events: none`) on duplicate rows with tooltip explaining it cannot commit duplicates.
+   - **Independent Batch Commit**: Because duplicate rows cannot be selected, the bottom commit button automatically shows `"Commit Valid (X) to Available Stock →"` (or `"Commit Selected (X)..."`) and safely skips duplicate rows so the operator is never blocked from stocking in good items.
+   - **Traffic Light Indicators**:
+     - 🟢 **Ready / Good Rows**: Get a vibrant green left border (`border-left: 3.5px solid var(--green-bright)` / `#10b981`), and a clean `[🟢 READY]` status pill under the model name.
+     - 🔴 **Duplicate Rows**: Retain their red left border (`border-left: 3.5px solid #ef4444`), blinking duplicate serial chips, and `[⚠️ DUPLICATE]` badge with cursor lock.
+   - **Editable Recovery**: When an operator edits a duplicate row via ✏️ and fixes the serials, `saveEditScanModal` re-evaluates the serials and automatically restores the row to 🟢 READY status and re-enables its assign arrow.
+13. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-13. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+14. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have
