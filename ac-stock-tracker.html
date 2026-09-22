@@ -1012,15 +1012,24 @@ body.theme-light .table-scroll-10 thead th {
   display: block;
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
 .preview-actions-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 16px;
   padding: 4px 0;
   width: 100%;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .btn-preview-action {
@@ -1029,7 +1038,7 @@ body.theme-light .table-scroll-10 thead th {
   justify-content: center;
   gap: 7px;
   height: 38px;
-  padding: 0 20px;
+  padding: 0 16px;
   border-radius: 99px;
   font-size: 12px;
   font-weight: 600;
@@ -1041,6 +1050,7 @@ body.theme-light .table-scroll-10 thead th {
   border: 1px solid var(--border);
   background: var(--surface2);
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .btn-preview-action:hover {
@@ -1051,20 +1061,69 @@ body.theme-light .table-scroll-10 thead th {
 }
 
 .btn-preview-action.btn-scan-main {
+  width: 138px;
+  padding: 0 12px;
   background: linear-gradient(135deg, #137a5f 0%, #0d5a45 100%);
   border: 1px solid rgba(38, 208, 124, 0.45);
   color: #ffffff;
-  padding: 0 26px;
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
   box-shadow: 0 4px 16px rgba(19, 122, 95, 0.4), 0 0 12px rgba(38, 208, 124, 0.25);
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-preview-action.btn-scan-main:hover {
   background: linear-gradient(135deg, #168f6f 0%, #106b52 100%);
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(19, 122, 95, 0.55), 0 0 16px rgba(38, 208, 124, 0.4);
+}
+
+/* Multi-state scan button contents */
+.btn-scan-main .scan-btn-state {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+}
+
+.btn-scan-main .state-idle {
+  display: inline-flex;
+}
+
+/* Active scanning state */
+.btn-preview-action.btn-scan-main.is-scanning {
+  background: linear-gradient(135deg, #0d5a45 0%, #083c2e 100%);
+  border-color: rgba(38, 208, 124, 0.65);
+  box-shadow: 0 0 18px rgba(38, 208, 124, 0.35);
+  cursor: pointer;
+}
+
+.btn-preview-action.btn-scan-main.is-scanning .state-idle {
+  display: none;
+}
+
+.btn-preview-action.btn-scan-main.is-scanning .state-scanning {
+  display: inline-flex;
+}
+
+/* When scanning and mouse hovers over it: Switch to STOP */
+.btn-preview-action.btn-scan-main.is-scanning:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.5) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.btn-preview-action.btn-scan-main.is-scanning:hover .state-scanning {
+  display: none;
+}
+
+.btn-preview-action.btn-scan-main.is-scanning:hover .state-stop {
+  display: inline-flex;
 }
 
 .btn-preview-action.btn-clear:hover {
@@ -1097,6 +1156,19 @@ body.theme-light .btn-preview-action.btn-scan-main {
 body.theme-light .btn-preview-action.btn-scan-main:hover {
   background: #0d5442;
   box-shadow: 0 6px 18px rgba(17, 104, 82, 0.4);
+}
+
+body.theme-light .btn-preview-action.btn-scan-main.is-scanning {
+  background: #0d5442;
+  border-color: #0d5442;
+  color: #ffffff;
+}
+
+body.theme-light .btn-preview-action.btn-scan-main.is-scanning:hover {
+  background: #dc2626 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4) !important;
+  color: #ffffff !important;
 }
 
 body.theme-light .btn-preview-action.btn-clear:hover {
@@ -2196,15 +2268,39 @@ body.theme-light .autocomplete-dropdown {
                   </svg>
                   <span>Load Image</span>
                 </button>
-                <button class="btn-preview-action btn-scan-main" id="btn-scan" onclick="triggerScanSimulation()" title="Extract serials with AI model">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-                    <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                    <path d="m12 8 1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z" fill="currentColor"></path>
-                  </svg>
-                  <span>SCAN</span>
+                <button class="btn-preview-action btn-scan-main" id="btn-scan" onclick="handleScanButtonClick()" title="Extract serials with AI model">
+                  <!-- Idle state -->
+                  <span class="scan-btn-state state-idle">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                      <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                      <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                      <path d="m12 8 1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z" fill="currentColor"></path>
+                    </svg>
+                    <span>SCAN</span>
+                  </span>
+                  <!-- Scanning state -->
+                  <span class="scan-btn-state state-scanning">
+                    <svg class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="2" x2="12" y2="6"></line>
+                      <line x1="12" y1="18" x2="12" y2="22"></line>
+                      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                      <line x1="2" y1="12" x2="6" y2="12"></line>
+                      <line x1="18" y1="12" x2="22" y2="12"></line>
+                      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                    </svg>
+                    <span>Scanning...</span>
+                  </span>
+                  <!-- Stop state (hovered during scan) -->
+                  <span class="scan-btn-state state-stop">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                      <rect x="4" y="4" width="16" height="16" rx="3"></rect>
+                    </svg>
+                    <span>Stop</span>
+                  </span>
                 </button>
                 <button class="btn-preview-action btn-clear" onclick="clearPreview(event)" title="Clear Photo Preview">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#f87171;">
@@ -3234,10 +3330,52 @@ function triggerLoadImage() {
   if (input) input.click();
 }
 
+let isScanningActive = false;
+let scanAbortController = null;
+
+function handleScanButtonClick() {
+  if (isScanningActive) {
+    stopScanningProcess();
+  } else {
+    triggerScanSimulation();
+  }
+}
+
+function stopScanningProcess() {
+  if (!isScanningActive) return;
+  if (scanAbortController) {
+    try {
+      scanAbortController.abort();
+    } catch (e) {}
+  }
+  const laser = document.getElementById('scan-laser');
+  const btn = document.getElementById('btn-scan');
+  if (laser) laser.style.display = 'none';
+  if (btn) {
+    btn.classList.remove('is-scanning');
+    btn.title = 'Extract serials with AI model';
+  }
+  isScanningActive = false;
+  scanAbortController = null;
+
+  const log = document.getElementById('status-log-console');
+  if (log) {
+    const el = document.createElement('div');
+    el.className = 'log-line-warn';
+    el.textContent = `[${new Date().toLocaleTimeString()}] Scanning stopped by user.`;
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+  }
+  showToast('Scanning stopped.', '&#9209;');
+}
+
 function clearPreview(e) {
   if (e) {
     e.stopPropagation();
     e.preventDefault();
+  }
+  if (isScanningActive) {
+    stopScanningProcess();
   }
   const img = document.getElementById('preview-photo-img');
   const input = document.getElementById('image-file-input');
@@ -3266,8 +3404,6 @@ async function triggerScanSimulation() {
   const btn = document.getElementById('btn-scan');
   const log = document.getElementById('status-log-console');
 
-  const scanSvg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="m12 8 1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z" fill="currentColor"></path></svg>`;
-
   const addLog = (txt, cls = '') => {
     const el = document.createElement('div');
     if (cls) el.className = cls;
@@ -3282,9 +3418,12 @@ async function triggerScanSimulation() {
     return;
   }
 
+  isScanningActive = true;
+  scanAbortController = new AbortController();
   laser.style.display = 'block';
-  btn.disabled = true;
-  btn.innerHTML = `${scanSvg}<span>Scanning...</span>`;
+  btn.classList.add('is-scanning');
+  btn.title = 'Scanning in progress... Hover & click to Stop';
+
   const modelName = (DB.config && DB.config.active)
     ? `${provLabel(DB.config.active.provider)} \u00b7 ${DB.config.active.model}`
     : 'AI Vision';
@@ -3293,7 +3432,14 @@ async function triggerScanSimulation() {
   try {
     const fd = new FormData();
     fd.append('file', DB.photoFile);
-    const res = await api('/api/scan', { method: 'POST', body: fd });
+    const res = await api('/api/scan', {
+      method: 'POST',
+      body: fd,
+      signal: scanAbortController.signal
+    });
+
+    if (!isScanningActive) return;
+
     (res.log || []).forEach(l => addLog(`[${new Date().toLocaleTimeString()}] ${l}`, res.ok ? 'log-line-ok' : 'log-line-warn'));
     if (res.ok) {
       DB.scans = res.rows.map(r => ({
@@ -3308,13 +3454,20 @@ async function triggerScanSimulation() {
     }
     fetchDoPhotos();
   } catch (e) {
-    addLog(`[${new Date().toLocaleTimeString()}] Scan request failed: ${e.message}`, 'log-line-warn');
-    showToast('Scan failed \u2014 is backend.py running?');
+    if (e.name === 'AbortError' || scanAbortController?.signal?.aborted) {
+      addLog(`[${new Date().toLocaleTimeString()}] Scanning stopped by user.`, 'log-line-warn');
+      showToast('Scanning stopped.', '&#9209;');
+    } else {
+      addLog(`[${new Date().toLocaleTimeString()}] Scan request failed: ${e.message}`, 'log-line-warn');
+      showToast('Scan failed \u2014 is backend.py running?');
+    }
+  } finally {
+    laser.style.display = 'none';
+    btn.classList.remove('is-scanning');
+    btn.title = 'Extract serials with AI model';
+    isScanningActive = false;
+    scanAbortController = null;
   }
-
-  laser.style.display = 'none';
-  btn.disabled = false;
-  btn.innerHTML = `${scanSvg}<span>SCAN</span>`;
 }
 
 function zoomScanRow(idx) {

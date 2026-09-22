@@ -131,7 +131,8 @@ desc, or no model, are skipped/blocked.
    - Each serial card features a subtle Pencil ✏️ icon to edit (Serial, Model, Brand, Date In) and a Trash 🗑️ icon to delete accidental/duplicate units via an in-app `#confirm-delete-modal` (no browser alerts).
    - Clicking the card body still copies the serial to clipboard; clicking action buttons is isolated with `event.stopPropagation()`.
    - Dedicated sleek `#edit-unit-modal` for modifying unit details with automatic brand synchronization and staged cart updating.
-   - Fixed Image Preview action buttons getting cut off: moved "Recent DOs" to the card header, leaving 3 clean, wrapping action buttons (`Load Image`, `SCAN`, `Clear`).
+   - Fixed Image Preview action buttons layout & scan controller: Set `.preview-actions-row` to `flex-wrap: nowrap` with fixed button dimensions (`width: 138px` on `#btn-scan`) so buttons stay completely still and never wrap to a second line.
+   - Added interactive multi-state scan button: displays animated spinner (`Scanning...`) while active, smoothly switches to danger red (`Stop`) on mouse hover, and aborts/cancels scanning immediately on click via `AbortController`.
    - Powered by `StockStore.update_unit()` and `StockStore.delete_unit()` with pre-save backup snapshots and `ActivityLog` records.
 8. [DONE] **Delivery Order (DO) Photos (3-Day Rolling Auto-Cleanup)**:
    - Scanned invoice/DO photos saved locally to `delivery_orders/` (gitignored).
