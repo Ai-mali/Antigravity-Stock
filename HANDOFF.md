@@ -177,10 +177,21 @@ desc, or no model, are skipped/blocked.
    - **Dual Action Commit Paths**:
      - **Path 1 (Green Chip Modal)**: Clicking any green serial chip opens `#ready-serial-modal` (`Ready to Stock In`), displaying Model, Serial, target Brand selector, and an `"Assign & Stock In"` button to commit that single verified unit immediately.
      - **Path 2 (Row Assign Arrow ▶️)**: The row's assign button remains enabled on partial duplicate rows. Clicking it automatically commits all valid serials in the row to Available Stock and leaves only the duplicate serial(s) behind in the scan results (dropping row quantity and turning into full red `[⚠️ DUPLICATE]`).
-14. **Indoor + Outdoor Sets & Non-Serial Parts**:
+14. [DONE] **Smart Auto-Expand, Focus Glow, & Search Query Preservation (Available Stock & Stock Out)**:
+   - **Auto-Expand on Search**:
+     - When searching for a serial (e.g. `K000581`) or model, matching brand and model accordions automatically expand (`display: block` / `display: grid`), even if they were previously collapsed.
+     - Non-matching models and serials are cleanly filtered out; if a brand has no matches, it is hidden.
+   - **Focus Glow & Match Highlight**:
+     - Found serial cards receive `.avail-unit-card-highlighted` with an emerald focus border, ambient breathing glow (`avail-card-focus-pulse`), and matched character text highlight (`<mark class="search-match-text">`).
+   - **Accordion State Preservation & Restore**:
+     - Toggling accordions (e.g. clicking brand header) during search retains the active search text instead of clearing it.
+     - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
+   - **Seamless Duplicate Jump Navigation**:
+     - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
+15. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-15. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+16. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have

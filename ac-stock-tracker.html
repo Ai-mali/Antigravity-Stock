@@ -724,6 +724,31 @@ main {
   pointer-events: none;
 }
 
+.search-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  z-index: 4;
+}
+
+.search-clear-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
 .filter-pills-row {
   display: flex;
   align-items: center;
@@ -1880,6 +1905,35 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   box-shadow: -6px 0 18px -4px var(--green-bright), 6px 0 18px -4px var(--green-bright);
 }
 
+.avail-unit-card.avail-unit-card-highlighted {
+  border-color: var(--green-bright) !important;
+  box-shadow: 0 0 18px rgba(38, 208, 124, 0.55), inset 0 0 8px rgba(38, 208, 124, 0.18) !important;
+  background: rgba(38, 208, 124, 0.09) !important;
+  animation: avail-card-focus-pulse 2.2s infinite ease-in-out;
+}
+
+.avail-unit-card.avail-unit-card-highlighted .card-glow-bar-left,
+.avail-unit-card.avail-unit-card-highlighted .card-glow-bar-right {
+  transform: scaleY(1);
+}
+
+@keyframes avail-card-focus-pulse {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(38, 208, 124, 0.4), inset 0 0 6px rgba(38, 208, 124, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(38, 208, 124, 0.8), inset 0 0 12px rgba(38, 208, 124, 0.25);
+  }
+}
+
+.search-match-text {
+  background: rgba(38, 208, 124, 0.28);
+  color: #34d399;
+  font-weight: 800;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
 .avail-unit-card .avail-card-header {
   display: flex;
   align-items: center;
@@ -2718,7 +2772,8 @@ body.theme-light .autocomplete-dropdown {
       <div class="search-filter-bar">
         <div class="search-box-wrap">
           <span class="search-icon">&#128269;</span>
-          <input type="text" id="avail-search" oninput="renderAvailable(this.value)" placeholder="Search serial (e.g., K002120) or model...">
+          <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search serial (e.g., K002120) or model...">
+          <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
         </div>
         <div class="filter-pills-row" id="avail-pills-row"></div>
       </div>
@@ -2743,7 +2798,8 @@ body.theme-light .autocomplete-dropdown {
       <div class="search-filter-bar">
         <div class="search-box-wrap">
           <span class="search-icon">&#128269;</span>
-          <input type="text" id="stockout-search" oninput="renderStockOut(this.value)" placeholder="Search Model, Serial or Date In...">
+          <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Search Model, Serial or Date In...">
+          <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
         </div>
         <div class="filter-pills-row" id="so-pills-row"></div>
       </div>
@@ -2835,7 +2891,8 @@ body.theme-light .autocomplete-dropdown {
       <!-- Search Box -->
       <div class="search-box-wrap" style="margin-bottom:14px;">
         <span class="search-icon">&#128269;</span>
-        <input type="text" id="track-search" oninput="renderTrackList(this.value)" placeholder="Search serial, customer, or model...">
+        <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, or model...">
+        <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
       </div>
 
       <!-- Track List Table -->
@@ -3934,10 +3991,14 @@ function jumpToDuplicateInStock(brand, model, serial) {
     const searchInput = document.getElementById('avail-search');
     if (searchInput) {
       searchInput.value = serial;
-      renderAvailable(serial);
+      handleAvailSearchInput(serial);
+    }
+    const card = document.querySelector('.avail-unit-card-highlighted');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     showToast(`Showing serial ${serial} in Available Stock (${brand})`, '&#128205;');
-  }, 100);
+  }, 120);
 }
 
 function jumpToDuplicateInTrack(serial) {
@@ -3947,7 +4008,7 @@ function jumpToDuplicateInTrack(serial) {
     const searchInput = document.getElementById('track-search');
     if (searchInput) {
       searchInput.value = serial;
-      renderTrackList();
+      handleTrackSearchInput(serial);
     }
     showToast(`Found serial ${serial} in Track List`, '&#128205;');
   }, 100);
@@ -5059,11 +5120,75 @@ function toggleLowStockFilter() {
   renderAvailable();
 }
 
-function renderAvailable(searchTerm = '') {
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+let _availSavedExpandState = null;
+
+function handleAvailSearchInput(val) {
+  const clearBtn = document.getElementById('avail-search-clear');
+  if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
+  renderAvailable(val);
+}
+
+function clearAvailSearch() {
+  const searchInput = document.getElementById('avail-search');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.focus();
+  }
+  const clearBtn = document.getElementById('avail-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderAvailable('');
+}
+
+function renderAvailable(searchTerm) {
+  const searchInput = document.getElementById('avail-search');
+  const rawSearch = (typeof searchTerm === 'string') 
+    ? searchTerm 
+    : (searchInput ? searchInput.value : '');
+  const q = rawSearch.trim().toLowerCase();
+
+  const clearBtn = document.getElementById('avail-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+
+  // Snapshot or restore accordion state
+  if (q) {
+    if (!_availSavedExpandState) {
+      _availSavedExpandState = { brands: {}, models: {} };
+      for (const bKey in DB.inventory) {
+        _availSavedExpandState.brands[bKey] = DB.inventory[bKey].open !== false;
+        _availSavedExpandState.models[bKey] = {};
+        for (const mKey in DB.inventory[bKey].models) {
+          _availSavedExpandState.models[bKey][mKey] = DB.inventory[bKey].models[mKey].open !== false;
+        }
+      }
+    }
+  } else {
+    // When search is cleared, restore previous user expand state
+    if (_availSavedExpandState) {
+      for (const bKey in DB.inventory) {
+        if (_availSavedExpandState.brands[bKey] !== undefined) {
+          DB.inventory[bKey].open = _availSavedExpandState.brands[bKey];
+        }
+        delete DB.inventory[bKey].searchOpen;
+        if (_availSavedExpandState.models[bKey]) {
+          for (const mKey in DB.inventory[bKey].models) {
+            if (_availSavedExpandState.models[bKey][mKey] !== undefined) {
+              DB.inventory[bKey].models[mKey].open = _availSavedExpandState.models[bKey][mKey];
+            }
+            delete DB.inventory[bKey].models[mKey].searchOpen;
+          }
+        }
+      }
+      _availSavedExpandState = null;
+    }
+  }
+
   const container = document.getElementById('avail-accordion-container');
   container.innerHTML = '';
 
-  const q = searchTerm.trim().toLowerCase();
   const brands = DB.availFilter === 'ALL' ? Object.keys(DB.inventory) : [DB.availFilter].filter(b => DB.inventory[b]);
 
   // Check low-stock models across entire inventory
@@ -5071,14 +5196,14 @@ function renderAvailable(searchTerm = '') {
   for (const bKey in DB.inventory) {
     const bData = DB.inventory[bKey];
     for (const mKey in bData.models) {
-      const sCount = bData.models[mKey].serials.length;
+      const sCount = (bData.models[mKey].serials || []).length;
       if (sCount <= 2) {
         lowStockModels.push({ brand: bKey, model: mKey, count: sCount });
       }
     }
   }
 
-  if (lowStockModels.length > 0) {
+  if (lowStockModels.length > 0 && !q) {
     const banner = document.createElement('div');
     banner.className = 'low-stock-banner';
     banner.innerHTML = `
@@ -5100,29 +5225,42 @@ function renderAvailable(searchTerm = '') {
     container.appendChild(banner);
   }
 
+  let totalRenderedBrands = 0;
+
   brands.forEach(brandKey => {
     const bData = DB.inventory[brandKey];
     const brandUnits = countBrandUnits(brandKey);
 
     let modelsHtml = '';
+
     for (const mKey in bData.models) {
       const mData = bData.models[mKey];
-      let serials = mData.serials;
+      let serials = mData.serials || [];
       if (DB.lowStockFilter && serials.length > 2) continue;
+
+      let matchedSerials = serials;
       if (q) {
-        serials = serials.filter(s => s.toLowerCase().includes(q) || mKey.toLowerCase().includes(q));
-        if (serials.length === 0) continue;
+        const modelNameMatch = mKey.toLowerCase().includes(q);
+        matchedSerials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
+        if (matchedSerials.length === 0) continue;
       }
 
-      const cardsHtml = serials.map(s => {
+      const cardsHtml = matchedSerials.map(s => {
         const staged = isSerialInCart(s);
         const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
+        const isMatch = q && s.toLowerCase().includes(q);
+        const highlightClass = isMatch ? 'avail-unit-card-highlighted' : '';
+        let serialDisplay = s;
+        if (isMatch) {
+          const re = new RegExp(`(${escapeRegex(q)})`, 'gi');
+          serialDisplay = s.replace(re, '<mark class="search-match-text">$1</mark>');
+        }
         return `
-          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''}" onclick="copySerial('${s}')" title="Click to copy serial">
+          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" onclick="copySerial('${s}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="avail-card-header">
-              <span class="serial-text">${s}</span>
+              <span class="serial-text">${serialDisplay}</span>
               <div class="avail-card-actions" onclick="event.stopPropagation()">
                 <button type="button" class="unit-action-btn btn-edit-unit" onclick="event.stopPropagation(); openEditUnitModal('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}', '${escapeJs(unitDateIn)}')" title="Edit unit (${s})">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -5149,7 +5287,7 @@ function renderAvailable(searchTerm = '') {
         `;
       }).join('');
 
-      const count = serials.length;
+      const count = matchedSerials.length;
       let badgeClass = 'badge-green';
       let badgeText = `${count} In Stock`;
       if (count === 0) {
@@ -5160,6 +5298,11 @@ function renderAvailable(searchTerm = '') {
         badgeText = `⚠️ Low Stock: ${count}`;
       }
 
+      // If searching, auto-expand unless user manually toggled it during this search
+      const isModelOpen = q 
+        ? (mData.searchOpen !== undefined ? mData.searchOpen : true)
+        : (mData.open !== false);
+
       modelsHtml += `
         <div class="model-accordion">
           <div class="model-accordion-header" onclick="toggleModelAcc('${brandKey}', '${mKey}')">
@@ -5169,10 +5312,10 @@ function renderAvailable(searchTerm = '') {
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${badgeClass}">${badgeText}</span>
-              <span style="color:var(--text-sub);">${mData.open ? '&#9650;' : '&#9660;'}</span>
+              <span style="color:var(--text-sub);">${isModelOpen ? '&#9650;' : '&#9660;'}</span>
             </div>
           </div>
-          <div style="display:${mData.open ? 'grid' : 'none'};" class="model-cards-grid-4">
+          <div style="display:${isModelOpen ? 'grid' : 'none'};" class="model-cards-grid-4">
             ${cardsHtml}
           </div>
         </div>
@@ -5180,6 +5323,11 @@ function renderAvailable(searchTerm = '') {
     }
 
     if (!modelsHtml && (q || DB.lowStockFilter)) return;
+
+    // If searching, auto-expand matching brand unless user manually toggled it during this search
+    const isBrandOpen = q 
+      ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
+      : (bData.open !== false);
 
     const brandSection = document.createElement('div');
     brandSection.className = 'brand-accordion';
@@ -5190,26 +5338,54 @@ function renderAvailable(searchTerm = '') {
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-neutral">${brandUnits} Units Total</span>
         </div>
-        <span style="color:var(--text-sub); font-size:12px;">${bData.open ? '&#9650;' : '&#9660;'}</span>
+        <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
-      <div style="padding:12px; display:${bData.open ? 'block' : 'none'};">
+      <div style="padding:12px; display:${isBrandOpen ? 'block' : 'none'};">
         ${modelsHtml}
       </div>
     `;
     container.appendChild(brandSection);
+    totalRenderedBrands++;
   });
+
+  if (q && totalRenderedBrands === 0) {
+    const emptyNotice = document.createElement('div');
+    emptyNotice.style.cssText = 'text-align:center; padding:48px 20px; color:var(--text-sub);';
+    emptyNotice.innerHTML = `
+      <div style="font-size:32px; margin-bottom:10px;">🔍</div>
+      <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px;">No inventory matching "${escapeHtml(rawSearch)}"</div>
+      <div style="font-size:12px; margin-bottom:16px;">Try checking for typos or searching by model number.</div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="clearAvailSearch()">&#10005; Clear Search</button>
+    `;
+    container.appendChild(emptyNotice);
+  }
 }
 
 function toggleBrandAcc(brand) {
   if (DB.inventory[brand]) {
-    DB.inventory[brand].open = !DB.inventory[brand].open;
+    const searchInput = document.getElementById('avail-search');
+    const q = (searchInput ? searchInput.value : '').trim();
+    if (q) {
+      const current = DB.inventory[brand].searchOpen !== undefined ? DB.inventory[brand].searchOpen : true;
+      DB.inventory[brand].searchOpen = !current;
+    } else {
+      DB.inventory[brand].open = (DB.inventory[brand].open === false) ? true : false;
+    }
     renderAvailable();
   }
 }
 
 function toggleModelAcc(brand, model) {
   if (DB.inventory[brand] && DB.inventory[brand].models[model]) {
-    DB.inventory[brand].models[model].open = !DB.inventory[brand].models[model].open;
+    const searchInput = document.getElementById('avail-search');
+    const q = (searchInput ? searchInput.value : '').trim();
+    const mObj = DB.inventory[brand].models[model];
+    if (q) {
+      const current = mObj.searchOpen !== undefined ? mObj.searchOpen : true;
+      mObj.searchOpen = !current;
+    } else {
+      mObj.open = (mObj.open === false) ? true : false;
+    }
     renderAvailable();
   }
 }
@@ -5224,11 +5400,69 @@ function setSOFilter(filter) {
   renderStockOut();
 }
 
-function renderStockOut(searchTerm = '') {
+let _soSavedExpandState = null;
+
+function handleSOSearchInput(val) {
+  const clearBtn = document.getElementById('so-search-clear');
+  if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
+  renderStockOut(val);
+}
+
+function clearSOSearch() {
+  const input = document.getElementById('stockout-search');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  const clearBtn = document.getElementById('so-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderStockOut('');
+}
+
+function renderStockOut(searchTerm) {
+  const searchInput = document.getElementById('stockout-search');
+  const rawSearch = (typeof searchTerm === 'string') 
+    ? searchTerm 
+    : (searchInput ? searchInput.value : '');
+  const q = rawSearch.trim().toLowerCase();
+
+  const clearBtn = document.getElementById('so-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+
+  if (q) {
+    if (!_soSavedExpandState) {
+      _soSavedExpandState = { brands: {}, models: {} };
+      for (const bKey in DB.inventory) {
+        _soSavedExpandState.brands[bKey] = DB.inventory[bKey].open !== false;
+        _soSavedExpandState.models[bKey] = {};
+        for (const mKey in DB.inventory[bKey].models) {
+          _soSavedExpandState.models[bKey][mKey] = DB.inventory[bKey].models[mKey].open !== false;
+        }
+      }
+    }
+  } else {
+    if (_soSavedExpandState) {
+      for (const bKey in DB.inventory) {
+        if (_soSavedExpandState.brands[bKey] !== undefined) {
+          DB.inventory[bKey].open = _soSavedExpandState.brands[bKey];
+        }
+        delete DB.inventory[bKey].soSearchOpen;
+        if (_soSavedExpandState.models[bKey]) {
+          for (const mKey in DB.inventory[bKey].models) {
+            if (_soSavedExpandState.models[bKey][mKey] !== undefined) {
+              DB.inventory[bKey].models[mKey].open = _soSavedExpandState.models[bKey][mKey];
+            }
+            delete DB.inventory[bKey].models[mKey].soSearchOpen;
+          }
+        }
+      }
+      _soSavedExpandState = null;
+    }
+  }
+
   const container = document.getElementById('stockout-brands-container');
   container.innerHTML = '';
 
-  const q = searchTerm.trim().toLowerCase();
   const brands = DB.soFilter === 'ALL' ? Object.keys(DB.inventory) : [DB.soFilter].filter(b => DB.inventory[b]);
 
   brands.forEach(brandKey => {
@@ -5238,20 +5472,27 @@ function renderStockOut(searchTerm = '') {
     let modelsHtml = '';
     for (const mKey in bData.models) {
       const mData = bData.models[mKey];
-      let serials = mData.serials;
+      let serials = mData.serials || [];
       if (q) {
-        serials = serials.filter(s => s.toLowerCase().includes(q) || mKey.toLowerCase().includes(q));
+        const modelNameMatch = mKey.toLowerCase().includes(q);
+        serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
         if (serials.length === 0) continue;
       }
 
       const chipsHtml = serials.map(s => {
         const staged = isSerialInCart(s);
+        const isMatch = q && s.toLowerCase().includes(q);
+        let serialDisplay = s;
+        if (isMatch) {
+          const re = new RegExp(`(${escapeRegex(q)})`, 'gi');
+          serialDisplay = s.replace(re, '<mark class="search-match-text">$1</mark>');
+        }
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''}" onclick="toggleSerialInCart('${s}', '${mKey}', '${brandKey}')">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
-              <span class="serial-val">${s}</span>
+              <span class="serial-val">${serialDisplay}</span>
               <span class="indicator-dot"></span>
             </div>
             <div class="so-card-bottom">
@@ -5262,29 +5503,34 @@ function renderStockOut(searchTerm = '') {
         `;
       }).join('');
 
-            const soCount = serials.length;
-            let soBadgeClass = 'badge-green';
-            let soBadgeText = `${soCount} In Stock`;
-            if (soCount === 0) {
-              soBadgeClass = 'badge-red';
-              soBadgeText = 'Out of Stock (0)';
-            } else if (soCount <= 2) {
-              soBadgeClass = 'badge-amber';
-              soBadgeText = `⚠️ Low: ${soCount}`;
-            }
-            modelsHtml += `
-              <div class="model-accordion">
-                <div class="model-accordion-header" onclick="toggleSOModelAcc('${brandKey}', '${mKey}')">
-                  <div style="display:flex; align-items:center;">
-                    <span class="model-index-pill">${mData.idx || '01'}</span>
-                    <span style="font-weight:700; font-size:12.5px;">${mKey}</span>
-                  </div>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="badge ${soBadgeClass}">${soBadgeText}</span>
-                    <span style="color:var(--text-sub);">${mData.open ? '&#9650;' : '&#9660;'}</span>
-                  </div>
-                </div>
-          <div style="display:${mData.open ? 'block' : 'none'};">
+      const soCount = serials.length;
+      let soBadgeClass = 'badge-green';
+      let soBadgeText = `${soCount} In Stock`;
+      if (soCount === 0) {
+        soBadgeClass = 'badge-red';
+        soBadgeText = 'Out of Stock (0)';
+      } else if (soCount <= 2) {
+        soBadgeClass = 'badge-amber';
+        soBadgeText = `⚠️ Low: ${soCount}`;
+      }
+
+      const isModelOpen = q 
+        ? (mData.soSearchOpen !== undefined ? mData.soSearchOpen : true)
+        : (mData.open !== false);
+
+      modelsHtml += `
+        <div class="model-accordion">
+          <div class="model-accordion-header" onclick="toggleSOModelAcc('${brandKey}', '${mKey}')">
+            <div style="display:flex; align-items:center;">
+              <span class="model-index-pill">${mData.idx || '01'}</span>
+              <span style="font-weight:700; font-size:12.5px;">${mKey}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge ${soBadgeClass}">${soBadgeText}</span>
+              <span style="color:var(--text-sub);">${isModelOpen ? '&#9650;' : '&#9660;'}</span>
+            </div>
+          </div>
+          <div style="display:${isModelOpen ? 'block' : 'none'};">
             <div style="padding:8px 14px 0 14px; font-size:11px; color:var(--text-sub);">
               Click any serial to quickly toggle in Dispatch Staging Cart:
             </div>
@@ -5298,6 +5544,10 @@ function renderStockOut(searchTerm = '') {
 
     if (!modelsHtml && q) return;
 
+    const isBrandOpen = q 
+      ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
+      : (bData.open !== false);
+
     const brandSection = document.createElement('div');
     brandSection.className = 'brand-accordion';
     brandSection.innerHTML = `
@@ -5307,9 +5557,9 @@ function renderStockOut(searchTerm = '') {
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-neutral">${brandUnits} Units Total</span>
         </div>
-        <span style="color:var(--text-sub); font-size:12px;">${bData.open ? '&#9650;' : '&#9660;'}</span>
+        <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
-      <div style="padding:12px; display:${bData.open ? 'block' : 'none'};">
+      <div style="padding:12px; display:${isBrandOpen ? 'block' : 'none'};">
         ${modelsHtml}
       </div>
     `;
@@ -5321,14 +5571,29 @@ function renderStockOut(searchTerm = '') {
 
 function toggleSOBrandAcc(brand) {
   if (DB.inventory[brand]) {
-    DB.inventory[brand].open = !DB.inventory[brand].open;
+    const searchInput = document.getElementById('stockout-search');
+    const q = (searchInput ? searchInput.value : '').trim();
+    if (q) {
+      const current = DB.inventory[brand].soSearchOpen !== undefined ? DB.inventory[brand].soSearchOpen : true;
+      DB.inventory[brand].soSearchOpen = !current;
+    } else {
+      DB.inventory[brand].open = (DB.inventory[brand].open === false) ? true : false;
+    }
     renderStockOut();
   }
 }
 
 function toggleSOModelAcc(brand, model) {
   if (DB.inventory[brand] && DB.inventory[brand].models[model]) {
-    DB.inventory[brand].models[model].open = !DB.inventory[brand].models[model].open;
+    const searchInput = document.getElementById('stockout-search');
+    const q = (searchInput ? searchInput.value : '').trim();
+    const mObj = DB.inventory[brand].models[model];
+    if (q) {
+      const current = mObj.soSearchOpen !== undefined ? mObj.soSearchOpen : true;
+      mObj.soSearchOpen = !current;
+    } else {
+      mObj.open = (mObj.open === false) ? true : false;
+    }
     renderStockOut();
   }
 }
@@ -5412,11 +5677,36 @@ async function processCartCheckout() {
 /* =========================================================
    4. TRACK LIST LOGIC
    ========================================================= */
-function renderTrackList(searchTerm = '') {
+function handleTrackSearchInput(val) {
+  const clearBtn = document.getElementById('track-search-clear');
+  if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
+  renderTrackList(val);
+}
+
+function clearTrackSearch() {
+  const input = document.getElementById('track-search');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  const clearBtn = document.getElementById('track-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderTrackList('');
+}
+
+function renderTrackList(searchTerm) {
   renderCustomerFilterPills();
   renderWarrantyFilterPills();
 
-  const q = searchTerm.trim().toLowerCase();
+  const searchInput = document.getElementById('track-search');
+  const rawSearch = (typeof searchTerm === 'string') 
+    ? searchTerm 
+    : (searchInput ? searchInput.value : '');
+  const q = rawSearch.trim().toLowerCase();
+
+  const clearBtn = document.getElementById('track-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+
   let list = DB.trackList;
 
   if (DB.trackFilter !== 'ALL') {
