@@ -527,6 +527,19 @@ main {
   border-color: var(--green-hover);
 }
 
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+}
+
 .btn-ghost {
   background: var(--surface2);
   color: var(--text-muted);
@@ -2811,6 +2824,56 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- 7b. CONFIRM DELETE UNIT MODAL -->
+<div class="modal-overlay" id="confirm-delete-modal">
+  <div class="modal-dialog" style="max-width: 420px; border: 1px solid rgba(239, 68, 68, 0.28); box-shadow: 0 16px 40px rgba(0,0,0,0.65);">
+    <div class="modal-header" style="align-items:flex-start;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </div>
+        <div>
+          <div class="modal-title" style="color:#ef4444;">Delete In-Stock Unit?</div>
+          <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+            This will permanently remove the unit from stock.
+          </div>
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeConfirmDeleteModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:10px; padding-bottom:6px;">
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">Serial Number</div>
+          <div id="confirm-del-serial" class="mono" style="font-size:16px; font-weight:800; color:#ef4444; margin-top:3px;">—</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">Model</div>
+          <div id="confirm-del-model" class="mono" style="font-size:13px; font-weight:700; color:var(--text); margin-top:3px;">—</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text-muted); margin-top:12px; line-height:1.5;">
+        ⚠️ Unit will be removed from <b>Available Stock</b> and row deleted from <b>daikin_stock.xlsx</b>. An automatic backup snapshot will be recorded.
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" onclick="closeConfirmDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="btn-confirm-delete" onclick="executeConfirmDelete()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>Sure, Delete</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- 8. RECENT DELIVERY ORDER (DO) PHOTOS MODAL -->
 <div class="modal-overlay" id="do-photos-modal">
   <div class="modal-dialog" style="max-width: 860px; max-height: 88vh; display:flex; flex-direction:column;">
@@ -4785,9 +4848,38 @@ async function saveEditUnitModal() {
   }
 }
 
-async function deleteUnitDirect(serial, model) {
-  if (!confirm(`Are you sure you want to delete unit "${serial}" (${model})?\n\nThis will remove it from Available Stock and daikin_stock.xlsx.`)) {
+let pendingDeleteUnit = { serial: '', model: '' };
+
+function deleteUnitDirect(serial, model) {
+  openConfirmDeleteModal(serial, model);
+}
+
+function openConfirmDeleteModal(serial, model) {
+  pendingDeleteUnit = { serial: serial || '', model: model || '' };
+  const sEl = document.getElementById('confirm-del-serial');
+  const mEl = document.getElementById('confirm-del-model');
+  if (sEl) sEl.textContent = serial || '—';
+  if (mEl) mEl.textContent = model || '—';
+  const modal = document.getElementById('confirm-delete-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeConfirmDeleteModal() {
+  const modal = document.getElementById('confirm-delete-modal');
+  if (modal) modal.classList.remove('open');
+  pendingDeleteUnit = { serial: '', model: '' };
+}
+
+async function executeConfirmDelete() {
+  const serial = pendingDeleteUnit.serial;
+  if (!serial) {
+    closeConfirmDeleteModal();
     return;
+  }
+  const btn = document.getElementById('btn-confirm-delete');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'Deleting...';
   }
   try {
     const res = await apiPost('/api/inventory/delete', { serial });
@@ -4796,10 +4888,22 @@ async function deleteUnitDirect(serial, model) {
       if (DB.stagedCart && DB.stagedCart.length) {
         DB.stagedCart = DB.stagedCart.filter(item => item.serial !== serial);
       }
+      closeConfirmDeleteModal();
       await refreshData();
     }
   } catch (e) {
     showToast('Delete failed: ' + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>Sure, Delete</span>
+      `;
+    }
   }
 }
 
@@ -4930,6 +5034,7 @@ document.addEventListener('keydown', e => {
     closeZoomScanModal();
     closeActivityModal();
     closeEditUnitModal();
+    closeConfirmDeleteModal();
     closeDoPhotosModal();
     closePhotoViewerModal();
   }
@@ -4950,6 +5055,12 @@ const editUnitModalEl = document.getElementById('edit-unit-modal');
 if (editUnitModalEl) {
   editUnitModalEl.addEventListener('click', e => {
     if (e.target === editUnitModalEl) closeEditUnitModal();
+  });
+}
+const confirmDelModalEl = document.getElementById('confirm-delete-modal');
+if (confirmDelModalEl) {
+  confirmDelModalEl.addEventListener('click', e => {
+    if (e.target === confirmDelModalEl) closeConfirmDeleteModal();
   });
 }
 document.getElementById('do-photos-modal').addEventListener('click', e => {

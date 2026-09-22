@@ -128,7 +128,7 @@ desc, or no model, are skipped/blocked.
    - Allows operators to cleanly restock mistakenly dispatched serials back into Available Stock with a recorded audit trail.
 7. [DONE] **Direct In-Stock Unit Editing & Deletion (Chips UX)**:
    - Replaced the separate "Manage Inventory Table" modal with direct, contextual actions on every serial chip in Available Stock.
-   - Each serial card features a subtle Pencil ✏️ icon to edit (Serial, Model, Brand, Date In) and a Trash 🗑️ icon to delete accidental/duplicate units.
+   - Each serial card features a subtle Pencil ✏️ icon to edit (Serial, Model, Brand, Date In) and a Trash 🗑️ icon to delete accidental/duplicate units via an in-app `#confirm-delete-modal` (no browser alerts).
    - Clicking the card body still copies the serial to clipboard; clicking action buttons is isolated with `event.stopPropagation()`.
    - Dedicated sleek `#edit-unit-modal` for modifying unit details with automatic brand synchronization and staged cart updating.
    - Fixed Image Preview action buttons getting cut off: moved "Recent DOs" to the card header, leaving 3 clean, wrapping action buttons (`Load Image`, `SCAN`, `Clear`).
