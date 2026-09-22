@@ -126,12 +126,13 @@ desc, or no model, are skipped/blocked.
 6. [DONE] **Accidental Dispatch / Cancellation restock**:
    - Added `"Order Cancelled / Wrong Entry"` to Return (RMA) reasons.
    - Allows operators to cleanly restock mistakenly dispatched serials back into Available Stock with a recorded audit trail.
-7. [DONE] **Manage Inventory Table (Typo & unit correction)**:
-   - "Manage Inventory Table" button in Available Stock view.
-   - Interactive spreadsheet-like modal displaying all In-Stock units with search & brand filter.
-   - Inline editing for Model, Serial Number, Supplier, and Date In.
-   - Deletion of duplicate or accidental entries with confirmation.
-   - Fully backed by `StockStore.update_unit()` and `StockStore.delete_unit()` with pre-save backup snapshots and `ActivityLog` records.
+7. [DONE] **Direct In-Stock Unit Editing & Deletion (Chips UX)**:
+   - Replaced the separate "Manage Inventory Table" modal with direct, contextual actions on every serial chip in Available Stock.
+   - Each serial card features a subtle Pencil ✏️ icon to edit (Serial, Model, Brand, Supplier, Date In) and a Trash 🗑️ icon to delete accidental/duplicate units.
+   - Clicking the card body still copies the serial to clipboard; clicking action buttons is isolated with `event.stopPropagation()`.
+   - Dedicated sleek `#edit-unit-modal` for modifying unit details with automatic brand synchronization and staged cart updating.
+   - Fixed Image Preview action buttons getting cut off: moved "Recent DOs" to the card header, leaving 3 clean, wrapping action buttons (`Load Image`, `SCAN`, `Clear`).
+   - Powered by `StockStore.update_unit()` and `StockStore.delete_unit()` with pre-save backup snapshots and `ActivityLog` records.
 8. [DONE] **Delivery Order (DO) Photos (3-Day Rolling Auto-Cleanup)**:
    - Scanned invoice/DO photos saved locally to `delivery_orders/` (gitignored).
    - Rolling auto-cleanup prunes photos older than 3 days from oldest to newest.

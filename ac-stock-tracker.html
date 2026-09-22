@@ -1003,10 +1003,11 @@ body.theme-light .table-scroll-10 thead th {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   margin-top: 16px;
   padding: 4px 0;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .btn-preview-action {
@@ -1497,6 +1498,56 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   color: #ffffff;
   text-shadow: 0 0 10px rgba(38, 208, 124, 0.95), 0 0 22px rgba(38, 208, 124, 0.6);
   letter-spacing: 0.04em;
+}
+
+.avail-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 5;
+}
+
+.unit-action-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  opacity: 0.7;
+}
+
+.avail-unit-card:hover .unit-action-btn {
+  opacity: 1;
+}
+
+.unit-action-btn:hover {
+  transform: scale(1.15);
+}
+
+.unit-action-btn.btn-edit-unit:hover {
+  border-color: var(--green-bright);
+  color: #ffffff;
+  background: var(--green);
+}
+
+.unit-action-btn.btn-delete-unit:hover {
+  border-color: #ef4444;
+  color: #ffffff;
+  background: #dc2626;
+}
+
+body.theme-light .unit-action-btn {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #475569;
 }
 
 .avail-card-dot {
@@ -2063,8 +2114,19 @@ body.theme-light .autocomplete-dropdown {
         <div style="display:flex; flex-direction:column; gap:16px;">
           <!-- Image preview card -->
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
               <span class="card-title">Image Preview</span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="openDoPhotosModal()" title="View Recent Delivery Order Photos (Last 3 Days)" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span>Recent DOs</span>
+                <span id="do-photos-badge" class="badge badge-green" style="padding:1px 6px; font-size:10px;">0</span>
+              </button>
             </div>
             <div class="card-body">
               <!-- Drag and Drop Image Uploader / Previewer -->
@@ -2129,17 +2191,6 @@ body.theme-light .autocomplete-dropdown {
                     <path d="m12 8 1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z" fill="currentColor"></path>
                   </svg>
                   <span>SCAN</span>
-                </button>
-                <button class="btn-preview-action" onclick="openDoPhotosModal()" title="View Recent Delivery Order Photos (Last 3 Days)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                  </svg>
-                  <span>Recent DOs</span>
-                  <span id="do-photos-badge" class="badge badge-green" style="padding:1px 5px; font-size:10px; margin-left:2px;">0</span>
                 </button>
                 <button class="btn-preview-action btn-clear" onclick="clearPreview(event)" title="Clear Photo Preview">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#f87171;">
@@ -2217,19 +2268,10 @@ body.theme-light .autocomplete-dropdown {
           <div class="view-title">Available Stock</div>
           <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
         </div>
-        <div style="display:flex; align-items:center; gap:16px;">
-          <button class="btn btn-secondary btn-sm" onclick="openManageInventoryModal()" title="View and edit all in-stock units in a spreadsheet table">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-            Manage Inventory Table
-          </button>
-          <div style="text-align:right;">
-            <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
-            <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
-              <span id="avail-total-big">115</span> Units
-            </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
+          <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
+            <span id="avail-total-big">115</span> Units
           </div>
         </div>
       </div>
@@ -2723,63 +2765,54 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
-<!-- 7. MANAGE INVENTORY TABLE MODAL -->
-<div class="modal-overlay" id="manage-inventory-modal">
-  <div class="modal-dialog" style="max-width: 980px; max-height: 90vh; display:flex; flex-direction:column;">
+<!-- 7. EDIT IN-STOCK UNIT MODAL -->
+<div class="modal-overlay" id="edit-unit-modal">
+  <div class="modal-dialog" style="max-width: 480px;">
     <div class="modal-header">
       <div>
-        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
-          <span>Manage Inventory Table</span>
-          <span class="badge badge-green" id="mgt-total-badge">0 units</span>
-        </div>
+        <div class="modal-title">Edit Stock Unit</div>
         <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
-          Spreadsheet view of all In-Stock units &middot; Quick edit serials, models, suppliers, or delete accidental entries.
+          Correct serial number, model, supplier, or date in.
         </div>
       </div>
-      <button class="btn-circle" onclick="closeManageInventoryModal()" title="Close">&#10005;</button>
+      <button class="btn-circle" onclick="closeEditUnitModal()" title="Close">&#10005;</button>
     </div>
-    <div class="modal-body" style="overflow-y:auto; flex:1; padding-bottom:10px; display:flex; flex-direction:column; gap:12px;">
-      <!-- Search & Brand Filter Controls -->
-      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
-        <div style="display:flex; gap:8px; flex:1; max-width:440px;">
-          <input type="text" id="mgt-search" class="form-input" style="padding:6px 12px; font-size:12px;" placeholder="Search serial, model, or supplier..." oninput="filterManageInventoryTable()">
-          <select id="mgt-brand-filter" class="form-select" style="max-width:140px; padding:6px 10px; font-size:12px;" onchange="filterManageInventoryTable()">
-            <option value="">All Brands</option>
-          </select>
+    <div class="modal-body">
+      <input type="hidden" id="edit-unit-old-serial" value="">
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label" for="edit-unit-serial">Serial Number *</label>
+        <input type="text" class="form-input mono" id="edit-unit-serial" placeholder="Serial Number" style="font-weight:700; font-size:14px; color:var(--green-bright);" autocomplete="off">
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label class="form-label" for="edit-unit-model">Model Code *</label>
+          <input type="text" class="form-input mono" id="edit-unit-model" placeholder="e.g. FTKU60ADX1" autocomplete="off" style="font-weight:600;">
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:11.5px; color:var(--text-sub);" id="mgt-count-label">Showing 0 units</span>
-          <button class="btn btn-ghost btn-sm" onclick="loadManageInventoryUnits(true)">&#8635; Refresh</button>
+        <div>
+          <label class="form-label" for="edit-unit-brand">Brand</label>
+          <select class="form-select" id="edit-unit-brand"></select>
         </div>
       </div>
 
-      <!-- Quick Instruction Banner -->
-      <div style="background:rgba(38,208,124,0.08); border:1px solid rgba(38,208,124,0.2); border-radius:6px; padding:8px 12px; font-size:11.5px; color:var(--text-muted); display:flex; align-items:center; justify-content:space-between;">
-        <span>💡 <b>Tip:</b> Click <b>Edit</b> on any row to fix serial numbers, model names, or suppliers, then click <b>Save</b>. Click <b>Delete</b> to remove duplicate/accidental entries.</span>
-      </div>
-
-      <!-- Inventory Table -->
-      <div class="table-container" style="flex:1; max-height:480px; overflow-y:auto;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width:100px;">BRAND</th>
-              <th>MODEL</th>
-              <th>SERIAL NUMBER</th>
-              <th>SUPPLIER</th>
-              <th style="width:115px;">DATE IN</th>
-              <th style="text-align:right; width:150px;">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody id="mgt-table-tbody"></tbody>
-        </table>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:8px;">
+        <div>
+          <label class="form-label" for="edit-unit-supplier">Supplier</label>
+          <input type="text" class="form-input" id="edit-unit-supplier" placeholder="Supplier name" autocomplete="off">
+        </div>
+        <div>
+          <label class="form-label" for="edit-unit-datein">Date In</label>
+          <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="MM/DD/YYYY or YYYY-MM-DD" autocomplete="off">
+        </div>
       </div>
     </div>
     <div class="modal-footer">
-      <span style="font-size:11px; color:var(--text-sub);">
-        All edits create an automatic backup snapshot and are logged in Activity Log.
-      </span>
-      <button class="btn btn-ghost" onclick="closeManageInventoryModal()">Close</button>
+      <div style="font-size:10.5px; color:var(--text-sub);">Automatic backup created before save.</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" onclick="closeEditUnitModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEditUnitModal()">&#10003; Save Changes</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3619,17 +3652,34 @@ function renderAvailable(searchTerm = '') {
 
       const cardsHtml = serials.map(s => {
         const staged = isSerialInCart(s);
+        const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
         return `
           <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''}" onclick="copySerial('${s}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="avail-card-header">
               <span class="serial-text">${s}</span>
-              <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
+              <div class="avail-card-actions" onclick="event.stopPropagation()">
+                <button type="button" class="unit-action-btn btn-edit-unit" onclick="event.stopPropagation(); openEditUnitModal('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}', '${escapeJs(unitDateIn)}')" title="Edit unit (${s})">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                </button>
+                <button type="button" class="unit-action-btn btn-delete-unit" onclick="event.stopPropagation(); deleteUnitDirect('${s}', '${escapeJs(mKey)}')" title="Delete unit (${s})">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="meta-text">
-              <span>Rec: ${mData.dateIn}</span>
-              <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}</span>
+              <span>Rec: ${unitDateIn}</span>
+              <span style="display:flex; align-items:center; gap:5px;">
+                <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
+                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}</span>
+              </span>
             </div>
           </div>
         `;
@@ -4644,164 +4694,83 @@ async function restoreBackupFile(filename) {
 }
 
 /* =========================================================
-   8. MANAGE INVENTORY TABLE MODAL LOGIC
+   8. DIRECT IN-STOCK UNIT EDIT & DELETE LOGIC
    ========================================================= */
-let mgtUnits = [];
-let mgtEditingSerial = null;
-
-async function openManageInventoryModal() {
-  const modal = document.getElementById('manage-inventory-modal');
+function openEditUnitModal(serial, model, brand, dateIn) {
+  const modal = document.getElementById('edit-unit-modal');
   if (!modal) return;
-  modal.classList.add('open');
-  mgtEditingSerial = null;
-  const sInput = document.getElementById('mgt-search');
-  if (sInput) sInput.value = '';
-  await loadManageInventoryUnits();
-}
 
-function closeManageInventoryModal() {
-  const modal = document.getElementById('manage-inventory-modal');
-  if (modal) modal.classList.remove('open');
-  mgtEditingSerial = null;
-}
+  document.getElementById('edit-unit-old-serial').value = serial || '';
+  document.getElementById('edit-unit-serial').value = serial || '';
+  document.getElementById('edit-unit-model').value = model || '';
 
-async function loadManageInventoryUnits(notify = false) {
+  // Populate brand options
+  const brandSel = document.getElementById('edit-unit-brand');
+  if (brandSel) {
+    brandSel.innerHTML = '';
+    const brandList = (DB.brands && DB.brands.length) ? DB.brands : Object.keys(DB.inventory || {});
+    brandList.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = b;
+      if (b === brand) opt.selected = true;
+      brandSel.appendChild(opt);
+    });
+    if (brand && !brandList.includes(brand)) {
+      const opt = document.createElement('option');
+      opt.value = brand;
+      opt.textContent = brand;
+      opt.selected = true;
+      brandSel.appendChild(opt);
+    }
+  }
+
+  // Look up supplier from DB.inventory[brand]?.models[model]?.units?.[serial]
+  let supplier = '';
   try {
-    const res = await apiGet('/api/inventory/units');
-    mgtUnits = res.units || [];
-    const bSel = document.getElementById('mgt-brand-filter');
-    if (bSel) {
-      const cur = bSel.value;
-      bSel.innerHTML = '<option value="">All Brands</option>';
-      (res.brands || DB.brands || []).forEach(b => {
-        const opt = document.createElement('option');
-        opt.value = b;
-        opt.textContent = b;
-        if (b === cur) opt.selected = true;
-        bSel.appendChild(opt);
-      });
+    const unitObj = DB.inventory?.[brand]?.models?.[model]?.units?.[serial];
+    if (unitObj && unitObj.supplier) {
+      supplier = unitObj.supplier;
     }
-    const badge = document.getElementById('mgt-total-badge');
-    if (badge) badge.textContent = `${mgtUnits.length} units`;
-    filterManageInventoryTable();
-    if (notify) showToast(`Loaded ${mgtUnits.length} in-stock units`);
-  } catch (e) {
-    showToast('Failed to load inventory units: ' + e.message);
-  }
-}
+  } catch (e) {}
+  document.getElementById('edit-unit-supplier').value = supplier;
 
-function filterManageInventoryTable() {
-  const query = (document.getElementById('mgt-search').value || '').trim().toLowerCase();
-  const brand = (document.getElementById('mgt-brand-filter').value || '').trim().toLowerCase();
-
-  const filtered = mgtUnits.filter(u => {
-    if (brand && (u.brand || '').toLowerCase() !== brand) return false;
-    if (!query) return true;
-    return (u.serial || '').toLowerCase().includes(query) ||
-           (u.model || '').toLowerCase().includes(query) ||
-           (u.supplier || '').toLowerCase().includes(query) ||
-           (u.brand || '').toLowerCase().includes(query);
-  });
-
-  const countLabel = document.getElementById('mgt-count-label');
-  if (countLabel) {
-    countLabel.textContent = `Showing ${filtered.length} of ${mgtUnits.length} units`;
-  }
-  renderManageInventoryTable(filtered);
-}
-
-function renderManageInventoryTable(units) {
-  const tbody = document.getElementById('mgt-table-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  if (!units.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px 16px; color:var(--text-sub);">
-      No matching in-stock units found.
-    </td></tr>`;
-    return;
-  }
-
-  const displayList = units.slice(0, 300);
-
-  displayList.forEach(u => {
-    const tr = document.createElement('tr');
-    const isEditing = (mgtEditingSerial === u.serial);
-
-    if (isEditing) {
-      tr.style.background = 'rgba(38, 208, 124, 0.08)';
-      tr.innerHTML = `
-        <td style="font-weight:600; color:var(--green-bright);">${escapeHtml(u.brand || '')}</td>
-        <td>
-          <input type="text" id="mgt-edit-model" class="form-input mono" value="${escapeHtml(u.model || '')}" style="padding:4px 8px; font-size:11.5px;">
-        </td>
-        <td>
-          <input type="text" id="mgt-edit-serial" class="form-input mono" value="${escapeHtml(u.serial || '')}" style="padding:4px 8px; font-size:11.5px; font-weight:700;">
-        </td>
-        <td>
-          <input type="text" id="mgt-edit-supplier" class="form-input" value="${escapeHtml(u.supplier || '')}" style="padding:4px 8px; font-size:11.5px;">
-        </td>
-        <td>
-          <input type="text" id="mgt-edit-datein" class="form-input mono" value="${escapeHtml(u.dateIn || '')}" placeholder="MM/DD/YYYY" style="padding:4px 8px; font-size:11.5px;">
-        </td>
-        <td style="text-align:right;">
-          <div style="display:inline-flex; gap:6px;">
-            <button class="btn btn-primary btn-sm" onclick="saveEditUnit('${escapeHtml(u.serial)}')" style="padding:3px 8px;">Save</button>
-            <button class="btn btn-ghost btn-sm" onclick="cancelEditUnit()" style="padding:3px 8px;">Cancel</button>
-          </div>
-        </td>
-      `;
-    } else {
-      tr.innerHTML = `
-        <td style="font-weight:600; color:var(--text-muted); font-size:11.5px;">${escapeHtml(u.brand || '')}</td>
-        <td style="font-weight:600;">${escapeHtml(u.model || '')}</td>
-        <td class="mono" style="font-weight:700; color:var(--green-bright);">${escapeHtml(u.serial || '')}</td>
-        <td style="color:var(--text-muted);">${escapeHtml(u.supplier || '')}</td>
-        <td class="mono" style="color:var(--text-sub); font-size:11.5px;">${escapeHtml(u.dateIn || '')}</td>
-        <td style="text-align:right;">
-          <div style="display:inline-flex; gap:6px;">
-            <button class="btn btn-ghost btn-sm" onclick="startEditUnit('${escapeHtml(u.serial)}')" style="padding:3px 8px;">Edit</button>
-            <button class="btn btn-danger-ghost btn-sm" onclick="deleteUnitPrompt('${escapeHtml(u.serial)}', '${escapeHtml(u.model)}')" style="padding:3px 8px;">Delete</button>
-          </div>
-        </td>
-      `;
+  // Date in
+  let dIn = dateIn || '';
+  try {
+    const unitObj = DB.inventory?.[brand]?.models?.[model]?.units?.[serial];
+    if (unitObj && unitObj.dateIn) {
+      dIn = unitObj.dateIn;
     }
-    tbody.appendChild(tr);
-  });
+  } catch (e) {}
+  document.getElementById('edit-unit-datein').value = dIn;
 
-  if (units.length > 300) {
-    const moreTr = document.createElement('tr');
-    moreTr.innerHTML = `<td colspan="6" style="text-align:center; padding:10px; color:var(--text-sub); font-size:11px;">
-      Showing first 300 of ${units.length} units. Use search above to narrow down results.
-    </td>`;
-    tbody.appendChild(moreTr);
-  }
+  modal.classList.add('open');
+  setTimeout(() => {
+    const input = document.getElementById('edit-unit-serial');
+    if (input) input.focus();
+  }, 100);
 }
 
-function startEditUnit(serial) {
-  mgtEditingSerial = serial;
-  filterManageInventoryTable();
-  const input = document.getElementById('mgt-edit-serial');
-  if (input) input.focus();
+function closeEditUnitModal() {
+  const modal = document.getElementById('edit-unit-modal');
+  if (modal) modal.classList.remove('open');
 }
 
-function cancelEditUnit() {
-  mgtEditingSerial = null;
-  filterManageInventoryTable();
-}
-
-async function saveEditUnit(oldSerial) {
-  const newSerial = (document.getElementById('mgt-edit-serial').value || '').trim();
-  const model = (document.getElementById('mgt-edit-model').value || '').trim();
-  const supplier = (document.getElementById('mgt-edit-supplier').value || '').trim();
-  const dateIn = (document.getElementById('mgt-edit-datein').value || '').trim();
+async function saveEditUnitModal() {
+  const oldSerial = (document.getElementById('edit-unit-old-serial').value || '').trim();
+  const newSerial = (document.getElementById('edit-unit-serial').value || '').trim();
+  const model = (document.getElementById('edit-unit-model').value || '').trim();
+  const brand = (document.getElementById('edit-unit-brand').value || '').trim();
+  const supplier = (document.getElementById('edit-unit-supplier').value || '').trim();
+  const dateIn = (document.getElementById('edit-unit-datein').value || '').trim();
 
   if (!newSerial) {
     showToast('Serial number cannot be empty.');
     return;
   }
   if (!model) {
-    showToast('Model cannot be empty.');
+    showToast('Model code cannot be empty.');
     return;
   }
 
@@ -4810,21 +4779,33 @@ async function saveEditUnit(oldSerial) {
       old_serial: oldSerial,
       new_serial: newSerial,
       model,
+      brand,
       supplier,
       date_in: dateIn
     });
+
     if (res.ok) {
-      showToast(`Updated unit ${newSerial} successfully!`);
-      mgtEditingSerial = null;
+      showToast(`Updated unit "${newSerial}" successfully!`);
+      closeEditUnitModal();
+
+      // If staged in cart, update staged item
+      if (DB.stagedCart && DB.stagedCart.length) {
+        const cartItem = DB.stagedCart.find(item => item.serial === oldSerial);
+        if (cartItem) {
+          cartItem.serial = newSerial;
+          cartItem.model = model;
+          if (brand) cartItem.brand = brand;
+        }
+      }
+
       await refreshData();
-      await loadManageInventoryUnits(false);
     }
   } catch (e) {
     showToast('Update failed: ' + e.message);
   }
 }
 
-async function deleteUnitPrompt(serial, model) {
+async function deleteUnitDirect(serial, model) {
   if (!confirm(`Are you sure you want to delete unit "${serial}" (${model})?\n\nThis will remove it from Available Stock and daikin_stock.xlsx.`)) {
     return;
   }
@@ -4832,9 +4813,10 @@ async function deleteUnitPrompt(serial, model) {
     const res = await apiPost('/api/inventory/delete', { serial });
     if (res.ok) {
       showToast(`Deleted unit ${serial} from inventory.`);
-      mgtEditingSerial = null;
+      if (DB.stagedCart && DB.stagedCart.length) {
+        DB.stagedCart = DB.stagedCart.filter(item => item.serial !== serial);
+      }
       await refreshData();
-      await loadManageInventoryUnits(false);
     }
   } catch (e) {
     showToast('Delete failed: ' + e.message);
@@ -4849,6 +4831,13 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function escapeJs(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
 }
 
 /* =========================================================
@@ -4960,7 +4949,7 @@ document.addEventListener('keydown', e => {
     closeEditScanModal();
     closeZoomScanModal();
     closeActivityModal();
-    closeManageInventoryModal();
+    closeEditUnitModal();
     closeDoPhotosModal();
     closePhotoViewerModal();
   }
@@ -4977,9 +4966,12 @@ document.getElementById('zoom-scan-modal').addEventListener('click', e => {
 document.getElementById('activity-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('activity-modal')) closeActivityModal();
 });
-document.getElementById('manage-inventory-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('manage-inventory-modal')) closeManageInventoryModal();
-});
+const editUnitModalEl = document.getElementById('edit-unit-modal');
+if (editUnitModalEl) {
+  editUnitModalEl.addEventListener('click', e => {
+    if (e.target === editUnitModalEl) closeEditUnitModal();
+  });
+}
 document.getElementById('do-photos-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('do-photos-modal')) closeDoPhotosModal();
 });

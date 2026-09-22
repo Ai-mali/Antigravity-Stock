@@ -351,8 +351,13 @@ class StockStore:
             b = inv.setdefault(brand, {"color": self._brand_color(brand),
                                        "open": True, "models": {}})
             m = b["models"].setdefault(
-                model, {"dateIn": str(rec["Date In"]), "serials": []})
-            m["serials"].append(str(rec["Serial"]))
+                model, {"dateIn": str(rec["Date In"]), "serials": [], "units": {}})
+            s = str(rec["Serial"]).strip()
+            m["serials"].append(s)
+            m["units"][s] = {
+                "supplier": str(rec.get("Supplier", "")).strip(),
+                "dateIn": str(rec.get("Date In", "")).strip()
+            }
         # keep zero-stock brands visible too
         for brand in self.brands:
             inv.setdefault(brand, {"color": self._brand_color(brand),
