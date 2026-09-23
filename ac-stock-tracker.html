@@ -704,346 +704,6 @@ main {
   min-height: 84px;
 }
 
-/* =========================================================
-   CUSTOM PREMIUM IN-APP DATE PICKER
-   ========================================================= */
-.custom-datepicker {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  user-select: none;
-}
-
-.datepicker-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 11px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  white-space: nowrap;
-}
-
-.datepicker-trigger:hover {
-  border-color: var(--green-bright);
-  background: var(--surface3);
-  box-shadow: 0 0 0 1px rgba(38, 208, 124, 0.2), 0 2px 6px rgba(0, 0, 0, 0.3);
-  transform: translateY(-1px);
-}
-
-.datepicker-trigger:focus,
-.custom-datepicker.is-open .datepicker-trigger {
-  border-color: var(--green-bright);
-  box-shadow: 0 0 0 2px var(--green-glow), 0 2px 8px rgba(0, 0, 0, 0.4);
-  outline: none;
-}
-
-.dp-icon-cal {
-  color: var(--green-bright);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.dp-date-text {
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-
-.dp-badge-relative {
-  font-size: 9.5px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(38, 208, 124, 0.15);
-  color: var(--green-bright);
-  border: 1px solid rgba(38, 208, 124, 0.3);
-  margin-left: 2px;
-  letter-spacing: 0.03em;
-}
-
-.dp-icon-chevron {
-  font-size: 10px;
-  color: var(--text-sub);
-  transition: transform 0.2s ease;
-  margin-left: 2px;
-}
-
-.custom-datepicker.is-open .dp-icon-chevron {
-  transform: rotate(180deg);
-  color: var(--green-bright);
-}
-
-/* Calendar Popover Dropdown */
-.datepicker-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 1000;
-  width: 280px;
-  background: var(--surface2);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  padding: 12px;
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-  animation: dpFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes dpFadeIn {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.custom-datepicker.is-open .datepicker-popover {
-  display: flex;
-}
-
-/* Quick Presets Row */
-.dp-presets-row {
-  display: flex;
-  gap: 4px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.dp-preset-btn {
-  flex: 1;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.dp-preset-btn:hover {
-  background: var(--green);
-  border-color: var(--green-bright);
-  color: #fff;
-  box-shadow: 0 2px 6px var(--green-glow);
-}
-
-.dp-preset-btn.is-active {
-  background: rgba(38, 208, 124, 0.18);
-  border-color: var(--green-bright);
-  color: var(--green-bright);
-}
-
-/* Month Navigation Header */
-.dp-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 2px;
-}
-
-.dp-nav-btn {
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  color: var(--text);
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 11px;
-  transition: all 0.15s ease;
-}
-
-.dp-nav-btn:hover {
-  border-color: var(--green-bright);
-  color: var(--green-bright);
-  background: var(--surface);
-  transform: scale(1.06);
-}
-
-.dp-title-select-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dp-title-btn {
-  background: transparent;
-  border: none;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text);
-  padding: 2px 4px;
-  border-radius: 6px;
-  font-family: inherit;
-}
-
-/* Weekday Grid */
-.dp-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-sub);
-  padding: 2px 0;
-  text-transform: uppercase;
-}
-
-/* Day Grid */
-.dp-days-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-}
-
-.dp-day-cell {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11.5px;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 500;
-  color: var(--text);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  position: relative;
-  background: transparent;
-  border: 1px solid transparent;
-}
-
-.dp-day-cell:hover:not(.dp-day-disabled) {
-  background: var(--surface3);
-  border-color: var(--border-light);
-  color: var(--green-bright);
-  transform: scale(1.05);
-}
-
-.dp-day-cell.dp-day-outmonth {
-  opacity: 0.28;
-  color: var(--text-sub);
-}
-
-.dp-day-cell.dp-day-today {
-  border-color: rgba(38, 208, 124, 0.6);
-  font-weight: 700;
-}
-
-.dp-day-cell.dp-day-today::after {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--green-bright);
-}
-
-.dp-day-cell.dp-day-selected {
-  background: var(--green) !important;
-  border-color: var(--green-bright) !important;
-  color: #ffffff !important;
-  font-weight: 800;
-  box-shadow: 0 2px 8px rgba(17, 104, 82, 0.4);
-}
-
-.dp-day-cell.dp-day-selected::after {
-  background: #ffffff;
-}
-
-/* Light Theme Overrides for Datepicker */
-body.theme-light .datepicker-trigger {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-body.theme-light .datepicker-trigger:hover {
-  background: #ffffff;
-  border-color: #10b981;
-}
-
-body.theme-light .datepicker-popover {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-body.theme-light .dp-preset-btn {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
-  color: #475569;
-}
-
-body.theme-light .dp-preset-btn:hover {
-  background: #116852;
-  border-color: #116852;
-  color: #ffffff;
-}
-
-body.theme-light .dp-preset-btn.is-active {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: #10b981;
-  color: #047857;
-}
-
-body.theme-light .dp-nav-btn {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
-  color: #334155;
-}
-
-body.theme-light .dp-nav-btn:hover {
-  background: #e2e8f0;
-  color: #047857;
-  border-color: #10b981;
-}
-
-body.theme-light .dp-day-cell {
-  color: #0f172a;
-}
-
-body.theme-light .dp-day-cell:hover:not(.dp-day-disabled) {
-  background: #f1f5f9;
-  color: #047857;
-  border-color: #cbd5e1;
-}
-
-body.theme-light .dp-day-cell.dp-day-outmonth {
-  color: #94a3b8;
-  opacity: 0.35;
-}
-
-body.theme-light .dp-day-cell.dp-day-today {
-  border-color: rgba(16, 185, 129, 0.6);
-}
-
-body.theme-light .dp-day-cell.dp-day-selected {
-  background: #116852 !important;
-  border-color: #116852 !important;
-  color: #ffffff !important;
-}
-
 /* Search and Filters Bar (Sticky with Separated Border) */
 .search-filter-bar {
   display: flex;
@@ -3231,44 +2891,23 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right column: Scan Results -->
-          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px; flex-wrap:wrap;">
+        <div class="card" style="display:flex; flex-direction:column;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:10px;">
-              <span class="card-title" style="font-size:13.5px; font-weight:700; letter-spacing:-0.2px;">Scan Results</span>
-              <span class="badge badge-green" id="scan-header-count-badge" style="font-size:10.5px; padding:2px 8px; font-weight:600;">0 units</span>
+              <span class="card-title">Scan Results</span>
             </div>
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:10.5px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.5px;">Date In:</span>
-                <div class="custom-datepicker" id="scan-date-in-picker">
-                  <input type="hidden" id="scan-date-in" value="2026-09-18">
-                  <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('scan-date-in-picker', event)" style="padding:4px 9px; font-size:11.5px;">
-                    <span class="dp-icon-cal">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </span>
-                    <span class="dp-date-text" id="scan-date-in-display">09/18/2026</span>
-                    <span class="dp-badge-relative" id="scan-date-in-relative"></span>
-                    <span class="dp-icon-chevron">&#9662;</span>
-                  </button>
-                  <div class="datepicker-popover" id="scan-date-in-popover"></div>
-                </div>
-              </div>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="addScanRowManual()" style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; font-size:11px; font-weight:600; border-radius:6px;" title="Add new model row manually">
-                <span style="color:var(--green-bright); font-size:13px; font-weight:700; line-height:1;">+</span>
-                <span>Add Row</span>
-              </button>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="downloadScanCsv()" title="Export CSV" style="padding:4px 9px; font-size:11px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Export</span>
-              </button>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-circle" onclick="addScanRowManual()" title="Add Model Row">+</button>
+              <button class="btn-circle" onclick="downloadScanCsv()" title="Export CSV">&#11015;</button>
+            </div>
+          </div>
+          <div class="scan-meta-bar">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <label class="form-label" style="margin-bottom:0; font-size:11px; white-space:nowrap;">DATE IN</label>
+              <input type="date" class="form-input" id="scan-date-in" value="2026-09-18" style="max-width:180px; padding:5px 10px;">
+            </div>
+            <div style="font-size:11px; color:var(--text-sub);">
+              Units are grouped automatically by Brand in Available Stock.
             </div>
           </div>
           <div class="table-container stock-in-table-scroll" style="flex:1;">
@@ -3388,33 +3027,17 @@ body.theme-light .autocomplete-dropdown {
                 <div class="quick-chips-row" id="recent-customers-chips" style="margin-top:4px;"></div>
               </div>
 
-              <div>
-                <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Date Out</label>
-                <div class="custom-datepicker" id="cart-date-out-picker" style="width:100%;">
-                  <input type="hidden" id="cart-date-out" value="2026-09-18">
-                  <button type="button" class="datepicker-trigger" style="width:100%; justify-content:space-between;" onclick="toggleDatePicker('cart-date-out-picker', event)">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span class="dp-icon-cal">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                          <line x1="16" y1="2" x2="16" y2="6"></line>
-                          <line x1="8" y1="2" x2="8" y2="6"></line>
-                          <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                      </span>
-                      <span class="dp-date-text" id="cart-date-out-display">09/18/2026</span>
-                      <span class="dp-badge-relative" id="cart-date-out-relative"></span>
-                    </div>
-                    <span class="dp-icon-chevron">&#9662;</span>
-                  </button>
-                  <div class="datepicker-popover" id="cart-date-out-popover"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <div style="flex:1;">
+                  <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Date Out</label>
+                  <input type="date" class="form-input" id="cart-date-out" value="2026-09-18" style="padding:5px 8px; font-size:11.5px;">
                 </div>
-              </div>
-
-              <div style="margin-top:2px;">
-                <button class="btn btn-primary" style="justify-content:center; padding:8px 12px; font-size:12px; font-weight:700; width:100%; box-shadow:0 2px 10px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
-                  Complete Checkout &rarr;
-                </button>
+                <div style="flex:1.2; display:flex; flex-direction:column; justify-content:flex-end;">
+                  <label class="form-label" style="margin-bottom:3px; font-size:11px; visibility:hidden;">Checkout</label>
+                  <button class="btn btn-primary" style="justify-content:center; padding:6px 10px; font-size:12px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
+                    Complete Checkout &rarr;
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -3707,89 +3330,6 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
-<!-- MANUAL ADD SCAN ROW MODAL -->
-<div class="modal-overlay" id="manual-input-modal">
-  <div class="modal-dialog" style="max-width: 580px;">
-    <div class="modal-header">
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:34px; height:34px; border-radius:8px; background:rgba(38, 208, 124, 0.12); border:1px solid rgba(38, 208, 124, 0.35); display:flex; align-items:center; justify-content:center; color:var(--green-bright); font-size:18px; font-weight:700; flex-shrink:0;">
-          +
-        </div>
-        <div>
-          <div class="modal-title">Manual Stock Entry</div>
-          <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Add an inventory model row with serialized units or non-serial accessories.</div>
-        </div>
-      </div>
-      <button class="btn-circle" onclick="closeManualInputModal()" title="Close">&#10005;</button>
-    </div>
-    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
-      
-      <!-- Type Switch Segmented Bar -->
-      <div>
-        <label class="form-label">Inventory Item Type</label>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:4px;">
-          <button type="button" id="manual-type-btn-serial" class="pill-filter-btn active" style="justify-content:center; padding:7px 10px; font-size:11.5px; border-radius:6px;" onclick="setManualInputMode('serial')">
-            <span>🏷️ Serialized Unit</span>
-          </button>
-          <button type="button" id="manual-type-btn-nonserial" class="pill-filter-btn" style="justify-content:center; padding:7px 10px; font-size:11.5px; border-radius:6px;" onclick="setManualInputMode('nonserial')">
-            <span>📦 Non-Serial / Piping Kit</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Row No & Model Code -->
-      <div style="display:grid; grid-template-columns: 90px 1fr; gap:10px;">
-        <div>
-          <label class="form-label" for="manual-in-no">Row No.</label>
-          <input type="text" class="form-input mono" id="manual-in-no" placeholder="10" autocomplete="off">
-        </div>
-        <div>
-          <label class="form-label" for="manual-in-model">Model Code *</label>
-          <input type="text" class="form-input mono" id="manual-in-model" placeholder="e.g. FTKU25AV1F or BHFP22P100-7" autocomplete="off" style="font-weight:700; text-transform:uppercase;" oninput="if(currentManualInputMode==='nonserial') updateManualNonSerialPreview();">
-        </div>
-      </div>
-
-      <!-- Mode 1: Serialized Unit Inputs -->
-      <div id="manual-mode-serial-fields">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label class="form-label" for="manual-in-serials" style="margin-bottom:0;">Serial Numbers *</label>
-          <span style="font-size:11px; color:var(--green-bright); font-weight:700; font-family:'JetBrains Mono', monospace;" id="manual-in-serials-count">0 serials</span>
-        </div>
-        <textarea class="form-textarea mono" id="manual-in-serials" rows="5" placeholder="Enter serial numbers (paste multiple lines, comma-separated, or space-separated)&#10;e.g.&#10;K001492&#10;K001529" oninput="updateManualInputSerialCount()" style="font-size:11.5px; line-height:1.6; min-height:110px;"></textarea>
-        <div style="font-size:11px; color:var(--text-sub); margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
-          <span>Separate by lines, commas, or spaces</span>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="formatManualInputSerials()" style="padding:2px 8px; font-size:10.5px;">Auto-Format</button>
-        </div>
-      </div>
-
-      <!-- Mode 2: Non-Serial / Accessories Inputs -->
-      <div id="manual-mode-nonserial-fields" style="display:none;">
-        <div style="display:grid; grid-template-columns: 1fr 100px; gap:10px; margin-bottom:10px;">
-          <div>
-            <label class="form-label" for="manual-in-desc">Part / Item Description</label>
-            <input type="text" class="form-input" id="manual-in-desc" placeholder="e.g. PIPING KIT 22P, REMOTE CONTROLLER" autocomplete="off" oninput="updateManualNonSerialPreview()">
-          </div>
-          <div>
-            <label class="form-label" for="manual-in-qty">Quantity *</label>
-            <input type="number" class="form-input mono" id="manual-in-qty" min="1" max="999" value="1" oninput="updateManualNonSerialPreview()">
-          </div>
-        </div>
-        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px;">
-          <div style="font-size:10.5px; color:var(--text-sub); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Generated Sequential Unit IDs</div>
-          <div id="manual-nonserial-preview" class="mono" style="font-size:12px; color:var(--green-bright); font-weight:600;">—</div>
-        </div>
-      </div>
-
-    </div>
-    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
-      <button class="btn btn-ghost" onclick="closeManualInputModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitManualInputModal()">
-        &#10003; Add to Scan List
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- EDIT SCANNED ITEM MODAL (NO, MODEL, SERIALS, QTY) -->
 <div class="modal-overlay" id="edit-scan-modal">
   <div class="modal-dialog" style="max-width: 580px;">
@@ -3990,25 +3530,7 @@ body.theme-light .autocomplete-dropdown {
 
       <div style="margin-bottom:8px;">
         <label class="form-label" for="edit-unit-datein">Date In</label>
-        <div class="custom-datepicker" id="edit-unit-datein-picker" style="width:100%;">
-          <input type="hidden" id="edit-unit-datein" value="">
-          <button type="button" class="datepicker-trigger" style="width:100%; justify-content:space-between;" onclick="toggleDatePicker('edit-unit-datein-picker', event)">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span class="dp-icon-cal">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-              </span>
-              <span class="dp-date-text" id="edit-unit-datein-display">—</span>
-              <span class="dp-badge-relative" id="edit-unit-datein-relative"></span>
-            </div>
-            <span class="dp-icon-chevron">&#9662;</span>
-          </button>
-          <div class="datepicker-popover" id="edit-unit-datein-popover"></div>
-        </div>
+        <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="MM/DD/YYYY or YYYY-MM-DD" autocomplete="off">
       </div>
     </div>
     <div class="modal-footer">
@@ -5070,11 +4592,9 @@ function renderScanResultsTable() {
   const hdrS = document.getElementById('scan-hdr-serial-cnt');
   const hdrQ = document.getElementById('scan-hdr-qty-cnt');
   const sumL = document.getElementById('scan-summary-label');
-  const hdrBadge = document.getElementById('scan-header-count-badge');
   if (hdrM) hdrM.textContent = '(' + DB.scans.length + ')';
   if (hdrS) hdrS.textContent = '(' + totalSerials + ')';
   if (hdrQ) hdrQ.textContent = '(' + totalSerials + ')';
-  if (hdrBadge) hdrBadge.textContent = `${totalSerials} unit${totalSerials === 1 ? '' : 's'}`;
   if (sumL) sumL.textContent = 'Total: ' + DB.scans.length + ' models \u00b7 ' + totalSerials + ' serialized units';
 
   updateScanSelectionUI();
@@ -5620,148 +5140,17 @@ function deleteCurrentScanRow() {
   showToast(`Deleted ${itemLabel}`, '&#128465;');
 }
 
-let currentManualInputMode = 'serial'; // 'serial' | 'nonserial'
-
-function openManualInputModal() {
-  currentManualInputMode = 'serial';
-  setManualInputMode('serial');
-
-  // Auto-calculate next row number
-  let nextNo = 10;
-  if (DB.scans && DB.scans.length > 0) {
-    const lastRow = DB.scans[DB.scans.length - 1];
-    const lastNo = parseInt(lastRow.no, 10);
-    nextNo = (!isNaN(lastNo) && lastNo > 0) ? lastNo + 10 : (DB.scans.length + 1) * 10;
-  }
-  document.getElementById('manual-in-no').value = nextNo;
-  document.getElementById('manual-in-model').value = '';
-  document.getElementById('manual-in-serials').value = '';
-  document.getElementById('manual-in-desc').value = '';
-  document.getElementById('manual-in-qty').value = '1';
-  updateManualInputSerialCount();
-  updateManualNonSerialPreview();
-
-  const modal = document.getElementById('manual-input-modal');
-  if (modal) {
-    modal.classList.add('open');
-    setTimeout(() => {
-      const modelInp = document.getElementById('manual-in-model');
-      if (modelInp) modelInp.focus();
-    }, 60);
-  }
-}
-
-function closeManualInputModal() {
-  const modal = document.getElementById('manual-input-modal');
-  if (modal) modal.classList.remove('open');
-}
-
-function setManualInputMode(mode) {
-  currentManualInputMode = mode;
-  const btnSerial = document.getElementById('manual-type-btn-serial');
-  const btnNonSerial = document.getElementById('manual-type-btn-nonserial');
-  const serialFields = document.getElementById('manual-mode-serial-fields');
-  const nonSerialFields = document.getElementById('manual-mode-nonserial-fields');
-
-  if (mode === 'serial') {
-    if (btnSerial) btnSerial.classList.add('active');
-    if (btnNonSerial) btnNonSerial.classList.remove('active');
-    if (serialFields) serialFields.style.display = 'block';
-    if (nonSerialFields) nonSerialFields.style.display = 'none';
-  } else {
-    if (btnSerial) btnSerial.classList.remove('active');
-    if (btnNonSerial) btnNonSerial.classList.add('active');
-    if (serialFields) serialFields.style.display = 'none';
-    if (nonSerialFields) nonSerialFields.style.display = 'block';
-    updateManualNonSerialPreview();
-  }
-}
-
-function updateManualInputSerialCount() {
-  const text = (document.getElementById('manual-in-serials')?.value || '').trim();
-  const serials = parseSerialsInput(text);
-  const countEl = document.getElementById('manual-in-serials-count');
-  if (countEl) {
-    countEl.textContent = `${serials.length} serial${serials.length === 1 ? '' : 's'}`;
-  }
-}
-
-function formatManualInputSerials() {
-  const text = (document.getElementById('manual-in-serials')?.value || '').trim();
-  const serials = parseSerialsInput(text);
-  document.getElementById('manual-in-serials').value = serials.join(', ');
-  updateManualInputSerialCount();
-  showToast(`Formatted ${serials.length} serial numbers.`);
-}
-
-function updateManualNonSerialPreview() {
-  const model = (document.getElementById('manual-in-model')?.value || '').trim().toUpperCase();
-  const desc = (document.getElementById('manual-in-desc')?.value || '').trim() || model || 'PART';
-  const qty = parseInt(document.getElementById('manual-in-qty')?.value, 10) || 1;
-  const startIdx = getNonSerialNextIndex(model, desc);
-  const previewEl = document.getElementById('manual-nonserial-preview');
-  if (previewEl) {
-    const list = Array.from({ length: Math.min(qty, 6) }, (_, i) => `${desc} #${startIdx + i}`);
-    if (qty > 6) list.push(`... (+${qty - 6} more)`);
-    previewEl.textContent = list.join(', ');
-  }
-}
-
-function submitManualInputModal() {
-  const noVal = document.getElementById('manual-in-no').value.trim();
-  const modelVal = document.getElementById('manual-in-model').value.trim().toUpperCase();
-
-  if (!modelVal) {
-    showToast('Please enter a Model Code.', '&#9888;');
-    document.getElementById('manual-in-model')?.focus();
-    return;
-  }
-
-  const no = noVal !== '' ? (isNaN(Number(noVal)) ? noVal : Number(noVal)) : (DB.scans.length + 1) * 10;
-
-  if (currentManualInputMode === 'serial') {
-    const rawSerialsText = document.getElementById('manual-in-serials').value.trim();
-    const serials = parseSerialsInput(rawSerialsText).map(s => s.toUpperCase());
-
-    if (!serials.length) {
-      showToast('Please enter at least one serial number.', '&#9888;');
-      document.getElementById('manual-in-serials')?.focus();
-      return;
-    }
-
-    const newRow = {
-      no,
-      model: modelVal,
-      serials: serials,
-      qty: `${serials.length} PC${serials.length > 1 ? 'S' : ''}`,
-      flag: '',
-      desc: ''
-    };
-    DB.scans.push(newRow);
-  } else {
-    const descVal = document.getElementById('manual-in-desc').value.trim();
-    const qtyNum = Math.max(1, parseInt(document.getElementById('manual-in-qty').value, 10) || 1);
-    const desc = descVal || modelVal || 'PART';
-
-    const newRow = {
-      no,
-      model: modelVal,
-      serials: [],
-      qty: `${qtyNum} PC${qtyNum > 1 ? 'S' : ''}`,
-      flag: 'no_serial',
-      desc: desc
-    };
-    DB.scans.push(newRow);
-  }
-
+function addScanRowManual() {
+  const model = (prompt('Model code:') || '').trim().toUpperCase();
+  if (!model) return;
+  const serials = (prompt('Serials (comma-separated):') || '')
+    .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  const no = (DB.scans.length + 1) * 10;
+  const newRow = { no, model, serials, qty: serials.length + ' PC' + (serials.length > 1 ? 'S' : ''), flag: '', desc: '' };
+  DB.scans.push(newRow);
   markDuplicateScans();
   renderScanResultsTable();
-  closeManualInputModal();
-  showToast(`Added manual row ${modelVal}`, '&#10003;');
-}
-
-function addScanRowManual() {
-  openManualInputModal();
+  showToast('Added manual row ' + model);
 }
 
 /* ---- real commit: scan row -> backend stock_in (dup check + brand modal) ---- */
@@ -7631,7 +7020,7 @@ function openEditUnitModal(serial, model, brand, dateIn) {
       dIn = unitObj.dateIn;
     }
   } catch (e) {}
-  setDatePickerValue('edit-unit-datein-picker', dIn || new Date().toISOString().slice(0, 10));
+  document.getElementById('edit-unit-datein').value = dIn;
 
   modal.classList.add('open');
   setTimeout(() => {
@@ -7874,7 +7263,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeConfigModal();
     closeEditScanModal();
-    closeManualInputModal();
     closeZoomScanModal();
     closeActivityModal();
     closeEditUnitModal();
@@ -7889,12 +7277,6 @@ document.getElementById('config-modal').addEventListener('click', e => {
 document.getElementById('edit-scan-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('edit-scan-modal')) closeEditScanModal();
 });
-const manualInModalEl = document.getElementById('manual-input-modal');
-if (manualInModalEl) {
-  manualInModalEl.addEventListener('click', e => {
-    if (e.target === manualInModalEl) closeManualInputModal();
-  });
-}
 document.getElementById('zoom-scan-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('zoom-scan-modal')) closeZoomScanModal();
 });
@@ -7941,269 +7323,6 @@ function downloadCurrentHtml() {
   showToast('Downloaded current ac-stock-tracker.html');
 }
 
-/* =========================================================
-   CUSTOM PREMIUM IN-APP DATE PICKER CONTROLLER
-   ========================================================= */
-const DP_MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-const DP_DAY_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const activeDatePickers = {};
-
-function initDatePicker(pickerId, inputId, defaultIsoDate = '', onChangeCallback = null) {
-  const pickerEl = document.getElementById(pickerId);
-  const hiddenInput = document.getElementById(inputId);
-  if (!pickerEl || !hiddenInput) return;
-
-  const today = new Date();
-  let initDate = defaultIsoDate ? parseIsoDate(defaultIsoDate) : (hiddenInput.value ? parseIsoDate(hiddenInput.value) : today);
-  if (!initDate || isNaN(initDate.getTime())) initDate = today;
-
-  activeDatePickers[pickerId] = {
-    pickerId,
-    inputId,
-    selectedDate: new Date(initDate.getFullYear(), initDate.getMonth(), initDate.getDate()),
-    viewYear: initDate.getFullYear(),
-    viewMonth: initDate.getMonth(),
-    onChange: onChangeCallback
-  };
-
-  syncDatePickerValue(pickerId, false);
-  renderDatePickerPopover(pickerId);
-}
-
-function setDatePickerValue(pickerId, dateStr) {
-  const state = activeDatePickers[pickerId];
-  if (!state) {
-    initDatePicker(pickerId, pickerId.replace('-picker', ''), dateStr);
-    return;
-  }
-  const d = parseIsoDate(dateStr) || new Date();
-  state.selectedDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  state.viewYear = d.getFullYear();
-  state.viewMonth = d.getMonth();
-  syncDatePickerValue(pickerId, false);
-  renderDatePickerPopover(pickerId);
-}
-
-function parseIsoDate(str) {
-  if (!str) return null;
-  const s = String(str).trim();
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(y, m - 1, d);
-  }
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
-    const [m, d, y] = s.split('/').map(Number);
-    return new Date(y, m - 1, d);
-  }
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function formatIso(d) {
-  if (!d) return '';
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function formatDisplayDate(d) {
-  if (!d) return '—';
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const y = d.getFullYear();
-  return `${m}/${day}/${y}`;
-}
-
-function getRelativeDateLabel(d) {
-  if (!d) return '';
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'TODAY';
-  if (diffDays === -1) return 'YESTERDAY';
-  if (diffDays === 1) return 'TOMORROW';
-  if (diffDays < -1 && diffDays >= -7) return `${Math.abs(diffDays)}D AGO`;
-  return '';
-}
-
-function syncDatePickerValue(pickerId, fireChange = true) {
-  const state = activeDatePickers[pickerId];
-  if (!state) return;
-  const hiddenInput = document.getElementById(state.inputId);
-  const displayEl = document.getElementById(`${state.inputId}-display`);
-  const relativeEl = document.getElementById(`${state.inputId}-relative`);
-  const iso = formatIso(state.selectedDate);
-
-  if (hiddenInput) {
-    hiddenInput.value = iso;
-    if (fireChange) {
-      hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-      if (typeof state.onChange === 'function') state.onChange(iso);
-    }
-  }
-
-  if (displayEl) {
-    displayEl.textContent = formatDisplayDate(state.selectedDate);
-  }
-
-  if (relativeEl) {
-    const rel = getRelativeDateLabel(state.selectedDate);
-    if (rel) {
-      relativeEl.textContent = rel;
-      relativeEl.style.display = 'inline-block';
-    } else {
-      relativeEl.style.display = 'none';
-    }
-  }
-}
-
-function toggleDatePicker(pickerId, event) {
-  if (event) event.stopPropagation();
-  const pickerEl = document.getElementById(pickerId);
-  if (!pickerEl) return;
-  const isOpen = pickerEl.classList.contains('is-open');
-  closeAllDatePickers();
-  if (!isOpen) {
-    const state = activeDatePickers[pickerId];
-    if (state && state.selectedDate) {
-      state.viewYear = state.selectedDate.getFullYear();
-      state.viewMonth = state.selectedDate.getMonth();
-    }
-    renderDatePickerPopover(pickerId);
-    pickerEl.classList.add('is-open');
-  }
-}
-
-function closeAllDatePickers() {
-  document.querySelectorAll('.custom-datepicker.is-open').forEach(el => {
-    el.classList.remove('is-open');
-  });
-}
-
-function dpNavMonth(pickerId, delta, event) {
-  if (event) event.stopPropagation();
-  const state = activeDatePickers[pickerId];
-  if (!state) return;
-  state.viewMonth += delta;
-  if (state.viewMonth < 0) {
-    state.viewMonth = 11;
-    state.viewYear--;
-  } else if (state.viewMonth > 11) {
-    state.viewMonth = 0;
-    state.viewYear++;
-  }
-  renderDatePickerPopover(pickerId);
-}
-
-function dpSelectDay(pickerId, year, month, day, event) {
-  if (event) event.stopPropagation();
-  const state = activeDatePickers[pickerId];
-  if (!state) return;
-  state.selectedDate = new Date(year, month, day);
-  state.viewYear = year;
-  state.viewMonth = month;
-  syncDatePickerValue(pickerId, true);
-  renderDatePickerPopover(pickerId);
-  closeAllDatePickers();
-}
-
-function dpSetPreset(pickerId, offsetDays, event) {
-  if (event) event.stopPropagation();
-  const state = activeDatePickers[pickerId];
-  if (!state) return;
-  const target = new Date();
-  target.setDate(target.getDate() + offsetDays);
-  state.selectedDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  state.viewYear = target.getFullYear();
-  state.viewMonth = target.getMonth();
-  syncDatePickerValue(pickerId, true);
-  renderDatePickerPopover(pickerId);
-  closeAllDatePickers();
-}
-
-function renderDatePickerPopover(pickerId) {
-  const state = activeDatePickers[pickerId];
-  if (!state) return;
-  const popover = document.getElementById(`${state.pickerId}-popover`) || document.querySelector(`#${state.pickerId} .datepicker-popover`);
-  if (!popover) return;
-
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const sel = state.selectedDate;
-
-  const firstDayOfWeek = new Date(state.viewYear, state.viewMonth, 1).getDay();
-  const daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
-  const daysInPrevMonth = new Date(state.viewYear, state.viewMonth, 0).getDate();
-
-  const isToday = sel && sel.toDateString() === today.toDateString();
-  const yest = new Date(today);
-  yest.setDate(yest.getDate() - 1);
-  const isYesterday = sel && sel.toDateString() === yest.toDateString();
-  const weekAgo = new Date(today);
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const isWeekAgo = sel && sel.toDateString() === weekAgo.toDateString();
-
-  let daysHtml = '';
-
-  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    const d = daysInPrevMonth - i;
-    const prevMonth = state.viewMonth === 0 ? 11 : state.viewMonth - 1;
-    const prevYear = state.viewMonth === 0 ? state.viewYear - 1 : state.viewYear;
-    daysHtml += `<button type="button" class="dp-day-cell dp-day-outmonth" onclick="dpSelectDay('${pickerId}', ${prevYear}, ${prevMonth}, ${d}, event)">${d}</button>`;
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const checkDate = new Date(state.viewYear, state.viewMonth, d);
-    const isSel = sel && checkDate.toDateString() === sel.toDateString();
-    const isTod = checkDate.toDateString() === today.toDateString();
-    let cls = 'dp-day-cell';
-    if (isSel) cls += ' dp-day-selected';
-    if (isTod) cls += ' dp-day-today';
-    daysHtml += `<button type="button" class="${cls}" onclick="dpSelectDay('${pickerId}', ${state.viewYear}, ${state.viewMonth}, ${d}, event)">${d}</button>`;
-  }
-
-  const totalCells = firstDayOfWeek + daysInMonth;
-  const remaining = (totalCells % 7 === 0) ? 0 : 7 - (totalCells % 7);
-  for (let d = 1; d <= remaining; d++) {
-    const nextMonth = state.viewMonth === 11 ? 0 : state.viewMonth + 1;
-    const nextYear = state.viewMonth === 11 ? state.viewYear + 1 : state.viewYear;
-    daysHtml += `<button type="button" class="dp-day-cell dp-day-outmonth" onclick="dpSelectDay('${pickerId}', ${nextYear}, ${nextMonth}, ${d}, event)">${d}</button>`;
-  }
-
-  popover.innerHTML = `
-    <div class="dp-presets-row" onclick="event.stopPropagation()">
-      <button type="button" class="dp-preset-btn ${isToday ? 'is-active' : ''}" onclick="dpSetPreset('${pickerId}', 0, event)">Today</button>
-      <button type="button" class="dp-preset-btn ${isYesterday ? 'is-active' : ''}" onclick="dpSetPreset('${pickerId}', -1, event)">Yesterday</button>
-      <button type="button" class="dp-preset-btn ${isWeekAgo ? 'is-active' : ''}" onclick="dpSetPreset('${pickerId}', -7, event)">-7 Days</button>
-    </div>
-    <div class="dp-header" onclick="event.stopPropagation()">
-      <button type="button" class="dp-nav-btn" onclick="dpNavMonth('${pickerId}', -1, event)" title="Previous month">&#9664;</button>
-      <div class="dp-title-select-wrap">
-        <span class="dp-title-btn">${DP_MONTH_NAMES[state.viewMonth]} ${state.viewYear}</span>
-      </div>
-      <button type="button" class="dp-nav-btn" onclick="dpNavMonth('${pickerId}', 1, event)" title="Next month">&#9654;</button>
-    </div>
-    <div class="dp-weekdays" onclick="event.stopPropagation()">
-      ${DP_DAY_SHORT.map(w => `<span>${w}</span>`).join('')}
-    </div>
-    <div class="dp-days-grid" onclick="event.stopPropagation()">
-      ${daysHtml}
-    </div>
-  `;
-}
-
-// Global click outside listener for popovers
-document.addEventListener('click', e => {
-  if (!e.target.closest('.custom-datepicker')) {
-    closeAllDatePickers();
-  }
-});
-
 /* Initialization */
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -8214,10 +7333,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (txt) txt.textContent = 'Day';
     }
   } catch(e){}
-
-  initDatePicker('scan-date-in-picker', 'scan-date-in', '2026-09-18');
-  initDatePicker('cart-date-out-picker', 'cart-date-out', new Date().toISOString().slice(0, 10));
-  initDatePicker('edit-unit-datein-picker', 'edit-unit-datein', '');
 
   await refreshData();
   await loadConfig();
