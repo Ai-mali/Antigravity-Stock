@@ -213,7 +213,10 @@ desc, or no model, are skipped/blocked.
    - **Zero Bottom Cut-Off on Scroll Down**:
      - Adjusted `#stockout-right-sidebar` sticky anchor to `top: 122px` (docked cleanly below the frozen search toolbar with 9px breathing space).
      - Constrained sidebar to `max-height: calc(100vh - 150px)`, guaranteeing at least 28px of visible space between Card 2's bottom rounded border and the bottom of the viewport on any screen size.
-     - Added responsive fallback (`max-height: none !important; position: static !important;`) on screen widths <= 1024px.
+   - **Header & Card Title Refinements**:
+     - Renamed Card 1 title from `Dispatch Destination & Checkout` to `Dispatch & Checkout` with `white-space: nowrap` and `flex-wrap: nowrap`.
+     - Ensured customer status tag (`+ New Customer` / `Known Customer`) sits strictly on the same single line without wrapping down.
+     - Cleaned up Stock Out view header by removing the subtitle and duplicate top "Clear Staging Cart" button (preserving the dedicated "Clear Cart" button inside Card 2).
 18. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.

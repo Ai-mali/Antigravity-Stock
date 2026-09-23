@@ -2930,14 +2930,8 @@ body.theme-light .autocomplete-dropdown {
 
     <!-- 3. STOCK OUT & DISPATCH SCREEN -->
     <section id="view-stock-out" class="view-section">
-      <div class="view-header">
-        <div>
-          <div class="view-title">Stock Out &amp; Dispatch</div>
-          <div class="view-subtitle">Stage serials for shipment, assign recipient details, and record dispatch.</div>
-        </div>
-        <div>
-          <button class="btn-danger-ghost" onclick="clearDispatchCart()">Clear Staging Cart</button>
-        </div>
+      <div class="view-header" style="margin-bottom:10px;">
+        <div class="view-title">Stock Out &amp; Dispatch</div>
       </div>
 
       <!-- Search & Brand Filter Bar -->
@@ -2965,15 +2959,15 @@ body.theme-light .autocomplete-dropdown {
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
         <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:122px; max-height:calc(100vh - 150px); display:flex; flex-direction:column; gap:10px;">
           
-          <!-- Card 1: Dispatch Destination & Checkout (Own Closed Border, Frozen at Top) -->
+          <!-- Card 1: Dispatch & Checkout (Own Closed Border, Frozen at Top) -->
           <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
             <div class="card-header" style="padding:10px 14px 8px; border-bottom:1px solid var(--border);">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <div style="display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:nowrap; gap:6px;">
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; white-space:nowrap;">
                   <span style="font-size:12px;">📍</span>
-                  <div class="card-title" style="font-size:12px; letter-spacing:0.02em;">Dispatch Destination &amp; Checkout</div>
+                  <div class="card-title" style="font-size:12px; letter-spacing:0.02em; white-space:nowrap;">Dispatch &amp; Checkout</div>
                 </div>
-                <span id="customer-type-tag"></span>
+                <span id="customer-type-tag" style="flex-shrink:0; white-space:nowrap;"></span>
               </div>
             </div>
             
@@ -6416,9 +6410,9 @@ function checkCustomerInputStatus() {
   const known = getAllKnownCustomers();
   const found = known.find(c => c.name.toLowerCase() === val.toLowerCase());
   if (found) {
-    tag.innerHTML = `<span class="badge badge-neutral" title="Past order history found">Known Customer</span>`;
+    tag.innerHTML = `<span class="badge badge-neutral" style="white-space:nowrap; font-size:10px; padding:2px 7px;" title="Past order history found">Known Customer</span>`;
   } else {
-    tag.innerHTML = `<span class="badge badge-green" title="New customer destination">✦ New Customer</span>`;
+    tag.innerHTML = `<span class="badge badge-green" style="white-space:nowrap; font-size:10px; padding:2px 7px;" title="New customer destination">+ New Customer</span>`;
   }
 }
 
