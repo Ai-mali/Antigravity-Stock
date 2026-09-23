@@ -198,10 +198,10 @@ desc, or no model, are skipped/blocked.
      - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● CARRIER 8] [● DAIKIN 2]`).
    - **Brand Badges on Staged Cards**:
      - Each card in the staging cart displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
-16. [DONE] **Smooth 200ms Theme Transition & Pure Natural Scrolling**:
-   - **Smooth 200ms Day/Dark Mode Transition**:
-     - Configured a soft, elegant 200ms fade transition on main surfaces and cards (`body, .app-container, header, main, .card, .avail-unit-card, .so-serial-card, .search-filter-bar, .pill-filter-btn { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }`).
-     - By targeting high-level surfaces and cards rather than hundreds of nested micro-elements (icons, badges, buttons), the theme switch transitions smoothly over 200ms at 60fps with zero UI freezing or stuttering.
+16. [DONE] **Ultra-Fast 50ms Theme Transition & Pure Natural Scrolling**:
+   - **Ultra-Fast 50ms Day/Dark Mode Transition**:
+     - Configured a crisp 50ms (0.05s) micro-fade transition on main surfaces and cards (`body, .app-container, header, main, .card, .avail-unit-card, .so-serial-card, .search-filter-bar, .pill-filter-btn { transition: background-color 0.05s ease, border-color 0.05s ease, color 0.05s ease, box-shadow 0.05s ease; }`).
+     - Provides instant, snappy theme toggling within 3 frames (~50ms) without any rendering lag or dropped frames on low-power devices.
      - Snappy card hover transforms (`transform: translateY(-2px)`) remain fast and responsive.
    - **Pure Natural Scrolling (Lock Screen Removed)**:
      - Removed experimental `#screen-mode-btn` (Screen Fit vs Free Scroll) and removed all locked viewport / trapped inner scrollbar CSS.
