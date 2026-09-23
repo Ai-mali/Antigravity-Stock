@@ -188,18 +188,19 @@ desc, or no model, are skipped/blocked.
      - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
    - **Seamless Duplicate Jump Navigation**:
      - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
-15. [DONE] **Dispatch Staging Cart Top-Pinned Frozen Checkout & Anti-Cutoff Layout**:
-   - **Top-Pinned Frozen Checkout Controls**:
-     - Moved the entire checkout action controls section (Customer Name with autocomplete + recent customer chips, Date Out, and "Complete Checkout →" button) to the **TOP** of `#dispatch-staging-card`, directly beneath the header and brand breakdown pills.
-     - Section is pinned frozen (`flex-shrink: 0`, `background: var(--surface2)`, `border-bottom: 1px solid var(--border)`), guaranteeing that Customer Name, Date Out, and the Checkout button are always visible at eye-level on any screen size (even on 768p budget laptops or displays with 150% scaling).
-   - **Scrollable Staged Units List Below**:
-     - The staged serials list sits below the frozen action controls with `flex: 1 1 auto; overflow-y: auto; scrollbar-gutter: stable;`.
-     - Staging 10, 18, or 50+ units expands the list inside its own scroll container without pushing the checkout button offscreen or causing bottom cutoff.
-     - Added a dedicated "Staged Units List" header bar with an inline "Clear Cart" button for fast bulk clearing.
-   - **Top Brand Breakdown Row**:
-     - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● CARRIER 8] [● DAIKIN 2]`).
-   - **Brand Badges on Staged Cards**:
-     - Each card in the staging cart displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
+15. [DONE] **Dispatch Staging Cart Two Stacked Closed-Border Cards Architecture**:
+   - **Card 1: Dispatch Destination & Checkout (`#dispatch-checkout-card`)**:
+     - Dedicated card at the top of the right sidebar with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`).
+     - Contains its own header with `📍 Dispatch Destination & Checkout` title and `#customer-type-tag`.
+     - Body contains Customer Name input with autocomplete dropdown, quick-select recent customer chips, Date Out input, and the primary `Complete Checkout →` button.
+     - Pinned frozen at the top of the viewport (`flex-shrink: 0; position: relative; z-index: 20; overflow: visible`).
+   - **Card 2: Dispatch Staging Cart (`#dispatch-staging-card`)**:
+     - Sits directly below Card 1 with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`).
+     - Header displays `Dispatch Staging Cart` title, Batch ID (`#DISP-2026-0918`), count badge (`#cart-pill-count`), and the brand breakdown pills row (`#cart-brand-breakdown-row`).
+     - Body contains the staged units list header with "Clear Cart" button, and `#cart-items-container` with smooth internal scrolling (`overflow-y: auto; scrollbar-gutter: stable; min-height: 80px`).
+   - **Zero Cutoff & Small-Screen Stability**:
+     - Both cards sit inside `#stockout-right-sidebar` (`position: sticky; top: 76px; max-height: calc(100vh - 96px)`).
+     - Card 1 is guaranteed to be 100% visible at eye-level on every display resolution (including 768p and 150% scaling). Staging dozens of units only scrolls inside Card 2 without ever moving or hiding the destination and checkout actions.
 16. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.

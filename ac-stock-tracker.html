@@ -2899,60 +2899,73 @@ body.theme-light .autocomplete-dropdown {
           <div id="stockout-brands-container"></div>
         </div>
 
-        <!-- Right: Dispatch Staging Cart -->
-        <div class="card" id="dispatch-staging-card" style="position:sticky; top:76px; max-height:calc(100vh - 96px); display:flex; flex-direction:column; overflow:hidden; transition:all 0.25s ease;">
+        <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
+        <div id="stockout-right-sidebar" style="position:sticky; top:76px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 96px);">
           
-          <!-- 1. Header: Title, ID, Pill Count, Brand Breakdown -->
-          <div class="card-header" style="flex-direction:column; align-items:flex-start; gap:8px; flex-shrink:0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div>
-                <div class="card-title">Dispatch Staging Cart</div>
-                <div style="font-size:10.5px; color:var(--text-sub);">ID: #DISP-2026-0918</div>
-              </div>
-              <span class="badge badge-green" id="cart-pill-count">0 items</span>
-            </div>
-            <!-- Brand breakdown pills row -->
-            <div id="cart-brand-breakdown-row" style="display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:22px; align-items:center;"></div>
-          </div>
-
-          <!-- 2. Frozen Action Section: Customer, Date Out, Complete Checkout (Pinned at Top) -->
-          <div style="flex-shrink:0; background:var(--surface2); padding:12px 14px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <label class="form-label" style="margin-bottom:0; font-size:11px;">Customer / Client Name *</label>
+          <!-- Card 1: Dispatch Destination & Checkout (Own Closed Border, Frozen at Top) -->
+          <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
+            <div class="card-header" style="padding:10px 14px 8px; border-bottom:1px solid var(--border);">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:12px;">📍</span>
+                  <div class="card-title" style="font-size:12px; letter-spacing:0.02em;">Dispatch Destination &amp; Checkout</div>
+                </div>
                 <span id="customer-type-tag"></span>
               </div>
-              <div class="autocomplete-wrap">
-                <input type="text" class="form-input" id="cart-customer" value="Neath Air Conditioning Ltd" autocomplete="off" oninput="handleCustomerInput(this.value)" onfocus="handleCustomerFocus()" onkeydown="handleCustomerKeydown(event)" placeholder="Type or select customer...">
-                <div class="autocomplete-dropdown" id="cart-customer-dropdown"></div>
-              </div>
-              <!-- Quick Select Recent Customers -->
-              <div class="quick-chips-row" id="recent-customers-chips" style="margin-top:4px;"></div>
             </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-              <div style="flex:1;">
-                <label class="form-label" style="margin-bottom:3px; font-size:11px;">Date Out</label>
-                <input type="date" class="form-input" id="cart-date-out" value="2026-09-18" style="padding:5px 8px; font-size:11.5px;">
+            
+            <div class="card-body" style="padding:11px 14px; display:flex; flex-direction:column; gap:9px; overflow:visible;">
+              <div>
+                <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Customer / Client Name *</label>
+                <div class="autocomplete-wrap" style="position:relative;">
+                  <input type="text" class="form-input" id="cart-customer" value="Neath Air Conditioning Ltd" autocomplete="off" oninput="handleCustomerInput(this.value)" onfocus="handleCustomerFocus()" onkeydown="handleCustomerKeydown(event)" placeholder="Type or select customer...">
+                  <div class="autocomplete-dropdown" id="cart-customer-dropdown"></div>
+                </div>
+                <!-- Quick Select Recent Customers -->
+                <div class="quick-chips-row" id="recent-customers-chips" style="margin-top:4px;"></div>
               </div>
-              <div style="flex:1.2; display:flex; flex-direction:column; justify-content:flex-end;">
-                <label class="form-label" style="margin-bottom:3px; font-size:11px; visibility:hidden;">Checkout</label>
-                <button class="btn btn-primary" style="justify-content:center; padding:6px 10px; font-size:12px; font-weight:700; width:100%; white-space:nowrap;" onclick="processCartCheckout()">
-                  Complete Checkout &rarr;
-                </button>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <div style="flex:1;">
+                  <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Date Out</label>
+                  <input type="date" class="form-input" id="cart-date-out" value="2026-09-18" style="padding:5px 8px; font-size:11.5px;">
+                </div>
+                <div style="flex:1.2; display:flex; flex-direction:column; justify-content:flex-end;">
+                  <label class="form-label" style="margin-bottom:3px; font-size:11px; visibility:hidden;">Checkout</label>
+                  <button class="btn btn-primary" style="justify-content:center; padding:6px 10px; font-size:12px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
+                    Complete Checkout &rarr;
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 3. Staged Serials List (Scrollable, below the action controls) -->
-          <div class="card-body" style="display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; overflow:hidden; padding:12px 14px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-              <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-sub);">
-                Staged Units List
+          <!-- Card 2: Dispatch Staging Cart (Own Closed Border, Below Card 1) -->
+          <div class="card" id="dispatch-staging-card" style="flex:1 1 auto; min-height:180px; position:relative; z-index:10; display:flex; flex-direction:column; overflow:hidden;">
+            
+            <!-- 1. Header: Title, ID, Pill Count, Brand Breakdown -->
+            <div class="card-header" style="flex-direction:column; align-items:flex-start; gap:8px; flex-shrink:0; padding:11px 14px 9px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div>
+                  <div class="card-title">Dispatch Staging Cart</div>
+                  <div style="font-size:10.5px; color:var(--text-sub);">ID: #DISP-2026-0918</div>
+                </div>
+                <span class="badge badge-green" id="cart-pill-count">0 items</span>
               </div>
-              <button class="btn-danger-ghost" style="padding:1px 6px; font-size:10.5px; border-radius:4px;" onclick="clearDispatchCart()" title="Clear all staged items">Clear Cart</button>
+              <!-- Brand breakdown pills row -->
+              <div id="cart-brand-breakdown-row" style="display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:22px; align-items:center;"></div>
             </div>
-            <div id="cart-items-container" style="flex:1 1 auto; min-height:80px; overflow-y:auto; scrollbar-gutter:stable; padding-right:2px;"></div>
+
+            <!-- 2. Staged Serials List (Scrollable) -->
+            <div class="card-body" style="display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; overflow:hidden; padding:11px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-sub);">
+                  Staged Units List
+                </div>
+                <button class="btn-danger-ghost" style="padding:1px 6px; font-size:10.5px; border-radius:4px;" onclick="clearDispatchCart()" title="Clear all staged items">Clear Cart</button>
+              </div>
+              <div id="cart-items-container" style="flex:1 1 auto; min-height:80px; overflow-y:auto; scrollbar-gutter:stable; padding-right:2px;"></div>
+            </div>
           </div>
         </div>
       </div>
