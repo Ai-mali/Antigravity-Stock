@@ -188,16 +188,16 @@ desc, or no model, are skipped/blocked.
      - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
    - **Seamless Duplicate Jump Navigation**:
      - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
-15. [DONE] **Sticky Frozen Cards Architecture & Free Scroll Default**:
-   - **Default Display Mode (`📜 Free Scroll`)**:
-     - Set `📜 Free Scroll` as the active default on page load.
-     - Allows whole-page scrolling without trapped inner scrollbars, while the top header sticks at `top: 0` and the right sidebar sticks permanently frozen at `top: 76px` as desired by the owner.
-   - **Screen Mode Switch (`📌 Screen Fit` vs `📜 Free Scroll`)**:
-     - Switch button in top header next to Day/Night mode lets operators switch between Free Scroll and Screen Fit (locked app shell), with persistent state in `localStorage`.
-   - **Two Stacked Closed-Border Cards in Stock Out**:
-     - **Card 1: Dispatch Destination & Checkout (`#dispatch-checkout-card`)**: Dedicated card at the top with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`), customer autocomplete, date out, and `Complete Checkout →` button.
-     - **Card 2: Dispatch Staging Cart (`#dispatch-staging-card`)**: Sits directly below Card 1 with its own closed border, batch ID, brand breakdown pills, and scrollable staged serials list.
-   - **Zero Cutoff & Small-Screen Stability**: Card 1 is guaranteed to be 100% visible at eye-level on every display resolution without cutoff.
+15. [DONE] **Dispatch Staging Split Cards (Dedicated Checkout Card + Staging Cart)**:
+   - **Split into 2 Separate Cards on Right Sidebar**:
+     - **Card 1 (Dedicated Customer & Checkout Card)**: Placed above the staging cart with its own 4-side closed border (`border: 1px solid var(--border); border-radius: 10px; background: var(--surface)`). Houses Customer Name (autocomplete + recent customer chips), Date Out, and "Complete Checkout →" button. Pinned frozen (`flex-shrink: 0`) at the top of the sidebar.
+     - **Card 2 (Dispatch Staging Cart Card)**: Sits directly below Card 1 with its own closed border, header (Title, ID, Pill Count, Brand Breakdown Pills), and scrollable staged units list (`#cart-items-container` with `flex: 1 1 auto; overflow-y: auto`).
+   - **Zero Bottom Cut-Off on Any Display**:
+     - Both cards are held inside a sticky column (`position: sticky; top: 76px; max-height: calc(100vh - 96px);`). Card 1 never scrolls out of view and never gets pushed offscreen on small laptops or high display scaling.
+   - **Top Brand Breakdown Row**:
+     - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● CARRIER 8] [● DAIKIN 2]`).
+   - **Brand Badges on Staged Cards**:
+     - Each card in the staging cart displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
 16. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
