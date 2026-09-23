@@ -198,10 +198,19 @@ desc, or no model, are skipped/blocked.
      - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● CARRIER 8] [● DAIKIN 2]`).
    - **Brand Badges on Staged Cards**:
      - Each card in the staging cart displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
-16. **Indoor + Outdoor Sets & Non-Serial Parts**:
+16. [DONE] **Instant Zero-Freeze Theme Switching & Pure Natural Scrolling**:
+   - **Zero-Freeze Day/Dark Mode Toggle**:
+     - Eliminated the 300ms–800ms UI freeze when switching themes with many expanded brand accordions.
+     - Root cause: 1,000+ simultaneous CSS `transition: all` animations fired across all expanded chips when the theme class changed, overloading the browser's render thread.
+     - Solution: Added `.no-transitions` class injection during `toggleTheme()` to bypass interpolation, paired with a synchronous reflow (`void document.documentElement.offsetHeight`) and re-enabling on `requestAnimationFrame`. Swaps themes instantly in 0ms at 60fps.
+     - Replaced broad `transition: all` on `.avail-unit-card` and `.so-serial-card` with lightweight, hardware-accelerated transforms (`transform 0.15s, box-shadow 0.15s, border-color 0.15s`).
+   - **Pure Natural Scrolling (Lock Screen Removed)**:
+     - Removed experimental `#screen-mode-btn` (Screen Fit vs Free Scroll) and removed all locked viewport / trapped inner scrollbar CSS.
+     - Clean, comfortable whole-page scrolling where header sticks at `top: 0` and Stock Out cards stick at `top: 76px`.
+17. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-17. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+18. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have

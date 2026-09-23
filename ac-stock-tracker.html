@@ -227,204 +227,25 @@ body.theme-light .theme-toggle-thumb {
   letter-spacing: 0.02em;
 }
 
-/* Screen Mode (Screen Fit vs Free Scroll) Button */
-.screen-mode-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  padding: 4px 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  transition: all .2s ease;
-  font-family: inherit;
-  user-select: none;
-}
-.screen-mode-btn:hover {
-  border-color: var(--border-light);
-  color: var(--text);
-  transform: translateY(-1px);
-}
-.screen-mode-btn.active {
-  border-color: rgba(38, 208, 124, 0.4);
-  color: var(--green-bright);
-  background: rgba(38, 208, 124, 0.08);
-}
-body.theme-light .screen-mode-btn.active {
-  border-color: rgba(16, 185, 129, 0.45);
-  color: #059669;
-  background: rgba(16, 185, 129, 0.1);
+/* Disable transitions temporarily during theme switch for instantaneous 60fps toggling */
+.no-transitions, .no-transitions *, .no-transitions *::before, .no-transitions *::after {
+  transition: none !important;
 }
 
-/* ========================================================
-   SCREEN DISPLAY MODES: Screen Fit (Default) vs Free Scroll
-   ======================================================== */
-/* 1. Screen Fit Mode (App locked to viewport, header & cards frozen) */
-html.screen-fit-active, body.screen-fit-mode {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-body.screen-fit-mode {
-  height: 100vh;
-  box-sizing: border-box;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  padding: 12px 16px;
-}
-
-body.screen-fit-mode .app-container {
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-body.screen-fit-mode header {
-  position: relative;
-  flex-shrink: 0;
-}
-
-body.screen-fit-mode main {
-  flex: 1;
-  min-height: 0;
-  padding: 14px 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body.screen-fit-mode #view-stock-out.active {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.screen-fit-mode .stockout-layout {
-  display: flex;
-  gap: 16px;
-  align-items: stretch;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.screen-fit-mode .stockout-left-col {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-body.screen-fit-mode #stockout-brands-container {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  padding-right: 4px;
-}
-
-body.screen-fit-mode #stockout-right-sidebar {
-  width: 340px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* 2. Free Scroll Mode (Whole page scrolls, cards stick at top on small screens) */
-body.free-scroll-mode {
-  min-height: 100vh;
-  height: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 16px;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-body.free-scroll-mode .app-container {
-  height: auto;
-  min-height: calc(100vh - 32px);
-  max-height: none;
-  overflow: visible;
-}
-
-body.free-scroll-mode header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-}
-
-body.free-scroll-mode main {
-  flex: 1;
-  min-height: auto;
-  overflow: visible;
-  display: block;
-  padding: 16px 20px;
-}
-
-body.free-scroll-mode #view-stock-out.active {
-  display: block;
-  height: auto;
-  overflow: visible;
-}
-
-body.free-scroll-mode .stockout-layout {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 16px;
-  align-items: flex-start;
-  overflow: visible;
-  height: auto;
-}
-
-body.free-scroll-mode .stockout-left-col {
-  display: block;
-  height: auto;
-  overflow: visible;
-}
-
-body.free-scroll-mode #stockout-brands-container {
-  overflow: visible;
-  height: auto;
-  max-height: none;
-}
-
-body.free-scroll-mode #stockout-right-sidebar {
-  position: sticky;
-  top: 76px;
-  width: 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: calc(100vh - 96px);
-  overflow: visible;
-}
-
-/* Base Body Styles */
+/* Base Body Styles (Natural Scrolling Layout with Sticky Header & Sidebar) */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-page);
   color: var(--text);
   font-size: 12.5px;
   line-height: 1.4;
-  transition: background-color .2s;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .mono { font-family: 'JetBrains Mono', monospace; }
@@ -439,15 +260,13 @@ body {
 .app-container {
   width: 100%;
   max-width: 1360px;
-  height: 100%;
-  max-height: 100%;
+  min-height: calc(100vh - 32px);
   background: var(--bg-app);
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -462,7 +281,8 @@ header {
   justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 40;
 }
 
@@ -621,11 +441,7 @@ header {
 /* Main Views */
 main {
   flex: 1;
-  min-height: 0;
-  padding: 14px 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  padding: 16px 20px;
   box-sizing: border-box;
 }
 
@@ -639,11 +455,7 @@ main {
 }
 
 #view-stock-out.active {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  display: block;
 }
 
 @keyframes fadeIn {
@@ -2044,7 +1856,7 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   padding: 12px 14px;
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   user-select: none;
 }
 
@@ -2146,7 +1958,7 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   font-weight: 700;
   color: var(--text);
   letter-spacing: 0.02em;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
 }
 
 .avail-unit-card:hover .serial-text {
@@ -2174,7 +1986,7 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   font-family: inherit;
   opacity: 0.7;
 }
@@ -2210,7 +2022,7 @@ body.theme-light .unit-action-btn {
   height: 7px;
   border-radius: 50%;
   background: var(--text-sub);
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .avail-unit-card:hover .avail-card-dot {
@@ -2226,7 +2038,6 @@ body.theme-light .unit-action-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: color 0.2s;
 }
 
 .avail-unit-card:hover .meta-text {
@@ -2237,7 +2048,6 @@ body.theme-light .unit-action-btn {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-sub);
-  transition: color 0.2s;
 }
 
 .avail-unit-card:hover .avail-card-tag {
@@ -2247,28 +2057,18 @@ body.theme-light .unit-action-btn {
 
 /* Stock Out Layout */
 .stockout-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 340px;
   gap: 16px;
-  align-items: stretch;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  align-items: flex-start;
 }
 
 .stockout-left-col {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  display: block;
 }
 
 #stockout-brands-container {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  padding-right: 4px;
+  display: block;
 }
 
 .stockout-chips-grid {
@@ -2288,7 +2088,7 @@ body.theme-light .unit-action-btn {
   border-radius: 8px;
   padding: 10px 12px;
   cursor: pointer;
-  transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   user-select: none;
   display: flex;
   flex-direction: column;
@@ -2873,11 +2673,7 @@ body.theme-light .autocomplete-dropdown {
         <span class="theme-icon moon-icon">&#9790;</span>
         <span class="theme-mode-label" id="theme-mode-text">Dark</span>
       </button>
-      <!-- Screen Fit / Free Scroll Mode Switch -->
-      <button class="screen-mode-btn" id="screen-mode-btn" onclick="toggleScreenMode()" title="Free Scroll Mode is ON (Page scrolls, cards stick). Click to switch to Screen Fit.">
-        <span id="screen-mode-icon" style="font-size:11.5px;">📜</span>
-        <span id="screen-mode-text">Free Scroll</span>
-      </button>
+
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
         &#9201;
@@ -7201,52 +6997,26 @@ document.getElementById('photo-viewer-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('photo-viewer-modal')) closePhotoViewerModal();
 });
 
-/* Day / Dark Theme toggle with state persistence */
+/* Day / Dark Theme toggle with state persistence and zero-freeze instant switching */
 function toggleTheme() {
+  // 1. Temporarily disable transitions across all elements so the theme applies instantly with 0ms lag
+  document.documentElement.classList.add('no-transitions');
+
   document.body.classList.toggle('theme-light');
   const isLight = document.body.classList.contains('theme-light');
   const txt = document.getElementById('theme-mode-text');
   if (txt) txt.textContent = isLight ? 'Day' : 'Dark';
   try { localStorage.setItem('ac_stock_theme', isLight ? 'light' : 'dark'); } catch(e){}
+
+  // 2. Force style recalculation so color changes apply immediately
+  void document.documentElement.offsetHeight;
+
+  // 3. Re-enable transitions on the next animation frame for smooth hover effects
+  requestAnimationFrame(() => {
+    document.documentElement.classList.remove('no-transitions');
+  });
+
   showToast(isLight ? 'Day (Light) Mode activated' : 'Night (Dark) Mode activated', isLight ? '&#9728;' : '&#9790;');
-}
-
-/* Screen Mode (Screen Fit vs Free Scroll) toggle with state persistence */
-function toggleScreenMode() {
-  const isCurrentScreenFit = document.body.classList.contains('screen-fit-mode');
-  const newMode = !isCurrentScreenFit;
-  applyScreenMode(newMode);
-  showToast(newMode ? '📌 Screen Fit: Locked to screen' : '📜 Free Scroll: Whole page scrollable');
-}
-
-function applyScreenMode(isScreenFit) {
-  const btn = document.getElementById('screen-mode-btn');
-  const icon = document.getElementById('screen-mode-icon');
-  const text = document.getElementById('screen-mode-text');
-  
-  if (isScreenFit) {
-    document.documentElement.classList.add('screen-fit-active');
-    document.body.classList.add('screen-fit-mode');
-    document.body.classList.remove('free-scroll-mode');
-    try { localStorage.setItem('ac_stock_screen_mode', 'screen-fit'); } catch(e){}
-    if (btn) {
-      btn.className = 'screen-mode-btn active';
-      btn.title = 'Screen Fit Mode is ON (App locked to viewport). Click to switch to Free Scroll.';
-    }
-    if (icon) icon.textContent = '📌';
-    if (text) text.textContent = 'Screen Fit';
-  } else {
-    document.documentElement.classList.remove('screen-fit-active');
-    document.body.classList.remove('screen-fit-mode');
-    document.body.classList.add('free-scroll-mode');
-    try { localStorage.setItem('ac_stock_screen_mode', 'free-scroll'); } catch(e){}
-    if (btn) {
-      btn.className = 'screen-mode-btn';
-      btn.title = 'Free Scroll Mode is ON (Whole page scrolls). Click to switch to Screen Fit.';
-    }
-    if (icon) icon.textContent = '📜';
-    if (text) text.textContent = 'Free Scroll';
-  }
 }
 
 /* Clean download feature */
@@ -7270,15 +7040,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (txt) txt.textContent = 'Day';
     }
   } catch(e){}
-
-  try {
-    const savedScreen = localStorage.getItem('ac_stock_screen_mode');
-    // Default to Free Scroll mode (sticky frozen header & cards) unless user explicitly selected screen-fit
-    const isScreenFit = savedScreen === 'screen-fit';
-    applyScreenMode(isScreenFit);
-  } catch(e) {
-    applyScreenMode(false);
-  }
 
   await refreshData();
   await loadConfig();
