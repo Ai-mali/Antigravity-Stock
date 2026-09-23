@@ -1814,7 +1814,7 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   user-select: none;
   transition: background .12s;
   position: sticky;
-  top: 113px;
+  top: var(--avail-brand-sticky-top, 149px);
   z-index: 25;
   border-top-left-radius: 9px;
   border-top-right-radius: 9px;
@@ -1866,13 +1866,21 @@ body.theme-light .brand-accordion-header {
   cursor: pointer;
   user-select: none;
   position: sticky;
-  top: 156px;
+  top: var(--avail-model-sticky-top, 192px);
   z-index: 20;
   border-top-left-radius: 7px;
   border-top-right-radius: 7px;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   transition: background .12s ease;
+}
+
+#view-stock-out .brand-accordion-header {
+  top: var(--stockout-brand-sticky-top, 149px);
+}
+
+#view-stock-out .model-accordion-header {
+  top: var(--stockout-model-sticky-top, 192px);
 }
 
 .model-accordion-header:hover {
@@ -4241,6 +4249,33 @@ function renderBrandPills() {
 }
 
 /* =========================================================
+   STICKY HEADER OFFSETS AUTO-CALCULATOR
+   ========================================================= */
+function updateStickyHeaderOffsets() {
+  requestAnimationFrame(() => {
+    const navHeader = document.querySelector('header');
+    const navHeight = navHeader ? navHeader.offsetHeight : 56;
+
+    const availSearchBar = document.querySelector('#view-available .search-filter-bar');
+    if (availSearchBar) {
+      const barHeight = availSearchBar.offsetHeight;
+      const brandTop = navHeight + barHeight;
+      document.documentElement.style.setProperty('--avail-brand-sticky-top', `${brandTop}px`);
+      document.documentElement.style.setProperty('--avail-model-sticky-top', `${brandTop + 43}px`);
+    }
+
+    const soSearchBar = document.querySelector('#view-stock-out .search-filter-bar');
+    if (soSearchBar) {
+      const barHeight = soSearchBar.offsetHeight;
+      const brandTop = navHeight + barHeight;
+      document.documentElement.style.setProperty('--stockout-brand-sticky-top', `${brandTop}px`);
+      document.documentElement.style.setProperty('--stockout-model-sticky-top', `${brandTop + 43}px`);
+    }
+  });
+}
+window.addEventListener('resize', updateStickyHeaderOffsets);
+
+/* =========================================================
    TAB SWITCHING
    ========================================================= */
 function switchTab(tab) {
@@ -4259,6 +4294,7 @@ function switchTab(tab) {
   if (tab === 'return') renderReturnScreen();
 
   updateGlobalBadges();
+  updateStickyHeaderOffsets();
 }
 
 /* =========================================================
@@ -6082,6 +6118,7 @@ function renderAvailable(searchTerm) {
     `;
     container.appendChild(emptyNotice);
   }
+  updateStickyHeaderOffsets();
 }
 
 function toggleBrandAcc(brand) {
@@ -6290,6 +6327,7 @@ function renderStockOut(searchTerm) {
   });
 
   renderCartSidebar();
+  updateStickyHeaderOffsets();
 }
 
 function toggleSOBrandAcc(brand) {
