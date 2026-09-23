@@ -3225,7 +3225,7 @@ body.theme-light .autocomplete-dropdown {
 
 <!-- 6. MODEL AND API CONFIGURATION MODAL -->
 <div class="modal-overlay" id="config-modal">
-  <div class="modal-dialog">
+  <div class="modal-dialog" style="max-width:640px;">
     <div class="modal-header">
       <div>
         <div class="modal-title">Model &amp; API Configuration</div>
@@ -3265,9 +3265,16 @@ body.theme-light .autocomplete-dropdown {
         <span style="font-size:11px; color:var(--text-sub);" id="cfg-keys-count-label">2 keys registered</span>
       </div>
       <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:16px;">
-        <table class="data-table" style="font-size:11.5px;">
+        <table class="data-table" style="font-size:11.5px; width:100%;">
           <thead>
-            <tr><th style="width:26px;"></th><th>PROVIDER</th><th>KEY SIGNATURE</th><th>STATUS</th><th>REMARK</th><th style="text-align:right;">ACTIONS</th></tr>
+            <tr>
+              <th style="width:26px; padding-right:2px;"></th>
+              <th style="white-space:nowrap;">PROVIDER</th>
+              <th style="white-space:nowrap;">KEY SIGNATURE</th>
+              <th style="white-space:nowrap;">STATUS</th>
+              <th style="white-space:nowrap;">REMARK</th>
+              <th style="text-align:center; width:36px; white-space:nowrap; padding:8px 4px;">ACTIONS</th>
+            </tr>
           </thead>
           <tbody id="cfg-keys-tbody"></tbody>
         </table>
@@ -6388,15 +6395,15 @@ function renderProviderKeys(prov) {
     tr.dataset.idx = idx;
     tr.draggable = true;
     tr.innerHTML = `
-      <td class="drag-handle" title="Drag to reorder — top key is used first">
+      <td class="drag-handle" title="Drag to reorder — top key is used first" style="width:26px; text-align:center; padding-right:2px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
       </td>
-      <td><span class="badge badge-green" style="font-size:10px;">${provLabel(prov)}</span></td>
-      <td class="mono" style="color:var(--text-muted);">${k.masked}</td>
-      <td><span style="color:var(--green-bright); font-weight:700; font-size:11px;">${idx === 0 ? 'PRIMARY' : 'FAILOVER'}</span></td>
-      <td style="color:var(--text-muted);">${k.remark || '\u2014'}</td>
-      <td style="text-align:right;">
-        <button style="background:none; border:none; color:#f87171; cursor:pointer; font-size:13px;" onclick="removeKey('${prov}', ${idx})" title="Remove key">&#128465;</button>
+      <td style="white-space:nowrap;"><span class="badge badge-green" style="font-size:10px; white-space:nowrap;">${provLabel(prov)}</span></td>
+      <td class="mono" style="color:var(--text-muted); white-space:nowrap; font-size:11px;">${k.masked}</td>
+      <td style="white-space:nowrap;"><span style="color:var(--green-bright); font-weight:700; font-size:10.5px;">${idx === 0 ? 'PRIMARY' : 'FAILOVER'}</span></td>
+      <td style="color:var(--text-muted); white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis;" title="${k.remark || ''}">${k.remark || '\u2014'}</td>
+      <td style="text-align:center; width:36px; padding:6px 4px; white-space:nowrap;">
+        <button style="background:none; border:none; color:#f87171; cursor:pointer; font-size:14px; padding:2px 4px; line-height:1; display:inline-flex; align-items:center; justify-content:center;" onclick="removeKey('${prov}', ${idx})" title="Remove key">&#128465;</button>
       </td>
     `;
     tbody.appendChild(tr);

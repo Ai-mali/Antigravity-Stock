@@ -27,7 +27,7 @@ PROVIDERS = {
         "url": None,  # uses the google-genai SDK
     },
     "alibaba": {
-        "label": "Alibaba (Qwen-VL)",
+        "label": "Alibaba Qwen-VL",
         "models": ["qwen-vl-max", "qwen-vl-plus"],
         "default": "qwen-vl-max",
         "url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/"
