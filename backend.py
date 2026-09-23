@@ -424,12 +424,36 @@ def remove_key(provider: str, index: int):
     return {"ok": True, "provider": _provider_payload(provider)}
 
 
+def _launch_window(desktop_mode: bool = False):
+    url = "http://localhost:8000"
+    if desktop_mode:
+        import subprocess
+        import shutil
+        candidates = [
+            shutil.which("chrome"),
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            shutil.which("msedge"),
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        ]
+        for c in candidates:
+            if c and Path(c).exists():
+                try:
+                    subprocess.Popen([str(c), f"--app={url}", "--window-size=1440,900"])
+                    return
+                except Exception:
+                    pass
+    webbrowser.open(url)
+
+
 # ------------------------------------------------------------------ run
 if __name__ == "__main__":
     import multiprocessing
+    import sys
     multiprocessing.freeze_support()
     import uvicorn
 
-    threading.Timer(1.0,
-                    lambda: webbrowser.open("http://localhost:8000")).start()
+    desktop = "--desktop" in sys.argv or "--app" in sys.argv
+    threading.Timer(1.0, lambda: _launch_window(desktop_mode=desktop)).start()
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
