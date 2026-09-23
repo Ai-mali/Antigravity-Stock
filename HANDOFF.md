@@ -206,10 +206,18 @@ desc, or no model, are skipped/blocked.
    - **Pure Natural Scrolling (Lock Screen Removed)**:
      - Removed experimental `#screen-mode-btn` (Screen Fit vs Free Scroll) and removed all locked viewport / trapped inner scrollbar CSS.
      - Clean, comfortable whole-page scrolling where header sticks at `top: 0` and Stock Out cards stick at `top: 76px`.
-17. **Indoor + Outdoor Sets & Non-Serial Parts**:
+17. [DONE] **Frozen Sticky Search Dialog & Anti-Cutoff Sidebar Geometry**:
+   - **Sticky Search Bar with Separated Border**:
+     - Made `.search-filter-bar` sticky at `top: 56px` with `z-index: 35`, full-bleed background (`background: var(--bg-app)`), separated bottom border (`border-bottom: 1px solid var(--border)`), and soft ambient elevation shadow (`box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18)` in dark, `0 2px 10px rgba(0,0,0,0.05)` in light).
+     - In both Available Stock and Stock Out, scrolling down keeps the search input and brand filter pills frozen directly below the header. The scrolling inventory passes underneath with zero bleed-through.
+   - **Zero Bottom Cut-Off on Scroll Down**:
+     - Adjusted `#stockout-right-sidebar` sticky anchor to `top: 122px` (docked cleanly below the frozen search toolbar with 9px breathing space).
+     - Constrained sidebar to `max-height: calc(100vh - 150px)`, guaranteeing at least 28px of visible space between Card 2's bottom rounded border and the bottom of the viewport on any screen size.
+     - Added responsive fallback (`max-height: none !important; position: static !important;`) on screen widths <= 1024px.
+18. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-18. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+19. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have

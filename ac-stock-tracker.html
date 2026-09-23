@@ -704,13 +704,24 @@ main {
   min-height: 84px;
 }
 
-/* Search and Filters Bar */
+/* Search and Filters Bar (Sticky with Separated Border) */
 .search-filter-bar {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin: 0 -20px 14px -20px;
+  padding: 10px 20px 12px 20px;
   flex-wrap: wrap;
+  position: sticky;
+  top: 56px;
+  z-index: 35;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+body.theme-light .search-filter-bar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .search-box-wrap {
@@ -2457,6 +2468,8 @@ body.theme-light .unit-action-btn {
   #stockout-right-sidebar {
     width: 100% !important;
     height: auto !important;
+    max-height: none !important;
+    position: static !important;
     overflow: visible !important;
   }
   .stock-in-layout, .return-screen-layout {
@@ -2950,7 +2963,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
-        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:76px; max-height:calc(100vh - 96px); display:flex; flex-direction:column; gap:10px;">
+        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:122px; max-height:calc(100vh - 150px); display:flex; flex-direction:column; gap:10px;">
           
           <!-- Card 1: Dispatch Destination & Checkout (Own Closed Border, Frozen at Top) -->
           <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
