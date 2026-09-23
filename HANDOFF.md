@@ -213,6 +213,10 @@ desc, or no model, are skipped/blocked.
    - **Zero Bottom Cut-Off on Scroll Down**:
      - Adjusted `#stockout-right-sidebar` sticky anchor to `top: 122px` (docked cleanly below the frozen search toolbar with 9px breathing space).
      - Constrained sidebar to `max-height: calc(100vh - 150px)`, guaranteeing at least 28px of visible space between Card 2's bottom rounded border and the bottom of the viewport on any screen size.
+   - **Sticky Brand Category Headers**:
+     - Made `.brand-accordion-header` sticky at `top: 113px` (`z-index: 25`) directly below the frozen search toolbar, with `overflow: visible` on `.brand-accordion`.
+     - When scrolling down through an expanded brand's models (e.g. Carrier), that brand's header stays locked in place under the search bar.
+     - When reaching the next brand (e.g. Daikin), the next brand's header pushes and takes over smoothly at the top without any scroll-jumping or layout jitter.
    - **Header & Card Title Refinements**:
      - Renamed Card 1 title from `Dispatch Destination & Checkout` to `Dispatch & Checkout` with `white-space: nowrap` and `flex-wrap: nowrap`.
      - Ensured customer status tag (`+ New Customer` / `Known Customer`) sits strictly on the same single line without wrapping down.

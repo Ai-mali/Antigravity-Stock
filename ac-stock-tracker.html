@@ -1792,11 +1792,13 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
 }
 
 /* Available Stock & Accordion Hierarchy */
+/* Available Stock & Accordion Hierarchy */
 .brand-accordion {
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 12px;
+  overflow: visible;
+  margin-bottom: 14px;
+  background: var(--surface);
 }
 
 .brand-accordion-header {
@@ -1808,6 +1810,23 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   cursor: pointer;
   user-select: none;
   transition: background .12s;
+  position: sticky;
+  top: 113px;
+  z-index: 25;
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+.brand-accordion.is-closed .brand-accordion-header {
+  border-radius: 9px;
+  border-bottom: none;
+  box-shadow: none;
+}
+
+body.theme-light .brand-accordion-header {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .brand-accordion-header:hover {
@@ -5506,7 +5525,7 @@ function renderAvailable(searchTerm) {
       : (bData.open !== false);
 
     const brandSection = document.createElement('div');
-    brandSection.className = 'brand-accordion';
+    brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleBrandAcc('${brandKey}')">
         <div class="brand-title-group">
@@ -5725,7 +5744,7 @@ function renderStockOut(searchTerm) {
       : (bData.open !== false);
 
     const brandSection = document.createElement('div');
-    brandSection.className = 'brand-accordion';
+    brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${brandKey}')">
         <div class="brand-title-group">
