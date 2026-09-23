@@ -2685,6 +2685,10 @@ body.theme-light .autocomplete-dropdown {
 .modal-tab-btn:hover:not(.active) {
   color: var(--text);
 }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body class="free-scroll-mode">
@@ -3244,11 +3248,15 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div>
           <label class="form-label">Model Selection</label>
-          <select class="form-select" id="cfg-model" onchange="updateRoutingPreview()">
-            <option>claude-3-7-sonnet</option>
-            <option>claude-3-5-sonnet</option>
-            <option>claude-3-haiku</option>
-          </select>
+          <div style="display:flex; gap:6px;">
+            <select class="form-select" id="cfg-model" onchange="updateRoutingPreview()" style="flex:1;">
+              <option>gemini-flash-latest</option>
+            </select>
+            <button type="button" class="btn btn-ghost" id="btn-fetch-models" onclick="fetchLiveModels()" title="Fetch live models from provider API" style="white-space:nowrap; display:inline-flex; align-items:center; gap:5px; padding:0 12px; font-size:11.5px; height:36px; flex-shrink:0;">
+              <span id="fetch-models-icon" style="font-size:13px; display:inline-block;">&#8635;</span>
+              <span id="fetch-models-text">Fetch</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -6250,26 +6258,102 @@ function closeConfigModal() {
   document.getElementById('config-modal').classList.remove('open');
 }
 
-async function updateModelOptions(prov, selectedModel = null) {
+async function updateModelOptions(prov, selectedModel = null, customKey = null) {
   const ms = document.getElementById('cfg-model');
-  let list = (DB.config && DB.config.providers[prov])
+  let fallbackList = (DB.config && DB.config.providers[prov])
     ? DB.config.providers[prov].models : ['default'];
+  let resData = null;
   try {
-    const res = await apiGet('/api/config/models?provider=' + encodeURIComponent(prov));
-    if (res.models && res.models.length) list = res.models;
+    let url = '/api/config/models?provider=' + encodeURIComponent(prov);
+    if (customKey) url += '&key=' + encodeURIComponent(customKey);
+    const res = await apiGet(url);
+    if (res && (res.models || res.recommended)) {
+      resData = res;
+    }
   } catch (e) { /* static list stays */ }
+
   const configured = DB.config && DB.config.providers[prov] && DB.config.providers[prov].model;
-  if (configured && !list.includes(configured)) list.unshift(configured);
-  ms.innerHTML = list.map(m => `<option value="${m}">${m}</option>`).join('');
-  if (selectedModel && list.includes(selectedModel)) {
-    ms.value = selectedModel;
+
+  if (resData && (resData.recommended || resData.other)) {
+    const rec = Array.isArray(resData.recommended) ? [...resData.recommended] : [];
+    const oth = Array.isArray(resData.other) ? [...resData.other] : [];
+    const all = [...rec, ...oth];
+    if (configured && !all.includes(configured)) {
+      oth.unshift(configured);
+      all.unshift(configured);
+    }
+
+    let html = '';
+    if (rec.length) {
+      html += `<optgroup label="⚡ Fast & Free / Recommended">` +
+        rec.map(m => `<option value="${m}">${m}</option>`).join('') +
+        `</optgroup>`;
+    }
+    if (oth.length) {
+      html += `<optgroup label="Other Available Models">` +
+        oth.map(m => `<option value="${m}">${m}</option>`).join('') +
+        `</optgroup>`;
+    }
+    ms.innerHTML = html;
+
+    const targetModel = selectedModel || configured;
+    if (targetModel && all.includes(targetModel)) {
+      ms.value = targetModel;
+    } else if (rec.length) {
+      ms.value = rec[0];
+    } else if (all.length) {
+      ms.value = all[0];
+    }
   } else {
-    ms.value = list[0];
+    let list = (resData && resData.models && resData.models.length) ? resData.models : fallbackList;
+    if (configured && !list.includes(configured)) list = [configured, ...list];
+    ms.innerHTML = list.map(m => `<option value="${m}">${m}</option>`).join('');
+    const targetModel = selectedModel || configured;
+    if (targetModel && list.includes(targetModel)) {
+      ms.value = targetModel;
+    } else {
+      ms.value = list[0] || 'default';
+    }
   }
+
   updateRoutingPreview();
   renderProviderKeys(prov);
   const keyInput = document.getElementById('cfg-new-key');
   if (keyInput) keyInput.placeholder = 'Enter ' + provLabel(prov) + ' API key';
+  return resData;
+}
+
+async function fetchLiveModels() {
+  const prov = document.getElementById('cfg-provider').value;
+  const btn = document.getElementById('btn-fetch-models');
+  const icon = document.getElementById('fetch-models-icon');
+  const text = document.getElementById('fetch-models-text');
+
+  if (btn) btn.disabled = true;
+  if (text) text.textContent = 'Fetching...';
+  if (icon) {
+    icon.style.display = 'inline-block';
+    icon.style.animation = 'spin 0.8s linear infinite';
+  }
+
+  try {
+    const currentModel = document.getElementById('cfg-model').value;
+    const res = await updateModelOptions(prov, currentModel);
+    if (res && res.models && res.models.length) {
+      const recCount = (res.recommended || []).length;
+      showToast(`Fetched ${res.models.length} models for ${provLabel(prov)} (${recCount} recommended)`);
+    } else if (res && res.error) {
+      showToast('Live fetch note: ' + res.error);
+    } else {
+      showToast('Models updated for ' + provLabel(prov));
+    }
+  } catch (err) {
+    showToast('Failed to fetch models: ' + (err.message || err));
+  } finally {
+    if (btn) btn.disabled = false;
+    if (text) text.textContent = 'Fetch';
+    if (icon) icon.style.animation = '';
+  }
 }
 
 function updateRoutingPreview() {

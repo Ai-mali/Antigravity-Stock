@@ -164,52 +164,124 @@ def mask_key(key: str) -> str:
     return key[:6] + "..." + key[-4:] if len(key) > 10 else key
 
 
-def list_models(provider: str) -> list[str]:
-    """Fetch the live model list from the provider API with the first saved
-    key, so new models appear automatically. Falls back to the static
-    PROVIDERS list when no key is saved or the request fails."""
+def list_models_detailed(provider: str, key: str = None) -> dict:
+    """Fetch the live model list from the provider API with smart fast & free filtering.
+    Returns dict: {"ok": bool, "models": list[str], "recommended": list[str], "other": list[str], "error": str|None}
+    """
     static = PROVIDERS.get(provider, {}).get("models", [])
-    keys = load_providers().get(provider, {}).get("keys", [])
-    if not keys:
-        return static
-    key = keys[0]["key"]
+    if not key:
+        keys = load_providers().get(provider, {}).get("keys", [])
+        if not keys:
+            return {
+                "ok": False,
+                "models": static,
+                "recommended": static,
+                "other": [],
+                "error": f"No API key registered for {PROVIDERS.get(provider, {}).get('label', provider)}. Please register a key first."
+            }
+        key = keys[0]["key"]
+
     try:
         if provider == "gemini":
-            url = ("https://generativelanguage.googleapis.com/v1beta/models"
-                   f"?key={key}")
-            body = json.loads(
-                urllib.request.urlopen(url, timeout=30).read().decode())
-            names = [m["name"].split("/")[-1] for m in body.get("models", [])
-                     if "generateContent" in
-                     m.get("supportedGenerationMethods", [])]
-            keep = [n for n in names if "flash" in n or "pro" in n]
-            return keep or names or static
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key}"
+            req = urllib.request.Request(url, headers={"User-Agent": "ACStockTracker/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                body = json.loads(resp.read().decode())
+            
+            raw_models = body.get("models", [])
+            valid_models = []
+            for m in raw_models:
+                m_name = m.get("name", "").split("/")[-1]
+                methods = m.get("supportedGenerationMethods", [])
+                if "generateContent" not in methods:
+                    continue
+                # Exclude deprecated / non-vision / broken models
+                lower = m_name.lower()
+                if any(bad in lower for bad in ["embedding", "aqa", "imagen", "learnlm", "bison", "gecko", "gemini-1.0", "gemini-pro-vision"]):
+                    continue
+                valid_models.append(m_name)
+            
+            # Categorize: Fast & Free Flash models vs Pro/Other
+            recommended = [m for m in valid_models if "flash" in m.lower()]
+            other = [m for m in valid_models if m not in recommended]
+            
+            # Prioritize standard fast & free flash releases
+            def flash_rank(m):
+                m_low = m.lower()
+                if "2.5-flash" in m_low and "lite" not in m_low: return 0
+                if "2.0-flash" in m_low and "lite" not in m_low: return 1
+                if "1.5-flash" in m_low and "8b" not in m_low: return 2
+                if "flash-latest" in m_low: return 3
+                if "2.0-flash-lite" in m_low or "2.5-flash-lite" in m_low: return 4
+                if "8b" in m_low: return 5
+                return 10
+            recommended.sort(key=flash_rank)
+            
+            combined = recommended + other if (recommended or other) else static
+            return {
+                "ok": True,
+                "models": combined,
+                "recommended": recommended,
+                "other": other,
+                "error": None
+            }
+
         if provider == "anthropic":
             req = urllib.request.Request(
                 "https://api.anthropic.com/v1/models",
-                headers={"x-api-key": key,
-                         "anthropic-version": "2023-06-01"})
-            body = json.loads(
-                urllib.request.urlopen(req, timeout=30).read().decode())
-            ids = [m.get("id", "") for m in body.get("data", [])]
-            ids = [i for i in ids if i.startswith("claude")]
-            return ids or static
-        # OpenAI-compatible providers: <base>/chat/completions -> <base>/models
-        base = PROVIDERS[provider]["url"].rsplit("/chat/completions", 1)[0]
-        req = urllib.request.Request(
-            base + "/models", headers={"Authorization": f"Bearer {key}"})
-        body = json.loads(
-            urllib.request.urlopen(req, timeout=30).read().decode())
-        ids = [m.get("id", "") for m in body.get("data", [])]
+                headers={"x-api-key": key, "anthropic-version": "2023-06-01", "User-Agent": "ACStockTracker/1.0"}
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                body = json.loads(resp.read().decode())
+            ids = [m.get("id", "") for m in body.get("data", []) if m.get("id", "").startswith("claude")]
+            recommended = [i for i in ids if "haiku" in i.lower()]
+            other = [i for i in ids if i not in recommended]
+            combined = recommended + other if ids else static
+            return {"ok": True, "models": combined, "recommended": recommended, "other": other, "error": None}
+
+        # OpenAI compatible
+        url_base = PROVIDERS.get(provider, {}).get("url")
+        if not url_base:
+            return {"ok": True, "models": static, "recommended": static, "other": [], "error": None}
+        base = url_base.rsplit("/chat/completions", 1)[0]
+        req = urllib.request.Request(base + "/models", headers={"Authorization": f"Bearer {key}", "User-Agent": "ACStockTracker/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body = json.loads(resp.read().decode())
+        ids = [m.get("id", "") for m in body.get("data", []) if m.get("id")]
+        
         if provider == "alibaba":
-            ids = [i for i in ids if "vl" in i.lower()]
+            valid = [i for i in ids if "vl" in i.lower()]
+            recommended = [i for i in valid if "plus" in i.lower() or "7b" in i.lower()]
+            other = [i for i in valid if i not in recommended]
+            combined = recommended + other if valid else static
+            return {"ok": True, "models": combined, "recommended": recommended, "other": other, "error": None}
         elif provider == "openai":
-            ids = [i for i in ids if i.startswith("gpt")]
+            valid = [i for i in ids if i.startswith("gpt-4") or i.startswith("gpt-4o")]
+            recommended = [i for i in valid if "mini" in i.lower()]
+            other = [i for i in valid if i not in recommended]
+            combined = recommended + other if valid else static
+            return {"ok": True, "models": combined, "recommended": recommended, "other": other, "error": None}
         elif provider == "deepseek":
-            ids = [i for i in ids if i.startswith("deepseek")]
-        return ids or static
-    except Exception:
-        return static
+            valid = [i for i in ids if "deepseek" in i.lower()]
+            return {"ok": True, "models": valid or static, "recommended": valid or static, "other": [], "error": None}
+
+        return {"ok": True, "models": ids or static, "recommended": ids or static, "other": [], "error": None}
+
+    except Exception as ex:
+        err_msg = str(ex)
+        return {
+            "ok": False,
+            "models": static,
+            "recommended": static,
+            "other": [],
+            "error": f"Live fetch failed: {err_msg}"
+        }
+
+
+def list_models(provider: str) -> list[str]:
+    """Backward-compatible helper returning simple list of models."""
+    res = list_models_detailed(provider)
+    return res.get("models", [])
 
 
 # ------------------------------------------------------------- parsing

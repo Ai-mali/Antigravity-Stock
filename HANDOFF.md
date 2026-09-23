@@ -224,15 +224,20 @@ desc, or no model, are skipped/blocked.
      - Ensured customer status tag (`+ New Customer` / `Known Customer`) sits strictly on the same single line without wrapping down.
      - Cleaned up Stock Out view header by removing the subtitle and duplicate top "Clear Staging Cart" button (preserving the dedicated "Clear Cart" button inside Card 2).
      - Compacted the header AI scan button to display only the AI Provider name (e.g. `● Gemini ⚙`) instead of the verbose model string, saving over 200px of header width while providing the full active model info on hover tooltip.
-18. **Indoor + Outdoor Sets & Non-Serial Parts**:
-   - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
-   - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-19. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
-
-Owner instruction that still applies: *"the most important is you have
-to make the improvement on my idea — do not agree with me everytime,
-and suggest me good ideas."* Push back constructively.
+18. [DONE] **Live Model Fetch & Smart Fast/Free Vision Model Filtering**:
+    - Added a **🔄 Fetch** button directly beside the Model Selection dropdown in the **Model & API Configuration** modal (`#config-modal`).
+    - Clicking Fetch triggers a live API query via `/api/config/models?provider=[provider]` (using registered provider keys or custom key):
+      - **Gemini**: Dynamically pulls active models, filters specifically for `generateContent` models with image/vision OCR capability, discards broken or deprecated endpoints (`gemini-pro-vision`, `embedding`, `aqa`, `imagen`, `learnlm`, `bison`, `gecko`, `gemini-1.0`), and categorizes the fast, free tier models (`gemini-2.5-flash`, `gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-flash-latest`, `gemini-2.0-flash-lite`) under `<optgroup label="⚡ Fast & Free / Recommended">`.
+      - **Anthropic Claude**: Live fetches models and filters for fast Haiku vision models (`claude-3-5-haiku-latest`, `claude-3-haiku-20240307`).
+      - **OpenAI**: Prioritizes `gpt-4o-mini` for fast and cost-effective vision scanning.
+      - **Alibaba Qwen-VL**: Filters for `qwen-vl-plus` and `qwen2.5-vl-7b-instruct`.
+    - Dropdown automatically renders models with high-contrast `<optgroup>` groupings (`⚡ Fast & Free / Recommended` vs `Other Available Models`).
+    - Provides real-time visual feedback: animated spinning icon during fetch, disabled state to prevent duplicate clicks, and status toast notifications.
+19. **Indoor + Outdoor Sets & Non-Serial Parts**:
+    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
+    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
+20. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 **MANDATORY PROTOCOL — ASK & PROPOSE OPTIONS FIRST BEFORE IMPLEMENTING**:
 - If a requirement or request is underspecified, ambiguous, or if you can see a superior/pro-level approach or alternative options: **DO NOT assume or rush into code changes**.
