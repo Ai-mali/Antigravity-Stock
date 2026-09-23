@@ -2232,6 +2232,20 @@ body.theme-light .unit-action-btn {
   background: rgba(239, 68, 68, 0.12);
 }
 
+#cart-items-container::-webkit-scrollbar {
+  width: 5px;
+}
+#cart-items-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+#cart-items-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+#cart-items-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-sub);
+}
+
 /* Track List Elements */
 .track-customer-banner {
   background: var(--surface2);
@@ -2886,8 +2900,8 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right: Dispatch Staging Cart -->
-        <div class="card" id="dispatch-staging-card" style="position:sticky; top:76px; transition:all 0.25s ease;">
-          <div class="card-header" style="flex-direction:column; align-items:flex-start; gap:8px;">
+        <div class="card" id="dispatch-staging-card" style="position:sticky; top:76px; max-height:calc(100vh - 96px); display:flex; flex-direction:column; overflow:hidden; transition:all 0.25s ease;">
+          <div class="card-header" style="flex-direction:column; align-items:flex-start; gap:8px; flex-shrink:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <div>
                 <div class="card-title">Dispatch Staging Cart</div>
@@ -2898,28 +2912,29 @@ body.theme-light .autocomplete-dropdown {
             <!-- Brand breakdown pills row -->
             <div id="cart-brand-breakdown-row" style="display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:22px; align-items:center;"></div>
           </div>
-          <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
-            <div id="cart-items-container" style="min-height:80px; max-height:550px; overflow-y:auto; transition:max-height 0.3s ease;"></div>
-            <div style="height:1px; background:var(--border);"></div>
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <label class="form-label" style="margin-bottom:0;">Customer / Client Name *</label>
-                <span id="customer-type-tag"></span>
+          <div class="card-body" style="display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; overflow:hidden; padding:12px 14px;">
+            <div id="cart-items-container" style="flex:1 1 auto; min-height:60px; overflow-y:auto; scrollbar-gutter:stable; padding-right:2px;"></div>
+            <div style="flex-shrink:0; margin-top:auto; display:flex; flex-direction:column; gap:10px; padding-top:10px; border-top:1px solid var(--border);">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <label class="form-label" style="margin-bottom:0;">Customer / Client Name *</label>
+                  <span id="customer-type-tag"></span>
+                </div>
+                <div class="autocomplete-wrap">
+                  <input type="text" class="form-input" id="cart-customer" value="Neath Air Conditioning Ltd" autocomplete="off" oninput="handleCustomerInput(this.value)" onfocus="handleCustomerFocus()" onkeydown="handleCustomerKeydown(event)" placeholder="Type or select customer...">
+                  <div class="autocomplete-dropdown" id="cart-customer-dropdown"></div>
+                </div>
+                <!-- Quick Select Recent Customers -->
+                <div class="quick-chips-row" id="recent-customers-chips"></div>
               </div>
-              <div class="autocomplete-wrap">
-                <input type="text" class="form-input" id="cart-customer" value="Neath Air Conditioning Ltd" autocomplete="off" oninput="handleCustomerInput(this.value)" onfocus="handleCustomerFocus()" onkeydown="handleCustomerKeydown(event)" placeholder="Type or select customer...">
-                <div class="autocomplete-dropdown" id="cart-customer-dropdown"></div>
+              <div>
+                <label class="form-label">Date Out</label>
+                <input type="date" class="form-input" id="cart-date-out" value="2026-09-18">
               </div>
-              <!-- Quick Select Recent Customers -->
-              <div class="quick-chips-row" id="recent-customers-chips"></div>
+              <button class="btn btn-primary" style="justify-content:center; padding:10px;" onclick="processCartCheckout()">
+                Complete Checkout &amp; Deduct Stock
+              </button>
             </div>
-            <div>
-              <label class="form-label">Date Out</label>
-              <input type="date" class="form-input" id="cart-date-out" value="2026-09-18">
-            </div>
-            <button class="btn btn-primary" style="justify-content:center; padding:10px;" onclick="processCartCheckout()">
-              Complete Checkout &amp; Deduct Stock
-            </button>
           </div>
         </div>
       </div>

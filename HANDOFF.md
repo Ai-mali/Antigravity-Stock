@@ -188,13 +188,15 @@ desc, or no model, are skipped/blocked.
      - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
    - **Seamless Duplicate Jump Navigation**:
      - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
-15. [DONE] **Dispatch Staging Cart Dynamic Height & Brand Breakdown**:
-   - **Dynamic Bottom Border Expansion**:
-     - Increased `#cart-items-container` max height from 260px to 550px with smooth transition so the cart bottom border expands downward naturally as more serials are added, aligning with the left-hand inventory list.
+15. [DONE] **Dispatch Staging Cart Dynamic Height, Brand Breakdown & Smart Viewport-Fit**:
+   - **Smart Viewport-Fit & Anti-Cutoff Layout**:
+     - Constrained `#dispatch-staging-card` to `max-height: calc(100vh - 96px)` using a flex column layout.
+     - Pinned the checkout form section (`flex-shrink: 0`, Customer Name, Date Out, and "Complete Checkout & Deduct Stock" button) permanently in view at the bottom of the card.
+     - Allowed `#cart-items-container` to scroll smoothly inside (`flex: 1 1 auto; overflow-y: auto`), preventing the bottom of the card from ever being pushed offscreen or cut off on any display resolution.
    - **Top Brand Breakdown Row**:
      - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● LG 2] [● VOLVO 1]`).
    - **Brand Badges on Staged Cards**:
-     - Each card in the staging cart now displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
+     - Each card in the staging cart displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
 16. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
