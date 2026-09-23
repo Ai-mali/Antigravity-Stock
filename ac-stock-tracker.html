@@ -2146,6 +2146,12 @@ body.theme-light .unit-action-btn {
   background: var(--surface2);
   border: 1px solid var(--border);
   margin-bottom: 8px;
+  transition: all 0.15s ease;
+}
+
+.cart-card-item:hover {
+  border-color: rgba(38, 208, 124, 0.35);
+  background: rgba(38, 208, 124, 0.04);
 }
 
 .cart-item-num-box {
@@ -2161,6 +2167,69 @@ body.theme-light .unit-action-btn {
   justify-content: center;
   margin-right: 10px;
   flex-shrink: 0;
+}
+
+.cart-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease;
+}
+
+.cart-brand-pill .cart-brand-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cart-brand-pill .cart-brand-qty {
+  background: rgba(38, 208, 124, 0.15);
+  color: var(--green-bright);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+.cart-item-brand-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+
+.cart-item-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.cart-item-remove-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
 }
 
 /* Track List Elements */
@@ -2817,16 +2886,20 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right: Dispatch Staging Cart -->
-        <div class="card" style="position:sticky; top:76px;">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Dispatch Staging Cart</div>
-              <div style="font-size:10.5px; color:var(--text-sub);">ID: #DISP-2026-0918</div>
+        <div class="card" id="dispatch-staging-card" style="position:sticky; top:76px; transition:all 0.25s ease;">
+          <div class="card-header" style="flex-direction:column; align-items:flex-start; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <div>
+                <div class="card-title">Dispatch Staging Cart</div>
+                <div style="font-size:10.5px; color:var(--text-sub);">ID: #DISP-2026-0918</div>
+              </div>
+              <span class="badge badge-green" id="cart-pill-count">0 items</span>
             </div>
-            <span class="badge badge-green" id="cart-pill-count">3 items</span>
+            <!-- Brand breakdown pills row -->
+            <div id="cart-brand-breakdown-row" style="display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:22px; align-items:center;"></div>
           </div>
           <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
-            <div id="cart-items-container" style="min-height:80px; max-height:260px; overflow-y:auto;"></div>
+            <div id="cart-items-container" style="min-height:80px; max-height:550px; overflow-y:auto; transition:max-height 0.3s ease;"></div>
             <div style="height:1px; background:var(--border);"></div>
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -5612,27 +5685,94 @@ function toggleSerialInCart(serial, model, brand) {
   if (DB.activeTab === 'available') renderAvailable();
 }
 
+function getBrandColor(brand) {
+  if (DB.inventory && DB.inventory[brand] && DB.inventory[brand].color) {
+    return DB.inventory[brand].color;
+  }
+  const palette = [
+    '#38bdf8', '#34d399', '#fbbf24', '#f472b6', 
+    '#a78bfa', '#f87171', '#2dd4bf', '#fb923c'
+  ];
+  let hash = 0;
+  const str = String(brand || 'UNBRANDED').toUpperCase();
+  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function resolveItemBrand(item) {
+  if (item.brand && item.brand !== '—' && item.brand !== 'UNBRANDED') return item.brand;
+  if (DB.inventory) {
+    for (const b in DB.inventory) {
+      if (DB.inventory[b]?.models?.[item.model]) return b;
+    }
+  }
+  return item.brand || 'UNBRANDED';
+}
+
 function renderCartSidebar() {
   const container = document.getElementById('cart-items-container');
-  container.innerHTML = '';
+  const pillCount = document.getElementById('cart-pill-count');
+  const brandRow = document.getElementById('cart-brand-breakdown-row');
+  
+  if (pillCount) {
+    pillCount.textContent = `${DB.stagedCart.length} item${DB.stagedCart.length !== 1 ? 's' : ''}`;
+  }
 
+  // Calculate brand counts
+  const brandCounts = {};
+  DB.stagedCart.forEach(item => {
+    const b = resolveItemBrand(item);
+    item.brand = b;
+    brandCounts[b] = (brandCounts[b] || 0) + 1;
+  });
+
+  // Render top brand breakdown pills below header
+  if (brandRow) {
+    brandRow.innerHTML = '';
+    const brandKeys = Object.keys(brandCounts);
+    if (brandKeys.length === 0) {
+      brandRow.innerHTML = `<span style="font-size:11px; color:var(--text-sub); font-style:italic;">No units staged yet</span>`;
+    } else {
+      brandKeys.forEach(bKey => {
+        const color = getBrandColor(bKey);
+        const pill = document.createElement('div');
+        pill.className = 'cart-brand-pill';
+        pill.innerHTML = `
+          <span class="cart-brand-dot" style="background:${color}; box-shadow:0 0 6px ${color};"></span>
+          <span>${escapeHtml(bKey)}</span>
+          <span class="cart-brand-qty">${brandCounts[bKey]}</span>
+        `;
+        brandRow.appendChild(pill);
+      });
+    }
+  }
+
+  // Render staged item cards
+  container.innerHTML = '';
   if (DB.stagedCart.length === 0) {
     container.innerHTML = '<div style="font-size:11.5px; color:var(--text-sub); text-align:center; padding:24px 0;">Cart is empty. Select serials from the left list.</div>';
     return;
   }
 
   DB.stagedCart.forEach((item, idx) => {
+    const bName = resolveItemBrand(item);
+    const bColor = getBrandColor(bName);
     const div = document.createElement('div');
     div.className = 'cart-card-item';
     div.innerHTML = `
-      <div style="display:flex; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
         <div class="cart-item-num-box">${idx + 1}</div>
         <div>
-          <div class="mono" style="font-weight:700; font-size:12px;">${item.serial}</div>
-          <div style="font-size:11px; color:var(--text-sub);">${item.model}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="mono" style="font-weight:700; font-size:12.5px;">${escapeHtml(item.serial)}</span>
+            <span class="cart-item-brand-badge" style="color:${bColor}; background:${bColor}18; border-color:${bColor}55;">
+              ${escapeHtml(bName)}
+            </span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">${escapeHtml(item.model)}</div>
         </div>
       </div>
-      <button style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:14px;" onclick="removeFromCart(${idx})" title="Remove item">&#10005;</button>
+      <button class="cart-item-remove-btn" onclick="removeFromCart(${idx})" title="Remove item">&times;</button>
     `;
     container.appendChild(div);
   });

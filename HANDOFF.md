@@ -188,10 +188,17 @@ desc, or no model, are skipped/blocked.
      - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
    - **Seamless Duplicate Jump Navigation**:
      - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
-15. **Indoor + Outdoor Sets & Non-Serial Parts**:
+15. [DONE] **Dispatch Staging Cart Dynamic Height & Brand Breakdown**:
+   - **Dynamic Bottom Border Expansion**:
+     - Increased `#cart-items-container` max height from 260px to 550px with smooth transition so the cart bottom border expands downward naturally as more serials are added, aligning with the left-hand inventory list.
+   - **Top Brand Breakdown Row**:
+     - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● LG 2] [● VOLVO 1]`).
+   - **Brand Badges on Staged Cards**:
+     - Each card in the staging cart now displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
+16. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-16. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+17. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 
 Owner instruction that still applies: *"the most important is you have
