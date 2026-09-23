@@ -227,23 +227,201 @@ body.theme-light .theme-toggle-thumb {
   letter-spacing: 0.02em;
 }
 
-html, body {
+/* Screen Mode (Screen Fit vs Free Scroll) Button */
+.screen-mode-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all .2s ease;
+  font-family: inherit;
+  user-select: none;
+}
+.screen-mode-btn:hover {
+  border-color: var(--border-light);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.screen-mode-btn.active {
+  border-color: rgba(38, 208, 124, 0.4);
+  color: var(--green-bright);
+  background: rgba(38, 208, 124, 0.08);
+}
+body.theme-light .screen-mode-btn.active {
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* ========================================================
+   SCREEN DISPLAY MODES: Screen Fit (Default) vs Free Scroll
+   ======================================================== */
+/* 1. Screen Fit Mode (App locked to viewport, header & cards frozen) */
+html.screen-fit-active, body.screen-fit-mode {
   height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg-page);
-  color: var(--text);
+body.screen-fit-mode {
   height: 100vh;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: stretch;
   padding: 12px 16px;
+}
+
+body.screen-fit-mode .app-container {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body.screen-fit-mode header {
+  position: relative;
+  flex-shrink: 0;
+}
+
+body.screen-fit-mode main {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+body.screen-fit-mode #view-stock-out.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.screen-fit-mode .stockout-layout {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.screen-fit-mode .stockout-left-col {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body.screen-fit-mode #stockout-brands-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+}
+
+body.screen-fit-mode #stockout-right-sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 2. Free Scroll Mode (Whole page scrolls, cards stick at top on small screens) */
+body.free-scroll-mode {
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.free-scroll-mode .app-container {
+  height: auto;
+  min-height: calc(100vh - 32px);
+  max-height: none;
+  overflow: visible;
+}
+
+body.free-scroll-mode header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+body.free-scroll-mode main {
+  flex: 1;
+  min-height: auto;
+  overflow: visible;
+  display: block;
+  padding: 16px 20px;
+}
+
+body.free-scroll-mode #view-stock-out.active {
+  display: block;
+  height: auto;
+  overflow: visible;
+}
+
+body.free-scroll-mode .stockout-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+  align-items: flex-start;
+  overflow: visible;
+  height: auto;
+}
+
+body.free-scroll-mode .stockout-left-col {
+  display: block;
+  height: auto;
+  overflow: visible;
+}
+
+body.free-scroll-mode #stockout-brands-container {
+  overflow: visible;
+  height: auto;
+  max-height: none;
+}
+
+body.free-scroll-mode #stockout-right-sidebar {
+  position: sticky;
+  top: 76px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 96px);
+  overflow: visible;
+}
+
+/* Base Body Styles */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text);
   font-size: 12.5px;
   line-height: 1.4;
   transition: background-color .2s;
@@ -2694,6 +2872,11 @@ body.theme-light .autocomplete-dropdown {
         </span>
         <span class="theme-icon moon-icon">&#9790;</span>
         <span class="theme-mode-label" id="theme-mode-text">Dark</span>
+      </button>
+      <!-- Screen Fit / Free Scroll Mode Switch -->
+      <button class="screen-mode-btn active" id="screen-mode-btn" onclick="toggleScreenMode()" title="Toggle Screen Fit (Lock to Viewport) vs Free Scroll (Page Scroll)">
+        <span id="screen-mode-icon" style="font-size:11.5px;">📌</span>
+        <span id="screen-mode-text">Screen Fit</span>
       </button>
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
@@ -7028,6 +7211,44 @@ function toggleTheme() {
   showToast(isLight ? 'Day (Light) Mode activated' : 'Night (Dark) Mode activated', isLight ? '&#9728;' : '&#9790;');
 }
 
+/* Screen Mode (Screen Fit vs Free Scroll) toggle with state persistence */
+function toggleScreenMode() {
+  const isCurrentScreenFit = document.body.classList.contains('screen-fit-mode');
+  const newMode = !isCurrentScreenFit;
+  applyScreenMode(newMode);
+  showToast(newMode ? '📌 Screen Fit: Locked to screen' : '📜 Free Scroll: Whole page scrollable');
+}
+
+function applyScreenMode(isScreenFit) {
+  const btn = document.getElementById('screen-mode-btn');
+  const icon = document.getElementById('screen-mode-icon');
+  const text = document.getElementById('screen-mode-text');
+  
+  if (isScreenFit) {
+    document.documentElement.classList.add('screen-fit-active');
+    document.body.classList.add('screen-fit-mode');
+    document.body.classList.remove('free-scroll-mode');
+    try { localStorage.setItem('ac_stock_screen_mode', 'screen-fit'); } catch(e){}
+    if (btn) {
+      btn.className = 'screen-mode-btn active';
+      btn.title = 'Screen Fit Mode is ON (App locked to viewport). Click to switch to Free Scroll.';
+    }
+    if (icon) icon.textContent = '📌';
+    if (text) text.textContent = 'Screen Fit';
+  } else {
+    document.documentElement.classList.remove('screen-fit-active');
+    document.body.classList.remove('screen-fit-mode');
+    document.body.classList.add('free-scroll-mode');
+    try { localStorage.setItem('ac_stock_screen_mode', 'free-scroll'); } catch(e){}
+    if (btn) {
+      btn.className = 'screen-mode-btn';
+      btn.title = 'Free Scroll Mode is ON (Whole page scrolls). Click to switch to Screen Fit.';
+    }
+    if (icon) icon.textContent = '📜';
+    if (text) text.textContent = 'Free Scroll';
+  }
+}
+
 /* Clean download feature */
 function downloadCurrentHtml() {
   const html = document.documentElement.outerHTML;
@@ -7049,6 +7270,16 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (txt) txt.textContent = 'Day';
     }
   } catch(e){}
+
+  try {
+    const savedScreen = localStorage.getItem('ac_stock_screen_mode');
+    // Default: use saved preference, or if unset, use Screen Fit for screens >= 750px height, else Free Scroll
+    const defaultMode = savedScreen ? (savedScreen === 'screen-fit') : (window.innerHeight >= 750);
+    applyScreenMode(defaultMode);
+  } catch(e) {
+    applyScreenMode(true);
+  }
+
   await refreshData();
   await loadConfig();
   initScanResultsDragSelect();

@@ -188,25 +188,16 @@ desc, or no model, are skipped/blocked.
      - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
    - **Seamless Duplicate Jump Navigation**:
      - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
-15. [DONE] **Fixed Desktop App Shell & Two Stacked Closed-Border Cards Architecture**:
-   - **Fixed Desktop App Shell (Zero Outer Window Scrolling)**:
-     - Locked outer window scrolling (`html, body { height: 100%; overflow: hidden; }`), framing `.app-container` perfectly to the screen (`height: 100%; max-height: 100%`).
-     - App Header (`AC Stock Tracker` + navigation tabs + status badges) stays permanently frozen at the very top.
-     - No scrolling "outside the project area" is ever possible.
-   - **Stock Out Layout (Independent Left Scrolling, Frozen Right Sidebar)**:
-     - In Stock Out, the left column (`#stockout-brands-container`) has `overflow-y: auto; scrollbar-gutter: stable;`. Scrolling through 100+ models/serials scrolls **only the left inventory list**!
-     - The right sidebar (`#stockout-right-sidebar`) stays permanently frozen at eye-level with zero movement.
-   - **Card 1: Dispatch Destination & Checkout (`#dispatch-checkout-card`)**:
-     - Dedicated card at the top of the right sidebar with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`).
-     - Contains its own header with `📍 Dispatch Destination & Checkout` title and `#customer-type-tag`.
-     - Body contains Customer Name input with autocomplete dropdown, quick-select recent customer chips, Date Out input, and the primary `Complete Checkout →` button.
-     - Pinned frozen at the top (`flex-shrink: 0; position: relative; z-index: 20; overflow: visible`).
-   - **Card 2: Dispatch Staging Cart (`#dispatch-staging-card`)**:
-     - Sits directly below Card 1 with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`).
-     - Header displays `Dispatch Staging Cart` title, Batch ID (`#DISP-2026-0918`), count badge (`#cart-pill-count`), and the brand breakdown pills row (`#cart-brand-breakdown-row`).
-     - Body contains the staged units list header with "Clear Cart" button, and `#cart-items-container` with smooth internal scrolling (`overflow-y: auto; scrollbar-gutter: stable; min-height: 80px`).
-   - **Zero Cutoff & Small-Screen Stability**:
-     - Card 1 is guaranteed to be 100% visible at eye-level on every display resolution (including 768p and 150% scaling). Staging dozens of units only scrolls inside Card 2 without ever moving or hiding the destination and checkout actions.
+15. [DONE] **Fixed Desktop App Shell, Free Scroll Toggle & Two Stacked Closed-Border Cards**:
+   - **Screen Mode Toggle (`📌 Screen Fit` vs `📜 Free Scroll`)**:
+     - Added a dedicated switch button in the top header right next to Day/Night mode.
+     - **`📌 Screen Fit` (App Shell Mode)**: Locks outer browser window scrolling (`html, body { overflow: hidden; }`). The project area fits the viewport like a native desktop app. App header is frozen, and only the left inventory list scrolls inside. Ideal for desktop monitors.
+     - **`📜 Free Scroll` (Page Scroll Mode)**: Allows the whole webpage to scroll naturally with the browser scrollbar (`overflow-y: auto`), with `.app-container { overflow: visible }` so the right sidebar smoothly sticks at `top: 76px`. Ideal for small laptop screens (e.g. 1366x768).
+     - State persistence: User's choice is saved in `localStorage.getItem('ac_stock_screen_mode')` so each machine automatically remembers its own preferred display mode.
+   - **Two Stacked Closed-Border Cards in Stock Out**:
+     - **Card 1: Dispatch Destination & Checkout (`#dispatch-checkout-card`)**: Dedicated card at the top with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`), customer autocomplete, date out, and `Complete Checkout →` button.
+     - **Card 2: Dispatch Staging Cart (`#dispatch-staging-card`)**: Sits directly below Card 1 with its own closed border, batch ID, brand breakdown pills, and scrollable staged serials list.
+   - **Zero Cutoff & Small-Screen Stability**: Card 1 is guaranteed to be 100% visible at eye-level on every display resolution without cutoff.
 16. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
