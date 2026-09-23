@@ -1228,7 +1228,6 @@ body.theme-light .scan-serial-badge-dupe {
   grid-template-columns: 410px 1fr;
   gap: 16px;
   align-items: stretch;
-  min-height: calc(100vh - 130px);
 }
 
 /* Drag and Drop Image Previewer */
@@ -1631,9 +1630,9 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 
 /* Stock In table vertical scroll with sticky header */
 .stock-in-table-scroll {
-  flex: 1 1 auto;
-  min-height: 480px;
-  max-height: calc(100vh - 220px);
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   overflow-x: auto;
   scrollbar-gutter: stable;
@@ -3169,7 +3168,7 @@ body.theme-light .autocomplete-dropdown {
               </button>
             </div>
           </div>
-          <div class="table-container stock-in-table-scroll" style="flex:1;">
+          <div class="table-container stock-in-table-scroll" style="flex:1 1 0; min-height:0;">
             <table class="data-table" id="scan-results-table">
               <thead>
                 <tr>
