@@ -190,31 +190,43 @@ def list_models_detailed(provider: str, key: str = None) -> dict:
             
             raw_models = body.get("models", [])
             valid_models = []
+            
+            # Non-OCR/specialized keywords to exclude (TTS, audio transcribe, music, robotics, computer-use, deep research, etc.)
+            excluded_keywords = [
+                "embedding", "aqa", "imagen", "learnlm", "bison", "gecko", "gemini-1.0",
+                "gemini-pro-vision", "tts", "transcribe", "lyria", "veo", "robotics",
+                "computer-use", "deep-research", "antigravity", "gemma", "banana"
+            ]
+
             for m in raw_models:
                 m_name = m.get("name", "").split("/")[-1]
                 methods = m.get("supportedGenerationMethods", [])
                 if "generateContent" not in methods:
                     continue
-                # Exclude deprecated / non-vision / broken models
+                if not m_name.startswith("gemini-"):
+                    continue
                 lower = m_name.lower()
-                if any(bad in lower for bad in ["embedding", "aqa", "imagen", "learnlm", "bison", "gecko", "gemini-1.0", "gemini-pro-vision"]):
+                if any(bad in lower for bad in excluded_keywords):
                     continue
                 valid_models.append(m_name)
             
-            # Categorize: Fast & Free Flash models vs Pro/Other
-            recommended = [m for m in valid_models if "flash" in m.lower()]
+            # Categorize: Fast & Free Flash OCR models vs Pro/High-Accuracy Multimodal
+            recommended = [m for m in valid_models if "flash" in m.lower() and "image" not in m.lower()]
             other = [m for m in valid_models if m not in recommended]
             
-            # Prioritize standard fast & free flash releases
+            # Prioritize standard fast & free flash releases for OCR
             def flash_rank(m):
                 m_low = m.lower()
                 if "2.5-flash" in m_low and "lite" not in m_low: return 0
                 if "2.0-flash" in m_low and "lite" not in m_low: return 1
                 if "1.5-flash" in m_low and "8b" not in m_low: return 2
-                if "flash-latest" in m_low: return 3
-                if "2.0-flash-lite" in m_low or "2.5-flash-lite" in m_low: return 4
-                if "8b" in m_low: return 5
-                return 10
+                if m_low == "gemini-flash-latest": return 3
+                if "2.5-flash-lite" in m_low: return 4
+                if "2.0-flash-lite" in m_low: return 5
+                if m_low == "gemini-flash-lite-latest": return 6
+                if "3.5-flash" in m_low and "lite" not in m_low: return 7
+                if "3-flash" in m_low: return 8
+                return 20
             recommended.sort(key=flash_rank)
             
             combined = recommended + other if (recommended or other) else static
@@ -251,7 +263,7 @@ def list_models_detailed(provider: str, key: str = None) -> dict:
         
         if provider == "alibaba":
             valid = [i for i in ids if "vl" in i.lower()]
-            recommended = [i for i in valid if "plus" in i.lower() or "7b" in i.lower()]
+            recommended = [i for i in valid if any(f in i.lower() for f in ["flash", "plus", "7b", "max"])]
             other = [i for i in valid if i not in recommended]
             combined = recommended + other if valid else static
             return {"ok": True, "models": combined, "recommended": recommended, "other": other, "error": None}
