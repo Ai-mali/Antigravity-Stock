@@ -3944,9 +3944,77 @@ function getKnownMasterSerialsSet() {
   return s;
 }
 
+function isNonSerialRow(row) {
+  if (!row) return false;
+  if (row.flag === 'no_serial') return true;
+  if (!row.serials || !row.serials.length) return true;
+  // If all serials contain ' #' (synthetic unit IDs), treat as non-serial
+  return row.serials.every(s => String(s).includes(' #'));
+}
+
+function getNonSerialNextIndex(model, desc) {
+  let maxNum = 0;
+  const matchPattern = desc ? desc.trim().toUpperCase() : '';
+  const modelUpper = model ? model.trim().toUpperCase() : '';
+
+  const checkSerial = (s) => {
+    if (!s) return;
+    const str = String(s).trim().toUpperCase();
+    if (str.includes(' #')) {
+      const parts = str.split(' #');
+      const prefix = parts[0].trim();
+      const num = parseInt(parts[1], 10);
+      if (!isNaN(num)) {
+        if ((matchPattern && prefix === matchPattern) || (modelUpper && (prefix.includes(modelUpper) || prefix === modelUpper))) {
+          if (num > maxNum) maxNum = num;
+        }
+      }
+    }
+  };
+
+  // 1. Check existing in-stock inventory
+  for (const b in DB.inventory) {
+    for (const m in DB.inventory[b]?.models || {}) {
+      if (m.toUpperCase() === modelUpper) {
+        (DB.inventory[b].models[m].serials || []).forEach(checkSerial);
+      }
+    }
+  }
+  // 2. Check track list (dispatched units)
+  if (Array.isArray(DB.trackList)) {
+    DB.trackList.forEach(r => {
+      if ((r.model || '').toUpperCase() === modelUpper) {
+        checkSerial(r.serial);
+      }
+    });
+  }
+  // 3. Check returns
+  if (Array.isArray(DB.returns)) {
+    DB.returns.forEach(r => {
+      if ((r.model || '').toUpperCase() === modelUpper) {
+        checkSerial(r.serial);
+      }
+    });
+  }
+
+  return maxNum + 1;
+}
+
 function markDuplicateScans() {
   const known = getKnownMasterSerialsSet();
   DB.scans.forEach(row => {
+    // Non-serial items (accessories/piping kits) are not duplicate errors — they auto-increment sequentially
+    if (isNonSerialRow(row)) {
+      row.isDuplicate = false;
+      row.isPartialDuplicate = false;
+      delete row.dupeSerials;
+      if (row.warn && (row.warn.includes('duplicate') || row.warn.includes('Duplicate'))) {
+        row.warn = '';
+        row.sev = '';
+      }
+      return;
+    }
+
     if (!row.serials || !row.serials.length) return;
     const foundDupes = row.serials.filter(ser => known.has(String(ser).trim().toUpperCase()));
     if (foundDupes.length > 0) {
@@ -4352,15 +4420,24 @@ async function commitSingleReadySerialFromModal() {
       showToast(`Committed unit ${serial} (${row.model}) to ${picked}!`, '&#10003;');
       logLine(`Stocked In: ${row.model} [${serial}] to ${picked}`, 'log-line-ok');
 
-      if (row.serials.length === 0) {
-        // Entire row is now committed!
-        DB.scans.splice(_readyModalRowIdx, 1);
-        selectedScanIndices.delete(_readyModalRowIdx);
+      if (isNonSerialRow(row)) {
+        const curQ = parseInt((String(row.qty).match(/\d+/) || [])[0] || '1', 10) || 1;
+        if (curQ <= 1) {
+          DB.scans.splice(_readyModalRowIdx, 1);
+          selectedScanIndices.delete(_readyModalRowIdx);
+        } else {
+          row.qty = (curQ - 1) + ' PC' + (curQ - 1 > 1 ? 'S' : '');
+        }
       } else {
-        // Row still has other serials (e.g. the duplicate one)
-        row.qty = row.serials.length + ' PC' + (row.serials.length > 1 ? 'S' : '');
-        markDuplicateScans();
+        row.serials = (row.serials || []).filter(s => String(s).trim().toUpperCase() !== String(serial).trim().toUpperCase());
+        if (row.serials.length === 0) {
+          DB.scans.splice(_readyModalRowIdx, 1);
+          selectedScanIndices.delete(_readyModalRowIdx);
+        } else {
+          row.qty = row.serials.length + ' PC' + (row.serials.length > 1 ? 'S' : '');
+        }
       }
+      markDuplicateScans();
 
       closeReadySerialModal();
       renderScanResultsTable();
@@ -4392,25 +4469,37 @@ function renderScanResultsTable() {
   
   let totalSerials = 0;
   DB.scans.forEach((row, idx) => {
-    totalSerials += (row.serials || []).length;
+    const isNonSerial = isNonSerialRow(row);
+    const rowQty = parseInt((String(row.qty).match(/\d+/) || [])[0] || '1', 10) || 1;
+    totalSerials += isNonSerial ? rowQty : (row.serials || []).length;
     const isSelected = selectedScanIndices.has(idx);
     const dupeSet = new Set((row.dupeSerials || []).map(s => String(s).trim().toUpperCase()));
     const validSerials = (row.serials || []).filter(s => !dupeSet.has(String(s).trim().toUpperCase()));
     const dupeSerials = (row.serials || []).filter(s => dupeSet.has(String(s).trim().toUpperCase()));
-    const isPartial = dupeSerials.length > 0 && validSerials.length > 0;
-    const isAllDupe = (row.serials || []).length > 0 && dupeSerials.length === (row.serials || []).length;
-    const isReady = !isAllDupe && !isPartial && !row.sev && !!(row.model && row.model.trim()) && (!!(row.serials && row.serials.length) || !!row.desc);
+    const isPartial = !isNonSerial && dupeSerials.length > 0 && validSerials.length > 0;
+    const isAllDupe = !isNonSerial && (row.serials || []).length > 0 && dupeSerials.length === (row.serials || []).length;
+    const isReady = !isAllDupe && !isPartial && !row.sev && !!(row.model && row.model.trim()) && (!!(row.serials && row.serials.length) || !!row.desc || isNonSerial);
 
-    const serialChips = (row.serials || []).length
-      ? row.serials.map(s => {
-          const isDupe = dupeSet.has(String(s).trim().toUpperCase());
-          if (isDupe) {
-            return `<span class="scan-serial-badge scan-serial-badge-dupe" onclick="event.stopPropagation(); showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system">${s}</span>`;
-          } else {
-            return `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${s}')" title="READY TO STOCK IN \u2014 Click to review &amp; assign brand">${s}</span>`;
-          }
-        }).join('')
-      : `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
+    let serialChips = '';
+    if (isNonSerial) {
+      const desc = (row.desc || row.model || 'PART').trim();
+      const startIdx = getNonSerialNextIndex(row.model, desc);
+      const units = Array.from({ length: rowQty }, (_, i) => `${desc} #${startIdx + i}`);
+      serialChips = units.map(u => 
+        `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${u}')" title="NON-SERIAL PART \u2014 Click to stock in unit">${u}</span>`
+      ).join('');
+    } else if ((row.serials || []).length) {
+      serialChips = row.serials.map(s => {
+        const isDupe = dupeSet.has(String(s).trim().toUpperCase());
+        if (isDupe) {
+          return `<span class="scan-serial-badge scan-serial-badge-dupe" onclick="event.stopPropagation(); showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system">${s}</span>`;
+        } else {
+          return `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${s}')" title="READY TO STOCK IN \u2014 Click to review &amp; assign brand">${s}</span>`;
+        }
+      }).join('');
+    } else {
+      serialChips = `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
+    }
 
     const firstDupeSerial = (row.dupeSerials && row.dupeSerials[0]) || (row.serials && row.serials[0]) || '';
     let statusBadge = '';
@@ -5061,14 +5150,16 @@ function reportCommit(row, res) {
   }
 }
 
-// serials to send for a scan row: real serials, or the description as the
-// unit identifier for serial-less parts (expanded when Qty > 1)
+// serials to send for a scan row: real serials, or auto-sequential description
+// as the unit identifier for serial-less parts (expanded when Qty > 1)
 function commitSerialsOf(row) {
-  if (row.serials && row.serials.length) return row.serials;
-  if (!row.desc) return [];
+  if (row.serials && row.serials.length && !isNonSerialRow(row)) {
+    return row.serials;
+  }
+  const desc = (row.desc || row.model || 'PART').trim();
   const q = parseInt((String(row.qty).match(/\d+/) || [])[0] || '1', 10) || 1;
-  return q > 1 ? Array.from({ length: q }, (_, i) => `${row.desc} #${i + 1}`)
-               : [row.desc];
+  const startIdx = getNonSerialNextIndex(row.model, desc);
+  return Array.from({ length: q }, (_, i) => `${desc} #${startIdx + i}`);
 }
 
 async function commitScanRow(idx, assignedBrand = null) {

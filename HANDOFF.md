@@ -234,10 +234,15 @@ desc, or no model, are skipped/blocked.
       - **Alibaba Qwen-VL**: Filters for `qwen-vl-plus` and `qwen2.5-vl-7b-instruct`.
     - Dropdown automatically renders models with high-contrast `<optgroup>` groupings (`⚡ Fast & Free / Recommended` vs `Other Available Models`).
     - Provides real-time visual feedback: animated spinning icon during fetch, disabled state to prevent duplicate clicks, and status toast notifications.
-19. **Indoor + Outdoor Sets & Non-Serial Parts**:
+19. [DONE] **Auto-Sequential Non-Serial Unit IDs & Duplicate Exemption for Accessories/Piping Kits**:
+    - For items without factory serial barcodes (piping kits, refnet joints, accessories with Model + Description + Quantity), the system automatically sequences unit identifiers (e.g. `[Description] #1..#N`) based on existing stock in `daikin_stock.xlsx` + `TrackList`.
+    - **No False Duplicates**: Restocks of non-serial parts from new delivery orders never collide or trigger false `[⚠️ DUPLICATE]` errors. If `#1..#3` exist, a new delivery of 4 pcs automatically numbers as `#4..#7`.
+    - **Backend Protection**: `StockStore._split_dupes` automatically increments synthetic unit numbers to the next available unique index if overlap is encountered, ensuring stock-in always succeeds smoothly.
+    - Each unit remains an individually clickable chip in Available Stock & Stock Out so operators can stage and dispatch exact quantities.
+20. **Indoor + Outdoor Sets & Non-Serial Parts**:
     - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
     - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-20. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+21. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 **MANDATORY PROTOCOL — ASK & PROPOSE OPTIONS FIRST BEFORE IMPLEMENTING**:
 - If a requirement or request is underspecified, ambiguous, or if you can see a superior/pro-level approach or alternative options: **DO NOT assume or rush into code changes**.

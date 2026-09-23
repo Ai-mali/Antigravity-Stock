@@ -451,9 +451,28 @@ class StockStore:
         return new_serials, dupes
 
     def _split_dupes(self, serials):
-        """Known serials AND repeated serials inside the same batch are dupes."""
+        """Known serials AND repeated serials inside the same batch are dupes.
+        However, non-serial synthetic unit IDs (containing ' #') automatically
+        increment to the next unique sequence number rather than being rejected as duplicates.
+        """
         seen, dupes, new_serials = set(), [], []
-        for s in serials:
+        for raw_s in serials:
+            s = str(raw_s).strip()
+            if " #" in s:
+                # Auto-increment synthetic non-serial part IDs until unique
+                prefix, num_str = s.rsplit(" #", 1)
+                try:
+                    num = int(num_str)
+                except ValueError:
+                    num = 1
+                cand = f"{prefix} #{num}"
+                while cand.lower() in seen or cand.lower() in self._serial_set:
+                    num += 1
+                    cand = f"{prefix} #{num}"
+                new_serials.append(cand)
+                seen.add(cand.lower())
+                continue
+
             if s.lower() in seen or s.lower() in self._serial_set:
                 dupes.append(s)
             else:
