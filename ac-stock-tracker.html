@@ -704,6 +704,346 @@ main {
   min-height: 84px;
 }
 
+/* =========================================================
+   CUSTOM PREMIUM IN-APP DATE PICKER
+   ========================================================= */
+.custom-datepicker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+
+.datepicker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.datepicker-trigger:hover {
+  border-color: var(--green-bright);
+  background: var(--surface3);
+  box-shadow: 0 0 0 1px rgba(38, 208, 124, 0.2), 0 2px 6px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.datepicker-trigger:focus,
+.custom-datepicker.is-open .datepicker-trigger {
+  border-color: var(--green-bright);
+  box-shadow: 0 0 0 2px var(--green-glow), 0 2px 8px rgba(0, 0, 0, 0.4);
+  outline: none;
+}
+
+.dp-icon-cal {
+  color: var(--green-bright);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.dp-date-text {
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.dp-badge-relative {
+  font-size: 9.5px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(38, 208, 124, 0.15);
+  color: var(--green-bright);
+  border: 1px solid rgba(38, 208, 124, 0.3);
+  margin-left: 2px;
+  letter-spacing: 0.03em;
+}
+
+.dp-icon-chevron {
+  font-size: 10px;
+  color: var(--text-sub);
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.custom-datepicker.is-open .dp-icon-chevron {
+  transform: rotate(180deg);
+  color: var(--green-bright);
+}
+
+/* Calendar Popover Dropdown */
+.datepicker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  width: 280px;
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  animation: dpFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dpFadeIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.custom-datepicker.is-open .datepicker-popover {
+  display: flex;
+}
+
+/* Quick Presets Row */
+.dp-presets-row {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dp-preset-btn {
+  flex: 1;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.dp-preset-btn:hover {
+  background: var(--green);
+  border-color: var(--green-bright);
+  color: #fff;
+  box-shadow: 0 2px 6px var(--green-glow);
+}
+
+.dp-preset-btn.is-active {
+  background: rgba(38, 208, 124, 0.18);
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+}
+
+/* Month Navigation Header */
+.dp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2px;
+}
+
+.dp-nav-btn {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s ease;
+}
+
+.dp-nav-btn:hover {
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+  background: var(--surface);
+  transform: scale(1.06);
+}
+
+.dp-title-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dp-title-btn {
+  background: transparent;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+/* Weekday Grid */
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-sub);
+  padding: 2px 0;
+  text-transform: uppercase;
+}
+
+/* Day Grid */
+.dp-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.dp-day-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.dp-day-cell:hover:not(.dp-day-disabled) {
+  background: var(--surface3);
+  border-color: var(--border-light);
+  color: var(--green-bright);
+  transform: scale(1.05);
+}
+
+.dp-day-cell.dp-day-outmonth {
+  opacity: 0.28;
+  color: var(--text-sub);
+}
+
+.dp-day-cell.dp-day-today {
+  border-color: rgba(38, 208, 124, 0.6);
+  font-weight: 700;
+}
+
+.dp-day-cell.dp-day-today::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--green-bright);
+}
+
+.dp-day-cell.dp-day-selected {
+  background: var(--green) !important;
+  border-color: var(--green-bright) !important;
+  color: #ffffff !important;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(17, 104, 82, 0.4);
+}
+
+.dp-day-cell.dp-day-selected::after {
+  background: #ffffff;
+}
+
+/* Light Theme Overrides for Datepicker */
+body.theme-light .datepicker-trigger {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .datepicker-trigger:hover {
+  background: #ffffff;
+  border-color: #10b981;
+}
+
+body.theme-light .datepicker-popover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .dp-preset-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+body.theme-light .dp-preset-btn:hover {
+  background: #116852;
+  border-color: #116852;
+  color: #ffffff;
+}
+
+body.theme-light .dp-preset-btn.is-active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #047857;
+}
+
+body.theme-light .dp-nav-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+body.theme-light .dp-nav-btn:hover {
+  background: #e2e8f0;
+  color: #047857;
+  border-color: #10b981;
+}
+
+body.theme-light .dp-day-cell {
+  color: #0f172a;
+}
+
+body.theme-light .dp-day-cell:hover:not(.dp-day-disabled) {
+  background: #f1f5f9;
+  color: #047857;
+  border-color: #cbd5e1;
+}
+
+body.theme-light .dp-day-cell.dp-day-outmonth {
+  color: #94a3b8;
+  opacity: 0.35;
+}
+
+body.theme-light .dp-day-cell.dp-day-today {
+  border-color: rgba(16, 185, 129, 0.6);
+}
+
+body.theme-light .dp-day-cell.dp-day-selected {
+  background: #116852 !important;
+  border-color: #116852 !important;
+  color: #ffffff !important;
+}
+
 /* Search and Filters Bar (Sticky with Separated Border) */
 .search-filter-bar {
   display: flex;
@@ -2904,7 +3244,23 @@ body.theme-light .autocomplete-dropdown {
           <div class="scan-meta-bar">
             <div style="display:flex; align-items:center; gap:12px;">
               <label class="form-label" style="margin-bottom:0; font-size:11px; white-space:nowrap;">DATE IN</label>
-              <input type="date" class="form-input" id="scan-date-in" value="2026-09-18" style="max-width:180px; padding:5px 10px;">
+              <div class="custom-datepicker" id="scan-date-in-picker">
+                <input type="hidden" id="scan-date-in" value="2026-09-18">
+                <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('scan-date-in-picker', event)">
+                  <span class="dp-icon-cal">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                  </span>
+                  <span class="dp-date-text" id="scan-date-in-display">09/18/2026</span>
+                  <span class="dp-badge-relative" id="scan-date-in-relative"></span>
+                  <span class="dp-icon-chevron">&#9662;</span>
+                </button>
+                <div class="datepicker-popover" id="scan-date-in-popover"></div>
+              </div>
             </div>
             <div style="font-size:11px; color:var(--text-sub);">
               Units are grouped automatically by Brand in Available Stock.
@@ -3027,12 +3383,30 @@ body.theme-light .autocomplete-dropdown {
                 <div class="quick-chips-row" id="recent-customers-chips" style="margin-top:4px;"></div>
               </div>
 
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:8px;">
                 <div style="flex:1;">
                   <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Date Out</label>
-                  <input type="date" class="form-input" id="cart-date-out" value="2026-09-18" style="padding:5px 8px; font-size:11.5px;">
+                  <div class="custom-datepicker" id="cart-date-out-picker" style="width:100%;">
+                    <input type="hidden" id="cart-date-out" value="2026-09-18">
+                    <button type="button" class="datepicker-trigger" style="width:100%; justify-content:space-between;" onclick="toggleDatePicker('cart-date-out-picker', event)">
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="dp-icon-cal">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                          </svg>
+                        </span>
+                        <span class="dp-date-text" id="cart-date-out-display">09/18/2026</span>
+                        <span class="dp-badge-relative" id="cart-date-out-relative"></span>
+                      </div>
+                      <span class="dp-icon-chevron">&#9662;</span>
+                    </button>
+                    <div class="datepicker-popover" id="cart-date-out-popover"></div>
+                  </div>
                 </div>
-                <div style="flex:1.2; display:flex; flex-direction:column; justify-content:flex-end;">
+                <div style="flex:1.1; display:flex; flex-direction:column; justify-content:flex-end;">
                   <label class="form-label" style="margin-bottom:3px; font-size:11px; visibility:hidden;">Checkout</label>
                   <button class="btn btn-primary" style="justify-content:center; padding:6px 10px; font-size:12px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
                     Complete Checkout &rarr;
@@ -3530,7 +3904,25 @@ body.theme-light .autocomplete-dropdown {
 
       <div style="margin-bottom:8px;">
         <label class="form-label" for="edit-unit-datein">Date In</label>
-        <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="MM/DD/YYYY or YYYY-MM-DD" autocomplete="off">
+        <div class="custom-datepicker" id="edit-unit-datein-picker" style="width:100%;">
+          <input type="hidden" id="edit-unit-datein" value="">
+          <button type="button" class="datepicker-trigger" style="width:100%; justify-content:space-between;" onclick="toggleDatePicker('edit-unit-datein-picker', event)">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="dp-icon-cal">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </span>
+              <span class="dp-date-text" id="edit-unit-datein-display">—</span>
+              <span class="dp-badge-relative" id="edit-unit-datein-relative"></span>
+            </div>
+            <span class="dp-icon-chevron">&#9662;</span>
+          </button>
+          <div class="datepicker-popover" id="edit-unit-datein-popover"></div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -7020,7 +7412,7 @@ function openEditUnitModal(serial, model, brand, dateIn) {
       dIn = unitObj.dateIn;
     }
   } catch (e) {}
-  document.getElementById('edit-unit-datein').value = dIn;
+  setDatePickerValue('edit-unit-datein-picker', dIn || new Date().toISOString().slice(0, 10));
 
   modal.classList.add('open');
   setTimeout(() => {
@@ -7323,6 +7715,269 @@ function downloadCurrentHtml() {
   showToast('Downloaded current ac-stock-tracker.html');
 }
 
+/* =========================================================
+   CUSTOM PREMIUM IN-APP DATE PICKER CONTROLLER
+   ========================================================= */
+const DP_MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+const DP_DAY_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const activeDatePickers = {};
+
+function initDatePicker(pickerId, inputId, defaultIsoDate = '', onChangeCallback = null) {
+  const pickerEl = document.getElementById(pickerId);
+  const hiddenInput = document.getElementById(inputId);
+  if (!pickerEl || !hiddenInput) return;
+
+  const today = new Date();
+  let initDate = defaultIsoDate ? parseIsoDate(defaultIsoDate) : (hiddenInput.value ? parseIsoDate(hiddenInput.value) : today);
+  if (!initDate || isNaN(initDate.getTime())) initDate = today;
+
+  activeDatePickers[pickerId] = {
+    pickerId,
+    inputId,
+    selectedDate: new Date(initDate.getFullYear(), initDate.getMonth(), initDate.getDate()),
+    viewYear: initDate.getFullYear(),
+    viewMonth: initDate.getMonth(),
+    onChange: onChangeCallback
+  };
+
+  syncDatePickerValue(pickerId, false);
+  renderDatePickerPopover(pickerId);
+}
+
+function setDatePickerValue(pickerId, dateStr) {
+  const state = activeDatePickers[pickerId];
+  if (!state) {
+    initDatePicker(pickerId, pickerId.replace('-picker', ''), dateStr);
+    return;
+  }
+  const d = parseIsoDate(dateStr) || new Date();
+  state.selectedDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  state.viewYear = d.getFullYear();
+  state.viewMonth = d.getMonth();
+  syncDatePickerValue(pickerId, false);
+  renderDatePickerPopover(pickerId);
+}
+
+function parseIsoDate(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const [m, d, y] = s.split('/').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatIso(d) {
+  if (!d) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatDisplayDate(d) {
+  if (!d) return '—';
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
+}
+
+function getRelativeDateLabel(d) {
+  if (!d) return '';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'TODAY';
+  if (diffDays === -1) return 'YESTERDAY';
+  if (diffDays === 1) return 'TOMORROW';
+  if (diffDays < -1 && diffDays >= -7) return `${Math.abs(diffDays)}D AGO`;
+  return '';
+}
+
+function syncDatePickerValue(pickerId, fireChange = true) {
+  const state = activeDatePickers[pickerId];
+  if (!state) return;
+  const hiddenInput = document.getElementById(state.inputId);
+  const displayEl = document.getElementById(`${state.inputId}-display`);
+  const relativeEl = document.getElementById(`${state.inputId}-relative`);
+  const iso = formatIso(state.selectedDate);
+
+  if (hiddenInput) {
+    hiddenInput.value = iso;
+    if (fireChange) {
+      hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof state.onChange === 'function') state.onChange(iso);
+    }
+  }
+
+  if (displayEl) {
+    displayEl.textContent = formatDisplayDate(state.selectedDate);
+  }
+
+  if (relativeEl) {
+    const rel = getRelativeDateLabel(state.selectedDate);
+    if (rel) {
+      relativeEl.textContent = rel;
+      relativeEl.style.display = 'inline-block';
+    } else {
+      relativeEl.style.display = 'none';
+    }
+  }
+}
+
+function toggleDatePicker(pickerId, event) {
+  if (event) event.stopPropagation();
+  const pickerEl = document.getElementById(pickerId);
+  if (!pickerEl) return;
+  const isOpen = pickerEl.classList.contains('is-open');
+  closeAllDatePickers();
+  if (!isOpen) {
+    const state = activeDatePickers[pickerId];
+    if (state && state.selectedDate) {
+      state.viewYear = state.selectedDate.getFullYear();
+      state.viewMonth = state.selectedDate.getMonth();
+    }
+    renderDatePickerPopover(pickerId);
+    pickerEl.classList.add('is-open');
+  }
+}
+
+function closeAllDatePickers() {
+  document.querySelectorAll('.custom-datepicker.is-open').forEach(el => {
+    el.classList.remove('is-open');
+  });
+}
+
+function dpNavMonth(pickerId, delta, event) {
+  if (event) event.stopPropagation();
+  const state = activeDatePickers[pickerId];
+  if (!state) return;
+  state.viewMonth += delta;
+  if (state.viewMonth < 0) {
+    state.viewMonth = 11;
+    state.viewYear--;
+  } else if (state.viewMonth > 11) {
+    state.viewMonth = 0;
+    state.viewYear++;
+  }
+  renderDatePickerPopover(pickerId);
+}
+
+function dpSelectDay(pickerId, year, month, day, event) {
+  if (event) event.stopPropagation();
+  const state = activeDatePickers[pickerId];
+  if (!state) return;
+  state.selectedDate = new Date(year, month, day);
+  state.viewYear = year;
+  state.viewMonth = month;
+  syncDatePickerValue(pickerId, true);
+  renderDatePickerPopover(pickerId);
+  closeAllDatePickers();
+}
+
+function dpSetPreset(pickerId, offsetDays, event) {
+  if (event) event.stopPropagation();
+  const state = activeDatePickers[pickerId];
+  if (!state) return;
+  const target = new Date();
+  target.setDate(target.getDate() + offsetDays);
+  state.selectedDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  state.viewYear = target.getFullYear();
+  state.viewMonth = target.getMonth();
+  syncDatePickerValue(pickerId, true);
+  renderDatePickerPopover(pickerId);
+  closeAllDatePickers();
+}
+
+function renderDatePickerPopover(pickerId) {
+  const state = activeDatePickers[pickerId];
+  if (!state) return;
+  const popover = document.getElementById(`${state.pickerId}-popover`) || document.querySelector(`#${state.pickerId} .datepicker-popover`);
+  if (!popover) return;
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sel = state.selectedDate;
+
+  const firstDayOfWeek = new Date(state.viewYear, state.viewMonth, 1).getDay();
+  const daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(state.viewYear, state.viewMonth, 0).getDate();
+
+  const isToday = sel && sel.toDateString() === today.toDateString();
+  const yest = new Date(today);
+  yest.setDate(yest.getDate() - 1);
+  const isYesterday = sel && sel.toDateString() === yest.toDateString();
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const isWeekAgo = sel && sel.toDateString() === weekAgo.toDateString();
+
+  let daysHtml = '';
+
+  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    const d = daysInPrevMonth - i;
+    const prevMonth = state.viewMonth === 0 ? 11 : state.viewMonth - 1;
+    const prevYear = state.viewMonth === 0 ? state.viewYear - 1 : state.viewYear;
+    daysHtml += `<button type="button" class="dp-day-cell dp-day-outmonth" onclick="dpSelectDay('${pickerId}', ${prevYear}, ${prevMonth}, ${d}, event)">${d}</button>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const checkDate = new Date(state.viewYear, state.viewMonth, d);
+    const isSel = sel && checkDate.toDateString() === sel.toDateString();
+    const isTod = checkDate.toDateString() === today.toDateString();
+    let cls = 'dp-day-cell';
+    if (isSel) cls += ' dp-day-selected';
+    if (isTod) cls += ' dp-day-today';
+    daysHtml += `<button type="button" class="${cls}" onclick="dpSelectDay('${pickerId}', ${state.viewYear}, ${state.viewMonth}, ${d}, event)">${d}</button>`;
+  }
+
+  const totalCells = firstDayOfWeek + daysInMonth;
+  const remaining = (totalCells % 7 === 0) ? 0 : 7 - (totalCells % 7);
+  for (let d = 1; d <= remaining; d++) {
+    const nextMonth = state.viewMonth === 11 ? 0 : state.viewMonth + 1;
+    const nextYear = state.viewMonth === 11 ? state.viewYear + 1 : state.viewYear;
+    daysHtml += `<button type="button" class="dp-day-cell dp-day-outmonth" onclick="dpSelectDay('${pickerId}', ${nextYear}, ${nextMonth}, ${d}, event)">${d}</button>`;
+  }
+
+  popover.innerHTML = `
+    <div class="dp-presets-row" onclick="event.stopPropagation()">
+      <button type="button" class="dp-preset-btn ${isToday ? 'is-active' : ''}" onclick="dpSetPreset('${pickerId}', 0, event)">Today</button>
+      <button type="button" class="dp-preset-btn ${isYesterday ? 'is-active' : ''}" onclick="dpSetPreset('${pickerId}', -1, event)">Yesterday</button>
+      <button type="button" class="dp-preset-btn ${isWeekAgo ? 'is-active' : ''}" onclick="dpSetPreset('${pickerId}', -7, event)">-7 Days</button>
+    </div>
+    <div class="dp-header" onclick="event.stopPropagation()">
+      <button type="button" class="dp-nav-btn" onclick="dpNavMonth('${pickerId}', -1, event)" title="Previous month">&#9664;</button>
+      <div class="dp-title-select-wrap">
+        <span class="dp-title-btn">${DP_MONTH_NAMES[state.viewMonth]} ${state.viewYear}</span>
+      </div>
+      <button type="button" class="dp-nav-btn" onclick="dpNavMonth('${pickerId}', 1, event)" title="Next month">&#9654;</button>
+    </div>
+    <div class="dp-weekdays" onclick="event.stopPropagation()">
+      ${DP_DAY_SHORT.map(w => `<span>${w}</span>`).join('')}
+    </div>
+    <div class="dp-days-grid" onclick="event.stopPropagation()">
+      ${daysHtml}
+    </div>
+  `;
+}
+
+// Global click outside listener for popovers
+document.addEventListener('click', e => {
+  if (!e.target.closest('.custom-datepicker')) {
+    closeAllDatePickers();
+  }
+});
+
 /* Initialization */
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -7333,6 +7988,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (txt) txt.textContent = 'Day';
     }
   } catch(e){}
+
+  initDatePicker('scan-date-in-picker', 'scan-date-in', '2026-09-18');
+  initDatePicker('cart-date-out-picker', 'cart-date-out', new Date().toISOString().slice(0, 10));
+  initDatePicker('edit-unit-datein-picker', 'edit-unit-datein', '');
 
   await refreshData();
   await loadConfig();
