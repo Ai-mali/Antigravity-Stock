@@ -2727,7 +2727,7 @@ body.theme-light .autocomplete-dropdown {
     <div class="header-actions">
       <button class="model-pill-btn" id="header-model-btn" onclick="openConfigModal()" title="AI Model &amp; API Configuration">
         <span class="model-dot"></span>
-        <span id="header-model-label">Gemini</span>
+        <span id="header-model-label">Scan Model: Gemini</span>
         <span style="font-size:13px; opacity:0.7;">&#9881;</span>
       </button>
       <!-- Day / Dark Toggle Switch -->
@@ -6337,7 +6337,7 @@ async function loadConfig() {
     const pName = provLabel(a.provider);
     const labelEl = document.getElementById('header-model-label');
     const btnEl = document.getElementById('header-model-btn');
-    if (labelEl) labelEl.textContent = pName;
+    if (labelEl) labelEl.textContent = `Scan Model: ${pName}`;
     if (btnEl) btnEl.title = `AI Provider: ${pName}\nActive Model: ${a.model}\nClick to configure Model & API keys`;
   } catch (e) {
     logLine('Config load failed: ' + e.message, 'log-line-warn');
@@ -6596,7 +6596,7 @@ async function applyConfigSettings() {
     const pName = provLabel(prov);
     const labelEl = document.getElementById('header-model-label');
     const btnEl = document.getElementById('header-model-btn');
-    if (labelEl) labelEl.textContent = pName;
+    if (labelEl) labelEl.textContent = `Scan Model: ${pName}`;
     if (btnEl) btnEl.title = `AI Provider: ${pName}\nActive Model: ${model}\nClick to configure Model & API keys`;
     document.getElementById('cfg-routing-preview').textContent = `${pName} \u00b7 ${model}`;
     await loadConfig();
