@@ -223,6 +223,7 @@ desc, or no model, are skipped/blocked.
      - Renamed Card 1 title from `Dispatch Destination & Checkout` to `Dispatch & Checkout` with `white-space: nowrap` and `flex-wrap: nowrap`.
      - Ensured customer status tag (`+ New Customer` / `Known Customer`) sits strictly on the same single line without wrapping down.
      - Cleaned up Stock Out view header by removing the subtitle and duplicate top "Clear Staging Cart" button (preserving the dedicated "Clear Cart" button inside Card 2).
+     - Compacted the header AI scan button to display only the AI Provider name (e.g. `● Gemini ⚙`) instead of the verbose model string, saving over 200px of header width while providing the full active model info on hover tooltip.
 18. **Indoor + Outdoor Sets & Non-Serial Parts**:
    - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
    - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.

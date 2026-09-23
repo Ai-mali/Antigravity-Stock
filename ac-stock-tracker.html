@@ -2721,9 +2721,9 @@ body.theme-light .autocomplete-dropdown {
 
     <!-- Header Right Actions -->
     <div class="header-actions">
-      <button class="model-pill-btn" onclick="openConfigModal()">
+      <button class="model-pill-btn" id="header-model-btn" onclick="openConfigModal()" title="AI Model &amp; API Configuration">
         <span class="model-dot"></span>
-        <span id="header-model-label">Scan Model (Anthropic Claude &middot; claude-3-7-sonnet)</span>
+        <span id="header-model-label">Gemini</span>
         <span style="font-size:13px; opacity:0.7;">&#9881;</span>
       </button>
       <!-- Day / Dark Toggle Switch -->
@@ -6228,8 +6228,11 @@ async function loadConfig() {
   try {
     DB.config = await apiGet('/api/config');
     const a = DB.config.active;
-    document.getElementById('header-model-label').textContent =
-      `Scan Model (${provLabel(a.provider)} \u00b7 ${a.model})`;
+    const pName = provLabel(a.provider);
+    const labelEl = document.getElementById('header-model-label');
+    const btnEl = document.getElementById('header-model-btn');
+    if (labelEl) labelEl.textContent = pName;
+    if (btnEl) btnEl.title = `AI Provider: ${pName}\nActive Model: ${a.model}\nClick to configure Model & API keys`;
   } catch (e) {
     logLine('Config load failed: ' + e.message, 'log-line-warn');
   }
@@ -6408,11 +6411,15 @@ async function applyConfigSettings() {
   const model = document.getElementById('cfg-model').value;
   try {
     await apiPost('/api/config', { provider: prov, model });
-    document.getElementById('header-model-label').textContent = `Scan Model (${provLabel(prov)} \u00b7 ${model})`;
-    document.getElementById('cfg-routing-preview').textContent = `${provLabel(prov)} \u00b7 ${model}`;
+    const pName = provLabel(prov);
+    const labelEl = document.getElementById('header-model-label');
+    const btnEl = document.getElementById('header-model-btn');
+    if (labelEl) labelEl.textContent = pName;
+    if (btnEl) btnEl.title = `AI Provider: ${pName}\nActive Model: ${model}\nClick to configure Model & API keys`;
+    document.getElementById('cfg-routing-preview').textContent = `${pName} \u00b7 ${model}`;
     await loadConfig();
     closeConfigModal();
-    showToast(`Config applied: ${provLabel(prov)} \u00b7 ${model}`);
+    showToast(`Config applied: ${pName} \u00b7 ${model}`);
   } catch (e) {
     showToast('Apply failed: ' + e.message);
   }
