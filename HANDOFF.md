@@ -188,12 +188,12 @@ desc, or no model, are skipped/blocked.
      - When the search box is cleared (or user clicks the new quick `✕` clear button), previous brand and model collapsed/expanded states are automatically restored.
    - **Seamless Duplicate Jump Navigation**:
      - Clicking "View in Available Stock" from `#duplicate-location-modal` auto-expands the brand and model, focuses the matching card, and smoothly scrolls it into view.
-15. [DONE] **Fixed Desktop App Shell, Free Scroll Toggle & Two Stacked Closed-Border Cards**:
-   - **Screen Mode Toggle (`📌 Screen Fit` vs `📜 Free Scroll`)**:
-     - Added a dedicated switch button in the top header right next to Day/Night mode.
-     - **`📌 Screen Fit` (App Shell Mode)**: Locks outer browser window scrolling (`html, body { overflow: hidden; }`). The project area fits the viewport like a native desktop app. App header is frozen, and only the left inventory list scrolls inside. Ideal for desktop monitors.
-     - **`📜 Free Scroll` (Page Scroll Mode)**: Allows the whole webpage to scroll naturally with the browser scrollbar (`overflow-y: auto`), with `.app-container { overflow: visible }` so the right sidebar smoothly sticks at `top: 76px`. Ideal for small laptop screens (e.g. 1366x768).
-     - State persistence: User's choice is saved in `localStorage.getItem('ac_stock_screen_mode')` so each machine automatically remembers its own preferred display mode.
+15. [DONE] **Sticky Frozen Cards Architecture & Free Scroll Default**:
+   - **Default Display Mode (`📜 Free Scroll`)**:
+     - Set `📜 Free Scroll` as the active default on page load.
+     - Allows whole-page scrolling without trapped inner scrollbars, while the top header sticks at `top: 0` and the right sidebar sticks permanently frozen at `top: 76px` as desired by the owner.
+   - **Screen Mode Switch (`📌 Screen Fit` vs `📜 Free Scroll`)**:
+     - Switch button in top header next to Day/Night mode lets operators switch between Free Scroll and Screen Fit (locked app shell), with persistent state in `localStorage`.
    - **Two Stacked Closed-Border Cards in Stock Out**:
      - **Card 1: Dispatch Destination & Checkout (`#dispatch-checkout-card`)**: Dedicated card at the top with its own complete closed border (`border: 1px solid var(--border); border-radius: 12px; background: var(--surface)`), customer autocomplete, date out, and `Complete Checkout →` button.
      - **Card 2: Dispatch Staging Cart (`#dispatch-staging-card`)**: Sits directly below Card 1 with its own closed border, batch ID, brand breakdown pills, and scrollable staged serials list.

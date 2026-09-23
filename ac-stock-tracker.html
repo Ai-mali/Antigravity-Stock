@@ -2825,7 +2825,7 @@ body.theme-light .autocomplete-dropdown {
 }
 </style>
 </head>
-<body>
+<body class="free-scroll-mode">
 
 <div class="app-container">
   <!-- TOP APP HEADER -->
@@ -2874,9 +2874,9 @@ body.theme-light .autocomplete-dropdown {
         <span class="theme-mode-label" id="theme-mode-text">Dark</span>
       </button>
       <!-- Screen Fit / Free Scroll Mode Switch -->
-      <button class="screen-mode-btn active" id="screen-mode-btn" onclick="toggleScreenMode()" title="Toggle Screen Fit (Lock to Viewport) vs Free Scroll (Page Scroll)">
-        <span id="screen-mode-icon" style="font-size:11.5px;">📌</span>
-        <span id="screen-mode-text">Screen Fit</span>
+      <button class="screen-mode-btn" id="screen-mode-btn" onclick="toggleScreenMode()" title="Free Scroll Mode is ON (Page scrolls, cards stick). Click to switch to Screen Fit.">
+        <span id="screen-mode-icon" style="font-size:11.5px;">📜</span>
+        <span id="screen-mode-text">Free Scroll</span>
       </button>
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
@@ -7273,11 +7273,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const savedScreen = localStorage.getItem('ac_stock_screen_mode');
-    // Default: use saved preference, or if unset, use Screen Fit for screens >= 750px height, else Free Scroll
-    const defaultMode = savedScreen ? (savedScreen === 'screen-fit') : (window.innerHeight >= 750);
-    applyScreenMode(defaultMode);
+    // Default to Free Scroll mode (sticky frozen header & cards) unless user explicitly selected screen-fit
+    const isScreenFit = savedScreen === 'screen-fit';
+    applyScreenMode(isScreenFit);
   } catch(e) {
-    applyScreenMode(true);
+    applyScreenMode(false);
   }
 
   await refreshData();
