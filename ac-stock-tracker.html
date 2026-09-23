@@ -2356,6 +2356,239 @@ body.theme-light .unit-action-btn {
   color: var(--text);
 }
 
+/* Custom Glassmorphic Datepicker */
+.custom-datepicker {
+  position: relative;
+  display: inline-block;
+}
+
+.datepicker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.datepicker-trigger:hover {
+  border-color: var(--green-bright);
+  background: rgba(38, 208, 124, 0.05);
+}
+
+.datepicker-trigger .dp-icon-cal {
+  color: var(--green-bright);
+  display: inline-flex;
+  align-items: center;
+}
+
+.datepicker-trigger .dp-date-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.2px;
+}
+
+.datepicker-trigger .dp-badge-relative {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: rgba(38, 208, 124, 0.15);
+  color: var(--green-bright);
+  border: 1px solid rgba(38, 208, 124, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.datepicker-trigger .dp-icon-chevron {
+  font-size: 9px;
+  color: var(--text-sub);
+  margin-left: 2px;
+  transition: transform 0.15s ease;
+}
+
+.custom-datepicker.open .dp-icon-chevron {
+  transform: rotate(180deg);
+}
+
+.datepicker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+  width: 260px;
+  display: none;
+  animation: dpPop .15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-datepicker.open .datepicker-popover {
+  display: block;
+}
+
+@keyframes dpPop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dp-presets-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dp-preset-btn {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s;
+}
+
+.dp-preset-btn:hover {
+  background: rgba(38, 208, 124, 0.12);
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+}
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.dp-header-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dp-nav-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-sub);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.12s;
+}
+
+.dp-nav-btn:hover {
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+  background: var(--surface2);
+}
+
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin-bottom: 4px;
+}
+
+.dp-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dp-day-cell {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.1s;
+  user-select: none;
+}
+
+.dp-day-cell:hover:not(.dp-day-empty) {
+  background: rgba(38, 208, 124, 0.18);
+  color: var(--green-bright);
+}
+
+.dp-day-cell.dp-day-selected {
+  background: var(--green-bright) !important;
+  color: #0d1217 !important;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(38, 208, 124, 0.4);
+}
+
+.dp-day-cell.dp-day-today {
+  border: 1px solid var(--green-bright);
+}
+
+.dp-day-cell.dp-day-empty {
+  cursor: default;
+  opacity: 0.15;
+}
+
+/* Manual Entry Modal Tabs & Forms */
+.manual-type-tab-group {
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.manual-type-tab {
+  flex: 1;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-sub);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.manual-type-tab.active {
+  background: var(--surface);
+  color: var(--green-bright);
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
 /* Return Screen Layout */
 .return-screen-layout {
   display: grid;
@@ -2892,22 +3125,44 @@ body.theme-light .autocomplete-dropdown {
 
         <!-- Right column: Scan Results -->
         <div class="card" style="display:flex; flex-direction:column;">
-          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:10px;">
-              <span class="card-title">Scan Results</span>
+              <span class="card-title" style="font-size:13.5px; font-weight:700; letter-spacing:-0.2px;">Scan Results</span>
+              <span class="badge badge-green" id="scan-header-count-badge" style="font-size:10.5px; padding:2px 8px; font-weight:600;">0 units</span>
             </div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn-circle" onclick="addScanRowManual()" title="Add Model Row">+</button>
-              <button class="btn-circle" onclick="downloadScanCsv()" title="Export CSV">&#11015;</button>
-            </div>
-          </div>
-          <div class="scan-meta-bar">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <label class="form-label" style="margin-bottom:0; font-size:11px; white-space:nowrap;">DATE IN</label>
-              <input type="date" class="form-input" id="scan-date-in" value="2026-09-18" style="max-width:180px; padding:5px 10px;">
-            </div>
-            <div style="font-size:11px; color:var(--text-sub);">
-              Units are grouped automatically by Brand in Available Stock.
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:10.5px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.5px;">DATE IN:</span>
+                <div class="custom-datepicker" id="scan-date-in-picker">
+                  <input type="hidden" id="scan-date-in" value="2026-09-18">
+                  <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('scan-date-in-picker', event)" style="padding:4px 9px; font-size:11.5px;">
+                    <span class="dp-icon-cal">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </span>
+                    <span class="dp-date-text" id="scan-date-in-display">09/18/2026</span>
+                    <span class="dp-badge-relative" id="scan-date-in-relative"></span>
+                    <span class="dp-icon-chevron">&#9662;</span>
+                  </button>
+                  <div class="datepicker-popover" id="scan-date-in-popover"></div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="openManualStockInModal()" style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; font-size:11px; font-weight:600; border-radius:6px;" title="Manual input stock entry">
+                <span style="color:var(--green-bright); font-size:13px; font-weight:700; line-height:1;">+</span>
+                <span>Add Row</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="downloadScanCsv()" title="Export CSV" style="padding:4px 9px; font-size:11px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export</span>
+              </button>
             </div>
           </div>
           <div class="table-container stock-in-table-scroll" style="flex:1;">
@@ -3027,14 +3282,31 @@ body.theme-light .autocomplete-dropdown {
                 <div class="quick-chips-row" id="recent-customers-chips" style="margin-top:4px;"></div>
               </div>
 
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                <div style="flex:1;">
+              <div style="display:flex; flex-direction:column; gap:10px; margin-top:2px;">
+                <div>
                   <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Date Out</label>
-                  <input type="date" class="form-input" id="cart-date-out" value="2026-09-18" style="padding:5px 8px; font-size:11.5px;">
+                  <div class="custom-datepicker" id="dispatch-date-out-picker" style="width:100%;">
+                    <input type="hidden" id="cart-date-out" value="2026-09-18">
+                    <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('dispatch-date-out-picker', event)" style="width:100%; justify-content:space-between; padding:6px 10px; font-size:11.5px;">
+                      <span style="display:flex; align-items:center; gap:6px;">
+                        <span class="dp-icon-cal">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                          </svg>
+                        </span>
+                        <span class="dp-date-text" id="dispatch-date-out-display">09/18/2026</span>
+                        <span class="dp-badge-relative" id="dispatch-date-out-relative">TODAY</span>
+                      </span>
+                      <span class="dp-icon-chevron">&#9662;</span>
+                    </button>
+                    <div class="datepicker-popover" id="dispatch-date-out-popover"></div>
+                  </div>
                 </div>
-                <div style="flex:1.2; display:flex; flex-direction:column; justify-content:flex-end;">
-                  <label class="form-label" style="margin-bottom:3px; font-size:11px; visibility:hidden;">Checkout</label>
-                  <button class="btn btn-primary" style="justify-content:center; padding:6px 10px; font-size:12px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
+                <div>
+                  <button class="btn btn-primary" style="justify-content:center; padding:8px 12px; font-size:12.5px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
                     Complete Checkout &rarr;
                   </button>
                 </div>
@@ -3219,8 +3491,72 @@ body.theme-light .autocomplete-dropdown {
         </div>
       </div>
     </section>
-
   </main>
+</div>
+
+<!-- MANUAL STOCK ENTRY MODAL -->
+<div class="modal-overlay" id="manual-entry-modal">
+  <div class="modal-dialog" style="max-width:540px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Manual Stock Entry</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Add model and inventory units directly to Scan Results without scanning.</div>
+      </div>
+      <button class="btn-circle" onclick="closeManualStockInModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Mode Switch: Serialized vs Non-Serial -->
+      <div class="manual-type-tab-group">
+        <div class="manual-type-tab active" id="manual-tab-serial" onclick="toggleManualEntryMode('serial')">
+          &#128290; Serialized Equipment
+        </div>
+        <div class="manual-type-tab" id="manual-tab-nonserial" onclick="toggleManualEntryMode('nonserial')">
+          &#128230; Non-Serial Part / Accessory
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div>
+          <label class="form-label">Brand *</label>
+          <select class="form-select" id="manual-brand-select" onchange="handleManualBrandChange(this.value)">
+            <!-- Populated dynamically -->
+          </select>
+          <input type="text" class="form-input" id="manual-brand-new" placeholder="Enter new brand name..." style="display:none; margin-top:6px;">
+        </div>
+        <div>
+          <label class="form-label">Model Code *</label>
+          <input type="text" class="form-input mono" id="manual-model-input" placeholder="e.g. FTKV25NVM" style="text-transform:uppercase;">
+        </div>
+      </div>
+
+      <!-- Serialized Units Mode -->
+      <div id="manual-mode-serial-fields">
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Serial Numbers * (Comma, space, or new line)</span>
+          <span id="manual-serial-count-hint" style="font-size:10.5px; color:var(--green-bright); font-weight:600;">0 serials entered</span>
+        </label>
+        <textarea class="form-input mono" id="manual-serials-textarea" rows="4" placeholder="K001234, K001235, K001236&#10;or paste a list of serials..." oninput="updateManualSerialsCount()" style="font-size:12px; line-height:1.5; resize:vertical;"></textarea>
+      </div>
+
+      <!-- Non-Serial Mode -->
+      <div id="manual-mode-nonserial-fields" style="display:none;">
+        <div style="display:grid; grid-template-columns:100px 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label class="form-label">Quantity *</label>
+            <input type="number" class="form-input mono" id="manual-qty-input" min="1" max="9999" value="1">
+          </div>
+          <div>
+            <label class="form-label">Part / Accessory Description</label>
+            <input type="text" class="form-input" id="manual-desc-input" placeholder="e.g. REMOTE CONTROLLER, COPPER PIPE KIT">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeManualStockInModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitManualStockIn()">+ Add to Scan Results</button>
+    </div>
+  </div>
 </div>
 
 <!-- 6. MODEL AND API CONFIGURATION MODAL -->
@@ -4592,9 +4928,11 @@ function renderScanResultsTable() {
   const hdrS = document.getElementById('scan-hdr-serial-cnt');
   const hdrQ = document.getElementById('scan-hdr-qty-cnt');
   const sumL = document.getElementById('scan-summary-label');
+  const hdrBadge = document.getElementById('scan-header-count-badge');
   if (hdrM) hdrM.textContent = '(' + DB.scans.length + ')';
   if (hdrS) hdrS.textContent = '(' + totalSerials + ')';
   if (hdrQ) hdrQ.textContent = '(' + totalSerials + ')';
+  if (hdrBadge) hdrBadge.textContent = `${totalSerials} unit${totalSerials === 1 ? '' : 's'}`;
   if (sumL) sumL.textContent = 'Total: ' + DB.scans.length + ' models \u00b7 ' + totalSerials + ' serialized units';
 
   updateScanSelectionUI();
@@ -7258,10 +7596,400 @@ function closePhotoViewerModal() {
   if (modal) modal.classList.remove('open');
 }
 
+/* ==========================================================================
+   CUSTOM IN-APP GLASSMORPHIC DATEPICKER ENGINE
+   ========================================================================== */
+const DatePickerState = {};
+
+function initDatePicker(id, initialDateStr = null) {
+  const container = document.getElementById(id);
+  if (!container) return;
+
+  const today = new Date();
+  const defStr = initialDateStr || today.toISOString().split('T')[0];
+  const parts = defStr.split('-');
+  const initialYear = parseInt(parts[0], 10);
+  const initialMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+  const initialDay = parseInt(parts[2], 10);
+
+  DatePickerState[id] = {
+    selectedDate: new Date(initialYear, initialMonth, initialDay),
+    viewYear: initialYear,
+    viewMonth: initialMonth,
+    inputId: id === 'scan-date-in-picker' ? 'scan-date-in' : (id === 'dispatch-date-out-picker' ? 'cart-date-out' : null)
+  };
+
+  updateDatePickerDisplay(id);
+  renderDatePickerPopover(id);
+}
+
+function getRelativeDateLabel(targetDate) {
+  if (!targetDate) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(targetDate);
+  target.setHours(0, 0, 0, 0);
+
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'TODAY';
+  if (diffDays === 1) return 'TOMORROW';
+  if (diffDays === -1) return 'YESTERDAY';
+  if (diffDays < -1) return `${Math.abs(diffDays)}D AGO`;
+  if (diffDays > 1) return `+${diffDays} DAYS`;
+  return '';
+}
+
+function formatDateDisplay(d) {
+  if (!d || isNaN(d.getTime())) return '';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function formatDateISO(d) {
+  if (!d || isNaN(d.getTime())) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function updateDatePickerDisplay(id) {
+  const state = DatePickerState[id];
+  if (!state) return;
+
+  const dateText = formatDateDisplay(state.selectedDate);
+  const relText = getRelativeDateLabel(state.selectedDate);
+  const isoText = formatDateISO(state.selectedDate);
+
+  if (id === 'scan-date-in-picker') {
+    const disp = document.getElementById('scan-date-in-display');
+    const rel = document.getElementById('scan-date-in-relative');
+    const input = document.getElementById('scan-date-in');
+    if (disp) disp.textContent = dateText;
+    if (rel) {
+      rel.textContent = relText;
+      rel.style.display = relText ? 'inline-block' : 'none';
+    }
+    if (input) input.value = isoText;
+  } else if (id === 'dispatch-date-out-picker') {
+    const disp = document.getElementById('dispatch-date-out-display');
+    const rel = document.getElementById('dispatch-date-out-relative');
+    const input = document.getElementById('cart-date-out');
+    if (disp) disp.textContent = dateText;
+    if (rel) {
+      rel.textContent = relText;
+      rel.style.display = relText ? 'inline-block' : 'none';
+    }
+    if (input) input.value = isoText;
+  }
+}
+
+function renderDatePickerPopover(id) {
+  const state = DatePickerState[id];
+  if (!state) return;
+
+  const popover = document.getElementById(`${id}-popover`) || (document.getElementById(id) ? document.getElementById(id).querySelector('.datepicker-popover') : null);
+  if (!popover) return;
+
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const monthTitle = `${monthNames[state.viewMonth]} ${state.viewYear}`;
+
+  const firstDayIndex = new Date(state.viewYear, state.viewMonth, 1).getDay();
+  const daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
+
+  const today = new Date();
+  const isCurrentMonthToday = today.getFullYear() === state.viewYear && today.getMonth() === state.viewMonth;
+  const todayDate = today.getDate();
+
+  const isCurrentMonthSelected = state.selectedDate.getFullYear() === state.viewYear && state.selectedDate.getMonth() === state.viewMonth;
+  const selectedDateNum = state.selectedDate.getDate();
+
+  let daysHtml = '';
+  // Empty leading cells
+  for (let i = 0; i < firstDayIndex; i++) {
+    daysHtml += `<div class="dp-day-cell dp-day-empty"></div>`;
+  }
+  // Days of month
+  for (let d = 1; d <= daysInMonth; d++) {
+    let cls = 'dp-day-cell';
+    if (isCurrentMonthSelected && d === selectedDateNum) cls += ' dp-day-selected';
+    if (isCurrentMonthToday && d === todayDate) cls += ' dp-day-today';
+    daysHtml += `<div class="${cls}" onclick="selectDatePickerDate('${id}', ${state.viewYear}, ${state.viewMonth}, ${d})">${d}</div>`;
+  }
+
+  popover.innerHTML = `
+    <div class="dp-presets-row">
+      <button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', 'today')">Today</button>
+      <button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', 'yesterday')">Yesterday</button>
+      <button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', 'last7')">-7 Days</button>
+    </div>
+    <div class="dp-header">
+      <button type="button" class="dp-nav-btn" onclick="changeDatePickerMonth('${id}', -1)">&#9664;</button>
+      <span class="dp-header-title">${monthTitle}</span>
+      <button type="button" class="dp-nav-btn" onclick="changeDatePickerMonth('${id}', 1)">&#9654;</button>
+    </div>
+    <div class="dp-weekdays">
+      <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+    </div>
+    <div class="dp-days-grid">
+      ${daysHtml}
+    </div>
+  `;
+}
+
+function toggleDatePicker(id, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+
+  // Close all other open pickers
+  document.querySelectorAll('.custom-datepicker.open').forEach(p => {
+    if (p !== el) p.classList.remove('open');
+  });
+
+  if (!isOpen) {
+    const state = DatePickerState[id];
+    if (state && state.selectedDate) {
+      state.viewYear = state.selectedDate.getFullYear();
+      state.viewMonth = state.selectedDate.getMonth();
+      renderDatePickerPopover(id);
+    }
+    el.classList.add('open');
+  } else {
+    el.classList.remove('open');
+  }
+}
+
+function selectDatePickerDate(id, y, m, d) {
+  const state = DatePickerState[id];
+  if (!state) return;
+  state.selectedDate = new Date(y, m, d);
+  state.viewYear = y;
+  state.viewMonth = m;
+  updateDatePickerDisplay(id);
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+
+function applyDatePickerPreset(id, preset) {
+  const state = DatePickerState[id];
+  if (!state) return;
+  const now = new Date();
+  if (preset === 'today') {
+    state.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (preset === 'yesterday') {
+    now.setDate(now.getDate() - 1);
+    state.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (preset === 'last7') {
+    now.setDate(now.getDate() - 7);
+    state.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  state.viewYear = state.selectedDate.getFullYear();
+  state.viewMonth = state.selectedDate.getMonth();
+  updateDatePickerDisplay(id);
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+
+function changeDatePickerMonth(id, delta) {
+  const state = DatePickerState[id];
+  if (!state) return;
+  state.viewMonth += delta;
+  if (state.viewMonth < 0) {
+    state.viewMonth = 11;
+    state.viewYear -= 1;
+  } else if (state.viewMonth > 11) {
+    state.viewMonth = 0;
+    state.viewYear += 1;
+  }
+  renderDatePickerPopover(id);
+}
+
+// Close datepicker popovers when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.custom-datepicker')) {
+    document.querySelectorAll('.custom-datepicker.open').forEach(p => p.classList.remove('open'));
+  }
+});
+
+/* ==========================================================================
+   MANUAL STOCK ENTRY MODAL LOGIC
+   ========================================================================== */
+let manualEntryMode = 'serial'; // 'serial' or 'nonserial'
+
+function openManualStockInModal() {
+  const modal = document.getElementById('manual-entry-modal');
+  if (!modal) return;
+
+  // Populate brand dropdown
+  const brandSelect = document.getElementById('manual-brand-select');
+  if (brandSelect) {
+    const brands = (DB.brands && DB.brands.length) ? DB.brands : ['DAIKIN', 'CARRIER', 'MITSUBISHI', 'LG', 'PANASONIC', 'TOSHIBA'];
+    brandSelect.innerHTML = brands.map(b => `<option value="${b}">${b}</option>`).join('') +
+      `<option value="__NEW__">+ Add New Brand...</option>`;
+    brandSelect.value = brands[0];
+  }
+  const brandNewInput = document.getElementById('manual-brand-new');
+  if (brandNewInput) {
+    brandNewInput.style.display = 'none';
+    brandNewInput.value = '';
+  }
+
+  // Clear fields
+  const modelInput = document.getElementById('manual-model-input');
+  const serialsInput = document.getElementById('manual-serials-textarea');
+  const qtyInput = document.getElementById('manual-qty-input');
+  const descInput = document.getElementById('manual-desc-input');
+
+  if (modelInput) modelInput.value = '';
+  if (serialsInput) serialsInput.value = '';
+  if (qtyInput) qtyInput.value = '1';
+  if (descInput) descInput.value = '';
+
+  toggleManualEntryMode('serial');
+  updateManualSerialsCount();
+  modal.classList.add('open');
+  setTimeout(() => { if (modelInput) modelInput.focus(); }, 100);
+}
+
+function closeManualStockInModal() {
+  const modal = document.getElementById('manual-entry-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function handleManualBrandChange(val) {
+  const brandNewInput = document.getElementById('manual-brand-new');
+  if (!brandNewInput) return;
+  if (val === '__NEW__') {
+    brandNewInput.style.display = 'block';
+    brandNewInput.focus();
+  } else {
+    brandNewInput.style.display = 'none';
+    brandNewInput.value = '';
+  }
+}
+
+function toggleManualEntryMode(mode) {
+  manualEntryMode = mode;
+  const tabSerial = document.getElementById('manual-tab-serial');
+  const tabNonSerial = document.getElementById('manual-tab-nonserial');
+  const modeSerialFields = document.getElementById('manual-mode-serial-fields');
+  const modeNonSerialFields = document.getElementById('manual-mode-nonserial-fields');
+
+  if (mode === 'serial') {
+    if (tabSerial) tabSerial.classList.add('active');
+    if (tabNonSerial) tabNonSerial.classList.remove('active');
+    if (modeSerialFields) modeSerialFields.style.display = 'block';
+    if (modeNonSerialFields) modeNonSerialFields.style.display = 'none';
+  } else {
+    if (tabSerial) tabSerial.classList.remove('active');
+    if (tabNonSerial) tabNonSerial.classList.add('active');
+    if (modeSerialFields) modeSerialFields.style.display = 'none';
+    if (modeNonSerialFields) modeNonSerialFields.style.display = 'block';
+  }
+}
+
+function updateManualSerialsCount() {
+  const textarea = document.getElementById('manual-serials-textarea');
+  const hint = document.getElementById('manual-serial-count-hint');
+  if (!textarea || !hint) return;
+
+  const raw = textarea.value;
+  const serials = raw.split(/[\r\n,;\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+  hint.textContent = `${serials.length} serial${serials.length === 1 ? '' : 's'} entered`;
+}
+
+function submitManualStockIn() {
+  const brandSelect = document.getElementById('manual-brand-select');
+  const brandNewInput = document.getElementById('manual-brand-new');
+  const modelInput = document.getElementById('manual-model-input');
+
+  let brand = brandSelect ? brandSelect.value : 'DAIKIN';
+  if (brand === '__NEW__') {
+    brand = (brandNewInput?.value || '').trim().toUpperCase();
+    if (!brand) {
+      showToast('Please enter a new brand name.', '&#9888;');
+      if (brandNewInput) brandNewInput.focus();
+      return;
+    }
+  }
+
+  const model = (modelInput?.value || '').trim().toUpperCase();
+  if (!model) {
+    showToast('Please enter equipment Model Code.', '&#9888;');
+    if (modelInput) modelInput.focus();
+    return;
+  }
+
+  // Ensure model is registered to brand in DB
+  if (!DB.modelBrands[model]) {
+    DB.modelBrands[model] = brand;
+  }
+  if (!DB.brands.includes(brand)) {
+    DB.brands.push(brand);
+  }
+
+  if (manualEntryMode === 'serial') {
+    const textarea = document.getElementById('manual-serials-textarea');
+    const raw = textarea ? textarea.value : '';
+    const serials = raw.split(/[\r\n,;\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+
+    if (!serials.length) {
+      showToast('Please enter at least one serial number.', '&#9888;');
+      if (textarea) textarea.focus();
+      return;
+    }
+
+    // Add row to DB.scans
+    const newRow = {
+      no: DB.scans.length + 1,
+      model: model,
+      serials: serials,
+      qty: String(serials.length),
+      desc: '',
+      flag: '',
+      sev: ''
+    };
+    DB.scans.push(newRow);
+  } else {
+    const qtyInput = document.getElementById('manual-qty-input');
+    const descInput = document.getElementById('manual-desc-input');
+    const qtyNum = parseInt(qtyInput?.value || '1', 10) || 1;
+    const descText = (descInput?.value || '').trim() || `${model} PART`;
+
+    const newRow = {
+      no: DB.scans.length + 1,
+      model: model,
+      serials: [],
+      qty: `${qtyNum} PCS`,
+      desc: descText,
+      flag: '',
+      sev: ''
+    };
+    DB.scans.push(newRow);
+  }
+
+  markDuplicateScans();
+  renderScanResultsTable();
+  closeManualStockInModal();
+  showToast(`Added ${model} to Scan Results!`, '&#10003;');
+}
+
 /* Keyboard escape listener & modal backdrop click */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeConfigModal();
+    closeManualStockInModal();
     closeEditScanModal();
     closeZoomScanModal();
     closeActivityModal();
@@ -7271,6 +7999,12 @@ document.addEventListener('keydown', e => {
     closePhotoViewerModal();
   }
 });
+const manualEntryModalEl = document.getElementById('manual-entry-modal');
+if (manualEntryModalEl) {
+  manualEntryModalEl.addEventListener('click', e => {
+    if (e.target === manualEntryModalEl) closeManualStockInModal();
+  });
+}
 document.getElementById('config-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('config-modal')) closeConfigModal();
 });
@@ -7337,6 +8071,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   await refreshData();
   await loadConfig();
   initScanResultsDragSelect();
+  
+  // Initialize Custom Datepickers with today's date
+  const todayStr = new Date().toISOString().split('T')[0];
+  initDatePicker('scan-date-in-picker', todayStr);
+  initDatePicker('dispatch-date-out-picker', todayStr);
+
   switchTab('stock-in');
 });
 </script>
