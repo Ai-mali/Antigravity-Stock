@@ -198,12 +198,11 @@ desc, or no model, are skipped/blocked.
      - Right below the "Dispatch Staging Cart" title, `#cart-brand-breakdown-row` displays colorful brand summary pills showing live units per brand staged (e.g. `[● CARRIER 8] [● DAIKIN 2]`).
    - **Brand Badges on Staged Cards**:
      - Each card in the staging cart displays a distinct colored brand tag (`.cart-item-brand-badge`) alongside the serial and model description.
-16. [DONE] **Instant Zero-Freeze Theme Switching & Pure Natural Scrolling**:
-   - **Zero-Freeze Day/Dark Mode Toggle**:
-     - Eliminated the 300ms–800ms UI freeze when switching themes with many expanded brand accordions.
-     - Root cause: 1,000+ simultaneous CSS `transition: all` animations fired across all expanded chips when the theme class changed, overloading the browser's render thread.
-     - Solution: Added `.no-transitions` class injection during `toggleTheme()` to bypass interpolation, paired with a synchronous reflow (`void document.documentElement.offsetHeight`) and re-enabling on `requestAnimationFrame`. Swaps themes instantly in 0ms at 60fps.
-     - Replaced broad `transition: all` on `.avail-unit-card` and `.so-serial-card` with lightweight, hardware-accelerated transforms (`transform 0.15s, box-shadow 0.15s, border-color 0.15s`).
+16. [DONE] **Smooth 200ms Theme Transition & Pure Natural Scrolling**:
+   - **Smooth 200ms Day/Dark Mode Transition**:
+     - Configured a soft, elegant 200ms fade transition on main surfaces and cards (`body, .app-container, header, main, .card, .avail-unit-card, .so-serial-card, .search-filter-bar, .pill-filter-btn { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }`).
+     - By targeting high-level surfaces and cards rather than hundreds of nested micro-elements (icons, badges, buttons), the theme switch transitions smoothly over 200ms at 60fps with zero UI freezing or stuttering.
+     - Snappy card hover transforms (`transform: translateY(-2px)`) remain fast and responsive.
    - **Pure Natural Scrolling (Lock Screen Removed)**:
      - Removed experimental `#screen-mode-btn` (Screen Fit vs Free Scroll) and removed all locked viewport / trapped inner scrollbar CSS.
      - Clean, comfortable whole-page scrolling where header sticks at `top: 0` and Stock Out cards stick at `top: 76px`.
