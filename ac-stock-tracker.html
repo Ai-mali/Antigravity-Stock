@@ -227,15 +227,23 @@ body.theme-light .theme-toggle-thumb {
   letter-spacing: 0.02em;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-page);
   color: var(--text);
-  min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 16px;
+  align-items: stretch;
+  padding: 12px 16px;
   font-size: 12.5px;
   line-height: 1.4;
   transition: background-color .2s;
@@ -253,14 +261,16 @@ body {
 .app-container {
   width: 100%;
   max-width: 1360px;
+  height: 100%;
+  max-height: 100%;
   background: var(--bg-app);
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 32px);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -273,8 +283,8 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
+  position: relative;
   z-index: 40;
 }
 
@@ -433,8 +443,12 @@ header {
 /* Main Views */
 main {
   flex: 1;
-  padding: 20px;
+  min-height: 0;
+  padding: 14px 20px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .view-section {
@@ -444,6 +458,14 @@ main {
 
 .view-section.active {
   display: block;
+}
+
+#view-stock-out.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -2045,12 +2067,30 @@ body.theme-light .unit-action-btn {
   text-shadow: 0 0 8px rgba(38, 208, 124, 0.7);
 }
 
-/* Stock Out 4-Column Grid Chips */
+/* Stock Out Layout */
 .stockout-layout {
-  display: grid;
-  grid-template-columns: 1fr 340px;
+  display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stockout-left-col {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#stockout-brands-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
 }
 
 .stockout-chips-grid {
@@ -2410,7 +2450,30 @@ body.theme-light .unit-action-btn {
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .stock-in-layout, .stockout-layout, .return-screen-layout {
+  #view-stock-out.active {
+    overflow-y: auto;
+    height: auto;
+  }
+  .stockout-layout {
+    flex-direction: column;
+    overflow: visible;
+    height: auto;
+  }
+  .stockout-left-col {
+    overflow: visible;
+    height: auto;
+  }
+  #stockout-brands-container {
+    overflow: visible;
+    height: auto;
+    max-height: none;
+  }
+  #stockout-right-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .stock-in-layout, .return-screen-layout {
     grid-template-columns: 1fr;
   }
   .stockout-chips-grid {
@@ -2889,8 +2952,8 @@ body.theme-light .autocomplete-dropdown {
 
       <div class="stockout-layout">
         <!-- Left: Accordion with 4-col chip cards -->
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div class="stockout-left-col">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
             <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-sub);">
               AVAILABLE MODELS BY BRAND <span style="font-weight:400; text-transform:none; margin-left:6px; color:var(--text-muted);">Click serial chip to toggle in cart</span>
             </div>
@@ -2900,7 +2963,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
-        <div id="stockout-right-sidebar" style="position:sticky; top:76px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 96px);">
+        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; display:flex; flex-direction:column; gap:10px; height:100%; min-height:0; overflow:hidden;">
           
           <!-- Card 1: Dispatch Destination & Checkout (Own Closed Border, Frozen at Top) -->
           <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
