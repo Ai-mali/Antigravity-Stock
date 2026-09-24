@@ -239,10 +239,16 @@ desc, or no model, are skipped/blocked.
     - **No False Duplicates**: Restocks of non-serial parts from new delivery orders never collide or trigger false `[⚠️ DUPLICATE]` errors. If `#1..#3` exist, a new delivery of 4 pcs automatically numbers as `#4..#7`.
     - **Backend Protection**: `StockStore._split_dupes` automatically increments synthetic unit numbers to the next available unique index if overlap is encountered, ensuring stock-in always succeeds smoothly.
     - Each unit remains an individually clickable chip in Available Stock & Stock Out so operators can stage and dispatch exact quantities.
-20. **Indoor + Outdoor Sets & Non-Serial Parts**:
+20. [DONE] **Desktop Launch Performance (Splash + Lazy Render + Resize Hit Zones)**:
+    - `desktop_app.py`: backend boots inside a daemon thread — `import uvicorn`/`from backend import app` moved inside `run_server()` so heavy imports + workbook parse run parallel to window creation. Window opens instantly on inline `SPLASH_HTML`, then `window.load_url(APP_URL)` swaps to the app once port 8000 accepts (poll in `webview.start` callback, max 30s).
+    - `DesktopApi.window` renamed `_window` — **must stay private**: pywebview's `inject_pywebview`/`get_functions` walks all public js_api attributes recursively; a public `window` made it descend into `window.native` (.NET WinForms graph → COM off-UI-thread errors + `Rectangle.Empty` infinite recursion) on every page injection.
+    - Frontend `SCREEN_RENDERERS` map + `dirtyScreens` Set: `renderAll()` marks all screens dirty but renders only `DB.activeTab`; `switchTab()` calls `renderScreenIfDirty(tab)`. Cut initial DOM from ~9.4k elements to the active screen only.
+    - Resize hit zones: edges 14px, corners 34px (was 8/22). Native `SC_SIZE` + PointerCapture fallback unchanged.
+    - `stock_store.load()` only rewrites the workbook when `_schema_dirty` (new file / real migration) — no more write-on-every-launch.
+21. **Indoor + Outdoor Sets & Non-Serial Parts**:
     - Decided with owner: Keep indoor and outdoor units treated as independent boxes (operator selects serials separately).
     - Non-serial accessories remain description-only (`#1..#N`) for now; to be revisited when the owner requests it.
-21. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
+22. **Final step: PyInstaller `.exe` packaging** — deferred until all upgrades and new features are finished as requested by the owner. Keep repo and folder clean until that final step.
 
 **MANDATORY PROTOCOL — ASK & PROPOSE OPTIONS FIRST BEFORE IMPLEMENTING**:
 - If a requirement or request is underspecified, ambiguous, or if you can see a superior/pro-level approach or alternative options: **DO NOT assume or rush into code changes**.
