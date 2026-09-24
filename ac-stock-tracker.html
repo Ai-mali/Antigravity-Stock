@@ -227,17 +227,24 @@ body.theme-light .theme-toggle-thumb {
   letter-spacing: 0.02em;
 }
 
-/* Ultra-fast 50ms Theme Transition on Main Surfaces & Cards */
-body,
-.app-container,
-header,
-main,
-.card,
-.avail-unit-card,
-.so-serial-card,
-.search-filter-bar,
-.pill-filter-btn {
-  transition: background-color 0.05s ease, border-color 0.05s ease, color 0.05s ease, box-shadow 0.05s ease;
+/* Theme switching uses the View Transitions API: the browser snapshots the
+   page, swaps the theme in ONE style recalc, and cross-fades the snapshots
+   on the compositor — smooth at any DOM size, zero per-element animation. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: ease;
+  mix-blend-mode: normal;
+}
+
+/* While a view transition runs, suppress ALL element transitions/animations —
+   the snapshot crossfade IS the animation; per-element color/box-shadow
+   tweens would double-fade and repaint every expanded card (the old lag). */
+body.vt-theme-switch *,
+body.vt-theme-switch *::before,
+body.vt-theme-switch *::after {
+  transition: none !important;
+  animation: none !important;
 }
 
 /* Base Body Styles (Natural Scrolling Layout with Sticky Header & Sidebar) */
@@ -8324,14 +8331,28 @@ document.getElementById('photo-viewer-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('photo-viewer-modal')) closePhotoViewerModal();
 });
 
-/* Day / Dark Theme toggle with state persistence and smooth 200ms transition */
+/* Day / Dark Theme toggle — View Transitions crossfade: GPU snapshot swap
+   whose cost is independent of DOM size (fixes the lag on expanded data).
+   Falls back to an instant swap when unsupported / reduced-motion. */
 function toggleTheme() {
-  document.body.classList.toggle('theme-light');
-  const isLight = document.body.classList.contains('theme-light');
-  const txt = document.getElementById('theme-mode-text');
-  if (txt) txt.textContent = isLight ? 'Day' : 'Dark';
-  try { localStorage.setItem('ac_stock_theme', isLight ? 'light' : 'dark'); } catch(e){}
-  showToast(isLight ? 'Day (Light) Mode activated' : 'Night (Dark) Mode activated', isLight ? '&#9728;' : '&#9790;');
+  const willBeLight = !document.body.classList.contains('theme-light');
+  const applyTheme = () => {
+    document.body.classList.toggle('theme-light');
+    const txt = document.getElementById('theme-mode-text');
+    if (txt) txt.textContent = willBeLight ? 'Day' : 'Dark';
+    try { localStorage.setItem('ac_stock_theme', willBeLight ? 'light' : 'dark'); } catch(e){}
+  };
+  const reduceMotion = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (document.startViewTransition && !reduceMotion) {
+    document.body.classList.add('vt-theme-switch');
+    const vt = document.startViewTransition(applyTheme);
+    vt.finished.finally(() => document.body.classList.remove('vt-theme-switch'));
+  } else {
+    applyTheme();
+  }
+  showToast(willBeLight ? 'Day (Light) Mode activated' : 'Night (Dark) Mode activated',
+            willBeLight ? '&#9728;' : '&#9790;');
 }
 
 /* Clean download feature */
