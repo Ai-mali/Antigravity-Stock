@@ -469,6 +469,8 @@ body.is-desktop-shell .desktop-window-controls {
   gap: 10px;
   cursor: pointer;
   user-select: none;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .brand-icon {
@@ -490,12 +492,39 @@ body.is-desktop-shell .desktop-window-controls {
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
-.brand-text p {
-  font-size: 10.5px;
-  color: var(--text-muted);
-  margin-top: 1px;
+.brand-title-full {
+  display: none;
+}
+
+.brand-title-short {
+  display: inline;
+}
+
+.model-text-full {
+  display: none;
+}
+
+.model-text-short {
+  display: inline;
+}
+
+@media (min-width: 1240px) {
+  .brand-title-full {
+    display: inline;
+  }
+  .brand-title-short {
+    display: none;
+  }
+  .model-text-full {
+    display: inline;
+  }
+  .model-text-short {
+    display: none;
+  }
 }
 
 /* Nav Pills Bar */
@@ -3122,8 +3151,10 @@ body.theme-light .autocomplete-dropdown {
     <div class="brand" onclick="switchTab('stock-in')">
       <div class="brand-icon">&#x25A6;</div>
       <div class="brand-text">
-        <h1>AC Stock Tracker</h1>
-        <p>Fast, clean warehouse inventory</p>
+        <h1>
+          <span class="brand-title-full">AC Stock Tracker</span>
+          <span class="brand-title-short">AC ST</span>
+        </h1>
       </div>
     </div>
 
@@ -3150,7 +3181,10 @@ body.theme-light .autocomplete-dropdown {
     <div class="header-actions">
       <button class="model-pill-btn" id="header-model-btn" onclick="openConfigModal()" title="AI Model &amp; API Configuration">
         <span class="model-dot"></span>
-        <span id="header-model-label">Scan Model: Gemini</span>
+        <span id="header-model-label">
+          <span class="model-text-full">Scan Model: Gemini</span>
+          <span class="model-text-short">SMA: Gemini</span>
+        </span>
         <span style="font-size:13px; opacity:0.7;">&#9881;</span>
       </button>
       <!-- Day / Dark Toggle Switch -->
@@ -6955,15 +6989,34 @@ function provLabel(pid) {
     ? DB.config.providers[pid].label : pid;
 }
 
+function updateHeaderModelDisplay(pName, model) {
+  const labelEl = document.getElementById('header-model-label');
+  const btnEl = document.getElementById('header-model-btn');
+
+  let shortName = pName || 'AI';
+  if (shortName.toLowerCase().includes('qwen')) shortName = 'Qwen-VL';
+  else if (shortName.toLowerCase().includes('gemini')) shortName = 'Gemini';
+  else if (shortName.toLowerCase().includes('deepseek')) shortName = 'DeepSeek';
+  else if (shortName.toLowerCase().includes('openai') || shortName.toLowerCase().includes('gpt')) shortName = 'GPT-4o';
+  else if (shortName.toLowerCase().includes('claude') || shortName.toLowerCase().includes('anthropic')) shortName = 'Claude';
+
+  if (labelEl) {
+    labelEl.innerHTML = `
+      <span class="model-text-full">Scan Model: ${escapeHtml(pName)}</span>
+      <span class="model-text-short">SMA: ${escapeHtml(shortName)}</span>
+    `;
+  }
+  if (btnEl) {
+    btnEl.title = `AI Provider: ${pName}\nActive Model: ${model || 'default'}\nClick to configure Model & API keys`;
+  }
+}
+
 async function loadConfig() {
   try {
     DB.config = await apiGet('/api/config');
     const a = DB.config.active;
     const pName = provLabel(a.provider);
-    const labelEl = document.getElementById('header-model-label');
-    const btnEl = document.getElementById('header-model-btn');
-    if (labelEl) labelEl.textContent = `Scan Model: ${pName}`;
-    if (btnEl) btnEl.title = `AI Provider: ${pName}\nActive Model: ${a.model}\nClick to configure Model & API keys`;
+    updateHeaderModelDisplay(pName, a.model);
   } catch (e) {
     logLine('Config load failed: ' + e.message, 'log-line-warn');
   }
@@ -7219,10 +7272,7 @@ async function applyConfigSettings() {
   try {
     await apiPost('/api/config', { provider: prov, model });
     const pName = provLabel(prov);
-    const labelEl = document.getElementById('header-model-label');
-    const btnEl = document.getElementById('header-model-btn');
-    if (labelEl) labelEl.textContent = `Scan Model: ${pName}`;
-    if (btnEl) btnEl.title = `AI Provider: ${pName}\nActive Model: ${model}\nClick to configure Model & API keys`;
+    updateHeaderModelDisplay(pName, model);
     document.getElementById('cfg-routing-preview').textContent = `${pName} \u00b7 ${model}`;
     await loadConfig();
     closeConfigModal();
