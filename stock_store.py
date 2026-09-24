@@ -169,6 +169,7 @@ class StockStore:
 
     # ---------------------------------------------------------- load/save
     def load(self):
+        self._schema_dirty = not self.path.exists()
         if self.path.exists():
             self.wb = load_workbook(self.path)
         else:
@@ -210,33 +211,42 @@ class StockStore:
                 continue
             self.activities.append(dict(
                 zip(ACTIVITY_HEADER, ("" if v is None else v for v in row))))
-        self.save(backup=False)
+        if self._schema_dirty:
+            self.save(backup=False)
 
     def _migrate_schema(self):
         """Rename the Type-era sheets/column to Brand, and remove Supplier column if present."""
         names = self.wb.sheetnames
         if "Types" in names and "Brands" not in names:
             self.wb["Types"].title = "Brands"
+            self._schema_dirty = True
         if "ModelTypes" in names and "ModelBrands" not in names:
             self.wb["ModelTypes"].title = "ModelBrands"
+            self._schema_dirty = True
         if "MasterRecord" in names:
             ws = self.wb["MasterRecord"]
             first_val = str(ws.cell(row=1, column=1).value or "").strip().lower()
             if first_val == "supplier":
                 ws.delete_cols(1, 1)
+                self._schema_dirty = True
             hdr = ws.cell(row=1, column=1).value
             if str(hdr or "").strip() == "Type":
                 ws.cell(row=1, column=1, value="Brand")
+                self._schema_dirty = True
 
     def _sheet(self, name: str, header: list[str]):
-        ws = (self.wb[name] if name in self.wb.sheetnames
-              else self.wb.create_sheet(name))
+        if name in self.wb.sheetnames:
+            ws = self.wb[name]
+        else:
+            ws = self.wb.create_sheet(name)
+            self._schema_dirty = True
         first = next(ws.iter_rows(min_row=1, max_row=1, values_only=True),
                      None)
         if first is None or all(v is None for v in first):
             # written cell-by-cell: append() would leave an empty leading row
             for col, title in enumerate(header, start=1):
                 ws.cell(row=1, column=col, value=title)
+            self._schema_dirty = True
         return ws
 
     def _backup(self):

@@ -324,69 +324,69 @@ body.is-desktop-shell .desktop-resize-handle {
   display: block !important;
 }
 
-/* Edges */
+/* Edges (14px grab zone — easy to hit without pixel-perfect aim) */
 .desktop-resize-handle.edge-top {
   top: 0;
-  left: 20px;
-  right: 20px;
-  height: 8px;
+  left: 34px;
+  right: 34px;
+  height: 14px;
   cursor: n-resize !important;
 }
 
 .desktop-resize-handle.edge-bottom {
   bottom: 0;
-  left: 20px;
-  right: 20px;
-  height: 8px;
+  left: 34px;
+  right: 34px;
+  height: 14px;
   cursor: s-resize !important;
 }
 
 .desktop-resize-handle.edge-left {
-  top: 20px;
-  bottom: 20px;
+  top: 34px;
+  bottom: 34px;
   left: 0;
-  width: 8px;
+  width: 14px;
   cursor: w-resize !important;
 }
 
 .desktop-resize-handle.edge-right {
-  top: 20px;
-  bottom: 20px;
+  top: 34px;
+  bottom: 34px;
   right: 0;
-  width: 8px;
+  width: 14px;
   cursor: e-resize !important;
 }
 
-/* Corners (Diagonal Cursors with generous 22x22px hit target) */
+/* Corners (Diagonal Cursors with generous 34x34px hit target) */
 .desktop-resize-handle.corner-top-left {
   top: 0;
   left: 0;
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   cursor: nwse-resize !important;
 }
 
 .desktop-resize-handle.corner-top-right {
   top: 0;
   right: 0;
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   cursor: nesw-resize !important;
 }
 
 .desktop-resize-handle.corner-bottom-left {
   bottom: 0;
   left: 0;
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   cursor: nesw-resize !important;
 }
 
 .desktop-resize-handle.corner-bottom-right {
   bottom: 0;
   right: 0;
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   cursor: nwse-resize !important;
 }
 
@@ -4372,13 +4372,28 @@ async function refreshData() {
   checkCustomerInputStatus();
 }
 
+/* Lazy per-tab rendering: data loads for all screens at once, but only the
+   visible tab's DOM is (re)built. Hidden screens stay dirty until visited —
+   cuts the initial render from ~9k elements to just the active screen. */
+const SCREEN_RENDERERS = {
+  'stock-in':   () => renderScanResultsTable(),
+  'available':  () => renderAvailable(),
+  'stock-out':  () => { renderStockOut(); renderCartSidebar(); },
+  'track-list': () => renderTrackList(),
+  'return':     () => renderReturnScreen()
+};
+const dirtyScreens = new Set(Object.keys(SCREEN_RENDERERS));
+
+function renderScreenIfDirty(tab) {
+  if (dirtyScreens.has(tab) && SCREEN_RENDERERS[tab]) {
+    dirtyScreens.delete(tab);
+    SCREEN_RENDERERS[tab]();
+  }
+}
+
 function renderAll() {
-  renderScanResultsTable();
-  renderAvailable();
-  renderStockOut();
-  renderCartSidebar();
-  renderTrackList();
-  renderReturnScreen();
+  Object.keys(SCREEN_RENDERERS).forEach(t => dirtyScreens.add(t));
+  renderScreenIfDirty(DB.activeTab || 'stock-in');
 }
 
 function logLine(txt, cls = '') {
@@ -4507,11 +4522,7 @@ function switchTab(tab) {
     if (btn) btn.classList.toggle('active', t === tab);
   });
 
-  if (tab === 'stock-in') renderScanResultsTable();
-  if (tab === 'available') renderAvailable();
-  if (tab === 'stock-out') renderStockOut();
-  if (tab === 'track-list') renderTrackList();
-  if (tab === 'return') renderReturnScreen();
+  renderScreenIfDirty(tab);
 
   updateGlobalBadges();
   updateStickyHeaderOffsets();
