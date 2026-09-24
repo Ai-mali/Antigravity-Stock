@@ -237,17 +237,23 @@ body.theme-light .theme-toggle-thumb {
   mix-blend-mode: normal;
 }
 
-/* While a view transition runs, suppress ALL element transitions/animations —
-   the snapshot crossfade IS the animation; per-element color/box-shadow
-   tweens would double-fade and repaint every expanded card (the old lag). */
+/* While a view transition runs, suppress element transitions — the snapshot
+   crossfade IS the animation; per-element color/box-shadow tweens would
+   double-fade and repaint every expanded card (the old lag).
+   NOTE: animations are deliberately NOT suppressed — killing infinite
+   animations (chip glow, dupe blink, focus pulse, spinners) mid-flight and
+   restarting them at 0% when the guard lifts causes a visible end-flick. */
 body.vt-theme-switch *,
 body.vt-theme-switch *::before,
 body.vt-theme-switch *::after {
   transition: none !important;
-  animation: none !important;
 }
 
 /* Base Body Styles (Natural Scrolling Layout with Sticky Header & Sidebar) */
+html {
+  background-color: var(--bg-page); /* canvas behind view-transition snapshots */
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-page);
