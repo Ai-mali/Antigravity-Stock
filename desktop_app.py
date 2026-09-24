@@ -25,6 +25,93 @@ class DesktopApi:
     def set_window(self, window):
         self.window = window
 
+    def get_hwnd(self):
+        if self.window and hasattr(self.window, 'native') and self.window.native:
+            try:
+                return int(self.window.native.Handle.ToInt32())
+            except Exception:
+                pass
+        try:
+            import ctypes
+            hwnd = ctypes.windll.user32.FindWindowW(None, 'AC Stock Tracker')
+            if hwnd:
+                return hwnd
+        except Exception:
+            pass
+        return None
+
+    def apply_rounded_corners(self):
+        """Enable Windows 11 DWM native rounded corners."""
+        try:
+            import ctypes
+            hwnd = self.get_hwnd()
+            if hwnd:
+                DWMWA_WINDOW_CORNER_PREFERENCE = 33
+                DWMWCP_ROUND = 2
+                val = ctypes.c_int(DWMWCP_ROUND)
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_WINDOW_CORNER_PREFERENCE,
+                    ctypes.byref(val),
+                    ctypes.sizeof(val)
+                )
+                return True
+        except Exception:
+            pass
+        return False
+
+    def start_native_resize(self, direction: str):
+        """Initiate native Windows OS smooth resizing for frameless window."""
+        dir_map = {
+            'left': 1,        # WMSZ_LEFT
+            'right': 2,       # WMSZ_RIGHT
+            'top': 3,         # WMSZ_TOP
+            'top-left': 4,    # WMSZ_TOPLEFT
+            'top-right': 5,   # WMSZ_TOPRIGHT
+            'bottom': 6,      # WMSZ_BOTTOM
+            'bottom-left': 7, # WMSZ_BOTTOMLEFT
+            'bottom-right': 8 # WMSZ_BOTTOMRIGHT
+        }
+        dir_code = dir_map.get(direction)
+        if not dir_code:
+            return False
+
+        try:
+            import ctypes
+            hwnd = self.get_hwnd()
+            if hwnd:
+                ctypes.windll.user32.ReleaseCapture()
+                # WM_SYSCOMMAND = 0x0112, SC_SIZE = 0xF000
+                ctypes.windll.user32.SendMessageW(hwnd, 0x0112, 0xF000 + dir_code, 0)
+                return True
+        except Exception:
+            pass
+        return False
+
+    def get_window_bounds(self):
+        if self.window:
+            return {
+                'x': getattr(self.window, 'x', 0),
+                'y': getattr(self.window, 'y', 0),
+                'width': getattr(self.window, 'width', 1320),
+                'height': getattr(self.window, 'height', 840)
+            }
+        return {'x': 0, 'y': 0, 'width': 1320, 'height': 840}
+
+    def set_bounds(self, x, y, width, height):
+        if self.window:
+            try:
+                min_w, min_h = 1050, 680
+                w = max(min_w, int(width))
+                h = max(min_h, int(height))
+                if x is not None and y is not None:
+                    self.window.move(int(x), int(y))
+                self.window.resize(w, h)
+                return True
+            except Exception:
+                pass
+        return False
+
     def minimize(self):
         if self.window:
             self.window.minimize()
@@ -101,8 +188,12 @@ def main():
     )
     api.set_window(window)
 
+    def on_started(w):
+        time.sleep(0.4)
+        api.apply_rounded_corners()
+
     # Start the desktop window (blocking until closed)
-    webview.start(debug=False)
+    webview.start(on_started, window, debug=False)
     sys.exit(0)
 
 

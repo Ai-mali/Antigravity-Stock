@@ -291,14 +291,102 @@ body.is-desktop-shell .app-container {
   max-width: 100% !important;
   min-height: 100vh !important;
   height: 100vh !important;
-  border-radius: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
+  border-radius: 14px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+body.is-desktop-shell header {
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
 }
 
 body.is-desktop-shell main {
   height: calc(100vh - 56px) !important;
   overflow-y: auto !important;
+}
+
+/* Frameless Window 8-Direction Resize Handles */
+.desktop-resize-handle {
+  display: none;
+  position: fixed;
+  z-index: 99999;
+  background: transparent;
+  -webkit-app-region: no-drag;
+  user-select: none;
+  pointer-events: auto;
+}
+
+body.is-desktop-shell .desktop-resize-handle {
+  display: block;
+}
+
+/* Edges */
+.desktop-resize-handle.edge-top {
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.desktop-resize-handle.edge-bottom {
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.desktop-resize-handle.edge-left {
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.desktop-resize-handle.edge-right {
+  top: 14px;
+  bottom: 14px;
+  right: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+/* Corners (Diagonal Cursors with generous 16x16px hit target) */
+.desktop-resize-handle.corner-top-left {
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.desktop-resize-handle.corner-top-right {
+  top: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nesw-resize;
+}
+
+.desktop-resize-handle.corner-bottom-left {
+  bottom: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nesw-resize;
+}
+
+.desktop-resize-handle.corner-bottom-right {
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
 }
 
 /* Header & Drag Region */
@@ -3016,6 +3104,16 @@ body.theme-light .autocomplete-dropdown {
 </style>
 </head>
 <body class="free-scroll-mode">
+
+<!-- Frameless Desktop 8-Direction Resize Handles -->
+<div class="desktop-resize-handle edge-top" onmousedown="onDesktopResizeStart('top', event)" title="Resize Top"></div>
+<div class="desktop-resize-handle edge-bottom" onmousedown="onDesktopResizeStart('bottom', event)" title="Resize Bottom"></div>
+<div class="desktop-resize-handle edge-left" onmousedown="onDesktopResizeStart('left', event)" title="Resize Left"></div>
+<div class="desktop-resize-handle edge-right" onmousedown="onDesktopResizeStart('right', event)" title="Resize Right"></div>
+<div class="desktop-resize-handle corner-top-left" onmousedown="onDesktopResizeStart('top-left', event)" title="Resize Top-Left"></div>
+<div class="desktop-resize-handle corner-top-right" onmousedown="onDesktopResizeStart('top-right', event)" title="Resize Top-Right"></div>
+<div class="desktop-resize-handle corner-bottom-left" onmousedown="onDesktopResizeStart('bottom-left', event)" title="Resize Bottom-Left"></div>
+<div class="desktop-resize-handle corner-bottom-right" onmousedown="onDesktopResizeStart('bottom-right', event)" title="Resize Bottom-Right"></div>
 
 <div class="app-container">
   <!-- TOP APP HEADER -->
@@ -8208,12 +8306,94 @@ function desktopClose() {
   }
 }
 
+let _desktopResizeState = null;
+
+async function onDesktopResizeStart(direction, event) {
+  if (event.button !== 0) return; // left click only
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (!isDesktopShell()) return;
+
+  // 1. Try Win32 native live resize
+  try {
+    if (window.pywebview.api.start_native_resize) {
+      const ok = await window.pywebview.api.start_native_resize(direction);
+      if (ok) return;
+    }
+  } catch(e) {}
+
+  // 2. Coordinated smooth resize fallback
+  try {
+    const bounds = await window.pywebview.api.get_window_bounds();
+    _desktopResizeState = {
+      dir: direction,
+      startX: event.screenX,
+      startY: event.screenY,
+      winX: bounds.x,
+      winY: bounds.y,
+      winW: bounds.width,
+      winH: bounds.height
+    };
+    document.addEventListener('mousemove', onDesktopResizeMove);
+    document.addEventListener('mouseup', onDesktopResizeEnd);
+  } catch(e) {}
+}
+
+function onDesktopResizeMove(event) {
+  if (!_desktopResizeState || !isDesktopShell()) return;
+  event.preventDefault();
+
+  const dx = event.screenX - _desktopResizeState.startX;
+  const dy = event.screenY - _desktopResizeState.startY;
+
+  let newX = _desktopResizeState.winX;
+  let newY = _desktopResizeState.winY;
+  let newW = _desktopResizeState.winW;
+  let newH = _desktopResizeState.winH;
+
+  const minW = 1050;
+  const minH = 680;
+
+  if (_desktopResizeState.dir.includes('right')) {
+    newW = Math.max(minW, _desktopResizeState.winW + dx);
+  }
+  if (_desktopResizeState.dir.includes('left')) {
+    const candidateW = _desktopResizeState.winW - dx;
+    if (candidateW >= minW) {
+      newW = candidateW;
+      newX = _desktopResizeState.winX + dx;
+    }
+  }
+  if (_desktopResizeState.dir.includes('bottom')) {
+    newH = Math.max(minH, _desktopResizeState.winH + dy);
+  }
+  if (_desktopResizeState.dir.includes('top')) {
+    const candidateH = _desktopResizeState.winH - dy;
+    if (candidateH >= minH) {
+      newH = candidateH;
+      newY = _desktopResizeState.winY + dy;
+    }
+  }
+
+  window.pywebview.api.set_bounds(newX, newY, newW, newH);
+}
+
+function onDesktopResizeEnd(event) {
+  _desktopResizeState = null;
+  document.removeEventListener('mousemove', onDesktopResizeMove);
+  document.removeEventListener('mouseup', onDesktopResizeEnd);
+}
+
 function enableDesktopShellMode() {
   document.body.classList.add('is-desktop-shell');
 }
 
 window.addEventListener('pywebviewready', () => {
   enableDesktopShellMode();
+  if (isDesktopShell() && window.pywebview.api.apply_rounded_corners) {
+    try { window.pywebview.api.apply_rounded_corners(); } catch(e){}
+  }
 });
 
 if (window.pywebview || (navigator.userAgent && navigator.userAgent.includes('pywebview'))) {
