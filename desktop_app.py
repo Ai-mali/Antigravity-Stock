@@ -1,7 +1,7 @@
 """Frameless Desktop Shell for AC Stock Tracker.
 
 Launches a native frameless Edge WebView2 window with custom dark titlebar,
-window drag support, minimize/maximize/close controls, and an integrated
+smooth 8-direction resize handles, native rounded corners, and an integrated
 background FastAPI backend server.
 """
 
@@ -9,6 +9,8 @@ import sys
 import time
 import socket
 import threading
+import ctypes
+from ctypes import wintypes
 import uvicorn
 import webview
 
@@ -32,7 +34,6 @@ class DesktopApi:
             except Exception:
                 pass
         try:
-            import ctypes
             hwnd = ctypes.windll.user32.FindWindowW(None, 'AC Stock Tracker')
             if hwnd:
                 return hwnd
@@ -40,12 +41,12 @@ class DesktopApi:
             pass
         return None
 
-    def apply_rounded_corners(self):
-        """Enable Windows 11 DWM native rounded corners."""
+    def enable_window_features(self):
+        """Enable Windows 11 DWM rounded corners and native sizing frame."""
         try:
-            import ctypes
             hwnd = self.get_hwnd()
             if hwnd:
+                # 1. Windows 11 Native Rounded Corners (DWMWA_WINDOW_CORNER_PREFERENCE = 33)
                 DWMWA_WINDOW_CORNER_PREFERENCE = 33
                 DWMWCP_ROUND = 2
                 val = ctypes.c_int(DWMWCP_ROUND)
@@ -55,13 +56,26 @@ class DesktopApi:
                     ctypes.byref(val),
                     ctypes.sizeof(val)
                 )
+
+                # 2. Add WS_THICKFRAME for native OS window sizing & aero snap
+                GWL_STYLE = -16
+                WS_THICKFRAME = 0x00040000
+                WS_MINIMIZEBOX = 0x00020000
+                WS_MAXIMIZEBOX = 0x00010000
+                style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+                style |= WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+                ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
+                ctypes.windll.user32.SetWindowPos(
+                    hwnd, 0, 0, 0, 0, 0,
+                    0x0027  # SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER
+                )
                 return True
         except Exception:
             pass
         return False
 
     def start_native_resize(self, direction: str):
-        """Initiate native Windows OS smooth resizing for frameless window."""
+        """Initiate native Windows OS smooth hardware resizing for frameless window."""
         dir_map = {
             'left': 1,        # WMSZ_LEFT
             'right': 2,       # WMSZ_RIGHT
@@ -77,7 +91,6 @@ class DesktopApi:
             return False
 
         try:
-            import ctypes
             hwnd = self.get_hwnd()
             if hwnd:
                 ctypes.windll.user32.ReleaseCapture()
@@ -89,21 +102,56 @@ class DesktopApi:
         return False
 
     def get_window_bounds(self):
+        """Returns accurate screen coordinates and dimensions of the window."""
+        try:
+            hwnd = self.get_hwnd()
+            if hwnd:
+                rect = wintypes.RECT()
+                if ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+                    return {
+                        'x': int(rect.left),
+                        'y': int(rect.top),
+                        'width': int(rect.right - rect.left),
+                        'height': int(rect.bottom - rect.top)
+                    }
+        except Exception:
+            pass
+
         if self.window:
             return {
-                'x': getattr(self.window, 'x', 0),
-                'y': getattr(self.window, 'y', 0),
-                'width': getattr(self.window, 'width', 1320),
-                'height': getattr(self.window, 'height', 840)
+                'x': int(getattr(self.window, 'x', 0)),
+                'y': int(getattr(self.window, 'y', 0)),
+                'width': int(getattr(self.window, 'width', 1320)),
+                'height': int(getattr(self.window, 'height', 840))
             }
         return {'x': 0, 'y': 0, 'width': 1320, 'height': 840}
 
     def set_bounds(self, x, y, width, height):
+        """Atomic 0-latency window reposition and resize via Win32 SetWindowPos."""
+        min_w, min_h = 1050, 680
+        w = max(min_w, int(width))
+        h = max(min_h, int(height))
+
+        try:
+            hwnd = self.get_hwnd()
+            if hwnd:
+                SWP_NOZORDER = 0x0004
+                SWP_NOACTIVATE = 0x0010
+                ctypes.windll.user32.SetWindowPos(
+                    hwnd, 0, int(x), int(y), int(w), int(h),
+                    SWP_NOZORDER | SWP_NOACTIVATE
+                )
+                if self.window:
+                    self.window._x = int(x)
+                    self.window._y = int(y)
+                    self.window._width = int(w)
+                    self.window._height = int(h)
+                return True
+        except Exception:
+            pass
+
         if self.window:
             try:
-                min_w, min_h = 1050, 680
-                w = max(min_w, int(width))
-                h = max(min_h, int(height))
                 if x is not None and y is not None:
                     self.window.move(int(x), int(y))
                 self.window.resize(w, h)
@@ -174,10 +222,10 @@ def main():
 
     api = DesktopApi()
 
-    # Create true frameless window
+    # Create true frameless window with desktop mode query param
     window = webview.create_window(
         title='AC Stock Tracker',
-        url='http://127.0.0.1:8000/',
+        url='http://127.0.0.1:8000/?app_mode=desktop',
         js_api=api,
         width=1320,
         height=840,
@@ -190,7 +238,7 @@ def main():
 
     def on_started(w):
         time.sleep(0.4)
-        api.apply_rounded_corners()
+        api.enable_window_features()
 
     # Start the desktop window (blocking until closed)
     webview.start(on_started, window, debug=False)
