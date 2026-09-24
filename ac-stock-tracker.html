@@ -278,11 +278,34 @@ body {
   box-sizing: border-box;
 }
 
-/* Header */
+/* Frameless Desktop App Shell Overrides */
+body.is-desktop-shell {
+  padding: 0 !important;
+  background: var(--bg-app) !important;
+  overflow: hidden !important;
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+body.is-desktop-shell .app-container {
+  max-width: 100% !important;
+  min-height: 100vh !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.is-desktop-shell main {
+  height: calc(100vh - 56px) !important;
+  overflow-y: auto !important;
+}
+
+/* Header & Drag Region */
 header {
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
-  padding: 0 20px;
+  padding: 0 14px 0 20px;
   height: 56px;
   display: flex;
   align-items: center;
@@ -292,6 +315,63 @@ header {
   position: sticky;
   top: 0;
   z-index: 40;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+header .brand,
+header .nav-tab-bar,
+header .nav-tab-bar *,
+header .header-actions,
+header .header-actions *,
+header button,
+header input {
+  -webkit-app-region: no-drag;
+}
+
+/* Frameless Desktop Window Controls (—, □, ✕) */
+.desktop-window-controls {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  -webkit-app-region: no-drag;
+}
+
+body.is-desktop-shell .desktop-window-controls {
+  display: inline-flex;
+}
+
+.win-control-btn {
+  width: 32px;
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  -webkit-app-region: no-drag;
+}
+
+.win-control-btn:hover {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.win-control-btn.win-close-btn:hover {
+  background: #dc2626 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
 }
 
 .brand {
@@ -2939,7 +3019,7 @@ body.theme-light .autocomplete-dropdown {
 
 <div class="app-container">
   <!-- TOP APP HEADER -->
-  <header>
+  <header class="pywebview-drag-region">
     <div class="brand" onclick="switchTab('stock-in')">
       <div class="brand-icon">&#x25A6;</div>
       <div class="brand-text">
@@ -2991,6 +3071,13 @@ body.theme-light .autocomplete-dropdown {
       <button class="icon-square-btn" onclick="downloadCurrentHtml()" title="Download Clean Single-File HTML">
         &#11015;
       </button>
+
+      <!-- Desktop Frameless Window Controls (—, □, ✕) -->
+      <div class="desktop-window-controls" id="desktop-window-controls">
+        <button type="button" class="win-control-btn" onclick="desktopMinimize()" title="Minimize">&#9472;</button>
+        <button type="button" class="win-control-btn" onclick="desktopToggleMaximize()" title="Maximize / Restore">&#9633;</button>
+        <button type="button" class="win-control-btn win-close-btn" onclick="desktopClose()" title="Close">&#10005;</button>
+      </div>
     </div>
   </header>
 
@@ -8098,6 +8185,41 @@ function downloadCurrentHtml() {
   showToast('Downloaded current ac-stock-tracker.html');
 }
 
+/* Frameless Desktop App Shell Bridge (pywebview) */
+function isDesktopShell() {
+  return window.pywebview && window.pywebview.api;
+}
+
+function desktopMinimize() {
+  if (isDesktopShell()) {
+    window.pywebview.api.minimize();
+  }
+}
+
+function desktopToggleMaximize() {
+  if (isDesktopShell()) {
+    window.pywebview.api.toggle_maximize();
+  }
+}
+
+function desktopClose() {
+  if (isDesktopShell()) {
+    window.pywebview.api.close();
+  }
+}
+
+function enableDesktopShellMode() {
+  document.body.classList.add('is-desktop-shell');
+}
+
+window.addEventListener('pywebviewready', () => {
+  enableDesktopShellMode();
+});
+
+if (window.pywebview || (navigator.userAgent && navigator.userAgent.includes('pywebview'))) {
+  enableDesktopShellMode();
+}
+
 /* Initialization */
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -8108,6 +8230,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (txt) txt.textContent = 'Day';
     }
   } catch(e){}
+
+  if (window.pywebview || (navigator.userAgent && navigator.userAgent.includes('pywebview'))) {
+    enableDesktopShellMode();
+  }
 
   await refreshData();
   await loadConfig();

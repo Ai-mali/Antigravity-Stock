@@ -1,6 +1,10 @@
 @echo off
-title AC Stock Tracker (Desktop App)
 cd /d "%~dp0"
-echo Starting AC Stock Tracker in Standalone Desktop Window mode...
-python backend.py --desktop
-pause
+
+:: Launch frameless desktop app cleanly with no console window
+where pythonw >nul 2>nul
+if %ERRORLEVEL% equ 0 (
+    start "" pythonw desktop_app.py
+) else (
+    start "" python desktop_app.py
+)
