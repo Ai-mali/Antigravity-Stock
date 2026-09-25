@@ -3239,6 +3239,7 @@ body.theme-light .tl-status-badge {
 }
 .tl-main > .tl-header { flex-shrink: 0; flex-wrap: wrap; row-gap: 10px; }
 .tl-main > .tl-header .tl-header-actions { flex-wrap: wrap; row-gap: 8px; }
+.tl-main > .tl-card { margin-bottom: 0; }  /* .tl-main's own gap handles spacing */
 
 /* Sidebar header: hamburger + pill search + stacked customer avatars */
 .tl-side-head {
@@ -3399,56 +3400,21 @@ body.theme-light .tl-status-badge {
   flex-shrink: 0;
 }
 
-/* Sidebar footer (staff / sync status) */
-.tl-sidebar-footer {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-top: 1px solid var(--border);
-  padding: 10px 12px;
-  background: var(--bg-page);
-}
 /* Mini rail mode — avatars only */
 .tl-sidebar.tl-side-mini { width: 60px; }
 .tl-side-mini .tl-side-search,
 .tl-side-mini .tl-side-avatars,
 .tl-side-mini .tl-side-tab span,
 .tl-side-mini .tl-side-tab b,
-.tl-side-mini .tl-cust-meta,
-.tl-side-mini .tl-staff-meta { display: none; }
+.tl-side-mini .tl-cust-meta { display: none; }
 .tl-side-mini .tl-side-head { padding: 10px 8px; justify-content: center; }
 .tl-side-mini .tl-side-tabs { padding: 8px 8px; flex-direction: column; }
 .tl-side-mini .tl-cust-item { justify-content: center; padding: 8px 4px; border-bottom: none; }
 .tl-side-mini .tl-cust-item.active { box-shadow: inset -3px 0 0 var(--green-bright); }
-.tl-side-mini .tl-sidebar-footer { justify-content: center; padding: 10px 6px; }
 .tl-side-mini .tl-side-menu-btn { margin: 0; }
 
 @media (max-width: 1150px) {
   .tl-sidebar { width: 240px; }
-}
-.tl-staff-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--green-badge-bg);
-  border: 1px solid var(--green-badge-border);
-  color: var(--green-bright);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-.tl-staff-meta { flex: 1; min-width: 0; }
-.tl-staff-name { font-size: 11.5px; font-weight: 600; }
-.tl-staff-status {
-  font-size: 10px;
-  color: var(--text-sub);
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
 .tl-side-menu-btn {
   background: transparent;
@@ -3458,6 +3424,7 @@ body.theme-light .tl-status-badge {
   padding: 5px;
   border-radius: 6px;
   display: inline-flex;
+  flex-shrink: 0;
 }
 .tl-side-menu-btn:hover { color: var(--text); background: var(--surface2); }
 /* Breakdown cloud is the flexible element: it can shrink below its 240px
@@ -4577,16 +4544,6 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div class="tl-side-list" id="tl-customer-list"></div>
         <div class="tl-side-list" id="tl-warranty-list" style="display:none;"></div>
-        <div class="tl-sidebar-footer">
-          <div class="tl-staff-avatar">WS</div>
-          <div class="tl-staff-meta">
-            <div class="tl-staff-name">Warehouse Staff</div>
-            <div class="tl-staff-status"><i class="tl-wdot" style="background:var(--green-bright)"></i>Synced &middot; Local DB</div>
-          </div>
-          <button type="button" class="tl-side-menu-btn" onclick="openActivityModal()" title="Backups &amp; Activity Log">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-          </button>
-        </div>
       </aside>
 
       <!-- RIGHT: records workspace -->
