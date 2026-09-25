@@ -630,20 +630,16 @@ body.is-desktop-shell .desktop-window-controls {
 }
 
 /* Progressive header compression at narrow widths — the window controls
-   always stay visible; decorations drop first. */
+   and the core nav tabs (Stock In → Return) always stay visible; the
+   SMA model pill and other decorations drop first. */
 @media (max-width: 1120px) {
   .theme-mode-label { display: none; }
   .tab-btn { padding: 6px 11px; }
-  .model-pill-btn { padding: 5px 10px; gap: 6px; }
 }
-@media (max-width: 1000px) {
-  #header-model-btn > span:last-child { display: none; }
-}
-@media (max-width: 960px) {
-  .tab-badge { display: none; }
+@media (max-width: 1100px) {
+  #header-model-btn { display: none; }
 }
 @media (max-width: 860px) {
-  #header-model-label { display: none; }
   .brand-text { display: none; }
   header { gap: 8px; padding: 0 10px; }
 }
@@ -3931,9 +3927,6 @@ body.theme-light .autocomplete-dropdown {
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
         &#9201;
-      </button>
-      <button class="icon-square-btn" onclick="downloadCurrentHtml()" title="Download Clean Single-File HTML">
-        &#11015;
       </button>
 
       <!-- Desktop Frameless Window Controls (—, □, ✕) -->
@@ -8521,7 +8514,7 @@ document.addEventListener('click', e => {
    ========================================================= */
 function openActivityModal() {
   const m = document.getElementById('activity-modal');
-  if (m) m.classList.add('active');
+  if (m) m.classList.add('open');
   switchActivityModalTab('history');
   fetchActivityLog();
   fetchBackups();
@@ -8529,7 +8522,7 @@ function openActivityModal() {
 
 function closeActivityModal() {
   const m = document.getElementById('activity-modal');
-  if (m) m.classList.remove('active');
+  if (m) m.classList.remove('open');
 }
 
 function switchActivityModalTab(tab) {
@@ -9419,17 +9412,6 @@ function toggleTheme() {
   }
   showToast(willBeLight ? 'Day (Light) Mode activated' : 'Night (Dark) Mode activated',
             willBeLight ? '&#9728;' : '&#9790;');
-}
-
-/* Clean download feature */
-function downloadCurrentHtml() {
-  const html = document.documentElement.outerHTML;
-  const blob = new Blob([html], { type: 'text/html' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'ac-stock-tracker.html';
-  a.click();
-  showToast('Downloaded current ac-stock-tracker.html');
 }
 
 /* Frameless Desktop App Shell Bridge (pywebview) */
