@@ -8,6 +8,7 @@ it calls. Run:
 """
 
 import datetime
+import json
 import sys
 import threading
 import webbrowser
@@ -422,6 +423,34 @@ def remove_key(provider: str, index: int):
         keys.pop(index)
         scanner.save_providers(providers)
     return {"ok": True, "provider": _provider_payload(provider)}
+
+
+# ------------------------------------------------------------------ ui prefs
+UI_PREFS_PATH = Path(__file__).parent / "ui_prefs.json"
+
+
+def _read_ui_prefs() -> dict:
+    try:
+        return json.loads(UI_PREFS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+@app.get("/api/ui-prefs")
+def get_ui_prefs():
+    return _read_ui_prefs()
+
+
+class UiPrefsBody(BaseModel):
+    prefs: dict
+
+
+@app.post("/api/ui-prefs")
+def save_ui_prefs(body: UiPrefsBody):
+    existing = _read_ui_prefs()
+    existing.update(body.prefs)
+    UI_PREFS_PATH.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    return {"ok": True}
 
 
 def _launch_window(desktop_mode: bool = False):

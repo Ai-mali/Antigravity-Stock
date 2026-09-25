@@ -2963,16 +2963,15 @@ body.theme-light .track-breakdown-chip:hover {
 }
 
 /* Records table cells */
-.tl-check-col {
-  width: 34px;
+.tl-no-col {
+  width: 44px;
   text-align: center !important;
 }
-#track-table input[type="checkbox"] {
-  accent-color: var(--green-bright);
-  width: 13px;
-  height: 13px;
-  cursor: pointer;
-  vertical-align: middle;
+#track-table td.tl-no-col {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-sub);
+  font-weight: 600;
 }
 .tl-model-cell {
   display: flex;
@@ -4388,7 +4387,7 @@ body.theme-light .autocomplete-dropdown {
           <table class="data-table" id="track-table">
             <thead>
               <tr>
-                <th class="tl-check-col"><input type="checkbox" id="track-sel-all" onchange="toggleTrackSelectAll(this.checked)" title="Select page"></th>
+                <th class="tl-no-col">No.</th>
                 <th data-tlcol="model">Model &amp; Description</th>
                 <th data-tlcol="serial">Serial Number</th>
                 <th data-tlcol="dateIn">Date In</th>
@@ -5090,8 +5089,8 @@ const DB = {
   trackPageSize: 10,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
-  trackBreakdownCollapsed: localStorage.getItem('tlCollapsed') === '1',
-  trackSelected: new Set(),   // checked serials in records table
+  trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
+
   trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
   lowStockFilter: false,      // toggles showing only models with <= 2 units
   scans: [],        // filled by POST /api/scan or the manual + button
@@ -5126,12 +5125,13 @@ const apiDel = (p, body) => api(p, {
 });
 
 async function refreshData() {
-  const [inv, trk, ret, cust, doRes] = await Promise.all([
+  const [inv, trk, ret, cust, doRes, uiPrefs] = await Promise.all([
     apiGet('/api/inventory'),
     apiGet('/api/track'),
     apiGet('/api/returns'),
     apiGet('/api/customers').catch(() => ({ customers: [] })),
-    apiGet('/api/delivery-orders').catch(() => ({ photos: [] }))
+    apiGet('/api/delivery-orders').catch(() => ({ photos: [] })),
+    apiGet('/api/ui-prefs').catch(() => ({}))
   ]);
   DB.inventory = inv.inventory;
   DB.brands = inv.brands;
@@ -5139,6 +5139,7 @@ async function refreshData() {
   DB.returns = ret.records;
   DB.customers = cust.customers || [];
   DB.doPhotos = (doRes && doRes.photos) || [];
+  DB.trackBreakdownCollapsed = !!(uiPrefs && uiPrefs.tlCollapsed);
   renderBrandPills();
   markDuplicateScans();
   renderAll();
@@ -7670,8 +7671,8 @@ function applyTrackBreakdownState() {
 
 function toggleTrackBreakdown() {
   DB.trackBreakdownCollapsed = !DB.trackBreakdownCollapsed;
-  try { localStorage.setItem('tlCollapsed', DB.trackBreakdownCollapsed ? '1' : '0'); } catch (e) {}
   applyTrackBreakdownState();
+  apiPost('/api/ui-prefs', { prefs: { tlCollapsed: DB.trackBreakdownCollapsed } }).catch(() => {});
 }
 
 /* ---- Fulfillment Records Log table ---- */
@@ -7719,13 +7720,12 @@ function renderTrackTable(list, modelColors) {
   if (!pageRows.length) {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
   }
-  pageRows.forEach(r => {
+  pageRows.forEach((r, idx) => {
     const tr = document.createElement('tr');
     const mc = modelColors[r.model] || 'var(--green-bright)';
-    const checked = DB.trackSelected.has(r.serial) ? ' checked' : '';
     const jsSerial = escapeHtml(escapeJs(r.serial));
     tr.innerHTML = `
-      <td class="tl-check-col"><input type="checkbox"${checked} onchange="toggleTrackRowSelect('${jsSerial}', this.checked)"></td>
+      <td class="tl-no-col">${DB.trackPage * size + idx + 1}</td>
       <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span>${escapeHtml(r.model)}</span></div></td>
       <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;">${escapeHtml(r.serial)}</td>
       <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateIn)}</td>
@@ -7737,13 +7737,6 @@ function renderTrackTable(list, modelColors) {
     `;
     tbody.appendChild(tr);
   });
-
-  const selAll = document.getElementById('track-sel-all');
-  if (selAll) {
-    const selCount = pageRows.filter(r => DB.trackSelected.has(r.serial)).length;
-    selAll.checked = pageRows.length > 0 && selCount === pageRows.length;
-    selAll.indeterminate = selCount > 0 && selCount < pageRows.length;
-  }
 
   const sb = document.getElementById('track-showing-badge');
   if (sb) sb.textContent = `Showing ${pageRows.length} of ${list.length}`;
@@ -7836,30 +7829,6 @@ document.addEventListener('click', e => {
   }
 });
 
-/* ---- Row selection (drives Print Labels) ---- */
-function toggleTrackRowSelect(serial, on) {
-  if (on) DB.trackSelected.add(serial);
-  else DB.trackSelected.delete(serial);
-  const tbody = document.getElementById('track-table-tbody');
-  const selAll = document.getElementById('track-sel-all');
-  if (selAll && tbody) {
-    const boxes = [...tbody.querySelectorAll('input[type="checkbox"]')];
-    const onCount = boxes.filter(b => b.checked).length;
-    selAll.checked = boxes.length > 0 && onCount === boxes.length;
-    selAll.indeterminate = onCount > 0 && onCount < boxes.length;
-  }
-}
-
-function toggleTrackSelectAll(on) {
-  const list = getSortedTrackList(getFilteredTrackList());
-  const pageRows = list.slice(DB.trackPage * DB.trackPageSize, DB.trackPage * DB.trackPageSize + DB.trackPageSize);
-  pageRows.forEach(r => {
-    if (on) DB.trackSelected.add(r.serial);
-    else DB.trackSelected.delete(r.serial);
-  });
-  renderTrackList(undefined, true);
-}
-
 /* ---- Eye action: inspect a dispatched unit in Return & RMA ---- */
 function inspectTrackRow(serial) {
   switchTab('return');
@@ -7877,11 +7846,9 @@ function inspectTrackRow(serial) {
   }, 150);
 }
 
-/* ---- Print serial labels (selected rows, else current filtered view) ---- */
+/* ---- Print serial labels for the current filtered view ---- */
 function printTrackLabels() {
-  const rows = DB.trackSelected.size
-    ? DB.trackList.filter(r => DB.trackSelected.has(r.serial))
-    : getFilteredTrackList();
+  const rows = getFilteredTrackList();
   if (!rows.length) {
     showToast('No records to print.');
     return;

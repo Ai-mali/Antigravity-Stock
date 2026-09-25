@@ -10,3 +10,4 @@ delivery_orders/
 
 # Devin CLI personal config (contains local permission rules)
 .devin/config.local.json
+ui_prefs.json
