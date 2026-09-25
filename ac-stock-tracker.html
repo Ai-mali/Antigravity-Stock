@@ -6978,7 +6978,9 @@ function renderAvailable(searchTerm) {
 
     let modelsHtml = '';
 
-    for (const mKey in bData.models) {
+    // Models render in the same alphabetical order the backend numbers them
+    // (idx was assigned via sorted()), so the pills read 01, 02, 03 in order.
+    for (const mKey of Object.keys(bData.models).sort()) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
       if (DB.lowStockFilter && serials.length > 2) continue;
@@ -7255,7 +7257,7 @@ function renderStockOut(searchTerm) {
     const brandUnits = countBrandUnits(brandKey);
 
     let modelsHtml = '';
-    for (const mKey in bData.models) {
+    for (const mKey of Object.keys(bData.models).sort()) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
       if (q) {
