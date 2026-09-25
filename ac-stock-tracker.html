@@ -480,7 +480,7 @@ body.is-desktop-shell .desktop-window-controls {
   display: flex;
   align-items: center;
   gap: 10px;
-  cursor: pointer;
+  cursor: default;
   user-select: none;
   flex-shrink: 0;
   white-space: nowrap;
@@ -3161,7 +3161,7 @@ body.theme-light .autocomplete-dropdown {
 <div class="app-container">
   <!-- TOP APP HEADER -->
   <header class="pywebview-drag-region" ondblclick="handleHeaderDblClick(event)">
-    <div class="brand" onclick="switchTab('stock-in')">
+    <div class="brand">
       <div class="brand-icon">&#x25A6;</div>
       <div class="brand-text">
         <h1>
@@ -8397,11 +8397,56 @@ function desktopClose() {
 
 function handleHeaderDblClick(event) {
   // Prevent maximizing when double clicking buttons, tabs, or input controls
-  if (event.target.closest('button') || event.target.closest('input') || event.target.closest('nav') || event.target.closest('.brand')) {
+  if (event.target.closest('button') || event.target.closest('input') || event.target.closest('nav')) {
     return;
   }
   desktopToggleMaximize();
 }
+
+// pywebview's drag region matches ANY descendant of .pywebview-drag-region —
+// it has no built-in "no-drag" concept (-webkit-app-region is ignored), so
+// mousedown on a header button both clicks it AND starts a window drag.
+// The only way to exempt a control is to stop the mousedown before it
+// bubbles to pywebview's document.body listener.
+// This same hook also watches free-area drags for the cursor touching the
+// top screen edge → snap-maximize (Windows-style), since pywebview's
+// programmatic SetWindowPos move cannot trigger Aero Snap on its own.
+(function() {
+  const header = document.querySelector('header.pywebview-drag-region');
+  if (!header) return;
+
+  let snapTracking = false;
+
+  function stopSnapTracking() {
+    snapTracking = false;
+    window.removeEventListener('mousemove', onSnapMove);
+    window.removeEventListener('mouseup', stopSnapTracking);
+  }
+
+  function onSnapMove(e) {
+    if (!snapTracking) return;
+    const topEdge = (window.screen && typeof window.screen.availTop === 'number') ? window.screen.availTop : 0;
+    if (e.screenY <= topEdge + 4) {
+      stopSnapTracking();
+      try {
+        if (isDesktopShell() && window.pywebview.api.maximize) {
+          window.pywebview.api.maximize();
+        }
+      } catch (err) {}
+    }
+  }
+
+  header.addEventListener('mousedown', function(e) {
+    if (e.target.closest('button, input, a, select, textarea, label, [role="button"]')) {
+      e.stopPropagation();
+      return;
+    }
+    if (e.button !== 0 || !isDesktopShell() || snapTracking) return;
+    snapTracking = true;
+    window.addEventListener('mousemove', onSnapMove);
+    window.addEventListener('mouseup', stopSnapTracking);
+  });
+})();
 
 let _desktopResizeState = null;
 let _resizeRafPending = false;
