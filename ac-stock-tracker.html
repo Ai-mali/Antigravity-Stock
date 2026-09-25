@@ -232,8 +232,8 @@ body.theme-light .theme-toggle-thumb {
    on the compositor — smooth at any DOM size, zero per-element animation. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.22s;
-  animation-timing-function: ease;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   mix-blend-mode: normal;
 }
 
