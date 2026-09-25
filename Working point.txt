@@ -1,0 +1,28 @@
+📌 PINNED STABLE STOP POINT
+
+Commit Hash: 
+
+727a066847b70f44ff0c326dd960d9097619bd66
+ (Short: 727a066)
+Commit Description: Header polish — activity modal fixed, Download HTML removed, adaptive small-window layout (backup icon drops first, SMA pill + nav pills + window controls always visible)
+Date: 2026-09-25 16:55 +0700
+Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
+Verified Working Features at this Stop Point:
+Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
+Instant Splash: Native Win32 splash in ~24ms, seamless handoff to WebView2 splash, then the app.
+Fast Launch: Parallel backend boot (imports + workbook parse in daemon thread).
+No Startup Freeze: Lazy per-tab rendering — only the active screen builds DOM (~9.4k elements avoided).
+Smooth Theme Toggle: View Transitions GPU crossfade, 600ms — reads as a real day/night transformation, no lag on expanded data, no end-flicker.
+Resize: All 8 inner handles work (PointerCapture + set_bounds; dead SC_SIZE attempt removed). Native border resize intact.
+Header: Buttons are click-only (no drag), AC Stock Tracker title is drag-only, double-click maximizes.
+Snap: Word-style — drag to top edge shows green preview, release snaps to maximize; drag down from maximized restores under cursor.
+Window Controls: Visible framed 46px hitboxes for Min/Max/Close with hover + press feedback; clicks verified, no accidental drag.
+Responsive Header: Progressive compression at narrow widths — backup icon + theme label drop first, brand text at 860px, SMA pill last at 760px; nav pills (Stock In → Return) and window controls always visible, verified at 1050px minimum.
+Activity/Backups Modal: ⏱ button opens Backups & Activity Log modal (open-class fix); legacy Download HTML button removed.
+Sticky Bars: Search/filter bar freezes flush under the header when scrolling (desktop-shell offsets corrected); Stock Out sidebar aligned.
+Brand Colors: Each brand has a unique color — colored ordering-number pills, glowing dot, left edge accent, and colored brand name; new brands auto-assign a free palette color.
+Track List (Stitch redesign): Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; merged Client+Warranty filter ribbon; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
+Duplicate Navigation: "View in Track List" resets stale customer/warranty filters — serial always found under ALL CUSTOMERS.
+Database Health: 333 total stock items loaded across 10 active brands (LG, VOLVO, CARRIER, DAIKIN, MITSUBISHI, CAT, KOMATSU, BIN, PART, OTHER).
+Data Protection: Real business data (daikin_stock.xlsx) is healthy and gitignored; no rewrite-on-launch.
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 727a066"
