@@ -8418,15 +8418,10 @@ async function onDesktopResizePointerDown(direction, event) {
     targetEl.setPointerCapture(event.pointerId);
   } catch(e) {}
 
-  // 1. Try native Win32 live hardware resize
-  try {
-    if (window.pywebview.api.start_native_resize) {
-      const ok = await window.pywebview.api.start_native_resize(direction);
-      if (ok) return;
-    }
-  } catch(e) {}
-
-  // 2. High-precision PointerCapture fallback
+  // Native WM_SYSCOMMAND/SC_SIZE resize was tried before but its modal loop
+  // never engages on WebView2-hosted frameless windows — SendMessageW returns
+  // instantly and reports a false success. PointerCapture + set_bounds is the
+  // reliable path (verified: set_bounds moves the real HWND).
   try {
     const bounds = await window.pywebview.api.get_window_bounds();
     _desktopResizeState = {
