@@ -2664,6 +2664,646 @@ body.theme-light .track-breakdown-chip:hover {
   background: rgba(16, 185, 129, 0.08);
 }
 
+/* ---------- Track List redesign (Google Stitch layout) ---------- */
+.tl-header {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tl-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.tl-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--green-badge-bg);
+  border: 1px solid var(--green-badge-border);
+  color: var(--green-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px -5px rgba(38, 208, 124, 0.35);
+}
+.tl-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tl-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--green-badge-bg);
+  color: var(--green-bright);
+  border: 1px solid var(--green-badge-border);
+  white-space: nowrap;
+}
+.tl-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-bright);
+  animation: tl-ping 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes tl-ping {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.tl-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tl-search {
+  min-width: 240px;
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+.tl-search input {
+  padding-right: 60px;
+}
+.tl-kbd {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-sub);
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* KPI metrics ribbon */
+.tl-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.tl-kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.35);
+}
+.tl-kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-sub);
+  margin-bottom: 6px;
+}
+.tl-kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tl-kpi-icon {
+  padding: 3px;
+  border-radius: 5px;
+  background: var(--surface3);
+  display: inline-flex;
+}
+.tl-kpi-body {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tl-kpi-num {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  line-height: 1.1;
+}
+.tl-kpi-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.tl-kpi-sub.kpi-accent {
+  color: var(--green-bright);
+}
+.tl-kpi-bar {
+  margin-top: 8px;
+  width: 100%;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--surface3);
+  overflow: hidden;
+}
+.tl-kpi-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+}
+
+/* Filter ribbon panel */
+.tl-filter-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.35);
+}
+.tl-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.tl-filter-warranty {
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+.tl-filter-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-sub);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.tl-wdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Breakdown card + records card headers */
+.tl-card {
+  margin-bottom: 14px;
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.35);
+}
+.tl-card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tl-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.tl-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green-bright);
+  box-shadow: 0 0 8px var(--green-bright);
+  flex-shrink: 0;
+}
+.tl-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  white-space: nowrap;
+}
+.tl-count-badge {
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--green-badge-bg);
+  color: var(--green-bright);
+  border: 1px solid var(--green-badge-border);
+  white-space: nowrap;
+}
+.tl-cust-chip {
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--surface3);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tl-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tl-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10.5px;
+  color: var(--text-sub);
+}
+.tl-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.tl-lg {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.tl-lg-mint { background: var(--green-bright); opacity: 0.85; }
+.tl-lg-sky { background: #38bdf8; opacity: 0.85; }
+.tl-view-switch {
+  display: inline-flex;
+  border-radius: 8px;
+  padding: 2px;
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+}
+.tl-view-switch button {
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+}
+.tl-view-switch button.active {
+  background: var(--surface3);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.tl-view-switch button:hover:not(.active) {
+  color: var(--text);
+}
+
+/* Serial tag cloud */
+.tl-tags-body {
+  padding: 12px 14px;
+}
+.tl-group-block {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.tl-group-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-sub);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.tl-group-title .tl-group-count {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Records table cells */
+.tl-check-col {
+  width: 34px;
+  text-align: center !important;
+}
+#track-table input[type="checkbox"] {
+  accent-color: var(--green-bright);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.tl-model-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+.tl-model-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--surface3);
+  border: 1px solid var(--border-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tl-cust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: var(--surface3);
+  border: 1px solid var(--border-light);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+.tl-cust-pill .tl-wdot {
+  width: 6px;
+  height: 6px;
+}
+.tl-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  white-space: nowrap;
+}
+body.theme-light .tl-status-badge {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0369a1;
+  border-color: rgba(2, 132, 199, 0.3);
+}
+.tl-warranty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tl-warranty-badge.w-active {
+  background: var(--green-badge-bg);
+  color: var(--green-bright);
+  border: 1px solid var(--green-badge-border);
+}
+.tl-warranty-badge.w-expiring {
+  background: rgba(217, 119, 6, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+.tl-warranty-badge.w-expired {
+  background: var(--red-badge-bg);
+  color: var(--red-badge-text);
+  border: 1px solid var(--red-badge-border);
+}
+.tl-warranty-badge.w-none {
+  background: var(--surface3);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+}
+.tl-eye-btn {
+  background: none;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  transition: all .12s;
+}
+.tl-eye-btn:hover {
+  color: var(--text);
+  background: var(--surface3);
+}
+
+/* Filter Columns dropdown */
+.tl-colmenu-wrap {
+  position: relative;
+}
+.tl-colmenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 170px;
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  border-radius: 9px;
+  padding: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.tl-colmenu label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.tl-colmenu label:hover {
+  background: var(--surface3);
+}
+.tl-colmenu input[type="checkbox"] {
+  accent-color: var(--green-bright);
+}
+
+/* Pagination footer */
+.tl-pagination {
+  padding: 11px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.tl-page-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tl-page-size {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-family: inherit;
+}
+.tl-page-btns {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tl-page-btn {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+}
+.tl-page-btn:hover:not(:disabled) {
+  background: var(--surface3);
+  color: var(--text);
+}
+.tl-page-btn.active {
+  background: var(--green-badge-bg);
+  color: var(--green-bright);
+  border-color: var(--green-badge-border);
+}
+.tl-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.tl-page-ellipsis {
+  color: var(--text-sub);
+  padding: 0 2px;
+}
+
+/* Telemetry footer */
+.tl-footer {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+.tl-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tl-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tl-footer-right strong {
+  color: var(--green-bright);
+  font-weight: 600;
+}
+.tl-footer-sep {
+  opacity: 0.5;
+}
+.tl-footer-link {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tl-footer-link:hover {
+  color: var(--text);
+}
+
+/* Column hiding via data-tlcol */
+#track-table.tl-hide-model   [data-tlcol="model"],
+#track-table.tl-hide-serial  [data-tlcol="serial"],
+#track-table.tl-hide-dateIn  [data-tlcol="dateIn"],
+#track-table.tl-hide-dateOut [data-tlcol="dateOut"],
+#track-table.tl-hide-customer [data-tlcol="customer"],
+#track-table.tl-hide-warranty [data-tlcol="warranty"],
+#track-table.tl-hide-status  [data-tlcol="status"],
+#track-table.tl-hide-actions [data-tlcol="actions"] {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .tl-kpi-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 780px) {
+  .tl-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .tl-filter-warranty { border-left: none; padding-left: 0; }
+}
+
+/* Print labels sheet */
+#tl-print-sheet { display: none; }
+@media print {
+  body * { visibility: hidden !important; }
+  #tl-print-sheet, #tl-print-sheet * { visibility: visible !important; }
+  #tl-print-sheet {
+    display: grid !important;
+    position: fixed;
+    inset: 0;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12mm;
+    background: #fff;
+    align-content: start;
+  }
+  .tl-print-label {
+    border: 1.5px dashed #444;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    color: #000;
+    page-break-inside: avoid;
+  }
+  .tl-print-label .pl-serial { font-size: 15px; font-weight: 700; }
+  .tl-print-label .pl-meta { font-size: 10px; margin-top: 3px; color: #333; }
+}
+
 /* Custom Glassmorphic Datepicker */
 .custom-datepicker {
   position: relative;
@@ -3677,64 +4317,141 @@ body.theme-light .autocomplete-dropdown {
 
     <!-- 4. TRACK LIST SCREEN -->
     <section id="view-track-list" class="view-section">
-      <div class="view-header">
-        <div>
-          <div class="view-title">Track List &amp; Records</div>
-          <div class="view-subtitle">Live movement log of stock deductions and fulfilled dispatches.</div>
-        </div>
-        <div>
-          <button class="btn btn-ghost btn-sm" onclick="exportTrackCsv()">&#11015; Export CSV</button>
-        </div>
-      </div>
-
-      <!-- Customer Filter Pills -->
-      <div class="filter-pills-row" id="track-customer-pills" style="margin-bottom:8px;"></div>
-
-      <!-- Warranty Filter Pills -->
-      <div class="filter-pills-row" id="track-warranty-pills" style="margin-bottom:14px;"></div>
-
-      <!-- Customer Summary Banner -->
-      <div class="track-customer-banner">
-        <div class="track-banner-top">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="width:8px; height:8px; border-radius:50%; background:var(--green-bright); display:inline-block;"></span>
-            <span style="font-weight:700; font-size:12px; letter-spacing:0.04em;" id="track-banner-title">CUSTOMER: ALL CUSTOMERS</span>
-            <span class="badge badge-green" id="track-banner-badge">16 Serials Total</span>
+      <!-- Header: icon tile + title + live badge | command bar -->
+      <div class="view-header tl-header">
+        <div class="tl-header-left">
+          <div class="tl-header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+            </svg>
           </div>
-          <div class="track-live-label">
-            Real-time Dispatch Log
+          <div>
+            <div class="tl-title-row">
+              <span class="view-title">Track List &amp; Records</span>
+              <span class="tl-live-badge"><span class="tl-live-dot"></span>Live Movement Stream</span>
+            </div>
+            <div class="view-subtitle">Live movement log of stock deductions, warranties, and fulfilled dispatches</div>
           </div>
         </div>
-        <div style="font-size:10.5px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">
-          SOLD SERIAL BREAKDOWN &amp; EQUIPMENT TAG:
+        <div class="tl-header-actions">
+          <div class="search-box-wrap tl-search">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, or model...">
+            <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
+            <kbd class="tl-kbd">Ctrl K</kbd>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="printTrackLabels()" title="Print serial labels">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12-3h12v5H6z"></path></svg>
+            Print Labels
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="exportTrackCsv()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="switchTab('stock-out')" title="Dispatch more units">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16m8-8H4"></path></svg>
+            Batch Dispatch
+          </button>
         </div>
-        <div class="track-pills-wrap" id="track-breakdown-tags"></div>
       </div>
 
-      <!-- Search Box -->
-      <div class="search-box-wrap" style="margin-bottom:14px;">
-        <span class="search-icon">&#128269;</span>
-        <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, or model...">
-        <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
+      <!-- KPI Metrics Ribbon -->
+      <div class="tl-kpi-row" id="tl-kpi-row"></div>
+
+      <!-- Filter Ribbon: Client + Warranty -->
+      <div class="tl-filter-panel">
+        <div class="tl-filter-group">
+          <span class="tl-filter-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            Client:
+          </span>
+          <div class="filter-pills-row" id="track-customer-pills"></div>
+        </div>
+        <div class="tl-filter-group tl-filter-warranty">
+          <span class="tl-filter-label">Warranty:</span>
+          <div class="filter-pills-row" id="track-warranty-pills"></div>
+        </div>
       </div>
 
-      <!-- Track List Table -->
-      <div class="card">
+      <!-- Sold Serial Breakdown & Equipment Tags -->
+      <div class="card tl-card">
+        <div class="tl-card-header">
+          <div class="tl-card-title-group">
+            <span class="tl-dot"></span>
+            <span class="tl-card-title">Sold Serial Breakdown &amp; Equipment Tags</span>
+            <span class="tl-count-badge" id="track-banner-badge">0 Serials Total</span>
+            <span class="tl-cust-chip" id="track-banner-title">All Customers</span>
+          </div>
+          <div class="tl-card-tools">
+            <div class="tl-legend">
+              <span class="tl-legend-item"><i class="tl-lg tl-lg-mint"></i>In Stock Deducted</span>
+              <span class="tl-legend-item"><i class="tl-lg tl-lg-sky"></i>Dispatch Verified</span>
+            </div>
+            <div class="tl-view-switch">
+              <button type="button" id="tl-view-cloud" class="active" onclick="setTrackViewMode('cloud')">Dense Cloud</button>
+              <button type="button" id="tl-view-grouped" onclick="setTrackViewMode('grouped')">Grouped by Model</button>
+            </div>
+          </div>
+        </div>
+        <div class="tl-tags-body">
+          <div class="track-pills-wrap" id="track-breakdown-tags"></div>
+        </div>
+      </div>
+
+      <!-- Fulfillment Records Log -->
+      <div class="card tl-card">
+        <div class="tl-card-header">
+          <div class="tl-card-title-group">
+            <span class="tl-card-title">Fulfillment Records Log</span>
+            <span class="tl-showing-badge" id="track-showing-badge">Showing 0 of 0</span>
+          </div>
+          <div class="tl-card-tools">
+            <div class="tl-colmenu-wrap">
+              <button type="button" class="btn btn-ghost btn-sm" id="track-colmenu-btn" onclick="toggleTrackColMenu(event)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                Filter Columns
+              </button>
+              <div class="tl-colmenu" id="track-col-menu" style="display:none;"></div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="track-sort-btn" onclick="toggleTrackSort()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+              Sort: Dispatched At (Desc)
+            </button>
+          </div>
+        </div>
         <div class="table-container table-scroll-10">
-          <table class="data-table">
+          <table class="data-table" id="track-table">
             <thead>
               <tr>
-                <th>MODEL</th>
-                <th>SERIAL NUMBER</th>
-                <th>DATE IN</th>
-                <th>DISPATCHED AT</th>
-                <th>CUSTOMER DESTINATION</th>
-                <th>WARRANTY</th>
-                <th style="text-align:right;">STATUS</th>
+                <th class="tl-check-col"><input type="checkbox" id="track-sel-all" onchange="toggleTrackSelectAll(this.checked)" title="Select page"></th>
+                <th data-tlcol="model">Model &amp; Description</th>
+                <th data-tlcol="serial">Serial Number</th>
+                <th data-tlcol="dateIn">Date In</th>
+                <th data-tlcol="dateOut">Dispatched At</th>
+                <th data-tlcol="customer">Customer Destination</th>
+                <th data-tlcol="warranty">Warranty</th>
+                <th data-tlcol="status">Status</th>
+                <th data-tlcol="actions" style="text-align:right;">Actions</th>
               </tr>
             </thead>
             <tbody id="track-table-tbody"></tbody>
           </table>
+        </div>
+        <div class="tl-pagination" id="track-pagination"></div>
+      </div>
+
+      <!-- Telemetry Footer -->
+      <div class="tl-footer">
+        <div class="tl-footer-left">
+          <span class="tl-dot"></span>
+          <span id="track-foot-sync">Inventory Telemetry Service &bull; 0 stock tags synchronized</span>
+        </div>
+        <div class="tl-footer-right">
+          <span>Server Response: <strong class="mono" id="track-foot-ms">&mdash;</strong></span>
+          <span class="tl-footer-sep">&bull;</span>
+          <span>Last Poll: <strong id="track-foot-poll">&mdash;</strong></span>
+          <span class="tl-footer-sep">&bull;</span>
+          <a href="javascript:void(0)" class="tl-footer-link" onclick="openActivityModal()">Audit Logs</a>
         </div>
       </div>
     </section>
@@ -4406,6 +5123,9 @@ body.theme-light .autocomplete-dropdown {
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
+<!-- Print-only serial label sheet (populated by printTrackLabels) -->
+<div id="tl-print-sheet"></div>
+
 <script>
 /* =========================================================
    APPLICATION STATE — hydrated from the Python backend
@@ -4416,6 +5136,14 @@ const DB = {
   soFilter: 'ALL',
   trackFilter: 'ALL',
   trackWarrantyFilter: 'ALL', // 'ALL' | 'active' | 'expiring' | 'expired'
+  trackPage: 0,           // Fulfillment Records Log pagination
+  trackPageSize: 10,
+  trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
+  trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
+  trackSelected: new Set(),   // checked serials in records table
+  trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
+  lastFetchMs: null,      // last refreshData() round-trip duration
+  lastDataRefreshAt: null,// timestamp of last successful refreshData()
   lowStockFilter: false,      // toggles showing only models with <= 2 units
   scans: [],        // filled by POST /api/scan or the manual + button
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
@@ -4449,6 +5177,7 @@ const apiDel = (p, body) => api(p, {
 });
 
 async function refreshData() {
+  const t0 = performance.now();
   const [inv, trk, ret, cust, doRes] = await Promise.all([
     apiGet('/api/inventory'),
     apiGet('/api/track'),
@@ -4469,6 +5198,9 @@ async function refreshData() {
   updateDoPhotosBadge();
   renderRecentCustomerChips();
   checkCustomerInputStatus();
+  DB.lastFetchMs = Math.round(performance.now() - t0);
+  DB.lastDataRefreshAt = Date.now();
+  updateTrackFooter();
 }
 
 /* Lazy per-tab rendering: data loads for all screens at once, but only the
@@ -6872,81 +7604,409 @@ function clearTrackSearch() {
   renderTrackList('');
 }
 
-function renderTrackList(searchTerm) {
-  renderCustomerFilterPills();
-  renderWarrantyFilterPills();
+/* Deterministic per-model / per-customer accent palettes (Google Stitch look) */
+const TRACK_MODEL_COLORS = ['#34d399', '#38bdf8', '#fbbf24', '#818cf8', '#10b981', '#fb7185', '#a78bfa', '#22d3ee', '#f472b6', '#a3e635'];
+const TRACK_CUST_COLORS  = ['#60a5fa', '#c084fc', '#f472b6', '#2dd4bf', '#fb923c', '#a3e635', '#facc15', '#f87171'];
 
+function trackModelColorMap() {
+  const models = [...new Set(DB.trackList.map(r => r.model || '\u2014'))].sort();
+  const map = {};
+  models.forEach((m, i) => { map[m] = TRACK_MODEL_COLORS[i % TRACK_MODEL_COLORS.length]; });
+  return map;
+}
+
+function trackCustomerColor(name) {
+  let h = 0;
+  const s = String(name || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return TRACK_CUST_COLORS[h % TRACK_CUST_COLORS.length];
+}
+
+function getFilteredTrackList() {
   const searchInput = document.getElementById('track-search');
-  const rawSearch = (typeof searchTerm === 'string') 
-    ? searchTerm 
-    : (searchInput ? searchInput.value : '');
-  const q = rawSearch.trim().toLowerCase();
-
-  const clearBtn = document.getElementById('track-search-clear');
-  if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
-
+  const q = (searchInput ? searchInput.value : '').trim().toLowerCase();
   let list = DB.trackList;
-
   if (DB.trackFilter !== 'ALL') {
     list = list.filter(r => r.customer === DB.trackFilter);
   }
-
   if (DB.trackWarrantyFilter && DB.trackWarrantyFilter !== 'ALL') {
     list = list.filter(r => (r.warranty && r.warranty.status) === DB.trackWarrantyFilter);
   }
-
   if (q) {
-    list = list.filter(r => 
-      r.serial.toLowerCase().includes(q) ||
-      r.model.toLowerCase().includes(q) ||
-      r.customer.toLowerCase().includes(q) ||
-      (r.warranty && r.warranty.status.toLowerCase().includes(q))
+    list = list.filter(r =>
+      (r.serial || '').toLowerCase().includes(q) ||
+      (r.model || '').toLowerCase().includes(q) ||
+      (r.customer || '').toLowerCase().includes(q) ||
+      (r.warranty && r.warranty.status && r.warranty.status.toLowerCase().includes(q))
     );
   }
+  return list;
+}
 
-  // Update banner
-  const bannerTitle = document.getElementById('track-banner-title');
-  bannerTitle.textContent = 'CUSTOMER: ' + (DB.trackFilter === 'ALL' ? 'ALL CUSTOMERS' : DB.trackFilter.toUpperCase());
-  document.getElementById('track-banner-badge').textContent = list.length + ' Serials Total';
-
-  const breakdownContainer = document.getElementById('track-breakdown-tags');
-  breakdownContainer.innerHTML = '';
-  list.forEach(r => {
-    const chip = document.createElement('span');
-    chip.className = 'track-breakdown-chip';
-    chip.title = `${r.model} \u2014 ${r.customer} \u00b7 dispatched ${r.dateOut}`;
-    chip.innerHTML = `${r.serial} <span class="chip-model">${r.model}</span>`;
-    breakdownContainer.appendChild(chip);
+function getSortedTrackList(list) {
+  return [...list].sort((a, b) => {
+    const cmp = String(a.dateOut || '').localeCompare(String(b.dateOut || ''))
+      || String(a.serial || '').localeCompare(String(b.serial || ''));
+    return DB.trackSortDir === 'asc' ? cmp : -cmp;
   });
+}
 
-  const tbody = document.getElementById('track-table-tbody');
-  tbody.innerHTML = '';
+function renderTrackList(searchTerm, keepPage) {
+  if (typeof searchTerm === 'string') {
+    const searchInput = document.getElementById('track-search');
+    if (searchInput) searchInput.value = searchTerm;
+  }
+  if (!keepPage) DB.trackPage = 0;
 
-  list.forEach(r => {
-    const tr = document.createElement('tr');
-    const w = r.warranty || { status: 'none', expiry: '', daysRemaining: null };
-    let wBadge = '<span class="badge badge-neutral">\u2014</span>';
+  renderCustomerFilterPills();
+  renderWarrantyFilterPills();
+  renderTrackKpis();
+
+  const list = getFilteredTrackList();
+  const modelColors = trackModelColorMap();
+
+  // Breakdown card header
+  const badge = document.getElementById('track-banner-badge');
+  if (badge) badge.textContent = `${list.length} Serial${list.length === 1 ? '' : 's'} Total`;
+  const custChip = document.getElementById('track-banner-title');
+  if (custChip) custChip.textContent = DB.trackFilter === 'ALL' ? 'All Customers' : DB.trackFilter;
+
+  renderTrackBreakdown(list, modelColors);
+  renderTrackTable(list, modelColors);
+  updateTrackFooter();
+}
+
+/* ---- KPI metrics ribbon ---- */
+function renderTrackKpis() {
+  const row = document.getElementById('tl-kpi-row');
+  if (!row) return;
+  const total = DB.trackList.length;
+  let active = 0, expiring = 0, expired = 0, daysSum = 0, daysN = 0;
+  DB.trackList.forEach(r => {
+    const w = r.warranty || {};
     if (w.status === 'active') {
-      wBadge = `<span class="badge badge-green" title="Warranty expires ${w.expiry}">Active (${w.daysRemaining}d)</span>`;
+      active++;
+      if (w.daysRemaining != null) { daysSum += w.daysRemaining; daysN++; }
     } else if (w.status === 'expiring') {
-      wBadge = `<span class="badge badge-amber" title="Warranty expires ${w.expiry}">Expiring (${w.daysRemaining}d)</span>`;
+      expiring++;
     } else if (w.status === 'expired') {
-      wBadge = `<span class="badge badge-red" title="Warranty expired ${w.expiry}">Expired</span>`;
+      expired++;
     }
+  });
+  const avgDays = daysN ? Math.round(daysSum / daysN) : 0;
+  const pct = n => total ? Math.round(n / total * 100) : 0;
 
+  const svgBox = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>';
+  const svgCheck = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>';
+  const svgShield = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>';
+  const svgWarn = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+  const svgX = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M6 6l12 12"></path></svg>';
+  const svgUp = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>';
+
+  const cards = [
+    { label: 'Total Tracked', num: total, numColor: '', sub: `${svgUp}${total ? '100% active' : 'no records'}`, accent: true, color: '#34d399', bar: total ? 100 : 0, icon: svgBox },
+    { label: 'Dispatched (Fulfilled)', num: total, numColor: '', sub: 'All orders clear', accent: false, color: '#38bdf8', bar: total ? 100 : 0, icon: svgCheck },
+    { label: 'Active Warranties', num: active, numColor: 'var(--green-bright)', sub: daysN ? `Avg ${avgDays}d left` : 'No coverage', accent: true, color: '#10b981', bar: pct(active), icon: svgShield },
+    { label: 'Expiring <30 Days', num: expiring, numColor: '', sub: `${pct(expiring)}% risk`, accent: false, color: '#fbbf24', bar: pct(expiring), icon: svgWarn },
+    { label: 'Expired Claims', num: expired, numColor: '', sub: expired ? `${expired} overdue unit${expired === 1 ? '' : 's'}` : 'No overdue units', accent: false, color: '#fb7185', bar: pct(expired), icon: svgX },
+  ];
+
+  row.innerHTML = cards.map(c => `
+    <div class="tl-kpi-card">
+      <div class="tl-kpi-head">
+        <span class="tl-kpi-label">${c.label}</span>
+        <span class="tl-kpi-icon" style="color:${c.color}">${c.icon}</span>
+      </div>
+      <div class="tl-kpi-body">
+        <span class="tl-kpi-num"${c.numColor ? ` style="color:${c.numColor}"` : ''}>${c.num}</span>
+        <span class="tl-kpi-sub${c.accent ? ' kpi-accent' : ''}">${c.sub}</span>
+      </div>
+      <div class="tl-kpi-bar"><i style="width:${c.bar}%; background:${c.color};"></i></div>
+    </div>`).join('');
+}
+
+/* ---- Sold serial breakdown (dense cloud / grouped by model) ---- */
+function trackChipSearch(serial) {
+  const input = document.getElementById('track-search');
+  if (input) input.value = serial;
+  handleTrackSearchInput(serial);
+}
+
+function renderTrackBreakdown(list, modelColors) {
+  const box = document.getElementById('track-breakdown-tags');
+  if (!box) return;
+  if (!list.length) {
+    box.innerHTML = '<div style="color:var(--text-sub); font-size:11.5px; padding:4px 2px;">No serials match the current filters.</div>';
+    return;
+  }
+  const chipHtml = r => {
+    const c = modelColors[r.model] || 'var(--green-bright)';
+    return `<span class="track-breakdown-chip" title="${escapeHtml(r.model)} \u2014 ${escapeHtml(r.customer)} \u00b7 dispatched ${escapeHtml(r.dateOut)}" onclick="trackChipSearch('${escapeHtml(escapeJs(r.serial))}')" style="cursor:pointer;"><span style="color:${c}; font-weight:700;">${escapeHtml(r.serial)}</span> <span class="chip-model">(${escapeHtml(r.model)})</span></span>`;
+  };
+  if (DB.trackViewMode === 'grouped') {
+    const groups = {};
+    list.forEach(r => {
+      const m = r.model || '\u2014';
+      (groups[m] = groups[m] || []).push(r);
+    });
+    box.innerHTML = Object.keys(groups).sort().map(m => `
+      <div class="tl-group-block">
+        <div class="tl-group-title"><i class="tl-wdot" style="background:${modelColors[m] || 'var(--green-bright)'}"></i>${escapeHtml(m)}<span class="tl-group-count">${groups[m].length} units</span></div>
+        <div class="filter-pills-row">${groups[m].map(chipHtml).join('')}</div>
+      </div>`).join('');
+  } else {
+    box.innerHTML = list.map(chipHtml).join('');
+  }
+}
+
+function setTrackViewMode(mode) {
+  DB.trackViewMode = mode;
+  const c = document.getElementById('tl-view-cloud');
+  const g = document.getElementById('tl-view-grouped');
+  if (c) c.classList.toggle('active', mode === 'cloud');
+  if (g) g.classList.toggle('active', mode === 'grouped');
+  renderTrackList(undefined, true);
+}
+
+/* ---- Fulfillment Records Log table ---- */
+const TRACK_COL_DEFS = [
+  ['model', 'Model & Description'], ['serial', 'Serial Number'], ['dateIn', 'Date In'],
+  ['dateOut', 'Dispatched At'], ['customer', 'Customer Destination'], ['warranty', 'Warranty'],
+  ['status', 'Status'], ['actions', 'Actions']
+];
+
+function trackWarrantyBadge(r) {
+  const w = r.warranty || { status: 'none', expiry: '', daysRemaining: null };
+  if (w.status === 'active') {
+    return `<span class="tl-warranty-badge w-active" title="Warranty expires ${escapeHtml(w.expiry)}"><i class="tl-wdot" style="background:var(--green-bright)"></i>Active (${w.daysRemaining}d)</span>`;
+  }
+  if (w.status === 'expiring') {
+    return `<span class="tl-warranty-badge w-expiring" title="Warranty expires ${escapeHtml(w.expiry)}"><i class="tl-wdot" style="background:#f59e0b"></i>Expiring (${w.daysRemaining}d)</span>`;
+  }
+  if (w.status === 'expired') {
+    return `<span class="tl-warranty-badge w-expired" title="Warranty expired ${escapeHtml(w.expiry)}"><i class="tl-wdot" style="background:#f87171"></i>Expired</span>`;
+  }
+  return '<span class="tl-warranty-badge w-none">\u2014</span>';
+}
+
+function renderTrackTable(list, modelColors) {
+  const tbody = document.getElementById('track-table-tbody');
+  const table = document.getElementById('track-table');
+  if (!tbody || !table) return;
+
+  for (const k in DB.trackCols) {
+    table.classList.toggle('tl-hide-' + k, !DB.trackCols[k]);
+  }
+
+  const sorted = getSortedTrackList(list);
+  const size = DB.trackPageSize;
+  const pages = Math.max(1, Math.ceil(sorted.length / size));
+  if (DB.trackPage >= pages) DB.trackPage = pages - 1;
+  if (DB.trackPage < 0) DB.trackPage = 0;
+  const pageRows = sorted.slice(DB.trackPage * size, DB.trackPage * size + size);
+
+  const boltSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>';
+  const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>';
+  const eyeSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
+
+  tbody.innerHTML = '';
+  if (!pageRows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
+  }
+  pageRows.forEach(r => {
+    const tr = document.createElement('tr');
+    const mc = modelColors[r.model] || 'var(--green-bright)';
+    const checked = DB.trackSelected.has(r.serial) ? ' checked' : '';
+    const jsSerial = escapeHtml(escapeJs(r.serial));
     tr.innerHTML = `
-      <td style="font-weight:700;">${r.model}</td>
-      <td class="mono" style="color:var(--green-bright); font-weight:700;">${r.serial}</td>
-      <td class="mono" style="color:var(--text-muted);">${r.dateIn}</td>
-      <td class="mono" style="color:var(--text-muted);">${r.dateOut}</td>
-      <td style="font-weight:500;">${r.customer}</td>
-      <td>${wBadge}</td>
-      <td style="text-align:right;">
-        <span class="badge badge-green">Dispatched</span>
-      </td>
+      <td class="tl-check-col"><input type="checkbox"${checked} onchange="toggleTrackRowSelect('${jsSerial}', this.checked)"></td>
+      <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span>${escapeHtml(r.model)}</span></div></td>
+      <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;">${escapeHtml(r.serial)}</td>
+      <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateIn)}</td>
+      <td data-tlcol="dateOut" class="mono">${escapeHtml(r.dateOut)}</td>
+      <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i>${escapeHtml(r.customer)}</span></td>
+      <td data-tlcol="warranty">${trackWarrantyBadge(r)}</td>
+      <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
+      <td data-tlcol="actions" style="text-align:right;"><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
     `;
     tbody.appendChild(tr);
   });
+
+  const selAll = document.getElementById('track-sel-all');
+  if (selAll) {
+    const selCount = pageRows.filter(r => DB.trackSelected.has(r.serial)).length;
+    selAll.checked = pageRows.length > 0 && selCount === pageRows.length;
+    selAll.indeterminate = selCount > 0 && selCount < pageRows.length;
+  }
+
+  const sb = document.getElementById('track-showing-badge');
+  if (sb) sb.textContent = `Showing ${pageRows.length} of ${list.length}`;
+
+  renderTrackPagination(sorted.length, pages);
+}
+
+function renderTrackPagination(total, pages) {
+  const el = document.getElementById('track-pagination');
+  if (!el) return;
+  const page = DB.trackPage;
+  const size = DB.trackPageSize;
+  const start = total ? page * size + 1 : 0;
+  const end = Math.min((page + 1) * size, total);
+
+  const nums = [];
+  if (pages <= 7) {
+    for (let i = 0; i < pages; i++) nums.push(i);
+  } else {
+    nums.push(0);
+    const lo = Math.max(1, page - 1);
+    const hi = Math.min(pages - 2, page + 1);
+    if (lo > 1) nums.push('\u2026');
+    for (let i = lo; i <= hi; i++) nums.push(i);
+    if (hi < pages - 2) nums.push('\u2026');
+    nums.push(pages - 1);
+  }
+
+  el.innerHTML = `
+    <div class="tl-page-left">
+      <span>Rows per page:</span>
+      <select class="tl-page-size" onchange="setTrackPageSize(this.value)">
+        ${[10, 25, 50, 100].map(n => `<option value="${n}"${n === size ? ' selected' : ''}>${n}</option>`).join('')}
+      </select>
+      <span style="opacity:.5;">|</span>
+      <span>${start}-${end} of ${total} records</span>
+    </div>
+    <div class="tl-page-btns">
+      <button type="button" class="tl-page-btn" ${page === 0 ? 'disabled' : ''} onclick="setTrackPage(0)" title="First page">&laquo;</button>
+      <button type="button" class="tl-page-btn" ${page === 0 ? 'disabled' : ''} onclick="setTrackPage(${page - 1})" title="Previous page">&lsaquo;</button>
+      ${nums.map(n => n === '\u2026'
+        ? '<span class="tl-page-ellipsis">\u2026</span>'
+        : `<button type="button" class="tl-page-btn${n === page ? ' active' : ''}" onclick="setTrackPage(${n})">${n + 1}</button>`).join('')}
+      <button type="button" class="tl-page-btn" ${page >= pages - 1 ? 'disabled' : ''} onclick="setTrackPage(${page + 1})" title="Next page">&rsaquo;</button>
+      <button type="button" class="tl-page-btn" ${page >= pages - 1 ? 'disabled' : ''} onclick="setTrackPage(${pages - 1})" title="Last page">&raquo;</button>
+    </div>`;
+}
+
+function setTrackPage(p) {
+  DB.trackPage = p;
+  renderTrackList(undefined, true);
+}
+
+function setTrackPageSize(v) {
+  DB.trackPageSize = parseInt(v, 10) || 10;
+  DB.trackPage = 0;
+  renderTrackList(undefined, true);
+}
+
+function toggleTrackSort() {
+  DB.trackSortDir = DB.trackSortDir === 'desc' ? 'asc' : 'desc';
+  DB.trackPage = 0;
+  const btn = document.getElementById('track-sort-btn');
+  if (btn) {
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg> Sort: Dispatched At (${DB.trackSortDir === 'desc' ? 'Desc' : 'Asc'})`;
+  }
+  renderTrackList(undefined, true);
+}
+
+function toggleTrackColMenu(ev) {
+  if (ev) ev.stopPropagation();
+  const m = document.getElementById('track-col-menu');
+  if (!m) return;
+  if (m.style.display !== 'none') { m.style.display = 'none'; return; }
+  m.innerHTML = TRACK_COL_DEFS.map(([k, l]) =>
+    `<label><input type="checkbox" ${DB.trackCols[k] ? 'checked' : ''} onchange="setTrackCol('${k}', this.checked)"> ${l}</label>`
+  ).join('');
+  m.style.display = 'block';
+}
+
+function setTrackCol(key, visible) {
+  DB.trackCols[key] = visible;
+  renderTrackList(undefined, true);
+}
+
+document.addEventListener('click', e => {
+  const m = document.getElementById('track-col-menu');
+  if (m && m.style.display !== 'none' && !e.target.closest('.tl-colmenu-wrap')) {
+    m.style.display = 'none';
+  }
+});
+
+/* ---- Row selection (drives Print Labels) ---- */
+function toggleTrackRowSelect(serial, on) {
+  if (on) DB.trackSelected.add(serial);
+  else DB.trackSelected.delete(serial);
+  const tbody = document.getElementById('track-table-tbody');
+  const selAll = document.getElementById('track-sel-all');
+  if (selAll && tbody) {
+    const boxes = [...tbody.querySelectorAll('input[type="checkbox"]')];
+    const onCount = boxes.filter(b => b.checked).length;
+    selAll.checked = boxes.length > 0 && onCount === boxes.length;
+    selAll.indeterminate = onCount > 0 && onCount < boxes.length;
+  }
+}
+
+function toggleTrackSelectAll(on) {
+  const list = getSortedTrackList(getFilteredTrackList());
+  const pageRows = list.slice(DB.trackPage * DB.trackPageSize, DB.trackPage * DB.trackPageSize + DB.trackPageSize);
+  pageRows.forEach(r => {
+    if (on) DB.trackSelected.add(r.serial);
+    else DB.trackSelected.delete(r.serial);
+  });
+  renderTrackList(undefined, true);
+}
+
+/* ---- Eye action: inspect a dispatched unit in Return & RMA ---- */
+function inspectTrackRow(serial) {
+  switchTab('return');
+  setTimeout(() => {
+    const sel = document.getElementById('rma-serial-select');
+    if (sel) {
+      sel.value = serial;
+      updateRmaWarrantyCard();
+      sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      sel.style.outline = '2px solid var(--green-bright)';
+      sel.style.outlineOffset = '2px';
+      setTimeout(() => { sel.style.outline = ''; sel.style.outlineOffset = ''; }, 1800);
+    }
+    showToast(`Inspecting ${serial} in Return & RMA`, '&#128065;');
+  }, 150);
+}
+
+/* ---- Print serial labels (selected rows, else current filtered view) ---- */
+function printTrackLabels() {
+  const rows = DB.trackSelected.size
+    ? DB.trackList.filter(r => DB.trackSelected.has(r.serial))
+    : getFilteredTrackList();
+  if (!rows.length) {
+    showToast('No records to print.');
+    return;
+  }
+  const sheet = document.getElementById('tl-print-sheet');
+  if (!sheet) return;
+  sheet.innerHTML = rows.map(r => `
+    <div class="tl-print-label">
+      <div class="pl-serial">${escapeHtml(r.serial)}</div>
+      <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.customer)} &middot; ${escapeHtml(r.dateOut)}</div>
+    </div>`).join('');
+  showToast(`Printing ${rows.length} label${rows.length === 1 ? '' : 's'}\u2026`);
+  setTimeout(() => window.print(), 60);
+}
+
+/* ---- Telemetry footer ---- */
+function updateTrackFooter() {
+  const sync = document.getElementById('track-foot-sync');
+  if (!sync) return;
+  sync.textContent = `Inventory Telemetry Service \u2022 All ${DB.trackList.length} stock tags synchronized`;
+  const ms = document.getElementById('track-foot-ms');
+  if (ms) ms.textContent = DB.lastFetchMs != null ? DB.lastFetchMs + 'ms' : '\u2014';
+  const poll = document.getElementById('track-foot-poll');
+  if (poll) {
+    if (!DB.lastDataRefreshAt) {
+      poll.textContent = '\u2014';
+    } else {
+      const s = Math.round((Date.now() - DB.lastDataRefreshAt) / 1000);
+      poll.textContent = s < 5 ? 'Just now' : s < 60 ? `${s}s ago` : `${Math.round(s / 60)}m ago`;
+    }
+  }
 }
 
 function renderCustomerFilterPills() {
@@ -6987,18 +8047,18 @@ function renderWarrantyFilterPills() {
     if (wCounts[s] !== undefined) wCounts[s]++;
   });
 
-  const mkPill = (key, label, count) => {
+  const mkPill = (key, label, count, dotColor) => {
     const btn = document.createElement('button');
     btn.className = 'pill-filter-btn' + (DB.trackWarrantyFilter === key ? ' active' : '');
-    btn.innerHTML = `${label} <span class="tab-badge">${count}</span>`;
+    btn.innerHTML = `${dotColor ? `<i class="tl-wdot" style="background:${dotColor}"></i>` : ''}${label} <span class="tab-badge">${count}</span>`;
     btn.onclick = () => { DB.trackWarrantyFilter = key; renderTrackList(); };
     container.appendChild(btn);
   };
 
   mkPill('ALL', 'All Warranty', wCounts.ALL);
-  mkPill('active', '\ud83d\udee1\ufe0f Active', wCounts.active);
-  mkPill('expiring', '\u26a0\ufe0f Expiring Soon', wCounts.expiring);
-  mkPill('expired', '\u274c Expired', wCounts.expired);
+  mkPill('active', 'Active', wCounts.active, 'var(--green-bright)');
+  mkPill('expiring', 'Expiring Soon', wCounts.expiring, '#fbbf24');
+  mkPill('expired', 'Expired', wCounts.expired, '#f87171');
 }
 
 function exportTrackCsv() {
@@ -8395,6 +9455,12 @@ function submitManualStockIn() {
 
 /* Keyboard escape listener & modal backdrop click */
 document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && DB.activeTab === 'track-list') {
+    e.preventDefault();
+    const s = document.getElementById('track-search');
+    if (s) { s.focus(); s.select(); }
+    return;
+  }
   if (e.key === 'Escape') {
     closeConfigModal();
     closeManualStockInModal();
