@@ -2931,7 +2931,7 @@ body.theme-light .track-breakdown-chip:hover {
 .tl-collapse-btn svg {
   transition: transform .2s ease;
 }
-.tl-breakdown-collapsed .tl-tags-body {
+#tl-breakdown-card.tl-breakdown-collapsed .tl-tags-body {
   display: none;
 }
 .tl-breakdown-collapsed .tl-collapse-btn svg {
@@ -3174,45 +3174,56 @@ body.theme-light .tl-status-badge {
   padding: 0 2px;
 }
 
-/* Telemetry footer */
-.tl-footer {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface2);
-  padding: 10px 16px;
+/* Track List fills the viewport: the records card flexes to the remaining
+   height so its pagination bar is always visible; the table scrolls
+   internally. Section scrolls internally only if the window is too short. */
+#view-track-list.active {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 11px;
-  color: var(--text-sub);
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
 }
-.tl-footer-left {
+#view-track-list.active > .tl-header,
+#view-track-list.active > .tl-filter-panel {
+  flex-shrink: 0;
+}
+/* Breakdown cloud is the flexible element: it can shrink below its 240px
+   cap (scrolls internally) so the records table keeps a usable height;
+   the records card grows to fill whatever space remains. */
+#tl-breakdown-card {
+  flex: 0 1 auto;
+  min-height: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
 }
-.tl-footer-right {
+#tl-breakdown-card .tl-card-header {
+  flex-shrink: 0;
+}
+#tl-breakdown-card .tl-tags-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 240px;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
 }
-.tl-footer-right strong {
-  color: var(--green-bright);
-  font-weight: 600;
+#tl-breakdown-card .tl-tags-body .track-pills-wrap {
+  max-height: none;
+  flex: 1 1 auto;
 }
-.tl-footer-sep {
-  opacity: 0.5;
+#tl-records-card {
+  flex: 1 1 0;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
 }
-.tl-footer-link {
-  color: var(--text-muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+#tl-records-card .tl-card-header,
+#tl-records-card .tl-pagination {
+  flex-shrink: 0;
 }
-.tl-footer-link:hover {
-  color: var(--text);
+#tl-records-card .table-scroll-10 {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 
 /* Column hiding via data-tlcol */
@@ -4353,7 +4364,7 @@ body.theme-light .autocomplete-dropdown {
       </div>
 
       <!-- Fulfillment Records Log -->
-      <div class="card tl-card">
+      <div class="card tl-card" id="tl-records-card">
         <div class="tl-card-header">
           <div class="tl-card-title-group">
             <span class="tl-card-title">Fulfillment Records Log</span>
@@ -4392,21 +4403,6 @@ body.theme-light .autocomplete-dropdown {
           </table>
         </div>
         <div class="tl-pagination" id="track-pagination"></div>
-      </div>
-
-      <!-- Telemetry Footer -->
-      <div class="tl-footer">
-        <div class="tl-footer-left">
-          <span class="tl-dot"></span>
-          <span id="track-foot-sync">Inventory Telemetry Service &bull; 0 stock tags synchronized</span>
-        </div>
-        <div class="tl-footer-right">
-          <span>Server Response: <strong class="mono" id="track-foot-ms">&mdash;</strong></span>
-          <span class="tl-footer-sep">&bull;</span>
-          <span>Last Poll: <strong id="track-foot-poll">&mdash;</strong></span>
-          <span class="tl-footer-sep">&bull;</span>
-          <a href="javascript:void(0)" class="tl-footer-link" onclick="openActivityModal()">Audit Logs</a>
-        </div>
       </div>
     </section>
 
@@ -5097,8 +5093,6 @@ const DB = {
   trackBreakdownCollapsed: localStorage.getItem('tlCollapsed') === '1',
   trackSelected: new Set(),   // checked serials in records table
   trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
-  lastFetchMs: null,      // last refreshData() round-trip duration
-  lastDataRefreshAt: null,// timestamp of last successful refreshData()
   lowStockFilter: false,      // toggles showing only models with <= 2 units
   scans: [],        // filled by POST /api/scan or the manual + button
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
@@ -5132,7 +5126,6 @@ const apiDel = (p, body) => api(p, {
 });
 
 async function refreshData() {
-  const t0 = performance.now();
   const [inv, trk, ret, cust, doRes] = await Promise.all([
     apiGet('/api/inventory'),
     apiGet('/api/track'),
@@ -5153,9 +5146,6 @@ async function refreshData() {
   updateDoPhotosBadge();
   renderRecentCustomerChips();
   checkCustomerInputStatus();
-  DB.lastFetchMs = Math.round(performance.now() - t0);
-  DB.lastDataRefreshAt = Date.now();
-  updateTrackFooter();
 }
 
 /* Lazy per-tab rendering: data loads for all screens at once, but only the
@@ -7628,7 +7618,6 @@ function renderTrackList(searchTerm, keepPage) {
   renderTrackBreakdown(list, modelColors);
   applyTrackBreakdownState();
   renderTrackTable(list, modelColors);
-  updateTrackFooter();
 }
 
 /* ---- Sold serial breakdown (dense cloud / grouped by model) ---- */
@@ -7908,23 +7897,7 @@ function printTrackLabels() {
   setTimeout(() => window.print(), 60);
 }
 
-/* ---- Telemetry footer ---- */
-function updateTrackFooter() {
-  const sync = document.getElementById('track-foot-sync');
-  if (!sync) return;
-  sync.textContent = `Inventory Telemetry Service \u2022 All ${DB.trackList.length} stock tags synchronized`;
-  const ms = document.getElementById('track-foot-ms');
-  if (ms) ms.textContent = DB.lastFetchMs != null ? DB.lastFetchMs + 'ms' : '\u2014';
-  const poll = document.getElementById('track-foot-poll');
-  if (poll) {
-    if (!DB.lastDataRefreshAt) {
-      poll.textContent = '\u2014';
-    } else {
-      const s = Math.round((Date.now() - DB.lastDataRefreshAt) / 1000);
-      poll.textContent = s < 5 ? 'Just now' : s < 60 ? `${s}s ago` : `${Math.round(s / 60)}m ago`;
-    }
-  }
-}
+
 
 function renderCustomerFilterPills() {
   const container = document.getElementById('track-customer-pills');
