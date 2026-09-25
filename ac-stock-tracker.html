@@ -2913,6 +2913,34 @@ body.theme-light .track-breakdown-chip:hover {
 .tl-tags-body .track-pills-wrap {
   max-height: 240px;
 }
+.tl-collapse-btn {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: all .15s;
+}
+.tl-collapse-btn:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+.tl-collapse-btn svg {
+  transition: transform .2s ease;
+}
+.tl-breakdown-collapsed .tl-tags-body {
+  display: none;
+}
+.tl-breakdown-collapsed .tl-collapse-btn svg {
+  transform: rotate(-90deg);
+}
+.tl-breakdown-collapsed .tl-legend,
+.tl-breakdown-collapsed .tl-view-switch {
+  display: none;
+}
 .tl-group-block {
   width: 100%;
   margin-bottom: 8px;
@@ -4297,7 +4325,7 @@ body.theme-light .autocomplete-dropdown {
       </div>
 
       <!-- Sold Serial Breakdown & Equipment Tags -->
-      <div class="card tl-card">
+      <div class="card tl-card" id="tl-breakdown-card">
         <div class="tl-card-header">
           <div class="tl-card-title-group">
             <span class="tl-dot"></span>
@@ -4306,14 +4334,17 @@ body.theme-light .autocomplete-dropdown {
             <span class="tl-cust-chip" id="track-banner-title">All Customers</span>
           </div>
           <div class="tl-card-tools">
-            <div class="tl-legend">
+            <div class="tl-legend" id="tl-breakdown-legend">
               <span class="tl-legend-item"><i class="tl-lg tl-lg-mint"></i>In Stock Deducted</span>
               <span class="tl-legend-item"><i class="tl-lg tl-lg-sky"></i>Dispatch Verified</span>
             </div>
-            <div class="tl-view-switch">
+            <div class="tl-view-switch" id="tl-breakdown-switch">
               <button type="button" id="tl-view-cloud" class="active" onclick="setTrackViewMode('cloud')">Dense Cloud</button>
               <button type="button" id="tl-view-grouped" onclick="setTrackViewMode('grouped')">Grouped by Model</button>
             </div>
+            <button type="button" class="tl-collapse-btn" id="tl-collapse-btn" onclick="toggleTrackBreakdown()" title="Collapse / Expand">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            </button>
           </div>
         </div>
         <div class="tl-tags-body">
@@ -5063,6 +5094,7 @@ const DB = {
   trackPageSize: 10,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
+  trackBreakdownCollapsed: localStorage.getItem('tlCollapsed') === '1',
   trackSelected: new Set(),   // checked serials in records table
   trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
   lastFetchMs: null,      // last refreshData() round-trip duration
@@ -7594,6 +7626,7 @@ function renderTrackList(searchTerm, keepPage) {
   if (custChip) custChip.textContent = DB.trackFilter === 'ALL' ? 'All Customers' : DB.trackFilter;
 
   renderTrackBreakdown(list, modelColors);
+  applyTrackBreakdownState();
   renderTrackTable(list, modelColors);
   updateTrackFooter();
 }
@@ -7639,6 +7672,17 @@ function setTrackViewMode(mode) {
   if (c) c.classList.toggle('active', mode === 'cloud');
   if (g) g.classList.toggle('active', mode === 'grouped');
   renderTrackList(undefined, true);
+}
+
+function applyTrackBreakdownState() {
+  const card = document.getElementById('tl-breakdown-card');
+  if (card) card.classList.toggle('tl-breakdown-collapsed', DB.trackBreakdownCollapsed);
+}
+
+function toggleTrackBreakdown() {
+  DB.trackBreakdownCollapsed = !DB.trackBreakdownCollapsed;
+  try { localStorage.setItem('tlCollapsed', DB.trackBreakdownCollapsed ? '1' : '0'); } catch (e) {}
+  applyTrackBreakdownState();
 }
 
 /* ---- Fulfillment Records Log table ---- */
