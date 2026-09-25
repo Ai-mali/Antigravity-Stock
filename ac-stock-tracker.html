@@ -5026,6 +5026,11 @@ function jumpToDuplicateInStock(brand, model, serial) {
 
 function jumpToDuplicateInTrack(serial) {
   closeDuplicateLocationModal();
+  // Reset leftover customer/warranty filters — a stale pill filter would
+  // silently hide the target serial (looked "random" because it depended
+  // on whichever customer pill was last clicked).
+  DB.trackFilter = 'ALL';
+  DB.trackWarrantyFilter = 'ALL';
   switchTab('track-list');
   setTimeout(() => {
     const searchInput = document.getElementById('track-search');
