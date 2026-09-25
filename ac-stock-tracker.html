@@ -36,6 +36,7 @@
   --red-badge-bg: rgba(220, 38, 38, 0.14);
   --red-badge-border: rgba(220, 38, 38, 0.3);
   --red-badge-text: #f87171;
+  --frame-bg: #39434c;
 }
 
 body.theme-light {
@@ -60,6 +61,7 @@ body.theme-light {
   --red-badge-bg: rgba(220, 38, 38, 0.1);
   --red-badge-border: rgba(220, 38, 38, 0.25);
   --red-badge-text: #dc2626;
+  --frame-bg: #b6c1ca;
 }
 
 /* Day/Light Mode Specific Component Overrides */
@@ -293,8 +295,8 @@ body {
 
 /* Frameless Desktop App Shell Overrides */
 body.is-desktop-shell {
-  padding: 0 !important;
-  background: var(--bg-app) !important;
+  padding: 5px !important;
+  background: var(--frame-bg) !important;   /* visible outer window-frame ring */
   overflow: hidden !important;
   height: 100vh !important;
   width: 100vw !important;
@@ -302,9 +304,9 @@ body.is-desktop-shell {
 
 body.is-desktop-shell .app-container {
   max-width: 100% !important;
-  min-height: 100vh !important;
-  height: 100vh !important;
-  border-radius: 14px !important;
+  min-height: 0 !important;
+  height: calc(100vh - 10px) !important;
+  border-radius: 13px !important;
   border: 1px solid var(--border) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
   overflow: hidden !important;
@@ -312,12 +314,14 @@ body.is-desktop-shell .app-container {
 }
 
 body.is-desktop-shell header {
-  border-top-left-radius: 13px;
-  border-top-right-radius: 13px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 body.is-desktop-shell main {
-  height: calc(100vh - 56px) !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
   overflow-y: auto !important;
 }
 
@@ -3206,10 +3210,207 @@ body.theme-light .tl-status-badge {
   height: 100%;
   overflow-y: auto;
 }
-#view-track-list.active > .tl-header,
-#view-track-list.active > .tl-filter-panel {
+/* Sidebar + main workspace split */
+.tl-layout {
+  display: flex;
+  gap: 14px;
+  flex: 1 1 0;
+  min-height: 0;
+  align-items: stretch;
+}
+.tl-sidebar {
+  width: 252px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.tl-main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tl-main > .tl-header { flex-shrink: 0; flex-wrap: wrap; row-gap: 10px; }
+.tl-main > .tl-header .tl-header-actions { flex-wrap: wrap; row-gap: 8px; }
+
+/* Sidebar search — same field, slimmer */
+.tl-side-search { width: 100%; }
+.tl-side-search input { width: 100%; }
+
+/* Sidebar tab chips (Customers | Warranty) */
+.tl-side-tabs {
+  display: flex;
+  gap: 6px;
   flex-shrink: 0;
 }
+.tl-side-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tl-side-tab b {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: rgba(0,0,0,0.25);
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+.tl-side-tab.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.tl-side-tab.active b { background: rgba(255,255,255,0.22); }
+.tl-side-tab:hover:not(.active) { color: var(--text); border-color: var(--border-light); }
+
+/* Sidebar scrolling list */
+.tl-side-list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  scrollbar-width: thin;
+}
+
+/* Customer row */
+.tl-cust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 9px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  color: var(--text);
+  transition: all .12s;
+}
+.tl-cust-item:hover { background: var(--surface2); }
+.tl-cust-item.active {
+  background: var(--surface2);
+  border-color: var(--green);
+  box-shadow: inset 2px 0 0 var(--green-bright);
+}
+.tl-cust-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+}
+.tl-cust-avatar .tl-wdot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid var(--surface);
+}
+.tl-cust-meta { flex: 1; min-width: 0; }
+.tl-cust-name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tl-cust-sub {
+  font-size: 10.5px;
+  color: var(--text-sub);
+  margin-top: 1px;
+}
+.tl-cust-right { text-align: right; flex-shrink: 0; }
+.tl-cust-units {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--green-bright);
+  background: var(--green-badge-bg);
+  border: 1px solid var(--green-badge-border);
+  padding: 1px 7px;
+  border-radius: 99px;
+}
+.tl-cust-date {
+  font-size: 9.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-sub);
+  margin-top: 3px;
+}
+
+/* Warranty rows share the customer-row shell */
+.tl-warr-row .tl-cust-avatar { border-radius: 50%; }
+
+/* Sidebar footer (staff / sync status) */
+.tl-sidebar-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.tl-staff-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--green-badge-bg);
+  border: 1px solid var(--green-badge-border);
+  color: var(--green-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.tl-staff-meta { flex: 1; min-width: 0; }
+.tl-staff-name { font-size: 11.5px; font-weight: 600; }
+.tl-staff-status {
+  font-size: 10px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tl-side-menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  display: inline-flex;
+}
+.tl-side-menu-btn:hover { color: var(--text); background: var(--surface2); }
 /* Breakdown cloud is the flexible element: it can shrink below its 240px
    cap (scrolls internally) so the records table keeps a usable height;
    the records card grows to fill whatever space remains. */
@@ -4302,6 +4503,39 @@ body.theme-light .autocomplete-dropdown {
 
     <!-- 4. TRACK LIST SCREEN -->
     <section id="view-track-list" class="view-section">
+      <div class="tl-layout">
+      <!-- LEFT: Customer / Warranty sidebar -->
+      <aside class="tl-sidebar">
+        <div class="search-box-wrap tl-side-search">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="track-search-side" oninput="handleTrackSearchInput(this.value)" placeholder="Search customer, client...">
+        </div>
+        <div class="tl-side-tabs">
+          <button type="button" class="tl-side-tab active" id="tl-side-tab-cust" onclick="setTrackSideTab('customers')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"></path></svg>
+            Customers <b id="tl-side-cust-count">0</b>
+          </button>
+          <button type="button" class="tl-side-tab" id="tl-side-tab-warr" onclick="setTrackSideTab('warranty')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Warranty <b id="tl-side-warr-count">0</b>
+          </button>
+        </div>
+        <div class="tl-side-list" id="tl-customer-list"></div>
+        <div class="tl-side-list" id="tl-warranty-list" style="display:none;"></div>
+        <div class="tl-sidebar-footer">
+          <div class="tl-staff-avatar">WS</div>
+          <div class="tl-staff-meta">
+            <div class="tl-staff-name">Warehouse Staff</div>
+            <div class="tl-staff-status"><i class="tl-wdot" style="background:var(--green-bright)"></i>Synced &middot; Local DB</div>
+          </div>
+          <button type="button" class="tl-side-menu-btn" onclick="openActivityModal()" title="Backups &amp; Activity Log">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- RIGHT: records workspace -->
+      <div class="tl-main">
       <!-- Header: icon tile + title + live badge | command bar -->
       <div class="view-header tl-header">
         <div class="tl-header-left">
@@ -4337,21 +4571,6 @@ body.theme-light .autocomplete-dropdown {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16m8-8H4"></path></svg>
             Batch Dispatch
           </button>
-        </div>
-      </div>
-
-      <!-- Filter Ribbon: Client + Warranty -->
-      <div class="tl-filter-panel">
-        <div class="tl-filter-group">
-          <span class="tl-filter-label">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            Client:
-          </span>
-          <div class="filter-pills-row" id="track-customer-pills"></div>
-        </div>
-        <div class="tl-filter-group tl-filter-warranty">
-          <span class="tl-filter-label">Warranty:</span>
-          <div class="filter-pills-row" id="track-warranty-pills"></div>
         </div>
       </div>
 
@@ -4424,6 +4643,8 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div class="tl-pagination" id="track-pagination"></div>
       </div>
+      </div><!-- /.tl-main -->
+      </div><!-- /.tl-layout -->
     </section>
 
     <!-- 5. RETURN SCREEN -->
@@ -5106,6 +5327,8 @@ const DB = {
   soFilter: 'ALL',
   trackFilter: 'ALL',
   trackWarrantyFilter: 'ALL', // 'ALL' | 'active' | 'expiring' | 'expired'
+  trackSearch: '',          // shared by both track-list search fields
+  trackSideTab: 'customers', // sidebar tab: 'customers' | 'warranty'
   trackPage: 0,           // Fulfillment Records Log pagination
   trackPageSize: 10,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
@@ -7556,21 +7779,32 @@ async function processCartCheckout() {
 /* =========================================================
    4. TRACK LIST LOGIC
    ========================================================= */
+/* Both search fields (sidebar + main) drive the SAME query — typing in
+   either one live-filters the records identically and mirrors the text
+   into the other field (unless that field is the one being typed in). */
+function syncTrackSearchInputs(v) {
+  ['track-search', 'track-search-side'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && document.activeElement !== el) el.value = v;
+  });
+}
+
 function handleTrackSearchInput(val) {
+  DB.trackSearch = val;
+  syncTrackSearchInputs(val);
   const clearBtn = document.getElementById('track-search-clear');
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
-  renderTrackList(val);
+  renderTrackList();
 }
 
 function clearTrackSearch() {
+  DB.trackSearch = '';
+  syncTrackSearchInputs('');
   const input = document.getElementById('track-search');
-  if (input) {
-    input.value = '';
-    input.focus();
-  }
+  if (input) input.focus();
   const clearBtn = document.getElementById('track-search-clear');
   if (clearBtn) clearBtn.style.display = 'none';
-  renderTrackList('');
+  renderTrackList();
 }
 
 /* Deterministic per-model / per-customer accent palettes (Google Stitch look) */
@@ -7592,8 +7826,7 @@ function trackCustomerColor(name) {
 }
 
 function getFilteredTrackList() {
-  const searchInput = document.getElementById('track-search');
-  const q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+  const q = (DB.trackSearch || '').trim().toLowerCase();
   let list = DB.trackList;
   if (DB.trackFilter !== 'ALL') {
     list = list.filter(r => r.customer === DB.trackFilter);
@@ -7622,13 +7855,12 @@ function getSortedTrackList(list) {
 
 function renderTrackList(searchTerm, keepPage) {
   if (typeof searchTerm === 'string') {
-    const searchInput = document.getElementById('track-search');
-    if (searchInput) searchInput.value = searchTerm;
+    DB.trackSearch = searchTerm;
+    syncTrackSearchInputs(searchTerm);
   }
   if (!keepPage) DB.trackPage = 0;
 
-  renderCustomerFilterPills();
-  renderWarrantyFilterPills();
+  renderTrackSidebar();
 
   const list = getFilteredTrackList();
   const modelColors = trackModelColorMap();
@@ -7646,8 +7878,6 @@ function renderTrackList(searchTerm, keepPage) {
 
 /* ---- Sold serial breakdown (dense cloud / grouped by model) ---- */
 function trackChipSearch(serial) {
-  const input = document.getElementById('track-search');
-  if (input) input.value = serial;
   handleTrackSearchInput(serial);
 }
 
@@ -7889,56 +8119,111 @@ function printTrackLabels() {
 
 
 
-function renderCustomerFilterPills() {
-  const container = document.getElementById('track-customer-pills');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const custMap = {};
-  DB.trackList.forEach(r => {
-    if (r.customer) {
-      custMap[r.customer] = (custMap[r.customer] || 0) + 1;
-    }
-  });
-
-  const allBtn = document.createElement('button');
-  allBtn.className = 'pill-filter-btn' + (DB.trackFilter === 'ALL' ? ' active' : '');
-  allBtn.innerHTML = 'All Customers <span class="tab-badge">' + DB.trackList.length + '</span>';
-  allBtn.onclick = () => { DB.trackFilter = 'ALL'; renderTrackList(); };
-  container.appendChild(allBtn);
-
-  for (const cName in custMap) {
-    const btn = document.createElement('button');
-    btn.className = 'pill-filter-btn' + (DB.trackFilter === cName ? ' active' : '');
-    btn.innerHTML = `${cName} <span class="tab-badge">${custMap[cName]} units</span>`;
-    btn.onclick = () => { DB.trackFilter = cName; renderTrackList(); };
-    container.appendChild(btn);
-  }
+/* ---- Track List sidebar: customers list + warranty list (tabbed) ---- */
+function trackCustomerInitials(name) {
+  const parts = String(name || '?').trim().split(/\s+/);
+  return (parts[0][0] + (parts[1] ? parts[1][0] : (parts[0][1] || ''))).toUpperCase();
 }
 
-function renderWarrantyFilterPills() {
-  const container = document.getElementById('track-warranty-pills');
-  if (!container) return;
-  container.innerHTML = '';
+function trackCustomerAggregates() {
+  const map = {};
+  DB.trackList.forEach(r => {
+    const c = r.customer || 'Unknown';
+    if (!map[c]) map[c] = { name: c, units: 0, last: '', worst: 'none' };
+    map[c].units++;
+    const d = r.dateOut || r.dateIn || '';
+    if (d > map[c].last) map[c].last = d;
+    const s = (r.warranty && r.warranty.status) || 'none';
+    if (s === 'expired') map[c].worst = 'expired';
+    else if (s === 'expiring' && map[c].worst !== 'expired') map[c].worst = 'expiring';
+    else if (s === 'active' && map[c].worst === 'none') map[c].worst = 'active';
+  });
+  return Object.values(map).sort((a, b) => b.units - a.units || a.name.localeCompare(b.name));
+}
 
+const TL_WORST_DOT = { expired: '#f87171', expiring: '#fbbf24', active: 'var(--green-bright)', none: 'var(--text-sub)' };
+
+function renderTrackSidebar() {
+  const custListEl = document.getElementById('tl-customer-list');
+  const warrListEl = document.getElementById('tl-warranty-list');
+  if (!custListEl || !warrListEl) return;
+
+  const customers = trackCustomerAggregates();
+
+  // Tab chip counts
+  const cc = document.getElementById('tl-side-cust-count');
+  if (cc) cc.textContent = customers.length;
+  const wc = document.getElementById('tl-side-warr-count');
   const wCounts = { ALL: DB.trackList.length, active: 0, expiring: 0, expired: 0 };
   DB.trackList.forEach(r => {
     const s = (r.warranty && r.warranty.status) ? r.warranty.status : 'none';
     if (wCounts[s] !== undefined) wCounts[s]++;
   });
+  if (wc) wc.textContent = `${wCounts.active}/${wCounts.expired}`;
 
-  const mkPill = (key, label, count, dotColor) => {
-    const btn = document.createElement('button');
-    btn.className = 'pill-filter-btn' + (DB.trackWarrantyFilter === key ? ' active' : '');
-    btn.innerHTML = `${dotColor ? `<i class="tl-wdot" style="background:${dotColor}"></i>` : ''}${label} <span class="tab-badge">${count}</span>`;
-    btn.onclick = () => { DB.trackWarrantyFilter = key; renderTrackList(); };
-    container.appendChild(btn);
-  };
+  // Customers tab — "All Customers" then each customer (units desc)
+  const mkCust = (key, name, units, last, color, initials, worst) => `
+    <button type="button" class="tl-cust-item${DB.trackFilter === key ? ' active' : ''}"
+            onclick="selectTrackCustomer('${escapeHtml(escapeJs(key))}')" title="${escapeHtml(name)} — filter records">
+      <span class="tl-cust-avatar" style="background:${color}26; color:${color}; border:1px solid ${color}55;">
+        ${escapeHtml(initials)}<i class="tl-wdot" style="background:${TL_WORST_DOT[worst]}"></i>
+      </span>
+      <span class="tl-cust-meta">
+        <span class="tl-cust-name">${escapeHtml(name)}</span>
+        <span class="tl-cust-sub">Purchased: ${units} unit${units === 1 ? '' : 's'}</span>
+      </span>
+      <span class="tl-cust-right">
+        <span class="tl-cust-units">${units} Units</span>
+        <div class="tl-cust-date">${escapeHtml(last || '—')}</div>
+      </span>
+    </button>`;
 
-  mkPill('ALL', 'All Warranty', wCounts.ALL);
-  mkPill('active', 'Active', wCounts.active, 'var(--green-bright)');
-  mkPill('expiring', 'Expiring Soon', wCounts.expiring, '#fbbf24');
-  mkPill('expired', 'Expired', wCounts.expired, '#f87171');
+  custListEl.innerHTML =
+    mkCust('ALL', 'All Customers', DB.trackList.length, '', 'var(--green-bright)', '∞', 'none') +
+    customers.map(c => mkCust(c.name, c.name, c.units, c.last, trackCustomerColor(c.name), trackCustomerInitials(c.name), c.worst)).join('');
+
+  // Warranty tab — status rows sharing the same row shell
+  const mkWarr = (key, label, count, dot) => `
+    <button type="button" class="tl-cust-item tl-warr-row${DB.trackWarrantyFilter === key ? ' active' : ''}"
+            onclick="selectTrackWarranty('${key}')" title="Show ${label} records">
+      <span class="tl-cust-avatar" style="background:${dot}26; color:${dot}; border:1px solid ${dot}55;">
+        <i class="tl-wdot" style="background:${dot}; position:static; border:none;"></i>
+      </span>
+      <span class="tl-cust-meta">
+        <span class="tl-cust-name">${label}</span>
+        <span class="tl-cust-sub">${count} record${count === 1 ? '' : 's'}</span>
+      </span>
+      <span class="tl-cust-right"><span class="tl-cust-units" style="color:${dot}; border-color:${dot}55; background:${dot}1a;">${count}</span></span>
+    </button>`;
+
+  warrListEl.innerHTML =
+    mkWarr('ALL', 'All Warranty', wCounts.ALL, 'var(--text-sub)') +
+    mkWarr('active', 'Active', wCounts.active, 'var(--green-bright)') +
+    mkWarr('expiring', 'Expiring Soon', wCounts.expiring, '#fbbf24') +
+    mkWarr('expired', 'Expired', wCounts.expired, '#f87171');
+
+  // Tab visual state
+  const tc = document.getElementById('tl-side-tab-cust');
+  const tw = document.getElementById('tl-side-tab-warr');
+  if (tc) tc.classList.toggle('active', DB.trackSideTab === 'customers');
+  if (tw) tw.classList.toggle('active', DB.trackSideTab === 'warranty');
+  custListEl.style.display = DB.trackSideTab === 'customers' ? 'flex' : 'none';
+  warrListEl.style.display = DB.trackSideTab === 'warranty' ? 'flex' : 'none';
+}
+
+function setTrackSideTab(tab) {
+  DB.trackSideTab = tab;
+  renderTrackSidebar();
+}
+
+function selectTrackCustomer(name) {
+  DB.trackFilter = name;
+  renderTrackList();
+}
+
+function selectTrackWarranty(key) {
+  DB.trackWarrantyFilter = key;
+  renderTrackList();
 }
 
 function exportTrackCsv() {
