@@ -498,7 +498,9 @@ body.is-desktop-shell .desktop-window-controls {
   gap: 10px;
   cursor: default;
   user-select: none;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
 }
 
@@ -565,6 +567,9 @@ body.is-desktop-shell .desktop-window-controls {
   border-radius: 99px;
   padding: 3px;
   gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tab-btn {
@@ -616,11 +621,34 @@ body.is-desktop-shell .desktop-window-controls {
   color: var(--green-bright);
 }
 
-/* Header Actions */
+/* Header Actions — never shrink: the window controls must stay reachable */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Progressive header compression at narrow widths — the window controls
+   always stay visible; decorations drop first. */
+@media (max-width: 1120px) {
+  .theme-mode-label { display: none; }
+  .tab-btn { padding: 6px 11px; }
+  .model-pill-btn { padding: 5px 10px; gap: 6px; }
+}
+@media (max-width: 1000px) {
+  #header-model-btn > span:last-child { display: none; }
+}
+@media (max-width: 960px) {
+  .tab-badge { display: none; }
+}
+@media (max-width: 860px) {
+  #header-model-label { display: none; }
+  .brand-text { display: none; }
+  header { gap: 8px; padding: 0 10px; }
+}
+@media (max-width: 720px) {
+  .icon-square-btn { display: none; }
 }
 
 .model-pill-btn {
