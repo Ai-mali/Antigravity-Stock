@@ -321,6 +321,18 @@ body.is-desktop-shell main {
   overflow-y: auto !important;
 }
 
+/* Snap preview outline (Windows-style: shown when cursor hits top edge mid-drag) */
+#desktop-snap-preview {
+  display: none;
+  position: fixed;
+  inset: 6px;
+  border: 2px solid rgba(38, 208, 124, 0.75);
+  background: rgba(38, 208, 124, 0.10);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 2147483646;
+}
+
 /* Frameless Window 8-Direction Resize Handles */
 .desktop-resize-handle {
   display: none;
@@ -8403,49 +8415,122 @@ function handleHeaderDblClick(event) {
   desktopToggleMaximize();
 }
 
-// pywebview's drag region matches ANY descendant of .pywebview-drag-region —
-// it has no built-in "no-drag" concept (-webkit-app-region is ignored), so
-// mousedown on a header button both clicks it AND starts a window drag.
-// The only way to exempt a control is to stop the mousedown before it
-// bubbles to pywebview's document.body listener.
-// This same hook also watches free-area drags for the cursor touching the
-// top screen edge → snap-maximize (Windows-style), since pywebview's
-// programmatic SetWindowPos move cannot trigger Aero Snap on its own.
+// Header window-drag with Windows-style snap (like MS Word / native apps).
+// pywebview's own drag is replaced here entirely for the header because:
+//  - it matches ANY descendant of .pywebview-drag-region (buttons drag too),
+//    and -webkit-app-region is Electron-only so it can't exempt them;
+//  - it moves via SetWindowPos, so Aero Snap and drag-to-restore can never
+//    trigger on their own.
+// We stop every header mousedown from bubbling to pywebview's body listener
+// and own the gesture instead: interactive controls stay click-only, free
+// areas drag the window, cursor at the top edge shows a snap preview and
+// maximizes on release, and dragging while maximized restores the window
+// anchored proportionally under the cursor.
 (function() {
   const header = document.querySelector('header.pywebview-drag-region');
   if (!header) return;
 
-  let snapTracking = false;
+  const INTERACTIVE = 'button, input, a, select, textarea, label, [role="button"]';
+  let drag = null;
+  let dragBusy = false;
 
-  function stopSnapTracking() {
-    snapTracking = false;
-    window.removeEventListener('mousemove', onSnapMove);
-    window.removeEventListener('mouseup', stopSnapTracking);
+  function snapPreview(show) {
+    let p = document.getElementById('desktop-snap-preview');
+    if (show && !p) {
+      p = document.createElement('div');
+      p.id = 'desktop-snap-preview';
+      document.body.appendChild(p);
+    }
+    if (p) p.style.display = show ? 'block' : 'none';
   }
 
-  function onSnapMove(e) {
-    if (!snapTracking) return;
+  function endHeaderDrag(e) {
+    if (!drag) return;
+    const snap = drag.snapArmed;
+    drag = null;
+    snapPreview(false);
+    try { header.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (snap) {
+      try { window.pywebview.api.maximize(); } catch (err) {}
+    }
+  }
+
+  async function startHeaderDrag(e) {
+    const api = window.pywebview.api;
+    let maximized = false;
+    try { maximized = await api.is_maximized(); } catch (err) {}
+    try {
+      const b = await api.get_window_bounds();
+      if (maximized) {
+        drag = {
+          mode: 'restore',
+          fracX: Math.min(1, Math.max(0, (e.screenX - b.x) / b.width)),
+          grabY: e.screenY - b.y,
+          snapArmed: false
+        };
+      } else {
+        drag = {
+          mode: 'move',
+          grabX: e.screenX - b.x,
+          grabY: e.screenY - b.y,
+          w: b.width, h: b.height,
+          snapArmed: false
+        };
+      }
+    } catch (err) {}
+  }
+
+  async function dragHeaderMove(e) {
+    const api = window.pywebview.api;
+    if (drag.mode === 'restore') {
+      // First move on a maximized window: restore it and anchor the titlebar
+      // grab point proportionally under the cursor (Windows behavior).
+      try { await api.restore(); } catch (err) {}
+      let b = null;
+      for (let i = 0; i < 4; i++) {
+        try { b = await api.get_window_bounds(); } catch (err) {}
+        if (b && b.width < window.screen.availWidth - 40) break;
+        await new Promise(r => setTimeout(r, 40));
+      }
+      const w = (b && b.width) || 1100;
+      const h = (b && b.height) || 680;
+      drag.mode = 'move';
+      drag.grabX = Math.round(drag.fracX * w);
+      drag.w = w; drag.h = h;
+    }
+    try {
+      api.set_bounds(Math.round(e.screenX - drag.grabX), Math.round(e.screenY - drag.grabY), drag.w, drag.h);
+    } catch (err) {}
+
     const topEdge = (window.screen && typeof window.screen.availTop === 'number') ? window.screen.availTop : 0;
-    if (e.screenY <= topEdge + 4) {
-      stopSnapTracking();
-      try {
-        if (isDesktopShell() && window.pywebview.api.maximize) {
-          window.pywebview.api.maximize();
-        }
-      } catch (err) {}
+    if (e.screenY <= topEdge + 6) {
+      if (!drag.snapArmed) { drag.snapArmed = true; snapPreview(true); }
+    } else if (drag.snapArmed && e.screenY > topEdge + 60) {
+      drag.snapArmed = false; snapPreview(false);
     }
   }
 
   header.addEventListener('mousedown', function(e) {
-    if (e.target.closest('button, input, a, select, textarea, label, [role="button"]')) {
-      e.stopPropagation();
-      return;
-    }
-    if (e.button !== 0 || !isDesktopShell() || snapTracking) return;
-    snapTracking = true;
-    window.addEventListener('mousemove', onSnapMove);
-    window.addEventListener('mouseup', stopSnapTracking);
+    // Always keep the press away from pywebview's body-level drag listener —
+    // this engine owns every drag that starts on the header.
+    e.stopPropagation();
   });
+
+  header.addEventListener('pointerdown', function(e) {
+    if (e.button !== 0 || drag || !isDesktopShell()) return;
+    if (e.target.closest(INTERACTIVE)) return;
+    try { header.setPointerCapture(e.pointerId); } catch (err) {}
+    startHeaderDrag(e);
+  });
+
+  header.addEventListener('pointermove', function(e) {
+    if (!drag || dragBusy) return;
+    dragBusy = true;
+    Promise.resolve(dragHeaderMove(e)).finally(function() { dragBusy = false; });
+  });
+
+  header.addEventListener('pointerup', endHeaderDrag);
+  header.addEventListener('pointercancel', endHeaderDrag);
 })();
 
 let _desktopResizeState = null;

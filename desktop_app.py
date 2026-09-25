@@ -479,6 +479,20 @@ class DesktopApi:
                 pass
         return False
 
+    def restore(self):
+        """Snap-friendly restore: only restores a maximized window."""
+        if self._window and getattr(self._window, '_is_maximized', False):
+            try:
+                self._window.restore()
+                self._window._is_maximized = False
+                return True
+            except Exception:
+                pass
+        return False
+
+    def is_maximized(self):
+        return bool(self._window and getattr(self._window, '_is_maximized', False))
+
     def toggle_maximize(self):
         if self._window:
             try:
