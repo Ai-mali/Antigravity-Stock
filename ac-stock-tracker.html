@@ -3219,16 +3219,15 @@ body.theme-light .tl-status-badge {
   align-items: stretch;
 }
 .tl-sidebar {
-  width: 252px;
+  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   min-height: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 12px;
+  overflow: hidden;
 }
 .tl-main {
   flex: 1 1 0;
@@ -3241,15 +3240,47 @@ body.theme-light .tl-status-badge {
 .tl-main > .tl-header { flex-shrink: 0; flex-wrap: wrap; row-gap: 10px; }
 .tl-main > .tl-header .tl-header-actions { flex-wrap: wrap; row-gap: 8px; }
 
-/* Sidebar search — same field, slimmer */
-.tl-side-search { width: 100%; }
-.tl-side-search input { width: 100%; }
+/* Sidebar header: hamburger + pill search + stacked customer avatars */
+.tl-side-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tl-side-search {
+  flex: 1;
+  min-width: 0;          /* override .search-box-wrap's 260px floor */
+}
+.tl-side-search input {
+  border-radius: 999px;
+  padding: 7px 12px 7px 32px;
+  font-size: 11.5px;
+}
+.tl-side-search .search-icon { left: 12px; font-size: 12px; }
+.tl-side-avatars { display: flex; flex-shrink: 0; }
+.tl-side-avatars span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: -6px;
+}
 
-/* Sidebar tab chips (Customers | Warranty) */
+/* Sidebar tab chips (Customers | Warranty) — own darker strip */
 .tl-side-tabs {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  padding: 10px 12px;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border);
 }
 .tl-side-tab {
   flex: 1;
@@ -3277,50 +3308,46 @@ body.theme-light .tl-status-badge {
   border-radius: 99px;
 }
 .tl-side-tab.active {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fff;
+  background: var(--green-badge-bg);
+  border-color: var(--green-badge-border);
+  color: var(--green-bright);
 }
-.tl-side-tab.active b { background: rgba(255,255,255,0.22); }
+.tl-side-tab.active b { background: var(--green); color: #fff; }
 .tl-side-tab:hover:not(.active) { color: var(--text); border-color: var(--border-light); }
 
-/* Sidebar scrolling list */
+/* Sidebar scrolling list — Telegram-style rows */
 .tl-side-list {
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;
   scrollbar-width: thin;
 }
-
-/* Customer row */
 .tl-cust-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 9px;
-  border-radius: 9px;
-  border: 1px solid transparent;
+  padding: 9px 12px;
   background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   text-align: left;
   width: 100%;
   font-family: inherit;
   color: var(--text);
-  transition: all .12s;
+  transition: background .12s;
 }
 .tl-cust-item:hover { background: var(--surface2); }
 .tl-cust-item.active {
-  background: var(--surface2);
-  border-color: var(--green);
-  box-shadow: inset 2px 0 0 var(--green-bright);
+  background: var(--surface3);
+  box-shadow: inset 3px 0 0 var(--green-bright);
 }
 .tl-cust-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3335,39 +3362,42 @@ body.theme-light .tl-status-badge {
   bottom: -2px;
   border: 2px solid var(--surface);
 }
-.tl-cust-meta { flex: 1; min-width: 0; }
+.tl-cust-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tl-cust-line1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tl-cust-name {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.tl-cust-item:hover .tl-cust-name { color: var(--green-bright); }
+.tl-cust-line2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tl-cust-sub {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-sub);
-  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.tl-cust-right { text-align: right; flex-shrink: 0; }
+.tl-cust-sub b { color: var(--text); font-weight: 600; }
 .tl-cust-units {
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--green-bright);
   background: var(--green-badge-bg);
   border: 1px solid var(--green-badge-border);
   padding: 1px 7px;
   border-radius: 99px;
+  flex-shrink: 0;
 }
 .tl-cust-date {
   font-size: 9.5px;
   font-family: 'JetBrains Mono', monospace;
   color: var(--text-sub);
-  margin-top: 3px;
+  flex-shrink: 0;
 }
-
-/* Warranty rows share the customer-row shell */
-.tl-warr-row .tl-cust-avatar { border-radius: 50%; }
 
 /* Sidebar footer (staff / sync status) */
 .tl-sidebar-footer {
@@ -3376,7 +3406,26 @@ body.theme-light .tl-status-badge {
   align-items: center;
   gap: 10px;
   border-top: 1px solid var(--border);
-  padding-top: 10px;
+  padding: 10px 12px;
+  background: var(--bg-page);
+}
+/* Mini rail mode — avatars only */
+.tl-sidebar.tl-side-mini { width: 60px; }
+.tl-side-mini .tl-side-search,
+.tl-side-mini .tl-side-avatars,
+.tl-side-mini .tl-side-tab span,
+.tl-side-mini .tl-side-tab b,
+.tl-side-mini .tl-cust-meta,
+.tl-side-mini .tl-staff-meta { display: none; }
+.tl-side-mini .tl-side-head { padding: 10px 8px; justify-content: center; }
+.tl-side-mini .tl-side-tabs { padding: 8px 8px; flex-direction: column; }
+.tl-side-mini .tl-cust-item { justify-content: center; padding: 8px 4px; border-bottom: none; }
+.tl-side-mini .tl-cust-item.active { box-shadow: inset -3px 0 0 var(--green-bright); }
+.tl-side-mini .tl-sidebar-footer { justify-content: center; padding: 10px 6px; }
+.tl-side-mini .tl-side-menu-btn { margin: 0; }
+
+@media (max-width: 1150px) {
+  .tl-sidebar { width: 240px; }
 }
 .tl-staff-avatar {
   width: 30px;
@@ -4505,10 +4554,16 @@ body.theme-light .autocomplete-dropdown {
     <section id="view-track-list" class="view-section">
       <div class="tl-layout">
       <!-- LEFT: Customer / Warranty sidebar -->
-      <aside class="tl-sidebar">
-        <div class="search-box-wrap tl-side-search">
-          <span class="search-icon">&#128269;</span>
-          <input type="text" id="track-search-side" oninput="handleTrackSearchInput(this.value)" placeholder="Search customer, client...">
+      <aside class="tl-sidebar" id="tl-sidebar">
+        <div class="tl-side-head">
+          <button type="button" class="tl-side-menu-btn" onclick="toggleTrackSidebarMini()" title="Collapse / expand sidebar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div class="search-box-wrap tl-side-search">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="track-search-side" oninput="handleTrackSearchInput(this.value)" placeholder="Search customer, client...">
+          </div>
+          <div class="tl-side-avatars" id="tl-side-avatars"></div>
         </div>
         <div class="tl-side-tabs">
           <button type="button" class="tl-side-tab active" id="tl-side-tab-cust" onclick="setTrackSideTab('customers')">
@@ -5329,6 +5384,7 @@ const DB = {
   trackWarrantyFilter: 'ALL', // 'ALL' | 'active' | 'expiring' | 'expired'
   trackSearch: '',          // shared by both track-list search fields
   trackSideTab: 'customers', // sidebar tab: 'customers' | 'warranty'
+  trackSidebarMini: false,  // sidebar collapsed to avatar rail
   trackPage: 0,           // Fulfillment Records Log pagination
   trackPageSize: 10,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
@@ -5384,6 +5440,7 @@ async function refreshData() {
   DB.customers = cust.customers || [];
   DB.doPhotos = (doRes && doRes.photos) || [];
   DB.trackBreakdownCollapsed = !!(uiPrefs && uiPrefs.tlCollapsed);
+  DB.trackSidebarMini = !!(uiPrefs && uiPrefs.tlMini);
   renderBrandPills();
   markDuplicateScans();
   renderAll();
@@ -7873,6 +7930,7 @@ function renderTrackList(searchTerm, keepPage) {
 
   renderTrackBreakdown(list, modelColors);
   applyTrackBreakdownState();
+  applyTrackSidebarMini();
   renderTrackTable(list, modelColors);
 }
 
@@ -8169,14 +8227,19 @@ function renderTrackSidebar() {
         ${escapeHtml(initials)}<i class="tl-wdot" style="background:${TL_WORST_DOT[worst]}"></i>
       </span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-name">${escapeHtml(name)}</span>
-        <span class="tl-cust-sub">Purchased: ${units} unit${units === 1 ? '' : 's'}</span>
-      </span>
-      <span class="tl-cust-right">
-        <span class="tl-cust-units">${units} Units</span>
-        <div class="tl-cust-date">${escapeHtml(last || '—')}</div>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(name)}</span><span class="tl-cust-units">${units} Units</span></span>
+        <span class="tl-cust-line2"><span class="tl-cust-sub">&#128230; Purchased: <b>${units} unit${units === 1 ? '' : 's'}</b></span><span class="tl-cust-date">${escapeHtml(last || '—')}</span></span>
       </span>
     </button>`;
+
+  // Stacked avatar preview beside the search (top 2 customers)
+  const av = document.getElementById('tl-side-avatars');
+  if (av) {
+    av.innerHTML = customers.slice(0, 2).map(c => {
+      const col = trackCustomerColor(c.name);
+      return `<span style="background:${col}; color:#0b1015;">${escapeHtml(trackCustomerInitials(c.name))}</span>`;
+    }).join('');
+  }
 
   custListEl.innerHTML =
     mkCust('ALL', 'All Customers', DB.trackList.length, '', 'var(--green-bright)', '∞', 'none') +
@@ -8190,10 +8253,9 @@ function renderTrackSidebar() {
         <i class="tl-wdot" style="background:${dot}; position:static; border:none;"></i>
       </span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-name">${label}</span>
-        <span class="tl-cust-sub">${count} record${count === 1 ? '' : 's'}</span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${label}</span><span class="tl-cust-units" style="color:${dot}; border-color:${dot}55; background:${dot}1a;">${count}</span></span>
+        <span class="tl-cust-line2"><span class="tl-cust-sub">${count} record${count === 1 ? '' : 's'}</span></span>
       </span>
-      <span class="tl-cust-right"><span class="tl-cust-units" style="color:${dot}; border-color:${dot}55; background:${dot}1a;">${count}</span></span>
     </button>`;
 
   warrListEl.innerHTML =
@@ -8214,6 +8276,17 @@ function renderTrackSidebar() {
 function setTrackSideTab(tab) {
   DB.trackSideTab = tab;
   renderTrackSidebar();
+}
+
+function applyTrackSidebarMini() {
+  const sb = document.getElementById('tl-sidebar');
+  if (sb) sb.classList.toggle('tl-side-mini', !!DB.trackSidebarMini);
+}
+
+function toggleTrackSidebarMini() {
+  DB.trackSidebarMini = !DB.trackSidebarMini;
+  applyTrackSidebarMini();
+  apiPost('/api/ui-prefs', { prefs: { tlMini: DB.trackSidebarMini } }).catch(() => {});
 }
 
 function selectTrackCustomer(name) {
