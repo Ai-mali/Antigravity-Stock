@@ -459,14 +459,14 @@ body.is-desktop-shell .desktop-window-controls {
 }
 
 .win-control-btn {
-  width: 32px;
+  width: 46px;
   height: 30px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: 1px solid transparent;
+  background: var(--surface2);
+  border: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 13px;
   font-family: inherit;
@@ -477,9 +477,13 @@ body.is-desktop-shell .desktop-window-controls {
 }
 
 .win-control-btn:hover {
-  background: var(--surface2);
-  border-color: var(--border);
+  background: var(--surface3);
+  border-color: var(--text-sub);
   color: var(--text);
+}
+
+.win-control-btn:active {
+  transform: scale(0.93);
 }
 
 .win-control-btn.win-close-btn:hover {
