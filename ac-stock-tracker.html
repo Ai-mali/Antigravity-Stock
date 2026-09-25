@@ -631,20 +631,20 @@ body.is-desktop-shell .desktop-window-controls {
 
 /* Progressive header compression at narrow widths — the window controls
    and the core nav tabs (Stock In → Return) always stay visible; the
-   SMA model pill and other decorations drop first. */
+   backup icon and other decorations drop first, SMA pill last. */
 @media (max-width: 1120px) {
   .theme-mode-label { display: none; }
+  .header-actions .icon-square-btn { display: none; }
+  .header-actions #header-model-btn { padding: 5px 9px; gap: 6px; }
+  .header-actions #header-model-btn > span:last-child { display: none; }
   .tab-btn { padding: 6px 11px; }
-}
-@media (max-width: 1100px) {
-  #header-model-btn { display: none; }
 }
 @media (max-width: 860px) {
   .brand-text { display: none; }
   header { gap: 8px; padding: 0 10px; }
 }
-@media (max-width: 720px) {
-  .icon-square-btn { display: none; }
+@media (max-width: 760px) {
+  #header-model-btn { display: none; }
 }
 
 .model-pill-btn {
