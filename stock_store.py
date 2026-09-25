@@ -40,7 +40,8 @@ ACTIVITY_HEADER = ["Timestamp", "Action", "Model",
                    "Serials Count", "Details", "Status"]
 
 BRAND_COLORS = ["#26d07c", "#3b82f6", "#f59e0b", "#a78bfa",
-                "#f87171", "#38bdf8", "#fb923c", "#4ade80"]
+                "#f87171", "#38bdf8", "#fb923c", "#4ade80",
+                "#e879f9", "#facc15", "#2dd4bf", "#94a3b8"]
 
 IN_STOCK = "In Stock"
 SOLD = "Sold"
@@ -355,7 +356,15 @@ class StockStore:
         try:
             return BRAND_COLORS[self.brands.index(name) % len(BRAND_COLORS)]
         except ValueError:
-            return BRAND_COLORS[len(self.brands) % len(BRAND_COLORS)]
+            # Brand present on records but missing from the Brands sheet:
+            # auto-assign the first palette color no registered brand uses,
+            # falling back to a name hash when the palette is exhausted.
+            used = {BRAND_COLORS[i % len(BRAND_COLORS)]
+                    for i in range(len(self.brands))}
+            for c in BRAND_COLORS:
+                if c not in used:
+                    return c
+            return BRAND_COLORS[sum(map(ord, name)) % len(BRAND_COLORS)]
 
     def inventory(self) -> dict:
         """In-stock units grouped Brand -> Model -> serials (UI shape)."""

@@ -2042,6 +2042,7 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   border-top-left-radius: 9px;
   border-top-right-radius: 9px;
   border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--brand-c, transparent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 
@@ -2120,16 +2121,28 @@ body.theme-light .model-accordion-header {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
+/* --brand-c is set per .brand-accordion section by the renderers */
+.brand-accordion { --brand-c: #38bdf8; }
+
 .model-index-pill {
   font-size: 11px;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: #64b5f6;
-  background: rgba(100, 181, 246, 0.12);
-  border: 1px solid rgba(100, 181, 246, 0.25);
+  color: var(--brand-c);
+  background: color-mix(in srgb, var(--brand-c) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 32%, transparent);
   padding: 2px 7px;
   border-radius: 4px;
   margin-right: 6px;
+}
+
+.brand-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--brand-c);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--brand-c) 60%, transparent);
+  flex-shrink: 0;
 }
 
 .model-cards-grid-4, .model-cards-grid-3 {
@@ -6319,9 +6332,11 @@ function renderAvailable(searchTerm) {
 
     const brandSection = document.createElement('div');
     brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
+    brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleBrandAcc('${brandKey}')">
         <div class="brand-title-group">
+          <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-neutral">${brandUnits} Units Total</span>
@@ -6576,9 +6591,11 @@ function renderStockOut(searchTerm) {
 
     const brandSection = document.createElement('div');
     brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
+    brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${brandKey}')">
         <div class="brand-title-group">
+          <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-neutral">${brandUnits} Units Total</span>
@@ -6644,8 +6661,9 @@ function getBrandColor(brand) {
     return DB.inventory[brand].color;
   }
   const palette = [
-    '#38bdf8', '#34d399', '#fbbf24', '#f472b6', 
-    '#a78bfa', '#f87171', '#2dd4bf', '#fb923c'
+    '#26d07c', '#3b82f6', '#f59e0b', '#a78bfa',
+    '#f87171', '#38bdf8', '#fb923c', '#4ade80',
+    '#e879f9', '#facc15', '#2dd4bf', '#94a3b8'
   ];
   let hash = 0;
   const str = String(brand || 'UNBRANDED').toUpperCase();
