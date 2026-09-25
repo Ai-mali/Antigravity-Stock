@@ -2,10 +2,10 @@
 
 Commit Hash: 
 
-727a066847b70f44ff0c326dd960d9097619bd66
- (Short: 727a066)
-Commit Description: Header polish — activity modal fixed, Download HTML removed, adaptive small-window layout (backup icon drops first, SMA pill + nav pills + window controls always visible)
-Date: 2026-09-25 16:55 +0700
+2d779743c7637f590bf27274787184dd22d9d347
+ (Short: 2d77974)
+Commit Description: Track List v2 Telegram-style sidebar redesign + rounded outer window frame + sidebar/records bottom alignment
+Date: 2026-09-25 18:17 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
 Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
@@ -21,8 +21,11 @@ Responsive Header: Progressive compression at narrow widths — backup icon + th
 Activity/Backups Modal: ⏱ button opens Backups & Activity Log modal (open-class fix); legacy Download HTML button removed.
 Sticky Bars: Search/filter bar freezes flush under the header when scrolling (desktop-shell offsets corrected); Stock Out sidebar aligned.
 Brand Colors: Each brand has a unique color — colored ordering-number pills, glowing dot, left edge accent, and colored brand name; new brands auto-assign a free palette color.
-Track List (Stitch redesign): Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; merged Client+Warranty filter ribbon; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
+Window Frame: Visible rounded outer frame ring around the app (--frame-bg, 5px body padding); real DWM rounded corners on Win11, styled inner frame on any OS.
+Track List (Telegram-style sidebar): Left customer sidebar — pill search + hamburger (collapses to 60px avatar rail, persisted via tlMini) + stacked top-customer avatars; Customers/Warranty tab chips on darker strip; customer rows (circular avatar + warranty-health dot, name + Units chip, Purchased/date line); click-to-filter records. Warranty tab lists All/Active/Expiring/Expired. Sidebar + records card bottoms align exactly.
+Dual Search: Both search fields (sidebar + header) drive the same query and mirror each other.
+Track List records: Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
 Duplicate Navigation: "View in Track List" resets stale customer/warranty filters — serial always found under ALL CUSTOMERS.
 Database Health: 333 total stock items loaded across 10 active brands (LG, VOLVO, CARRIER, DAIKIN, MITSUBISHI, CAT, KOMATSU, BIN, PART, OTHER).
 Data Protection: Real business data (daikin_stock.xlsx) is healthy and gitignored; no rewrite-on-launch.
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 727a066"
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 2d77974"
