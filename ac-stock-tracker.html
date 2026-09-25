@@ -1102,12 +1102,13 @@ body.theme-light .brand-display-badge {
 .brand-name-tag {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 800;
-  color: #38bdf8;
+  color: var(--brand-c, #38bdf8);
   letter-spacing: 0.04em;
 }
 
 body.theme-light .brand-name-tag {
-  color: #0284c7;
+  /* darken brand color 22% so light hues (yellow, lime) stay readable on white */
+  color: color-mix(in srgb, var(--brand-c, #0284c7) 78%, #1e293b);
   font-weight: 800;
 }
 
