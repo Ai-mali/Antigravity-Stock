@@ -936,7 +936,7 @@ main {
   padding: 10px 20px 12px 20px;
   flex-wrap: wrap;
   position: sticky;
-  top: 56px;
+  top: var(--searchbar-sticky-top, 56px);
   z-index: 35;
   background: var(--bg-app);
   border-bottom: 1px solid var(--border);
@@ -3513,7 +3513,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
-        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:122px; max-height:calc(100vh - 150px); display:flex; flex-direction:column; gap:10px;">
+        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:var(--stockout-brand-sticky-top, 122px); max-height:calc(100vh - 150px); display:flex; flex-direction:column; gap:10px;">
           
           <!-- Card 1: Dispatch & Checkout (Own Closed Border, Frozen at Top) -->
           <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
@@ -4514,12 +4514,22 @@ function renderBrandPills() {
 function updateStickyHeaderOffsets() {
   requestAnimationFrame(() => {
     const navHeader = document.querySelector('header');
-    const navHeight = navHeader ? navHeader.offsetHeight : 56;
+    // In the desktop shell, <main> is the scroll container (body is locked)
+    // so sticky offsets are relative to main's content box — the 56px header
+    // must NOT be counted, and main's padding-top must be cancelled with a
+    // negative base or bars float with a visible gap.
+    const main = document.querySelector('main');
+    const mainPadTop = main ? (parseFloat(getComputedStyle(main).paddingTop) || 0) : 0;
+    const stickyBase = document.body.classList.contains('is-desktop-shell')
+      ? -mainPadTop
+      : (navHeader ? navHeader.offsetHeight : 56);
+
+    document.documentElement.style.setProperty('--searchbar-sticky-top', `${stickyBase}px`);
 
     const availSearchBar = document.querySelector('#view-available .search-filter-bar');
     if (availSearchBar) {
       const barHeight = availSearchBar.offsetHeight;
-      const brandTop = navHeight + barHeight;
+      const brandTop = stickyBase + barHeight;
       document.documentElement.style.setProperty('--avail-brand-sticky-top', `${brandTop}px`);
       document.documentElement.style.setProperty('--avail-model-sticky-top', `${brandTop + 43}px`);
     }
@@ -4527,7 +4537,7 @@ function updateStickyHeaderOffsets() {
     const soSearchBar = document.querySelector('#view-stock-out .search-filter-bar');
     if (soSearchBar) {
       const barHeight = soSearchBar.offsetHeight;
-      const brandTop = navHeight + barHeight;
+      const brandTop = stickyBase + barHeight;
       document.documentElement.style.setProperty('--stockout-brand-sticky-top', `${brandTop}px`);
       document.documentElement.style.setProperty('--stockout-model-sticky-top', `${brandTop + 43}px`);
     }
