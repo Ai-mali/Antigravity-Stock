@@ -2747,79 +2747,6 @@ body.theme-light .track-breakdown-chip:hover {
   pointer-events: none;
 }
 
-/* KPI metrics ribbon */
-.tl-kpi-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.tl-kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.35);
-}
-.tl-kpi-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--text-sub);
-  margin-bottom: 6px;
-}
-.tl-kpi-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.tl-kpi-icon {
-  padding: 3px;
-  border-radius: 5px;
-  background: var(--surface3);
-  display: inline-flex;
-}
-.tl-kpi-body {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.tl-kpi-num {
-  font-size: 22px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text);
-  line-height: 1.1;
-}
-.tl-kpi-sub {
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-.tl-kpi-sub.kpi-accent {
-  color: var(--green-bright);
-}
-.tl-kpi-bar {
-  margin-top: 8px;
-  width: 100%;
-  height: 4px;
-  border-radius: 99px;
-  background: var(--surface3);
-  overflow: hidden;
-}
-.tl-kpi-bar > i {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-}
-
 /* Filter ribbon panel */
 .tl-filter-panel {
   background: var(--surface);
@@ -2982,6 +2909,9 @@ body.theme-light .track-breakdown-chip:hover {
 /* Serial tag cloud */
 .tl-tags-body {
   padding: 12px 14px;
+}
+.tl-tags-body .track-pills-wrap {
+  max-height: 240px;
 }
 .tl-group-block {
   width: 100%;
@@ -3269,11 +3199,7 @@ body.theme-light .tl-status-badge {
   display: none;
 }
 
-@media (max-width: 1200px) {
-  .tl-kpi-row { grid-template-columns: repeat(3, 1fr); }
-}
 @media (max-width: 780px) {
-  .tl-kpi-row { grid-template-columns: repeat(2, 1fr); }
   .tl-filter-warranty { border-left: none; padding-left: 0; }
 }
 
@@ -4354,9 +4280,6 @@ body.theme-light .autocomplete-dropdown {
           </button>
         </div>
       </div>
-
-      <!-- KPI Metrics Ribbon -->
-      <div class="tl-kpi-row" id="tl-kpi-row"></div>
 
       <!-- Filter Ribbon: Client + Warranty -->
       <div class="tl-filter-panel">
@@ -7660,7 +7583,6 @@ function renderTrackList(searchTerm, keepPage) {
 
   renderCustomerFilterPills();
   renderWarrantyFilterPills();
-  renderTrackKpis();
 
   const list = getFilteredTrackList();
   const modelColors = trackModelColorMap();
@@ -7674,55 +7596,6 @@ function renderTrackList(searchTerm, keepPage) {
   renderTrackBreakdown(list, modelColors);
   renderTrackTable(list, modelColors);
   updateTrackFooter();
-}
-
-/* ---- KPI metrics ribbon ---- */
-function renderTrackKpis() {
-  const row = document.getElementById('tl-kpi-row');
-  if (!row) return;
-  const total = DB.trackList.length;
-  let active = 0, expiring = 0, expired = 0, daysSum = 0, daysN = 0;
-  DB.trackList.forEach(r => {
-    const w = r.warranty || {};
-    if (w.status === 'active') {
-      active++;
-      if (w.daysRemaining != null) { daysSum += w.daysRemaining; daysN++; }
-    } else if (w.status === 'expiring') {
-      expiring++;
-    } else if (w.status === 'expired') {
-      expired++;
-    }
-  });
-  const avgDays = daysN ? Math.round(daysSum / daysN) : 0;
-  const pct = n => total ? Math.round(n / total * 100) : 0;
-
-  const svgBox = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>';
-  const svgCheck = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>';
-  const svgShield = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>';
-  const svgWarn = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-  const svgX = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M6 6l12 12"></path></svg>';
-  const svgUp = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>';
-
-  const cards = [
-    { label: 'Total Tracked', num: total, numColor: '', sub: `${svgUp}${total ? '100% active' : 'no records'}`, accent: true, color: '#34d399', bar: total ? 100 : 0, icon: svgBox },
-    { label: 'Dispatched (Fulfilled)', num: total, numColor: '', sub: 'All orders clear', accent: false, color: '#38bdf8', bar: total ? 100 : 0, icon: svgCheck },
-    { label: 'Active Warranties', num: active, numColor: 'var(--green-bright)', sub: daysN ? `Avg ${avgDays}d left` : 'No coverage', accent: true, color: '#10b981', bar: pct(active), icon: svgShield },
-    { label: 'Expiring <30 Days', num: expiring, numColor: '', sub: `${pct(expiring)}% risk`, accent: false, color: '#fbbf24', bar: pct(expiring), icon: svgWarn },
-    { label: 'Expired Claims', num: expired, numColor: '', sub: expired ? `${expired} overdue unit${expired === 1 ? '' : 's'}` : 'No overdue units', accent: false, color: '#fb7185', bar: pct(expired), icon: svgX },
-  ];
-
-  row.innerHTML = cards.map(c => `
-    <div class="tl-kpi-card">
-      <div class="tl-kpi-head">
-        <span class="tl-kpi-label">${c.label}</span>
-        <span class="tl-kpi-icon" style="color:${c.color}">${c.icon}</span>
-      </div>
-      <div class="tl-kpi-body">
-        <span class="tl-kpi-num"${c.numColor ? ` style="color:${c.numColor}"` : ''}>${c.num}</span>
-        <span class="tl-kpi-sub${c.accent ? ' kpi-accent' : ''}">${c.sub}</span>
-      </div>
-      <div class="tl-kpi-bar"><i style="width:${c.bar}%; background:${c.color};"></i></div>
-    </div>`).join('');
 }
 
 /* ---- Sold serial breakdown (dense cloud / grouped by model) ---- */
