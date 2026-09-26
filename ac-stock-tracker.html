@@ -7565,7 +7565,7 @@ function soShortDate(d) {
   return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function renderSOBrandSidebar() {
+function renderSOBrandSidebar(qOverride) {
   const listEl = document.getElementById('so-brand-list');
   if (!listEl) return;
   const brandKeys = Object.keys(DB.inventory);
@@ -7574,6 +7574,22 @@ function renderSOBrandSidebar() {
   const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
   const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
   const lowBrands = brands.filter(b => stats[b].units > 0 && stats[b].units <= SO_LOW_STOCK_MAX);
+
+  // Sidebar mirrors the live search: a brand row stays visible when the
+  // brand name matches OR any of its models/serials match (same set the
+  // center grid renders).
+  const q = (typeof qOverride === 'string'
+    ? qOverride
+    : ((document.getElementById('stockout-search') || {}).value || '')).trim().toLowerCase();
+  const visibleBrands = q ? brands.filter(b => {
+    if (b.toLowerCase().includes(q)) return true;
+    for (const m of stats[b].models) {
+      if (m.toLowerCase().includes(q)) return true;
+      const serials = (DB.inventory[b].models[m].serials) || [];
+      if (serials.some(s => s.toLowerCase().includes(q))) return true;
+    }
+    return false;
+  }) : brands;
 
   const mkRow = (key, o) => {
     const active = DB.soFilter === key;
@@ -7608,7 +7624,7 @@ function renderSOBrandSidebar() {
       date: '', desc: `<b>${brands.length}</b> brands \u00B7 complete depot view`,
       status: `&#10003; ${totalUnits} Units Verified`, statusColor: 'var(--green-bright)'
     }) +
-    brands.map(b => {
+    visibleBrands.map(b => {
       const s = stats[b];
       const desc = s.top.length
         ? escapeHtml(s.top.map(t => `${t.m} (${t.n})`).join(' \u2022 '))
@@ -7844,7 +7860,7 @@ function renderStockOut(searchTerm) {
     container.appendChild(brandSection);
   });
 
-  renderSOBrandSidebar();
+  renderSOBrandSidebar(q);
   applySOSidebarMini();
   renderCartSidebar();
   updateStickyHeaderOffsets();
