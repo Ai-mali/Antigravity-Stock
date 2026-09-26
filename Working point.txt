@@ -2,9 +2,9 @@
 
 Commit Hash: 
 
-8876dec (identical tree to 4bf39a9 — emerald palette restored via revert)
-Commit Description: VRE AC Stock rebrand + emerald accent palette + splash glow & live pulsing dot
-Date: 2026-10-14 +0700
+81a61d9
+Commit Description: Stock Out Telegram-style brand sidebar (Stitch ref) + search-driven brand filtering
+Date: 2026-10-15 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
 Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
@@ -26,8 +26,10 @@ Dual Search: Both search fields (sidebar + header) drive the same query and mirr
 Rebrand: App renamed to "VRE AC Stock" everywhere (window title, header, splash); splash shows "VRE AC STOCK" / "AI Scan".
 Splash Polish: Emerald glow on "AC STOCK" (text-shadow halo in HTML, 4-pass dim halo in native GDI) + pulsing live dot beside "AI Scan" in both splash layers; header "AC Stock" glows to match.
 Accent Palette: Emerald theme throughout (--green #116852, --green-bright #26d07c); ocean-blue experiment reverted (854cf2f).
+Stock Out (Telegram-style brand sidebar): Left brand sidebar reusing Track List tl-* components — hamburger (collapses to 60px avatar rail, persisted via ui_prefs soMini) + sidebar search; "Brands & Bins" section label; rich rows (solid brand-color avatar, name + last-activity date, top-2 model preview "BCR50FF (66) • FCFVVXZ (36)", status line: Units Verified / ⚠ Low Stock Warning / Empty, count pill; zero-unit brands dimmed; sorted by units). Click-to-filter drives DB.soFilter; center brand pills restored alongside. Sidebar auto-height fix (tl-side-list flex-basis).
+Stock Out Search: Typing resets stale brand/LOW filter to ALL (same fix class as Track List jump); brand names are searchable ('part' → PART brand); sidebar rows mirror results — 'ca' → CARRIER+CAT, serial → owning brand; sidebar + main inputs mirror both ways.
 Track List records: Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
 Duplicate Navigation: "View in Track List" resets stale customer/warranty filters — serial always found under ALL CUSTOMERS.
 Database Health: 333 total stock items loaded across 10 active brands (LG, VOLVO, CARRIER, DAIKIN, MITSUBISHI, CAT, KOMATSU, BIN, PART, OTHER).
 Data Protection: Real business data (daikin_stock.xlsx) is healthy and gitignored; no rewrite-on-launch.
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 8876dec"
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 81a61d9"
