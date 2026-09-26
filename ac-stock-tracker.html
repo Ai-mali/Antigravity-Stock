@@ -7661,6 +7661,13 @@ function handleSOSearchInput(val) {
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
   const side = document.getElementById('stockout-search-side');
   if (side && side.value !== val) side.value = val;
+  // A live query must search across ALL brands — a stale brand/Low filter
+  // would silently hide matches (same class of bug as the Track List jump).
+  if (val && val.trim() && DB.soFilter !== 'ALL') {
+    DB.soFilter = 'ALL';
+    renderBrandPills();
+    updateGlobalBadges();
+  }
   renderStockOut(val);
 }
 
@@ -7736,12 +7743,13 @@ function renderStockOut(searchTerm) {
   brands.forEach(brandKey => {
     const bData = DB.inventory[brandKey];
     const brandUnits = countBrandUnits(brandKey);
+    const brandMatch = q && brandKey.toLowerCase().includes(q);
 
     let modelsHtml = '';
     for (const mKey of Object.keys(bData.models).sort()) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
-      if (q) {
+      if (q && !brandMatch) {
         const modelNameMatch = mKey.toLowerCase().includes(q);
         serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
         if (serials.length === 0) continue;
