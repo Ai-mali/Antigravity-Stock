@@ -4455,7 +4455,7 @@ body.theme-light .autocomplete-dropdown {
             </button>
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="avail-search-side" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand, model, serial...">
+              <input type="text" id="avail-search-side" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand, model, serial, date...">
             </div>
           </div>
           <div class="so-side-section">
@@ -4477,7 +4477,7 @@ body.theme-light .autocomplete-dropdown {
             </div>
             <div class="search-box-wrap" style="width:290px; flex:0 0 290px;">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search serial (e.g., K002120) or model...">
+              <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search model, serial or date in...">
               <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
@@ -4504,7 +4504,7 @@ body.theme-light .autocomplete-dropdown {
             </button>
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand, model, serial...">
+              <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand, model, serial, date...">
             </div>
           </div>
           <div class="so-side-section">
@@ -4639,7 +4639,7 @@ body.theme-light .autocomplete-dropdown {
           </button>
           <div class="search-box-wrap tl-side-search">
             <span class="search-icon">&#128269;</span>
-            <input type="text" id="track-search-side" oninput="handleTrackSearchInput(this.value)" placeholder="Search customer, client...">
+            <input type="text" id="track-search-side" oninput="handleTrackSearchInput(this.value)" placeholder="Search customer, model, serial, date...">
           </div>
           <div class="tl-side-avatars" id="tl-side-avatars"></div>
         </div>
@@ -4678,7 +4678,7 @@ body.theme-light .autocomplete-dropdown {
         <div class="tl-header-actions">
           <div class="search-box-wrap tl-search">
             <span class="search-icon">&#128269;</span>
-            <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, or model...">
+            <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, model or date...">
             <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
             <kbd class="tl-kbd">Ctrl K</kbd>
           </div>
@@ -7243,6 +7243,26 @@ function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/* Matches a workbook date string against the search query in common formats:
+   raw text, 2026-09-18, 09/18/2026, 18/09/2026, "sep 18", "sep 18, 2026". */
+function dateMatchesQ(dateStr, q) {
+  if (!dateStr || !q) return false;
+  const raw = String(dateStr).toLowerCase();
+  if (raw.includes(q)) return true;
+  const t = new Date(dateStr);
+  if (isNaN(t)) return false;
+  const mm = String(t.getMonth() + 1).padStart(2, '0');
+  const dd = String(t.getDate()).padStart(2, '0');
+  const variants = [
+    `${t.getFullYear()}-${mm}-${dd}`,
+    `${mm}/${dd}/${t.getFullYear()}`,
+    `${dd}/${mm}/${t.getFullYear()}`,
+    t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase(),
+    t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toLowerCase()
+  ];
+  return variants.some(v => v.includes(q));
+}
+
 let _availSavedExpandState = null;
 
 function handleAvailSearchInput(val) {
@@ -7380,7 +7400,10 @@ function renderAvailable(searchTerm) {
       let matchedSerials = serials;
       if (q && !brandMatch) {
         const modelNameMatch = mKey.toLowerCase().includes(q);
-        matchedSerials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
+        const modelDateMatch = dateMatchesQ(mData.dateIn, q);
+        matchedSerials = serials.filter(s =>
+          s.toLowerCase().includes(q) || modelNameMatch || modelDateMatch ||
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q));
         if (matchedSerials.length === 0) continue;
       }
 
@@ -7565,8 +7588,11 @@ function renderAvailBrandSidebar(qOverride) {
     if (b.toLowerCase().includes(q)) return true;
     for (const m of stats[b].models) {
       if (m.toLowerCase().includes(q)) return true;
-      const serials = (DB.inventory[b].models[m].serials) || [];
-      if (serials.some(s => s.toLowerCase().includes(q))) return true;
+      const mData = DB.inventory[b].models[m];
+      if (dateMatchesQ(mData.dateIn, q)) return true;
+      const serials = mData.serials || [];
+      if (serials.some(s => s.toLowerCase().includes(q) ||
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q))) return true;
     }
     return false;
   }) : brands;
@@ -7714,8 +7740,11 @@ function renderSOBrandSidebar(qOverride) {
     if (b.toLowerCase().includes(q)) return true;
     for (const m of stats[b].models) {
       if (m.toLowerCase().includes(q)) return true;
-      const serials = (DB.inventory[b].models[m].serials) || [];
-      if (serials.some(s => s.toLowerCase().includes(q))) return true;
+      const mData = DB.inventory[b].models[m];
+      if (dateMatchesQ(mData.dateIn, q)) return true;
+      const serials = mData.serials || [];
+      if (serials.some(s => s.toLowerCase().includes(q) ||
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q))) return true;
     }
     return false;
   }) : brands;
@@ -7877,7 +7906,10 @@ function renderStockOut(searchTerm) {
       let serials = mData.serials || [];
       if (q && !brandMatch) {
         const modelNameMatch = mKey.toLowerCase().includes(q);
-        serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
+        const modelDateMatch = dateMatchesQ(mData.dateIn, q);
+        serials = serials.filter(s =>
+          s.toLowerCase().includes(q) || modelNameMatch || modelDateMatch ||
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q));
         if (serials.length === 0) continue;
       }
 
@@ -8212,7 +8244,9 @@ function getFilteredTrackList() {
       (r.serial || '').toLowerCase().includes(q) ||
       (r.model || '').toLowerCase().includes(q) ||
       (r.customer || '').toLowerCase().includes(q) ||
-      (r.warranty && r.warranty.status && r.warranty.status.toLowerCase().includes(q))
+      (r.warranty && r.warranty.status && r.warranty.status.toLowerCase().includes(q)) ||
+      dateMatchesQ(r.dateIn, q) ||
+      dateMatchesQ(r.dateOut, q)
     );
   }
   return list;
