@@ -2424,7 +2424,51 @@ body.theme-light .unit-action-btn {
   max-height: calc(100vh - 150px);
 }
 #view-stock-out .tl-sidebar.tl-side-mini { width: 60px; }
-#view-stock-out .tl-side-mini .tl-so-side-title { display: none; }
+#view-stock-out .tl-side-mini .so-side-tabs-wrap,
+#view-stock-out .tl-side-mini .so-side-section { display: none; }
+
+/* Stock Out sidebar — section label strip + filter chips (Stitch ref) */
+.so-side-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.so-side-section .cnt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  background: var(--surface3);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.so-side-chips { display: flex; gap: 6px; overflow-x: auto; width: 100%; }
+.so-chip {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .12s;
+}
+.so-chip b { font-family: 'JetBrains Mono', monospace; font-size: 9px; opacity: .75; margin-left: 3px; font-weight: 700; }
+.so-chip:hover { color: var(--text); border-color: var(--border-light); }
+.so-chip.active { background: var(--green); border-color: var(--green); color: #fff; }
+.so-chip.low { color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.08); }
+.so-chip.low.active { background: rgba(251, 191, 36, 0.22); color: #fbbf24; border-color: rgba(251, 191, 36, 0.55); }
 
 .stockout-left-col {
   display: block;
@@ -4435,6 +4479,7 @@ body.theme-light .autocomplete-dropdown {
           <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Search Model, Serial or Date In...">
           <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
         </div>
+        <div class="filter-pills-row" id="so-pills-row"></div>
       </div>
 
       <div class="stockout-layout">
@@ -4444,10 +4489,18 @@ body.theme-light .autocomplete-dropdown {
             <button type="button" class="tl-side-menu-btn" onclick="toggleSOSidebarMini()" title="Collapse / expand sidebar">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
-            <div class="tl-so-side-title" style="flex:1; min-width:0; font-size:11.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              Brands <span id="so-side-brand-count" style="color:var(--text-sub);"></span>
+            <div class="search-box-wrap tl-side-search">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand, model, serial...">
             </div>
             <div class="tl-side-avatars" id="so-side-avatars"></div>
+          </div>
+          <div class="tl-side-tabs so-side-tabs-wrap">
+            <div class="so-side-chips" id="so-side-chips"></div>
+          </div>
+          <div class="so-side-section">
+            <span>&#128230; Brands &amp; Bins</span>
+            <span class="cnt" id="so-side-brand-count">0</span>
           </div>
           <div class="tl-side-list" id="so-brand-list"></div>
         </aside>
@@ -5552,6 +5605,7 @@ function renderBrandPills() {
     });
   };
   mk('avail', DB.availFilter, setAvailFilter);
+  mk('so', DB.soFilter, setSOFilter);
 }
 
 /* =========================================================
@@ -7481,49 +7535,109 @@ function setSOFilter(filter) {
   renderStockOut();
 }
 
-/* Brand sidebar — mirrors the Track List customer sidebar */
+/* Brand sidebar — Stitch/Telegram-style rich rows + filter chips */
+const SO_LOW_STOCK_MAX = 8;
+
 function selectSOBrand(key) {
   setSOFilter(key);
   renderSOBrandSidebar();
 }
 
+function soBrandStats(b) {
+  const bData = DB.inventory[b] || { models: {} };
+  const models = Object.keys(bData.models || {});
+  const units = countBrandUnits(b);
+  let last = '';
+  const top = models
+    .map(m => ({ m, n: (bData.models[m].serials || []).length, d: bData.models[m].dateIn || '' }))
+    .sort((x, y) => y.n - x.n);
+  top.forEach(t => { if (t.d > last) last = t.d; });
+  return { models, units, last, top: top.slice(0, 2) };
+}
+
+function soShortDate(d) {
+  if (!d) return '';
+  const t = new Date(d);
+  if (isNaN(t)) return d;
+  return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 function renderSOBrandSidebar() {
   const listEl = document.getElementById('so-brand-list');
   if (!listEl) return;
-  const brands = Object.keys(DB.inventory);
-  const totalUnits = brands.reduce((n, b) => n + countBrandUnits(b), 0);
+  const brandKeys = Object.keys(DB.inventory);
+  const stats = {};
+  brandKeys.forEach(b => { stats[b] = soBrandStats(b); });
+  const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
+  const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
+  const lowBrands = brands.filter(b => stats[b].units > 0 && stats[b].units <= SO_LOW_STOCK_MAX);
 
-  const mkBrand = (key, name, modelCount, units, color, initials) => `
-    <button type="button" class="tl-cust-item${DB.soFilter === key ? ' active' : ''}"
-            onclick="selectSOBrand('${escapeJs(key)}')" title="${escapeHtml(name)} — show models">
-      <span class="tl-cust-avatar" style="background:${color}26; color:${color}; border:1px solid ${color}55;">
-        ${escapeHtml(initials)}
-      </span>
+  const mkRow = (key, o) => {
+    const active = DB.soFilter === key;
+    const pillStyle = active
+      ? 'background:var(--green); color:#fff; border-color:var(--green);'
+      : o.units === 0 ? 'opacity:.55;' : '';
+    return `
+    <button type="button" class="tl-cust-item${active ? ' active' : ''}" style="align-items:flex-start;${o.units === 0 ? 'opacity:.62;' : ''}"
+            onclick="selectSOBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
+      <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(name)}</span><span class="tl-cust-units">${units} Unit${units === 1 ? '' : 's'}</span></span>
-        <span class="tl-cust-line2"><span class="tl-cust-sub">&#128230; <b>${modelCount}</b> model${modelCount === 1 ? '' : 's'}</span></span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span class="tl-cust-date">${escapeHtml(o.date || '')}</span></span>
+        <span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>
+        <span class="tl-cust-line2">
+          <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
+          <span class="tl-cust-units" style="${pillStyle}">${o.units}</span>
+        </span>
       </span>
     </button>`;
+  };
 
+  const statusOf = u =>
+    u === 0 ? ['Empty', 'var(--text-sub)']
+    : u <= SO_LOW_STOCK_MAX ? ['&#9888; Low Stock Warning', '#fbbf24']
+    : [`&#10003; ${u} Units Verified`, 'var(--green-bright)'];
+
+  // "All Brands" top row + per-brand rows (Stitch: avatar, name+date, model
+  // preview line, status+count-pill line)
   listEl.innerHTML =
-    mkBrand('ALL', 'All Brands', brands.length, totalUnits, 'var(--green-bright)', '&#8734;') +
+    mkRow('ALL', {
+      name: 'All Brands', units: totalUnits, color: 'var(--green)', initials: '\u221E',
+      date: '', desc: `<b>${brands.length}</b> brands \u00B7 complete depot view`,
+      status: `&#10003; ${totalUnits} Units Verified`, statusColor: 'var(--green-bright)'
+    }) +
     brands.map(b => {
-      const mCount = Object.keys((DB.inventory[b] && DB.inventory[b].models) || {}).length;
-      return mkBrand(b, b, mCount, countBrandUnits(b), getBrandColor(b), b.slice(0, 2));
+      const s = stats[b];
+      const desc = s.top.length
+        ? escapeHtml(s.top.map(t => `${t.m} (${t.n})`).join(' \u2022 '))
+        : escapeHtml(`${s.models.length} model${s.models.length === 1 ? '' : 's'} configured`);
+      const [st, sc] = statusOf(s.units);
+      return mkRow(b, {
+        name: b, units: s.units, color: getBrandColor(b), initials: b.slice(0, 2),
+        date: soShortDate(s.last), desc, status: st, statusColor: sc
+      });
     }).join('');
 
-  // Stacked avatar preview (top 3 brands by units) beside the title
+  // Filter chips strip — All / top 3 brands / Low
+  const chipsEl = document.getElementById('so-side-chips');
+  if (chipsEl) {
+    const mkChip = (key, label, count, cls) =>
+      `<button type="button" class="so-chip${cls ? ' ' + cls : ''}${DB.soFilter === key ? ' active' : ''}"
+               onclick="selectSOBrand('${escapeJs(key)}')">${escapeHtml(label)}<b>${count}</b></button>`;
+    chipsEl.innerHTML =
+      mkChip('ALL', 'All', totalUnits, '') +
+      brands.slice(0, 3).map(b => mkChip(b, b, stats[b].units, '')).join('') +
+      mkChip('LOW', 'Low', lowBrands.length, 'low');
+  }
+
+  // Stacked avatar preview (top 3 brands by units) beside the search
   const av = document.getElementById('so-side-avatars');
   if (av) {
-    av.innerHTML = brands
-      .slice()
-      .sort((a, b) => countBrandUnits(b) - countBrandUnits(a))
-      .slice(0, 3)
-      .map(b => `<span style="background:${getBrandColor(b)}; color:#0b1015;" title="${escapeHtml(b)}">${escapeHtml(b.slice(0, 2))}</span>`)
+    av.innerHTML = brands.slice(0, 3)
+      .map(b => `<span style="background:${getBrandColor(b)}; color:#fff;" title="${escapeHtml(b)}">${escapeHtml(b.slice(0, 2))}</span>`)
       .join('');
   }
   const bc = document.getElementById('so-side-brand-count');
-  if (bc) bc.textContent = `(${brands.length})`;
+  if (bc) bc.textContent = brands.length;
 }
 
 function applySOSidebarMini() {
@@ -7542,7 +7656,15 @@ let _soSavedExpandState = null;
 function handleSOSearchInput(val) {
   const clearBtn = document.getElementById('so-search-clear');
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
+  const side = document.getElementById('stockout-search-side');
+  if (side && side.value !== val) side.value = val;
   renderStockOut(val);
+}
+
+function handleSOSideSearchInput(val) {
+  const main = document.getElementById('stockout-search');
+  if (main && main.value !== val) main.value = val;
+  handleSOSearchInput(val);
 }
 
 function clearSOSearch() {
@@ -7551,6 +7673,8 @@ function clearSOSearch() {
     input.value = '';
     input.focus();
   }
+  const side = document.getElementById('stockout-search-side');
+  if (side) side.value = '';
   const clearBtn = document.getElementById('so-search-clear');
   if (clearBtn) clearBtn.style.display = 'none';
   renderStockOut('');
@@ -7600,7 +7724,11 @@ function renderStockOut(searchTerm) {
   const container = document.getElementById('stockout-brands-container');
   container.innerHTML = '';
 
-  const brands = DB.soFilter === 'ALL' ? Object.keys(DB.inventory) : [DB.soFilter].filter(b => DB.inventory[b]);
+  const brands = DB.soFilter === 'ALL'
+    ? Object.keys(DB.inventory)
+    : DB.soFilter === 'LOW'
+      ? Object.keys(DB.inventory).filter(b => { const u = countBrandUnits(b); return u > 0 && u <= 8; })
+      : [DB.soFilter].filter(b => DB.inventory[b]);
 
   brands.forEach(brandKey => {
     const bData = DB.inventory[brandKey];
