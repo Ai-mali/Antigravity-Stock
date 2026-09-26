@@ -2420,8 +2420,8 @@ body.theme-light .unit-action-btn {
 #view-stock-out .tl-sidebar {
   width: 260px;
   position: sticky;
-  top: var(--stockout-brand-sticky-top, 122px);
-  max-height: calc(100vh - 150px);
+  top: var(--searchbar-sticky-top, 0);
+  max-height: calc(100vh - 60px);
 }
 #view-stock-out .tl-sidebar.tl-side-mini { width: 60px; }
 #view-stock-out .tl-side-mini .so-side-section { display: none; }
@@ -2430,12 +2430,13 @@ body.theme-light .unit-action-btn {
 #view-stock-out .tl-side-list { flex: 1 1 auto; }
 
 /* Available Stock — same brand sidebar pattern as Stock Out */
-.avail-layout { display: flex; gap: 16px; align-items: flex-start; }
+.avail-layout { display: flex; gap: 16px; align-items: stretch; }
 #view-available .tl-sidebar {
   width: 260px;
   position: sticky;
-  top: var(--avail-brand-sticky-top, 122px);
-  max-height: calc(100vh - 150px);
+  top: var(--searchbar-sticky-top, 0);
+  max-height: calc(100vh - 60px);
+  align-self: flex-start;
 }
 #view-available .tl-sidebar.tl-side-mini { width: 60px; }
 #view-available .tl-side-mini .so-side-section { display: none; }
@@ -4437,29 +4438,6 @@ body.theme-light .autocomplete-dropdown {
 
     <!-- 2. AVAILABLE STOCK SCREEN -->
     <section id="view-available" class="view-section">
-      <div class="view-header">
-        <div>
-          <div class="view-title">Available Stock</div>
-          <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
-          <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
-            <span id="avail-total-big">115</span> Units
-          </div>
-        </div>
-      </div>
-
-      <!-- Search & Brand Filter Pills -->
-      <div class="search-filter-bar">
-        <div class="search-box-wrap">
-          <span class="search-icon">&#128269;</span>
-          <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search serial (e.g., K002120) or model...">
-          <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
-        </div>
-        <div class="filter-pills-row" id="avail-pills-row"></div>
-      </div>
-
       <div class="avail-layout">
         <!-- Left: Brand sidebar (Telegram-style, shared tl-* components) -->
         <aside class="tl-sidebar" id="avail-sidebar">
@@ -4479,8 +4457,32 @@ body.theme-light .autocomplete-dropdown {
           <div class="tl-side-list" id="avail-brand-list"></div>
         </aside>
 
-        <!-- Right: Hierarchical Brand Sections Container -->
+        <!-- Right: header + search + accordion content -->
         <div class="avail-left-col">
+          <div class="view-header">
+            <div>
+              <div class="view-title">Available Stock</div>
+              <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
+              <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
+                <span id="avail-total-big">115</span> Units
+              </div>
+            </div>
+          </div>
+
+          <!-- Search & Brand Filter Pills -->
+          <div class="search-filter-bar">
+            <div class="search-box-wrap">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search serial (e.g., K002120) or model...">
+              <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
+            </div>
+            <div class="filter-pills-row" id="avail-pills-row"></div>
+          </div>
+
+          <!-- Hierarchical Brand Sections Container -->
           <div id="avail-accordion-container"></div>
         </div>
       </div>
@@ -4488,20 +4490,6 @@ body.theme-light .autocomplete-dropdown {
 
     <!-- 3. STOCK OUT & DISPATCH SCREEN -->
     <section id="view-stock-out" class="view-section">
-      <div class="view-header" style="margin-bottom:10px;">
-        <div class="view-title">Stock Out &amp; Dispatch</div>
-      </div>
-
-      <!-- Search & Brand Filter Bar -->
-      <div class="search-filter-bar">
-        <div class="search-box-wrap">
-          <span class="search-icon">&#128269;</span>
-          <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Search Model, Serial or Date In...">
-          <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
-        </div>
-        <div class="filter-pills-row" id="so-pills-row"></div>
-      </div>
-
       <div class="stockout-layout">
         <!-- Left: Brand sidebar (Telegram-style, shared tl-* components) -->
         <aside class="tl-sidebar" id="so-sidebar">
@@ -4521,9 +4509,23 @@ body.theme-light .autocomplete-dropdown {
           <div class="tl-side-list" id="so-brand-list"></div>
         </aside>
 
-        <!-- Middle: Accordion with 4-col chip cards -->
+        <!-- Middle: header + search + model accordions -->
         <div class="stockout-left-col">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+          <div class="view-header" style="margin-bottom:10px;">
+            <div class="view-title">Stock Out &amp; Dispatch</div>
+          </div>
+
+          <!-- Search & Brand Filter Bar -->
+          <div class="search-filter-bar">
+            <div class="search-box-wrap">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Search Model, Serial or Date In...">
+              <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
+            </div>
+            <div class="filter-pills-row" id="so-pills-row"></div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0 8px; flex-shrink:0;">
             <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-sub);">
               AVAILABLE MODELS BY BRAND <span style="font-weight:400; text-transform:none; margin-left:6px; color:var(--text-muted);">Click serial chip to toggle in cart</span>
             </div>
@@ -4533,7 +4535,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
 
         <!-- Right: Dispatch Staging Sidebar (Two Stacked Frozen Cards) -->
-        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:var(--stockout-brand-sticky-top, 122px); max-height:calc(100vh - 150px); display:flex; flex-direction:column; gap:10px;">
+        <div id="stockout-right-sidebar" style="width:340px; flex-shrink:0; position:sticky; top:var(--searchbar-sticky-top, 0); max-height:calc(100vh - 60px); display:flex; flex-direction:column; gap:10px;">
           
           <!-- Card 1: Dispatch & Checkout (Own Closed Border, Frozen at Top) -->
           <div class="card" id="dispatch-checkout-card" style="flex-shrink:0; position:relative; z-index:20; overflow:visible;">
