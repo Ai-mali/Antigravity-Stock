@@ -2424,7 +2424,6 @@ body.theme-light .unit-action-btn {
   max-height: calc(100vh - 150px);
 }
 #view-stock-out .tl-sidebar.tl-side-mini { width: 60px; }
-#view-stock-out .tl-side-mini .so-side-tabs-wrap,
 #view-stock-out .tl-side-mini .so-side-section { display: none; }
 /* Stock Out sidebar is auto-height (sticky in a grid) — flex-basis:0 would
    collapse the brand list; size it by content and scroll past max-height. */
@@ -2453,25 +2452,7 @@ body.theme-light .unit-action-btn {
   padding: 1px 6px;
   border-radius: 4px;
 }
-.so-side-chips { display: flex; gap: 6px; overflow-x: auto; width: 100%; }
-.so-chip {
-  flex-shrink: 0;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all .12s;
-}
-.so-chip b { font-family: 'JetBrains Mono', monospace; font-size: 9px; opacity: .75; margin-left: 3px; font-weight: 700; }
-.so-chip:hover { color: var(--text); border-color: var(--border-light); }
-.so-chip.active { background: var(--green); border-color: var(--green); color: #fff; }
-.so-chip.low { color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.08); }
-.so-chip.low.active { background: rgba(251, 191, 36, 0.22); color: #fbbf24; border-color: rgba(251, 191, 36, 0.55); }
+
 
 .stockout-left-col {
   display: block;
@@ -4496,10 +4477,6 @@ body.theme-light .autocomplete-dropdown {
               <span class="search-icon">&#128269;</span>
               <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand, model, serial...">
             </div>
-            <div class="tl-side-avatars" id="so-side-avatars"></div>
-          </div>
-          <div class="tl-side-tabs so-side-tabs-wrap">
-            <div class="so-side-chips" id="so-side-chips"></div>
           </div>
           <div class="so-side-section">
             <span>&#128230; Brands &amp; Bins</span>
@@ -7573,7 +7550,6 @@ function renderSOBrandSidebar(qOverride) {
   brandKeys.forEach(b => { stats[b] = soBrandStats(b); });
   const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
   const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
-  const lowBrands = brands.filter(b => stats[b].units > 0 && stats[b].units <= SO_LOW_STOCK_MAX);
 
   // Sidebar mirrors the live search: a brand row stays visible when the
   // brand name matches OR any of its models/serials match (same set the
@@ -7636,25 +7612,6 @@ function renderSOBrandSidebar(qOverride) {
       });
     }).join('');
 
-  // Filter chips strip — All / top 3 brands / Low
-  const chipsEl = document.getElementById('so-side-chips');
-  if (chipsEl) {
-    const mkChip = (key, label, count, cls) =>
-      `<button type="button" class="so-chip${cls ? ' ' + cls : ''}${DB.soFilter === key ? ' active' : ''}"
-               onclick="selectSOBrand('${escapeJs(key)}')">${escapeHtml(label)}<b>${count}</b></button>`;
-    chipsEl.innerHTML =
-      mkChip('ALL', 'All', totalUnits, '') +
-      brands.slice(0, 3).map(b => mkChip(b, b, stats[b].units, '')).join('') +
-      mkChip('LOW', 'Low', lowBrands.length, 'low');
-  }
-
-  // Stacked avatar preview (top 3 brands by units) beside the search
-  const av = document.getElementById('so-side-avatars');
-  if (av) {
-    av.innerHTML = brands.slice(0, 3)
-      .map(b => `<span style="background:${getBrandColor(b)}; color:#fff;" title="${escapeHtml(b)}">${escapeHtml(b.slice(0, 2))}</span>`)
-      .join('');
-  }
   const bc = document.getElementById('so-side-brand-count');
   if (bc) bc.textContent = brands.length;
 }
