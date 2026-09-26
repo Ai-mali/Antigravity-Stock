@@ -2,10 +2,9 @@
 
 Commit Hash: 
 
-2d779743c7637f590bf27274787184dd22d9d347
- (Short: 2d77974)
-Commit Description: Track List v2 Telegram-style sidebar redesign + rounded outer window frame + sidebar/records bottom alignment
-Date: 2026-09-25 18:17 +0700
+8876dec (identical tree to 4bf39a9 — emerald palette restored via revert)
+Commit Description: VRE AC Stock rebrand + emerald accent palette + splash glow & live pulsing dot
+Date: 2026-10-14 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
 Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
@@ -24,8 +23,11 @@ Brand Colors: Each brand has a unique color — colored ordering-number pills, g
 Window Frame: Visible rounded outer frame ring around the app (--frame-bg, 5px body padding); real DWM rounded corners on Win11, styled inner frame on any OS.
 Track List (Telegram-style sidebar): Left customer sidebar — pill search + hamburger (collapses to 60px avatar rail, persisted via tlMini) + stacked top-customer avatars; Customers/Warranty tab chips on darker strip; customer rows (circular avatar + warranty-health dot, name + Units chip, Purchased/date line); click-to-filter records. Warranty tab lists All/Active/Expiring/Expired. Sidebar + records card bottoms align exactly.
 Dual Search: Both search fields (sidebar + header) drive the same query and mirror each other.
+Rebrand: App renamed to "VRE AC Stock" everywhere (window title, header, splash); splash shows "VRE AC STOCK" / "AI Scan".
+Splash Polish: Emerald glow on "AC STOCK" (text-shadow halo in HTML, 4-pass dim halo in native GDI) + pulsing live dot beside "AI Scan" in both splash layers; header "AC Stock" glows to match.
+Accent Palette: Emerald theme throughout (--green #116852, --green-bright #26d07c); ocean-blue experiment reverted (854cf2f).
 Track List records: Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
 Duplicate Navigation: "View in Track List" resets stale customer/warranty filters — serial always found under ALL CUSTOMERS.
 Database Health: 333 total stock items loaded across 10 active brands (LG, VOLVO, CARRIER, DAIKIN, MITSUBISHI, CAT, KOMATSU, BIN, PART, OTHER).
 Data Protection: Real business data (daikin_stock.xlsx) is healthy and gitignored; no rewrite-on-launch.
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 2d77974"
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 8876dec"
