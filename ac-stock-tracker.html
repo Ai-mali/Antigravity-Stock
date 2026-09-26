@@ -2426,6 +2426,9 @@ body.theme-light .unit-action-btn {
 #view-stock-out .tl-sidebar.tl-side-mini { width: 60px; }
 #view-stock-out .tl-side-mini .so-side-tabs-wrap,
 #view-stock-out .tl-side-mini .so-side-section { display: none; }
+/* Stock Out sidebar is auto-height (sticky in a grid) — flex-basis:0 would
+   collapse the brand list; size it by content and scroll past max-height. */
+#view-stock-out .tl-side-list { flex: 1 1 auto; }
 
 /* Stock Out sidebar — section label strip + filter chips (Stitch ref) */
 .so-side-section {
