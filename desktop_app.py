@@ -22,14 +22,14 @@ justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidd
 user-select:none;-webkit-user-select:none}
 .box{text-align:center}
 .logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#e8f0f2}
-.logo span{color:#26d07c;text-shadow:0 0 14px rgba(38,208,124,.65),0 0 36px rgba(38,208,124,.28)}
+.logo span{color:#38bdf8;text-shadow:0 0 14px rgba(56,189,248,.65),0 0 36px rgba(56,189,248,.28)}
 .sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#5f7683;display:flex;
 align-items:center;justify-content:center;gap:8px}
-.live{width:7px;height:7px;border-radius:50%;background:#26d07c;
-box-shadow:0 0 10px #26d07c;animation:live 1.3s ease-in-out infinite}
+.live{width:7px;height:7px;border-radius:50%;background:#38bdf8;
+box-shadow:0 0 10px #38bdf8;animation:live 1.3s ease-in-out infinite}
 .spinner{margin:26px auto 14px;width:34px;height:34px;border:3px solid #1d2b33;
-border-top-color:#26d07c;border-radius:50%;animation:spin .8s linear infinite;
-box-shadow:0 0 18px rgba(38,208,124,.15)}
+border-top-color:#38bdf8;border-radius:50%;animation:spin .8s linear infinite;
+box-shadow:0 0 18px rgba(56,189,248,.15)}
 .status{font-size:12px;color:#8aa0ab;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
@@ -163,12 +163,12 @@ class _NativeSplash:
 
     # COLORREF is 0x00BBGGRR
     _BG     = 0x001C170F   # #0F171C
-    _ACCENT = 0x007CD026   # #26D07C
+    _ACCENT = 0x00F8BD38   # #38BDF8 (ocean)
     _TEXT   = 0x00F2F0E8   # #E8F0F2
     _SUB    = 0x0083765F   # #5F7683
     _STATUS = 0x00ABA08A   # #8AA0AB
     _TRACK  = 0x00332B1D   # #1D2B33
-    _ACCENT_DIM = 0x00365A10  # darkened accent for the halo pass
+    _ACCENT_DIM = 0x00674A11  # darkened accent halo (#114A67)
 
     def __init__(self):
         self._hwnd = None
