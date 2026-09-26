@@ -2443,6 +2443,14 @@ body.theme-light .unit-action-btn {
 #view-available .tl-side-list { flex: 1 1 auto; }
 .avail-left-col { flex: 1; min-width: 0; }
 
+/* Search bar inside the new right columns — cancel the section-edge bleed
+   (base rule uses -20px margins + 20px padding to span full section width) */
+.avail-left-col > .search-filter-bar,
+.stockout-left-col > .search-filter-bar {
+  margin: 0 0 14px 0;
+  padding: 10px 0 12px 0;
+}
+
 /* Stock Out sidebar — section label strip + filter chips (Stitch ref) */
 .so-side-section {
   display: flex;
@@ -4461,24 +4469,21 @@ body.theme-light .autocomplete-dropdown {
         <div class="avail-left-col">
           <div class="view-header">
             <div>
-              <div class="view-title">Available Stock</div>
+              <div class="view-title" style="display:flex; align-items:baseline; gap:10px;">
+                Available Stock
+                <span class="mono" style="font-size:16px; font-weight:800; color:var(--green-bright);"><span id="avail-total-big">115</span> <span style="font-size:11px; font-weight:600; color:var(--text-sub);">Units</span></span>
+              </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px; color:var(--text-sub);">Total Units</div>
-              <div style="font-size:24px; font-weight:800; color:var(--green-bright);" class="mono">
-                <span id="avail-total-big">115</span> Units
-              </div>
-            </div>
-          </div>
-
-          <!-- Search & Brand Filter Pills -->
-          <div class="search-filter-bar">
-            <div class="search-box-wrap">
+            <div class="search-box-wrap" style="width:290px; flex:0 0 290px;">
               <span class="search-icon">&#128269;</span>
               <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search serial (e.g., K002120) or model...">
               <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
+          </div>
+
+          <!-- Brand Filter Pills -->
+          <div class="search-filter-bar">
             <div class="filter-pills-row" id="avail-pills-row"></div>
           </div>
 
@@ -4511,17 +4516,17 @@ body.theme-light .autocomplete-dropdown {
 
         <!-- Middle: header + search + model accordions -->
         <div class="stockout-left-col">
-          <div class="view-header" style="margin-bottom:10px;">
+          <div class="view-header" style="margin-bottom:10px; align-items:center;">
             <div class="view-title">Stock Out &amp; Dispatch</div>
-          </div>
-
-          <!-- Search & Brand Filter Bar -->
-          <div class="search-filter-bar">
-            <div class="search-box-wrap">
+            <div class="search-box-wrap" style="width:290px; flex:0 0 290px;">
               <span class="search-icon">&#128269;</span>
               <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Search Model, Serial or Date In...">
               <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
+          </div>
+
+          <!-- Brand Filter Pills -->
+          <div class="search-filter-bar">
             <div class="filter-pills-row" id="so-pills-row"></div>
           </div>
 
