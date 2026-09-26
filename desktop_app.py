@@ -22,15 +22,20 @@ justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidd
 user-select:none;-webkit-user-select:none}
 .box{text-align:center}
 .logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#e8f0f2}
-.logo span{color:#26d07c}
-.sub{margin-top:6px;font-size:12px;letter-spacing:5px;color:#5f7683}
-.spinner{margin:28px auto 14px;width:34px;height:34px;border:3px solid #1d2b33;
-border-top-color:#26d07c;border-radius:50%;animation:spin .8s linear infinite}
+.logo span{color:#26d07c;text-shadow:0 0 14px rgba(38,208,124,.65),0 0 36px rgba(38,208,124,.28)}
+.sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#5f7683;display:flex;
+align-items:center;justify-content:center;gap:8px}
+.live{width:7px;height:7px;border-radius:50%;background:#26d07c;
+box-shadow:0 0 10px #26d07c;animation:live 1.3s ease-in-out infinite}
+.spinner{margin:26px auto 14px;width:34px;height:34px;border:3px solid #1d2b33;
+border-top-color:#26d07c;border-radius:50%;animation:spin .8s linear infinite;
+box-shadow:0 0 18px rgba(38,208,124,.15)}
 .status{font-size:12px;color:#8aa0ab;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 </style></head><body><div class="box">
 <div class="logo">VRE <span>AC STOCK</span></div>
-<div class="sub">AI Scan</div>
+<div class="sub"><i class="live"></i>AI Scan</div>
 <div class="spinner"></div>
 <div class="status">Starting services&hellip;</div>
 </div></body></html>"""
@@ -146,6 +151,9 @@ _g32.BitBlt.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int,
 _g32.DeleteDC.argtypes = [wintypes.HDC]
 _g32.CreateRoundRectRgn.restype = wintypes.HANDLE
 _g32.CreateRoundRectRgn.argtypes = [ctypes.c_int] * 6
+_g32.Ellipse.restype = wintypes.BOOL
+_g32.Ellipse.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int,
+                         ctypes.c_int, ctypes.c_int]
 
 
 class _NativeSplash:
@@ -160,6 +168,7 @@ class _NativeSplash:
     _SUB    = 0x0083765F   # #5F7683
     _STATUS = 0x00ABA08A   # #8AA0AB
     _TRACK  = 0x00332B1D   # #1D2B33
+    _ACCENT_DIM = 0x00365A10  # darkened accent for the halo pass
 
     def __init__(self):
         self._hwnd = None
@@ -275,18 +284,42 @@ class _NativeSplash:
             _g32.SelectObject(mem, f_title)
             parts = [("VRE ", self._TEXT), ("AC STOCK", self._ACCENT)]
             total = sum(self._text_width(mem, s) for s, _ in parts)
-            x = (W - total) // 2
+            x0 = (W - total) // 2
+            # soft halo behind the accent word — 4 dim offset copies
+            acc_x = x0 + self._text_width(mem, parts[0][0])
+            _g32.SetTextColor(mem, self._ACCENT_DIM)
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                r = wintypes.RECT(acc_x + dx, 66 + dy, W, 100)
+                _u32.DrawTextW(mem, parts[1][0], -1, ctypes.byref(r), 0x0020)
+            x = x0
             for s, col in parts:
                 _g32.SetTextColor(mem, col)
                 r = wintypes.RECT(x, 66, W, 100)
-                _u32.DrawTextW(mem, s, -1, ctypes.byref(r), 0x0020)  # LEFT|SINGLELINE
+                _u32.DrawTextW(mem, s, -1, ctypes.byref(r), 0x0020)
                 x += self._text_width(mem, s)
 
             _g32.SelectObject(mem, f_small)
+            # pulsing live dot + "AI Scan" (mirrors the HTML splash)
+            sub = "AI Scan"
+            sw = self._text_width(mem, sub)
+            sub_x = (W - (10 + 9 + sw)) // 2
+            cy = 113
+            s = self._phase % 20
+            rad = 3 + (s if s < 10 else 20 - s) // 5   # gentle 3-5px pulse
+            cx = sub_x + 5
+            halo = _g32.CreateSolidBrush(self._ACCENT_DIM)
+            old = _g32.SelectObject(mem, halo)
+            _g32.Ellipse(mem, cx - rad - 3, cy - rad - 3, cx + rad + 3, cy + rad + 3)
+            _g32.SelectObject(mem, old)
+            _g32.DeleteObject(halo)
+            dot = _g32.CreateSolidBrush(self._ACCENT)
+            old = _g32.SelectObject(mem, dot)
+            _g32.Ellipse(mem, cx - rad, cy - rad, cx + rad, cy + rad)
+            _g32.SelectObject(mem, old)
+            _g32.DeleteObject(dot)
             _g32.SetTextColor(mem, self._SUB)
-            r = wintypes.RECT(0, 102, W, 122)
-            _u32.DrawTextW(mem, "AI Scan", -1, ctypes.byref(r),
-                           0x0001 | 0x0004 | 0x0020)  # CENTER|VCENTER|SINGLELINE
+            r = wintypes.RECT(sub_x + 19, 102, W, 122)
+            _u32.DrawTextW(mem, sub, -1, ctypes.byref(r), 0x0004 | 0x0020)
 
             # Sweeping accent bar (the "spinner" equivalent)
             tw, th = 150, 3
