@@ -1,4 +1,4 @@
-"""Frameless Desktop Shell for AC Stock Tracker.
+"""Frameless Desktop Shell for VRE AC Stock.
 
 Launches a native frameless Edge WebView2 window with custom dark titlebar,
 smooth 8-direction resize handles, native rounded corners, and an integrated
@@ -29,8 +29,8 @@ border-top-color:#26d07c;border-radius:50%;animation:spin .8s linear infinite}
 .status{font-size:12px;color:#8aa0ab;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style></head><body><div class="box">
-<div class="logo">AC <span>STOCK</span> TRACKER</div>
-<div class="sub">S M A</div>
+<div class="logo">VRE <span>AC STOCK</span></div>
+<div class="sub">AI Scan</div>
 <div class="spinner"></div>
 <div class="status">Starting services&hellip;</div>
 </div></body></html>"""
@@ -201,7 +201,7 @@ class _NativeSplash:
 
             # WS_POPUP | WS_EX_TOPMOST | WS_EX_TOOLWINDOW
             self._hwnd = _u32.CreateWindowExW(
-                0x00000008 | 0x00000080, class_name, "AC Stock Tracker",
+                0x00000008 | 0x00000080, class_name, "ACStockSplash",
                 0x80000000, x, y, self.W, self.H, None, None, hinst, None)
             if not self._hwnd:
                 return
@@ -264,7 +264,7 @@ class _NativeSplash:
             _g32.DeleteObject(bg)
             _g32.SetBkMode(mem, 1)  # TRANSPARENT
 
-            # Title: "AC STOCK TRACKER" with STOCK in accent — two-tone via
+            # Title: "VRE AC STOCK" with AC STOCK in accent — two-tone via
             # measured widths, same look as the HTML splash.
             f_title = _g32.CreateFontW(-24, 0, 0, 0, 700, 0, 0, 0, 1,
                                        0, 0, 0, 0, "Segoe UI")
@@ -273,8 +273,7 @@ class _NativeSplash:
             fonts += [f_title, f_small]
 
             _g32.SelectObject(mem, f_title)
-            parts = [("AC ", self._TEXT), ("STOCK", self._ACCENT),
-                     (" TRACKER", self._TEXT)]
+            parts = [("VRE ", self._TEXT), ("AC STOCK", self._ACCENT)]
             total = sum(self._text_width(mem, s) for s, _ in parts)
             x = (W - total) // 2
             for s, col in parts:
@@ -286,7 +285,7 @@ class _NativeSplash:
             _g32.SelectObject(mem, f_small)
             _g32.SetTextColor(mem, self._SUB)
             r = wintypes.RECT(0, 102, W, 122)
-            _u32.DrawTextW(mem, "S M A", -1, ctypes.byref(r),
+            _u32.DrawTextW(mem, "AI Scan", -1, ctypes.byref(r),
                            0x0001 | 0x0004 | 0x0020)  # CENTER|VCENTER|SINGLELINE
 
             # Sweeping accent bar (the "spinner" equivalent)
@@ -338,7 +337,7 @@ class DesktopApi:
             except Exception:
                 pass
         try:
-            hwnd = ctypes.windll.user32.FindWindowW(None, 'AC Stock Tracker')
+            hwnd = ctypes.windll.user32.FindWindowW(None, 'VRE AC Stock')
             if hwnd:
                 return hwnd
         except Exception:
@@ -561,7 +560,7 @@ def main():
 
     # Window appears right away on the splash screen (no serial port-wait).
     window = webview.create_window(
-        title='AC Stock Tracker',
+        title='VRE AC Stock',
         html=SPLASH_HTML,
         js_api=api,
         width=1320,

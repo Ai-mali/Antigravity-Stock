@@ -1,4 +1,4 @@
-' AC Stock Tracker — silent launcher (no console window flash).
+' VRE AC Stock — silent launcher (no console window flash).
 ' Double-click this file instead of run_desktop.bat.
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set sh  = CreateObject("Wscript.Shell")

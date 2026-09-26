@@ -1,4 +1,4 @@
-"""AC Stock Tracker backend — FastAPI + Excel store + vision scan engine.
+"""VRE AC Stock backend — FastAPI + Excel store + vision scan engine.
 
 Serves the single-file frontend (ac-stock-tracker.html) and the REST API
 it calls. Run:
@@ -28,7 +28,7 @@ HTML_PATH = BASE / "ac-stock-tracker.html"
 if not HTML_PATH.exists():
     HTML_PATH = Path(__file__).parent / "ac-stock-tracker.html"
 
-app = FastAPI(title="AC Stock Tracker")
+app = FastAPI(title="VRE AC Stock")
 store = StockStore()
 _mtime = store.path.stat().st_mtime if store.path.exists() else 0
 

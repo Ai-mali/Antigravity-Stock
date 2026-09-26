@@ -1,4 +1,4 @@
-"""Excel-backed store for the AC Stock Tracker.
+"""Excel-backed store for VRE AC Stock.
 
 One workbook (daikin_stock.xlsx, next to the app) holds:
   MasterRecord — one row per physical unit:
