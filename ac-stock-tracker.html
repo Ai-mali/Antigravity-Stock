@@ -5420,6 +5420,7 @@ const DB = {
   trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
   lowStockFilter: false,      // toggles showing only models with <= 2 units
   scans: [],        // filled by POST /api/scan or the manual + button
+  modelBrands: {},  // model -> brand map (manual entry / ready-serial autofill)
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
   stagedCart: [],   // client-side staging; POST /api/stock-out on checkout
   trackList: [],    // GET /api/track       (sold units)
