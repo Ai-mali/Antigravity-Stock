@@ -7669,7 +7669,7 @@ function renderAvailBrandSidebar(qOverride) {
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span class="tl-cust-date">${escapeHtml(o.date || '')}</span></span>
-        <span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>
+        ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
           <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
           <span class="tl-cust-units" style="${pillStyle}">${o.units}</span>
@@ -7691,13 +7691,10 @@ function renderAvailBrandSidebar(qOverride) {
     }) +
     visibleBrands.map(b => {
       const s = stats[b];
-      const desc = s.top.length
-        ? escapeHtml(s.top.map(t => `${t.m} (${t.n})`).join(' \u2022 '))
-        : escapeHtml(`${s.models.length} model${s.models.length === 1 ? '' : 's'} configured`);
       const [st, sc] = statusOf(s.units);
       return mkRow(b, {
         name: b, units: s.units, color: getBrandColor(b), initials: b.slice(0, 2),
-        date: soShortDate(s.last), desc, status: st, statusColor: sc
+        date: soShortDate(s.last), desc: '', status: st, statusColor: sc
       });
     }).join('');
 
@@ -7885,7 +7882,7 @@ function renderSOBrandSidebar(qOverride) {
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span class="tl-cust-date">${escapeHtml(o.date || '')}</span></span>
-        <span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>
+        ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
           <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
           <span class="tl-cust-units" style="${pillStyle}">${o.units}</span>
@@ -7909,13 +7906,10 @@ function renderSOBrandSidebar(qOverride) {
     }) +
     visibleBrands.map(b => {
       const s = stats[b];
-      const desc = s.top.length
-        ? escapeHtml(s.top.map(t => `${t.m} (${t.n})`).join(' \u2022 '))
-        : escapeHtml(`${s.models.length} model${s.models.length === 1 ? '' : 's'} configured`);
       const [st, sc] = statusOf(s.units);
       return mkRow(b, {
         name: b, units: s.units, color: getBrandColor(b), initials: b.slice(0, 2),
-        date: soShortDate(s.last), desc, status: st, statusColor: sc
+        date: soShortDate(s.last), desc: '', status: st, statusColor: sc
       });
     }).join('');
 
