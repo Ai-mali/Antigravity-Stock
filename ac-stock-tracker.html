@@ -3322,6 +3322,9 @@ body.theme-light .tl-status-badge {
 }
 body.tl-resizing { user-select: none; cursor: col-resize; }
 body.tl-resizing * { cursor: col-resize !important; }
+/* Drag-resize repaints hundreds of serial cards — the pulsing highlight
+   shadows and glow bars make every reflow expensive, so suspend them. */
+body.tl-resizing * { animation: none !important; transition: none !important; }
 
 .tl-main {
   flex: 1 1 0;
@@ -7715,6 +7718,7 @@ function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
     const wasMini = sb.classList.contains('tl-side-mini');
     let curW = startW;
     let snapped = wasMini;
+    let rafId = 0, pendingW = 0;
     const onMove = ev => {
       const delta = ev.clientX - startX;
       const w = wasMini ? 200 + delta : startW + delta;
@@ -7729,10 +7733,19 @@ function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
         snapped = false;
       }
       curW = Math.max(SIDE_W_MIN, Math.min(SIDE_W_MAX, w));
-      sb.style.width = curW + 'px';
+      // mousemove fires faster than frames — apply at most one reflow/frame
+      pendingW = curW;
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          sb.style.width = pendingW + 'px';
+          rafId = 0;
+        });
+      }
     };
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
+      if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+      if (!DB[miniKey]) sb.style.width = curW + 'px';
       document.body.classList.remove('tl-resizing');
       handle.classList.remove('dragging');
       const prefs = {};
