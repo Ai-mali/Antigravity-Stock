@@ -2282,6 +2282,18 @@ body.theme-light .model-accordion-header {
   transform: scaleY(1);
 }
 
+.so-serial-card.so-highlighted {
+  border-color: var(--green-bright) !important;
+  box-shadow: 0 0 18px rgba(38, 208, 124, 0.55), inset 0 0 8px rgba(38, 208, 124, 0.18) !important;
+  background: rgba(38, 208, 124, 0.09) !important;
+  animation: avail-card-focus-pulse 2.2s infinite ease-in-out;
+}
+
+.so-serial-card.so-highlighted .card-glow-bar-left,
+.so-serial-card.so-highlighted .card-glow-bar-right {
+  transform: scaleY(1);
+}
+
 @keyframes avail-card-focus-pulse {
   0%, 100% {
     box-shadow: 0 0 14px rgba(38, 208, 124, 0.4), inset 0 0 6px rgba(38, 208, 124, 0.12);
@@ -7263,6 +7275,20 @@ function dateMatchesQ(dateStr, q) {
   return variants.some(v => v.includes(q));
 }
 
+/* Wraps the query match in <mark>; if the stored text doesn't literally
+   contain q (e.g. typed "Sep 18", stored "2026-09-18"), marks the whole
+   string since it still matched via a date-format variant. */
+function markMatchedText(text, q) {
+  const esc = escapeHtml(String(text || ''));
+  if (!q) return esc;
+  const qEsc = escapeHtml(q);
+  if (!esc.toLowerCase().includes(qEsc.toLowerCase())) {
+    return `<mark class="search-match-text">${esc}</mark>`;
+  }
+  const re = new RegExp(`(${escapeRegex(qEsc)})`, 'gi');
+  return esc.replace(re, '<mark class="search-match-text">$1</mark>');
+}
+
 let _availSavedExpandState = null;
 
 function handleAvailSearchInput(val) {
@@ -7410,13 +7436,11 @@ function renderAvailable(searchTerm) {
       const cardsHtml = matchedSerials.map(s => {
         const staged = isSerialInCart(s);
         const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
-        const isMatch = q && s.toLowerCase().includes(q);
-        const highlightClass = isMatch ? 'avail-unit-card-highlighted' : '';
-        let serialDisplay = s;
-        if (isMatch) {
-          const re = new RegExp(`(${escapeRegex(q)})`, 'gi');
-          serialDisplay = s.replace(re, '<mark class="search-match-text">$1</mark>');
-        }
+        const isSerialMatch = q && s.toLowerCase().includes(q);
+        const isDateMatch = q && dateMatchesQ(unitDateIn, q);
+        const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
+        const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
+        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, q) : escapeHtml(unitDateIn);
         return `
           <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" onclick="copySerial('${s}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
@@ -7439,7 +7463,7 @@ function renderAvailable(searchTerm) {
               </div>
             </div>
             <div class="meta-text">
-              <span>Rec: ${unitDateIn}</span>
+              <span>Rec: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
                 <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}</span>
@@ -7915,14 +7939,13 @@ function renderStockOut(searchTerm) {
 
       const chipsHtml = serials.map(s => {
         const staged = isSerialInCart(s);
-        const isMatch = q && s.toLowerCase().includes(q);
-        let serialDisplay = s;
-        if (isMatch) {
-          const re = new RegExp(`(${escapeRegex(q)})`, 'gi');
-          serialDisplay = s.replace(re, '<mark class="search-match-text">$1</mark>');
-        }
+        const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
+        const isSerialMatch = q && s.toLowerCase().includes(q);
+        const isDateMatch = q && dateMatchesQ(unitDateIn, q);
+        const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
+        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, q) : escapeHtml(unitDateIn);
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
@@ -7930,7 +7953,7 @@ function renderStockOut(searchTerm) {
               <span class="indicator-dot"></span>
             </div>
             <div class="so-card-bottom">
-              <span>In: ${mData.dateIn}</span>
+              <span>In: ${dateDisplay}</span>
               <span>${staged ? 'Staged &#10003;' : 'Ready'}</span>
             </div>
           </div>
