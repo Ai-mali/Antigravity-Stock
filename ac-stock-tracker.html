@@ -2435,7 +2435,7 @@ body.theme-light .unit-action-btn {
   top: var(--searchbar-sticky-top, 0);
   max-height: calc(100vh - 60px);
 }
-#view-stock-out .tl-sidebar.tl-side-mini { width: 60px; }
+#view-stock-out .tl-sidebar.tl-side-mini { width: 60px !important; }
 #view-stock-out .tl-side-mini .so-side-section { display: none; }
 /* Stock Out sidebar is auto-height (sticky in a grid) — flex-basis:0 would
    collapse the brand list; size it by content and scroll past max-height. */
@@ -2450,7 +2450,7 @@ body.theme-light .unit-action-btn {
   max-height: calc(100vh - 60px);
   align-self: flex-start;
 }
-#view-available .tl-sidebar.tl-side-mini { width: 60px; }
+#view-available .tl-sidebar.tl-side-mini { width: 60px !important; }
 #view-available .tl-side-mini .so-side-section { display: none; }
 #view-available .tl-side-list { flex: 1 1 auto; }
 .avail-left-col { flex: 1; min-width: 0; }
@@ -3307,6 +3307,22 @@ body.theme-light .tl-status-badge {
   border-radius: 12px;
   overflow: hidden;
 }
+/* Drag-resize handle on the sidebar's right edge (Telegram-style) */
+.tl-side-resizer {
+  position: absolute;
+  top: 0; right: 0;
+  width: 6px; height: 100%;
+  cursor: col-resize;
+  z-index: 6;
+  border-radius: 0 12px 12px 0;
+}
+.tl-side-resizer:hover,
+.tl-side-resizer.dragging {
+  background: rgba(38, 208, 124, 0.35);
+}
+body.tl-resizing { user-select: none; cursor: col-resize; }
+body.tl-resizing * { cursor: col-resize !important; }
+
 .tl-main {
   flex: 1 1 0;
   min-width: 0;
@@ -4475,6 +4491,7 @@ body.theme-light .autocomplete-dropdown {
             <span class="cnt" id="avail-side-brand-count">0</span>
           </div>
           <div class="tl-side-list" id="avail-brand-list"></div>
+          <div class="tl-side-resizer" id="avail-side-resizer" title="Drag to resize"></div>
         </aside>
 
         <!-- Right: header + search + accordion content -->
@@ -4524,6 +4541,7 @@ body.theme-light .autocomplete-dropdown {
             <span class="cnt" id="so-side-brand-count">0</span>
           </div>
           <div class="tl-side-list" id="so-brand-list"></div>
+          <div class="tl-side-resizer" id="so-side-resizer" title="Drag to resize"></div>
         </aside>
 
         <!-- Middle: header + search + model accordions -->
@@ -5467,6 +5485,8 @@ const DB = {
   trackSidebarMini: false,  // sidebar collapsed to avatar rail
   soSidebarMini: false,     // Stock Out brand sidebar collapsed
   availSidebarMini: false,  // Available Stock brand sidebar collapsed
+  soSidebarW: 0,            // persisted drag-resize widths (0 = default)
+  availSidebarW: 0,
   trackPage: 0,           // Fulfillment Records Log pagination
   trackPageSize: 10,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
@@ -5526,6 +5546,10 @@ async function refreshData() {
   DB.trackSidebarMini = !!(uiPrefs && uiPrefs.tlMini);
   DB.soSidebarMini = !!(uiPrefs && uiPrefs.soMini);
   DB.availSidebarMini = !!(uiPrefs && uiPrefs.availMini);
+  DB.soSidebarW = (uiPrefs && uiPrefs.soW) || 0;
+  DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
+  applySidebarWidth('so-sidebar', DB.soSidebarW);
+  applySidebarWidth('avail-sidebar', DB.availSidebarW);
   renderBrandPills();
   markDuplicateScans();
   renderAll();
@@ -7666,6 +7690,60 @@ function renderAvailBrandSidebar(qOverride) {
 
   const bc = document.getElementById('avail-side-brand-count');
   if (bc) bc.textContent = brands.length;
+}
+
+/* Telegram-style drag-to-resize for the brand sidebars. Dragging past the
+   collapse threshold snaps into the 60px mini rail; dragging out of mini
+   restores a normal width. Widths persist via /api/ui-prefs. */
+const SIDE_W_MIN = 180, SIDE_W_MAX = 440, SIDE_W_SNAP = 120;
+
+function applySidebarWidth(id, w) {
+  const sb = document.getElementById(id);
+  if (sb && w) sb.style.width = w + 'px';
+}
+
+function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
+  const handle = document.getElementById(handleId);
+  const sb = document.getElementById(sidebarId);
+  if (!handle || !sb) return;
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    document.body.classList.add('tl-resizing');
+    handle.classList.add('dragging');
+    const startX = e.clientX;
+    const startW = sb.offsetWidth;
+    const wasMini = sb.classList.contains('tl-side-mini');
+    let curW = startW;
+    let snapped = wasMini;
+    const onMove = ev => {
+      const delta = ev.clientX - startX;
+      const w = wasMini ? 200 + delta : startW + delta;
+      if (w <= SIDE_W_SNAP) {           // snap to the mini rail
+        if (!DB[miniKey]) { DB[miniKey] = true; applyMini(); }
+        snapped = true;
+        return;
+      }
+      if (snapped) {                  // dragged back out of mini
+        DB[miniKey] = false;
+        applyMini();
+        snapped = false;
+      }
+      curW = Math.max(SIDE_W_MIN, Math.min(SIDE_W_MAX, w));
+      sb.style.width = curW + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.body.classList.remove('tl-resizing');
+      handle.classList.remove('dragging');
+      const prefs = {};
+      prefs[prefKey] = curW >= SIDE_W_MIN ? curW : 0;
+      prefs[miniKey === 'availSidebarMini' ? 'availMini' : 'soMini'] = DB[miniKey];
+      apiPost('/api/ui-prefs', { prefs }).catch(() => {});
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
 }
 
 function applyAvailSidebarMini() {
@@ -10440,6 +10518,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   await refreshData();
   await loadConfig();
   initScanResultsDragSelect();
+  initSideResizer('avail-side-resizer', 'avail-sidebar', 'availW', 'availSidebarMini', applyAvailSidebarMini);
+  initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
   
   // Initialize Custom Datepickers with today's date
   const todayStr = new Date().toISOString().split('T')[0];
