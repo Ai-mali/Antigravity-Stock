@@ -2,8 +2,8 @@
 
 Commit Hash: 
 
-1a6826f
-Commit Description: Available Stock + Stock Out Telegram-style brand sidebars, full-height columns, shared search logic
+e98b9d9
+Commit Description: Brand sidebars (Telegram-style) + date search + drag-resize + smooth-release fixes
 Date: 2026-10-15 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
@@ -31,8 +31,12 @@ Stock Out Search: Typing resets stale brand/LOW filter to ALL (same fix class as
 Available Stock: Same brand sidebar as Stock Out (mini rail persisted via availMini, Brands & Bins label, rich rows, click-to-filter on DB.availFilter, identical search parity — reset-to-ALL, brand-name match, sidebar mirroring). Low-stock banner + serial cards unchanged.
 Layout: Both sidebars (and Stock Out's dispatch panel) span full column height — view header + search bar live inside the right column; sticky tops flush under the app header.
 Manual Stock Entry: Fixed dead "Add to Scan Results" — DB.modelBrands initialized (was always undefined → silent TypeError). Serial + non-serial modes verified.
+Date Search: All three search screens match dates — Available Stock & Stock Out match Date In (model + per-unit), Track List matches Date In AND Date Out. Formats: 2026-09-18, 09/18/2026, 18/09/2026, "Sep 18", "Sep 18, 2026" (dateMatchesQ helper). Sidebars mirror date matches.
+Date Highlight: Date-matched serial cards get the same emerald glow+pulse as serial hits; the matched date text is marked (Rec:/In:); per-unit granularity so only units with the matching date glow.
+Resizable Sidebars: 6px col-resize handle on both brand sidebars (180-440px); drag below ~120px snaps to mini rail, drag out expands; width persists via ui_prefs (availW/soW).
+Smooth Drag: rAF-throttled width application (one reflow/frame) + animation-play-state:paused on serial cards during drag (no repaint cost, no release flash).
 Track List records: Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
 Duplicate Navigation: "View in Track List" resets stale customer/warranty filters — serial always found under ALL CUSTOMERS.
 Database Health: 333 total stock items loaded across 10 active brands (LG, VOLVO, CARRIER, DAIKIN, MITSUBISHI, CAT, KOMATSU, BIN, PART, OTHER).
 Data Protection: Real business data (daikin_stock.xlsx) is healthy and gitignored; no rewrite-on-launch.
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 1a6826f"
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit e98b9d9"
