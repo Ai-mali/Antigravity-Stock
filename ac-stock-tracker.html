@@ -3322,9 +3322,19 @@ body.theme-light .tl-status-badge {
 }
 body.tl-resizing { user-select: none; cursor: col-resize; }
 body.tl-resizing * { cursor: col-resize !important; }
-/* Drag-resize repaints hundreds of serial cards — the pulsing highlight
-   shadows and glow bars make every reflow expensive, so suspend them. */
-body.tl-resizing * { animation: none !important; transition: none !important; }
+/* Drag-resize repaints hundreds of serial cards — pause the pulsing
+   highlight shadows (paused, not killed, so they resume without a flash)
+   and drop width/block transitions while resizing. */
+body.tl-resizing .avail-unit-card,
+body.tl-resizing .so-serial-card,
+body.tl-resizing .avail-unit-card *,
+body.tl-resizing .so-serial-card *,
+body.tl-resizing .brand-accordion,
+body.tl-resizing .model-accordion {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+body.tl-resizing .tl-sidebar { transition: none !important; }
 
 .tl-main {
   flex: 1 1 0;
