@@ -3622,6 +3622,35 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   display: inline-block;
 }
 
+/* Compact filter datepicker in view headers */
+.custom-datepicker.dp-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 172px;
+  flex: 0 0 172px;
+}
+.dp-filter .datepicker-trigger {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-start;
+  padding: 6px 9px;
+  font-size: 11.5px;
+}
+.dp-filter .dp-date-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dp-filter-clear {
+  flex: 0 0 18px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface2);
+  color: var(--text-sub);
+  font-size: 12px; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.dp-filter-clear:hover { background: #dc3545; color: #fff; }
+
 .datepicker-trigger {
   display: inline-flex;
   align-items: center;
@@ -4496,7 +4525,7 @@ body.theme-light .autocomplete-dropdown {
             </button>
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="avail-search-side" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand, model, serial, date...">
+              <input type="text" id="avail-search-side" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand...">
             </div>
           </div>
           <div class="so-side-section">
@@ -4517,10 +4546,24 @@ body.theme-light .autocomplete-dropdown {
               </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
-            <div class="search-box-wrap" style="width:290px; flex:0 0 290px;">
-              <span class="search-icon">&#128269;</span>
-              <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Search model, serial or date in...">
-              <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="search-box-wrap" style="width:210px; flex:0 0 210px;">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
+                <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
+              </div>
+              <div class="custom-datepicker dp-filter" id="avail-datein-picker">
+                <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
+                  <span class="dp-icon-cal">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  </span>
+                  <span class="dp-date-text" id="avail-datein-picker-display">Date In</span>
+                  <span class="dp-badge-relative" id="avail-datein-picker-relative" style="display:none;"></span>
+                  <span class="dp-icon-chevron">&#9662;</span>
+                </button>
+                <button type="button" class="dp-filter-clear" id="avail-datein-clear" onclick="clearAvailDateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
+                <div class="datepicker-popover" id="avail-datein-picker-popover"></div>
+              </div>
             </div>
           </div>
 
@@ -4546,7 +4589,7 @@ body.theme-light .autocomplete-dropdown {
             </button>
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand, model, serial, date...">
+              <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand...">
             </div>
           </div>
           <div class="so-side-section">
@@ -4561,10 +4604,24 @@ body.theme-light .autocomplete-dropdown {
         <div class="stockout-left-col">
           <div class="view-header" style="margin-bottom:10px; align-items:center;">
             <div class="view-title">Stock Out &amp; Dispatch</div>
-            <div class="search-box-wrap" style="width:290px; flex:0 0 290px;">
-              <span class="search-icon">&#128269;</span>
-              <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Search Model, Serial or Date In...">
-              <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="search-box-wrap" style="width:210px; flex:0 0 210px;">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
+                <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
+              </div>
+              <div class="custom-datepicker dp-filter" id="so-datein-picker">
+                <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
+                  <span class="dp-icon-cal">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  </span>
+                  <span class="dp-date-text" id="so-datein-picker-display">Date In</span>
+                  <span class="dp-badge-relative" id="so-datein-picker-relative" style="display:none;"></span>
+                  <span class="dp-icon-chevron">&#9662;</span>
+                </button>
+                <button type="button" class="dp-filter-clear" id="so-datein-clear" onclick="clearSODateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
+                <div class="datepicker-popover" id="so-datein-picker-popover"></div>
+              </div>
             </div>
           </div>
 
@@ -5500,6 +5557,8 @@ const DB = {
   availSidebarMini: false,  // Available Stock brand sidebar collapsed
   soSidebarW: 0,            // persisted drag-resize widths (0 = default)
   availSidebarW: 0,
+  availDateFilter: '',      // picked Date In (ISO) for Available Stock
+  soDateFilter: '',         // picked Date In (ISO) for Stock Out
   trackPage: 0,           // Fulfillment Records Log pagination
   trackPageSize: 10,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
@@ -7331,8 +7390,6 @@ let _availSavedExpandState = null;
 function handleAvailSearchInput(val) {
   const clearBtn = document.getElementById('avail-search-clear');
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
-  const side = document.getElementById('avail-search-side');
-  if (side && side.value !== val) side.value = val;
   // Live query searches across ALL brands — a stale brand filter would
   // silently hide matches (same fix as Stock Out / Track List jump).
   if (val && val.trim() && DB.availFilter !== 'ALL') {
@@ -7343,10 +7400,31 @@ function handleAvailSearchInput(val) {
   renderAvailable(val);
 }
 
+/* Sidebar search = brand names only; just re-filters the row list. */
 function handleAvailSideSearchInput(val) {
-  const main = document.getElementById('avail-search');
-  if (main && main.value !== val) main.value = val;
-  handleAvailSearchInput(val);
+  renderAvailBrandSidebar();
+}
+
+function setAvailDateFilter(iso) {
+  DB.availDateFilter = iso || '';
+  const clr = document.getElementById('avail-datein-clear');
+  if (clr) clr.style.display = iso ? 'flex' : 'none';
+  if (iso && DB.availFilter !== 'ALL') {
+    DB.availFilter = 'ALL';
+    renderBrandPills();
+    updateGlobalBadges();
+  }
+  renderAvailable();
+}
+
+function clearAvailDateFilter(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  DB.availDateFilter = '';
+  const st = DatePickerState['avail-datein-picker'];
+  if (st) { st.picked = false; updateDatePickerDisplay('avail-datein-picker'); }
+  const clr = document.getElementById('avail-datein-clear');
+  if (clr) clr.style.display = 'none';
+  renderAvailable();
 }
 
 function clearAvailSearch() {
@@ -7355,8 +7433,6 @@ function clearAvailSearch() {
     searchInput.value = '';
     searchInput.focus();
   }
-  const side = document.getElementById('avail-search-side');
-  if (side) side.value = '';
   const clearBtn = document.getElementById('avail-search-clear');
   if (clearBtn) clearBtn.style.display = 'none';
   renderAvailable('');
@@ -7368,12 +7444,14 @@ function renderAvailable(searchTerm) {
     ? searchTerm 
     : (searchInput ? searchInput.value : '');
   const q = rawSearch.trim().toLowerCase();
+  const dq = DB.availDateFilter || '';
+  const hasFilter = !!(q || dq);
 
   const clearBtn = document.getElementById('avail-search-clear');
   if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
 
   // Snapshot or restore accordion state
-  if (q) {
+  if (hasFilter) {
     if (!_availSavedExpandState) {
       _availSavedExpandState = { brands: {}, models: {} };
       for (const bKey in DB.inventory) {
@@ -7463,21 +7541,25 @@ function renderAvailable(searchTerm) {
       let matchedSerials = serials;
       if (q && !brandMatch) {
         const modelNameMatch = mKey.toLowerCase().includes(q);
-        const modelDateMatch = dateMatchesQ(mData.dateIn, q);
-        matchedSerials = serials.filter(s =>
-          s.toLowerCase().includes(q) || modelNameMatch || modelDateMatch ||
-          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q));
-        if (matchedSerials.length === 0) continue;
+        matchedSerials = matchedSerials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
       }
+      if (dq) {
+        const modelDateMatch = dateMatchesQ(mData.dateIn, dq);
+        if (!modelDateMatch) {
+          matchedSerials = matchedSerials.filter(s =>
+            dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
+        }
+      }
+      if ((q && !brandMatch || dq) && matchedSerials.length === 0) continue;
 
       const cardsHtml = matchedSerials.map(s => {
         const staged = isSerialInCart(s);
         const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
         const isSerialMatch = q && s.toLowerCase().includes(q);
-        const isDateMatch = q && dateMatchesQ(unitDateIn, q);
+        const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
-        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, q) : escapeHtml(unitDateIn);
+        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
           <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" onclick="copySerial('${s}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
@@ -7522,7 +7604,7 @@ function renderAvailable(searchTerm) {
       }
 
       // If searching, auto-expand unless user manually toggled it during this search
-      const isModelOpen = q 
+      const isModelOpen = hasFilter 
         ? (mData.searchOpen !== undefined ? mData.searchOpen : true)
         : (mData.open !== false);
 
@@ -7545,10 +7627,10 @@ function renderAvailable(searchTerm) {
       `;
     }
 
-    if (!modelsHtml && (q || DB.lowStockFilter)) return;
+    if (!modelsHtml && (hasFilter || DB.lowStockFilter)) return;
 
     // If searching, auto-expand matching brand unless user manually toggled it during this search
-    const isBrandOpen = q 
+    const isBrandOpen = hasFilter 
       ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
       : (bData.open !== false);
 
@@ -7621,7 +7703,7 @@ function renderAvailable(searchTerm) {
     `;
     container.appendChild(emptyNotice);
   }
-  renderAvailBrandSidebar(q);
+  renderAvailBrandSidebar();
   applyAvailSidebarMini();
   updateStickyHeaderOffsets();
 }
@@ -7632,7 +7714,7 @@ function selectAvailBrand(key) {
   renderAvailBrandSidebar();
 }
 
-function renderAvailBrandSidebar(qOverride) {
+function renderAvailBrandSidebar() {
   const listEl = document.getElementById('avail-brand-list');
   if (!listEl) return;
   const brandKeys = Object.keys(DB.inventory);
@@ -7641,22 +7723,26 @@ function renderAvailBrandSidebar(qOverride) {
   const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
   const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
 
-  // Sidebar mirrors the live search (brand name OR matching model/serial)
-  const q = (typeof qOverride === 'string'
-    ? qOverride
-    : ((document.getElementById('avail-search') || {}).value || '')).trim().toLowerCase();
-  const visibleBrands = q ? brands.filter(b => {
-    if (b.toLowerCase().includes(q)) return true;
-    for (const m of stats[b].models) {
-      if (m.toLowerCase().includes(q)) return true;
-      const mData = DB.inventory[b].models[m];
-      if (dateMatchesQ(mData.dateIn, q)) return true;
-      const serials = mData.serials || [];
-      if (serials.some(s => s.toLowerCase().includes(q) ||
-          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q))) return true;
-    }
-    return false;
-  }) : brands;
+  // Sidebar search = brand names only. When empty, the list mirrors the
+  // main filters (serial/model text + picked Date In) so brands that
+  // contain matches stay visible.
+  const sideQ = ((document.getElementById('avail-search-side') || {}).value || '').trim().toLowerCase();
+  const mainQ = ((document.getElementById('avail-search') || {}).value || '').trim().toLowerCase();
+  const dq = DB.availDateFilter || '';
+  const visibleBrands = sideQ
+    ? brands.filter(b => b.toLowerCase().includes(sideQ))
+    : (mainQ || dq) ? brands.filter(b => {
+        if (mainQ && b.toLowerCase().includes(mainQ)) return true;
+        for (const m of stats[b].models) {
+          if (mainQ && m.toLowerCase().includes(mainQ)) return true;
+          const mData = DB.inventory[b].models[m];
+          if (dq && dateMatchesQ(mData.dateIn, dq)) return true;
+          const serials = mData.serials || [];
+          if (serials.some(s => (mainQ && s.toLowerCase().includes(mainQ)) ||
+              (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)))) return true;
+        }
+        return false;
+      }) : brands;
 
   const mkRow = (key, o) => {
     const active = DB.availFilter === key;
@@ -7843,7 +7929,7 @@ function soShortDate(d) {
   return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function renderSOBrandSidebar(qOverride) {
+function renderSOBrandSidebar() {
   const listEl = document.getElementById('so-brand-list');
   if (!listEl) return;
   const brandKeys = Object.keys(DB.inventory);
@@ -7852,24 +7938,26 @@ function renderSOBrandSidebar(qOverride) {
   const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
   const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
 
-  // Sidebar mirrors the live search: a brand row stays visible when the
-  // brand name matches OR any of its models/serials match (same set the
-  // center grid renders).
-  const q = (typeof qOverride === 'string'
-    ? qOverride
-    : ((document.getElementById('stockout-search') || {}).value || '')).trim().toLowerCase();
-  const visibleBrands = q ? brands.filter(b => {
-    if (b.toLowerCase().includes(q)) return true;
-    for (const m of stats[b].models) {
-      if (m.toLowerCase().includes(q)) return true;
-      const mData = DB.inventory[b].models[m];
-      if (dateMatchesQ(mData.dateIn, q)) return true;
-      const serials = mData.serials || [];
-      if (serials.some(s => s.toLowerCase().includes(q) ||
-          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q))) return true;
-    }
-    return false;
-  }) : brands;
+  // Sidebar search = brand names only. When empty, the list mirrors the
+  // main filters (serial/model text + picked Date In) so brands that
+  // contain matches stay visible.
+  const sideQ = ((document.getElementById('stockout-search-side') || {}).value || '').trim().toLowerCase();
+  const mainQ = ((document.getElementById('stockout-search') || {}).value || '').trim().toLowerCase();
+  const dq = DB.soDateFilter || '';
+  const visibleBrands = sideQ
+    ? brands.filter(b => b.toLowerCase().includes(sideQ))
+    : (mainQ || dq) ? brands.filter(b => {
+        if (mainQ && b.toLowerCase().includes(mainQ)) return true;
+        for (const m of stats[b].models) {
+          if (mainQ && m.toLowerCase().includes(mainQ)) return true;
+          const mData = DB.inventory[b].models[m];
+          if (dq && dateMatchesQ(mData.dateIn, dq)) return true;
+          const serials = mData.serials || [];
+          if (serials.some(s => (mainQ && s.toLowerCase().includes(mainQ)) ||
+              (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)))) return true;
+        }
+        return false;
+      }) : brands;
 
   const mkRow = (key, o) => {
     const active = DB.soFilter === key;
@@ -7933,8 +8021,6 @@ let _soSavedExpandState = null;
 function handleSOSearchInput(val) {
   const clearBtn = document.getElementById('so-search-clear');
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
-  const side = document.getElementById('stockout-search-side');
-  if (side && side.value !== val) side.value = val;
   // A live query must search across ALL brands — a stale brand/Low filter
   // would silently hide matches (same class of bug as the Track List jump).
   if (val && val.trim() && DB.soFilter !== 'ALL') {
@@ -7945,10 +8031,31 @@ function handleSOSearchInput(val) {
   renderStockOut(val);
 }
 
+/* Sidebar search = brand names only; just re-filters the row list. */
 function handleSOSideSearchInput(val) {
-  const main = document.getElementById('stockout-search');
-  if (main && main.value !== val) main.value = val;
-  handleSOSearchInput(val);
+  renderSOBrandSidebar();
+}
+
+function setSODateFilter(iso) {
+  DB.soDateFilter = iso || '';
+  const clr = document.getElementById('so-datein-clear');
+  if (clr) clr.style.display = iso ? 'flex' : 'none';
+  if (iso && DB.soFilter !== 'ALL') {
+    DB.soFilter = 'ALL';
+    renderBrandPills();
+    updateGlobalBadges();
+  }
+  renderStockOut();
+}
+
+function clearSODateFilter(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  DB.soDateFilter = '';
+  const st = DatePickerState['so-datein-picker'];
+  if (st) { st.picked = false; updateDatePickerDisplay('so-datein-picker'); }
+  const clr = document.getElementById('so-datein-clear');
+  if (clr) clr.style.display = 'none';
+  renderStockOut();
 }
 
 function clearSOSearch() {
@@ -7957,8 +8064,6 @@ function clearSOSearch() {
     input.value = '';
     input.focus();
   }
-  const side = document.getElementById('stockout-search-side');
-  if (side) side.value = '';
   const clearBtn = document.getElementById('so-search-clear');
   if (clearBtn) clearBtn.style.display = 'none';
   renderStockOut('');
@@ -7970,11 +8075,13 @@ function renderStockOut(searchTerm) {
     ? searchTerm 
     : (searchInput ? searchInput.value : '');
   const q = rawSearch.trim().toLowerCase();
+  const dq = DB.soDateFilter || '';
+  const hasFilter = !!(q || dq);
 
   const clearBtn = document.getElementById('so-search-clear');
   if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
 
-  if (q) {
+  if (hasFilter) {
     if (!_soSavedExpandState) {
       _soSavedExpandState = { brands: {}, models: {} };
       for (const bKey in DB.inventory) {
@@ -8025,20 +8132,24 @@ function renderStockOut(searchTerm) {
       let serials = mData.serials || [];
       if (q && !brandMatch) {
         const modelNameMatch = mKey.toLowerCase().includes(q);
-        const modelDateMatch = dateMatchesQ(mData.dateIn, q);
-        serials = serials.filter(s =>
-          s.toLowerCase().includes(q) || modelNameMatch || modelDateMatch ||
-          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, q));
-        if (serials.length === 0) continue;
+        serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
       }
+      if (dq) {
+        const modelDateMatch = dateMatchesQ(mData.dateIn, dq);
+        if (!modelDateMatch) {
+          serials = serials.filter(s =>
+            dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
+        }
+      }
+      if ((q && !brandMatch || dq) && serials.length === 0) continue;
 
       const chipsHtml = serials.map(s => {
         const staged = isSerialInCart(s);
         const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
         const isSerialMatch = q && s.toLowerCase().includes(q);
-        const isDateMatch = q && dateMatchesQ(unitDateIn, q);
+        const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
-        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, q) : escapeHtml(unitDateIn);
+        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
           <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
             <span class="card-glow-bar-left"></span>
@@ -8066,7 +8177,7 @@ function renderStockOut(searchTerm) {
         soBadgeText = `⚠️ Low: ${soCount}`;
       }
 
-      const isModelOpen = q 
+      const isModelOpen = hasFilter 
         ? (mData.soSearchOpen !== undefined ? mData.soSearchOpen : true)
         : (mData.open !== false);
 
@@ -8094,9 +8205,9 @@ function renderStockOut(searchTerm) {
       `;
     }
 
-    if (!modelsHtml && q) return;
+    if (!modelsHtml && hasFilter) return;
 
-    const isBrandOpen = q 
+    const isBrandOpen = hasFilter 
       ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
       : (bData.open !== false);
 
@@ -8120,7 +8231,7 @@ function renderStockOut(searchTerm) {
     container.appendChild(brandSection);
   });
 
-  renderSOBrandSidebar(q);
+  renderSOBrandSidebar();
   applySOSidebarMini();
   renderCartSidebar();
   updateStickyHeaderOffsets();
@@ -9775,7 +9886,7 @@ function closePhotoViewerModal() {
    ========================================================================== */
 const DatePickerState = {};
 
-function initDatePicker(id, initialDateStr = null) {
+function initDatePicker(id, initialDateStr = null, onChange = null) {
   const container = document.getElementById(id);
   if (!container) return;
 
@@ -9790,7 +9901,9 @@ function initDatePicker(id, initialDateStr = null) {
     selectedDate: new Date(initialYear, initialMonth, initialDay),
     viewYear: initialYear,
     viewMonth: initialMonth,
-    inputId: id === 'scan-date-in-picker' ? 'scan-date-in' : (id === 'dispatch-date-out-picker' ? 'cart-date-out' : null)
+    inputId: id === 'scan-date-in-picker' ? 'scan-date-in' : (id === 'dispatch-date-out-picker' ? 'cart-date-out' : null),
+    onChange,
+    picked: !!initialDateStr
   };
 
   updateDatePickerDisplay(id);
@@ -9857,6 +9970,17 @@ function updateDatePickerDisplay(id) {
     if (rel) {
       rel.textContent = relText;
       rel.style.display = relText ? 'inline-block' : 'none';
+    }
+    if (input) input.value = isoText;
+  } else {
+    // Generic filter pickers: show placeholder until a date is picked
+    const disp = document.getElementById(`${id}-display`);
+    const rel = document.getElementById(`${id}-relative`);
+    const input = state.inputId ? document.getElementById(state.inputId) : null;
+    if (disp) disp.textContent = state.picked ? dateText : 'Date In';
+    if (rel) {
+      rel.textContent = state.picked ? relText : '';
+      rel.style.display = (state.picked && relText) ? 'inline-block' : 'none';
     }
     if (input) input.value = isoText;
   }
@@ -9950,9 +10074,11 @@ function selectDatePickerDate(id, y, m, d) {
   state.selectedDate = new Date(y, m, d);
   state.viewYear = y;
   state.viewMonth = m;
+  state.picked = true;
   updateDatePickerDisplay(id);
   const el = document.getElementById(id);
   if (el) el.classList.remove('open');
+  if (state.onChange) state.onChange(formatDateISO(state.selectedDate));
 }
 
 function applyDatePickerPreset(id, preset) {
@@ -9970,9 +10096,11 @@ function applyDatePickerPreset(id, preset) {
   }
   state.viewYear = state.selectedDate.getFullYear();
   state.viewMonth = state.selectedDate.getMonth();
+  state.picked = true;
   updateDatePickerDisplay(id);
   const el = document.getElementById(id);
   if (el) el.classList.remove('open');
+  if (state.onChange) state.onChange(formatDateISO(state.selectedDate));
 }
 
 function changeDatePickerMonth(id, delta) {
@@ -10542,6 +10670,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   const todayStr = new Date().toISOString().split('T')[0];
   initDatePicker('scan-date-in-picker', todayStr);
   initDatePicker('dispatch-date-out-picker', todayStr);
+  initDatePicker('avail-datein-picker', null, setAvailDateFilter);
+  initDatePicker('so-datein-picker', null, setSODateFilter);
 
   switchTab('stock-in');
 });
