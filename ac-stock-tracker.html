@@ -4129,6 +4129,44 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 .rma-link { font-size: 10px; color: var(--green-bright); cursor: pointer; }
 .rma-link:hover { text-decoration: underline; }
 .rma-select-wrap .rma-select { padding-left: 32px; padding-right: 74px; width: 100%; }
+.rma-select-wrap .rma-select-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 74px 8px 34px; font-size: 12px;
+  color: var(--text); outline: none; transition: border-color .15s;
+  font-family: inherit;
+}
+.rma-select-wrap .rma-select-input:focus { border-color: var(--green-bright); }
+.rma-suggest {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  max-height: 240px; overflow-y: auto; z-index: 40;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 10px; box-shadow: 0 14px 34px rgba(0,0,0,.5);
+  padding: 4px;
+}
+.rma-suggest-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 10px; border: none; border-radius: 7px;
+  background: transparent; color: var(--text); cursor: pointer;
+  text-align: left; font-family: inherit; font-size: 11.5px;
+}
+.rma-suggest-item:hover { background: var(--surface3); }
+.rma-suggest-item .rsi-serial {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  color: var(--green-bright); flex-shrink: 0;
+}
+.rma-suggest-item .rsi-meta {
+  flex: 1; min-width: 0; color: var(--text-sub); font-size: 10.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rma-suggest-item .rsi-warr {
+  flex-shrink: 0; font-size: 9px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace; padding: 1px 6px;
+  border-radius: 4px;
+}
+.rma-suggest-item .rsi-warr.active { background: rgba(38,208,124,.12); color: var(--green-bright); }
+.rma-suggest-item .rsi-warr.expiring { background: rgba(245,158,11,.12); color: #f59e0b; }
+.rma-suggest-item .rsi-warr.expired { background: var(--red-badge-bg); color: var(--red-badge-text); }
+.rma-suggest-empty { padding: 14px 12px; font-size: 11px; color: var(--text-sub); text-align: center; }
 .rma-status-pill {
   position: absolute; right: 26px; top: 50%; transform: translateY(-50%);
   padding: 1px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700;
@@ -5280,8 +5318,12 @@ body.theme-light .autocomplete-dropdown {
               </div>
               <div class="search-box-wrap rma-select-wrap">
                 <span class="search-icon">&#128269;</span>
-                <select class="form-select rma-select" id="rma-serial-select" onchange="updateRmaWarrantyCard()"></select>
+                <input type="text" class="rma-select-input" id="rma-serial-input" autocomplete="off" spellcheck="false"
+                       placeholder="Search serial, model, or scan barcode..."
+                       oninput="handleRmaSerialInput(this.value)"
+                       onfocus="handleRmaSerialFocus()">
                 <span class="rma-status-pill" id="rma-status-pill" style="display:none;"></span>
+                <div class="rma-suggest" id="rma-serial-suggest" style="display:none;"></div>
               </div>
               <div id="rma-warranty-card" style="display:none;"></div>
               <div class="rma-meta-strip" id="rma-meta-strip" style="display:none;">
@@ -6006,6 +6048,7 @@ const DB = {
   rmaChip: 'ALL',           // 'ALL' | 'Restocked' | 'Quarantined' | 'Warranty'
   rmaPage: 0,
   rmaPageSize: 25,
+  rmaSelectedSerial: '',    // dispatch unit picked in the inspection form
   lowStockFilter: false,      // toggles showing only models with <= 2 units
   scans: [],        // filled by POST /api/scan or the manual + button
   modelBrands: {},  // model -> brand map (manual entry / ready-serial autofill)
@@ -9403,14 +9446,13 @@ document.addEventListener('click', e => {
 function inspectTrackRow(serial) {
   switchTab('return');
   setTimeout(() => {
-    const sel = document.getElementById('rma-serial-select');
-    if (sel) {
-      sel.value = serial;
-      updateRmaWarrantyCard();
-      sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      sel.style.outline = '2px solid var(--green-bright)';
-      sel.style.outlineOffset = '2px';
-      setTimeout(() => { sel.style.outline = ''; sel.style.outlineOffset = ''; }, 1800);
+    const inp = document.getElementById('rma-serial-input');
+    pickRmaSerial(serial);
+    if (inp) {
+      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      inp.style.outline = '2px solid var(--green-bright)';
+      inp.style.outlineOffset = '2px';
+      setTimeout(() => { inp.style.outline = ''; inp.style.outlineOffset = ''; }, 1800);
     }
     showToast(`Inspecting ${serial} in Return & RMA`, '&#128065;');
   }, 150);
@@ -9569,35 +9611,80 @@ function exportTrackCsv() {
    5. RETURN SCREEN LOGIC
    ========================================================= */
 function renderReturnScreen() {
-  const select = document.getElementById('rma-serial-select');
-  select.innerHTML = '';
-  if (!DB.trackList.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = '\u2014 no dispatched units \u2014';
-    select.appendChild(opt);
-  }
-  DB.trackList.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.serial;
-    const w = r.warranty;
-    const wTxt = w && w.status && w.status !== 'none' ? ` [${w.status.toUpperCase()}]` : '';
-    opt.textContent = `${r.serial} - ${r.model} (${r.customer})${wTxt}`;
-    select.appendChild(opt);
-  });
-
+  const inp = document.getElementById('rma-serial-input');
+  if (inp) inp.value = '';
+  DB.rmaSelectedSerial = '';
+  hideRmaSuggest();
   updateRmaWarrantyCard();
   renderRmaDateOutOptions();
   renderReturnTable();
 }
+
+/* Searchable dispatch-serial picker: type to filter sold units,
+   click a suggestion to load it into the inspection form. */
+function handleRmaSerialFocus() {
+  const inp = document.getElementById('rma-serial-input');
+  renderRmaSuggest(DB.rmaSelectedSerial ? '' : (inp ? inp.value : ''));
+}
+
+function handleRmaSerialInput(v) {
+  DB.rmaSelectedSerial = '';
+  updateRmaWarrantyCard();
+  renderRmaSuggest(v);
+}
+
+function renderRmaSuggest(q) {
+  const box = document.getElementById('rma-serial-suggest');
+  if (!box) return;
+  const ql = (q || '').trim().toLowerCase();
+  const hits = DB.trackList.filter(r =>
+    !ql ||
+    (r.serial || '').toLowerCase().includes(ql) ||
+    (r.model || '').toLowerCase().includes(ql) ||
+    (r.customer || '').toLowerCase().includes(ql)
+  ).slice(0, 60);
+  if (!hits.length) {
+    box.innerHTML = '<div class="rma-suggest-empty">No dispatched units match.</div>';
+  } else {
+    box.innerHTML = hits.map(r => {
+      const ws = (r.warranty && r.warranty.status) || '';
+      const wTag = ws && ws !== 'none' ? `<span class="rsi-warr ${ws}">${ws.toUpperCase()}</span>` : '';
+      const serialHtml = ql && (r.serial || '').toLowerCase().includes(ql) ? markMatchedText(r.serial, q.trim()) : escapeHtml(r.serial);
+      return `<button type="button" class="rma-suggest-item" onmousedown="pickRmaSerial('${escapeJs(r.serial)}')">
+        <span class="rsi-serial">${serialHtml}</span>
+        <span class="rsi-meta">${escapeHtml(r.model)} \u00b7 ${escapeHtml(r.customer)} \u00b7 Out ${escapeHtml(r.dateOut || '\u2014')}</span>
+        ${wTag}
+      </button>`;
+    }).join('');
+  }
+  box.style.display = 'block';
+}
+
+function pickRmaSerial(serial) {
+  const r = DB.trackList.find(x => x.serial === serial);
+  if (!r) return;
+  DB.rmaSelectedSerial = serial;
+  const inp = document.getElementById('rma-serial-input');
+  if (inp) inp.value = `${r.serial} - ${r.model} (${r.customer})`;
+  hideRmaSuggest();
+  updateRmaWarrantyCard();
+}
+
+function hideRmaSuggest() {
+  const box = document.getElementById('rma-serial-suggest');
+  if (box) box.style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.rma-select-wrap')) hideRmaSuggest();
+});
 
 function updateRmaWarrantyCard() {
   const card = document.getElementById('rma-warranty-card');
   const strip = document.getElementById('rma-meta-strip');
   const pill = document.getElementById('rma-status-pill');
   if (!card) return;
-  const sel = document.getElementById('rma-serial-select');
-  const rec = sel && sel.value ? DB.trackList.find(r => r.serial === sel.value) : null;
+  const rec = DB.rmaSelectedSerial ? DB.trackList.find(r => r.serial === DB.rmaSelectedSerial) : null;
 
   if (pill) {
     const ws = rec && rec.warranty && rec.warranty.status;
@@ -9847,8 +9934,7 @@ function printRmaTags() {
 }
 
 async function submitRmaAction(isRestock) {
-  const sel = document.getElementById('rma-serial-select');
-  const serial = sel.value;
+  const serial = DB.rmaSelectedSerial;
   if (!serial) {
     showToast('Please select a valid dispatched unit.');
     return;
