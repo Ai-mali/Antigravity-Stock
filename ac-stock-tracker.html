@@ -3542,7 +3542,8 @@ body.tl-resizing .so-serial-card,
 body.tl-resizing .avail-unit-card *,
 body.tl-resizing .so-serial-card *,
 body.tl-resizing .brand-accordion,
-body.tl-resizing .model-accordion {
+body.tl-resizing .model-accordion,
+body.tl-resizing .tl-cust-item::after {
   animation-play-state: paused !important;
   transition: none !important;
 }
@@ -3658,12 +3659,24 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   font-family: inherit;
   color: var(--text);
   transition: background .12s;
+  position: relative;
+  overflow: hidden;
 }
 .tl-cust-item:hover { background: var(--surface2); }
 .tl-cust-item.active {
   background: var(--surface3);
   box-shadow: inset 3px 0 0 var(--green-bright);
 }
+.tl-cust-item.active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 25%, rgba(38,208,124,.12) 44%, rgba(38,208,124,.30) 50%, rgba(38,208,124,.12) 56%, transparent 75%);
+  transform: translateX(-110%);
+  animation: tlRunLight 2.4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes tlRunLight { to { transform: translateX(110%); } }
 .tl-cust-avatar {
   width: 32px;
   height: 32px;
@@ -8133,7 +8146,7 @@ function renderAvailBrandSidebar() {
   const brandKeys = Object.keys(DB.inventory);
   const stats = {};
   brandKeys.forEach(b => { stats[b] = soBrandStats(b); });
-  const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
+  const brands = brandKeys.slice().sort((a, b) => a.localeCompare(b));
   const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
 
   // Sidebar search = brand names only. When empty, the list mirrors the
@@ -8348,7 +8361,7 @@ function renderSOBrandSidebar() {
   const brandKeys = Object.keys(DB.inventory);
   const stats = {};
   brandKeys.forEach(b => { stats[b] = soBrandStats(b); });
-  const brands = brandKeys.slice().sort((a, b) => stats[b].units - stats[a].units || a.localeCompare(b));
+  const brands = brandKeys.slice().sort((a, b) => a.localeCompare(b));
   const totalUnits = brands.reduce((n, b) => n + stats[b].units, 0);
 
   // Sidebar search = brand names only. When empty, the list mirrors the
