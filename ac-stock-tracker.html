@@ -1156,7 +1156,6 @@ body.theme-light .search-filter-bar {
   flex-shrink: 0;
 }
 .filters-toggle-btn:hover { border-color: var(--border-light); color: var(--text); }
-.filters-toggle-btn .ft-label { font-size: 10.5px; }
 .filters-toggle-btn.on .theme-toggle-thumb { left: 14px; }
 .filters-toggle-btn:not(.on) .theme-toggle-thumb {
   background: var(--text-muted);
@@ -4756,7 +4755,6 @@ body.theme-light .autocomplete-dropdown {
               <button type="button" class="filters-toggle-btn on" id="avail-filters-toggle" onclick="toggleFiltersBar('avail')" title="Show / hide Quick Date &amp; brand filters">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-                <span class="ft-label">Filters</span>
               </button>
             </div>
           </div>
@@ -4832,7 +4830,6 @@ body.theme-light .autocomplete-dropdown {
               <button type="button" class="filters-toggle-btn on" id="so-filters-toggle" onclick="toggleFiltersBar('so')" title="Show / hide Quick Date &amp; brand filters">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-                <span class="ft-label">Filters</span>
               </button>
             </div>
           </div>
@@ -7666,8 +7663,6 @@ function applyFiltersBarState(kind) {
   if (bar) bar.classList.toggle('filters-bar-hidden', hidden);
   if (btn) {
     btn.classList.toggle('on', !hidden);
-    const lbl = btn.querySelector('.ft-label');
-    if (lbl) lbl.textContent = hidden ? 'Hidden' : 'Filters';
     btn.title = hidden ? 'Show Quick Date & brand filters' : 'Hide Quick Date & brand filters';
   }
   updateStickyHeaderOffsets();
