@@ -5081,8 +5081,9 @@ body.theme-light .autocomplete-dropdown {
               <button type="button" id="tl-view-cloud" class="active" onclick="setTrackViewMode('cloud')">Dense Cloud</button>
               <button type="button" id="tl-view-grouped" onclick="setTrackViewMode('grouped')">Grouped by Model</button>
             </div>
-            <button type="button" class="tl-collapse-btn" id="tl-collapse-btn" onclick="toggleTrackBreakdown()" title="Collapse / Expand">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            <button type="button" class="filters-toggle-btn on" id="tl-breakdown-toggle" onclick="toggleTrackBreakdown()" title="Show / hide serial breakdown">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
             </button>
           </div>
         </div>
@@ -9007,6 +9008,8 @@ function setTrackViewMode(mode) {
 function applyTrackBreakdownState() {
   const card = document.getElementById('tl-breakdown-card');
   if (card) card.classList.toggle('tl-breakdown-collapsed', DB.trackBreakdownCollapsed);
+  const btn = document.getElementById('tl-breakdown-toggle');
+  if (btn) btn.classList.toggle('on', !DB.trackBreakdownCollapsed);
 }
 
 function toggleTrackBreakdown() {
