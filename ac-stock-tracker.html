@@ -3243,7 +3243,7 @@ body.theme-light .track-breakdown-chip:hover {
 .tl-collapse-btn svg {
   transition: transform .2s ease;
 }
-#tl-breakdown-card.tl-breakdown-collapsed .tl-tags-body {
+#tl-breakdown-card.tl-breakdown-collapsed {
   display: none;
 }
 .tl-breakdown-collapsed .tl-collapse-btn svg {
@@ -5052,6 +5052,10 @@ body.theme-light .autocomplete-dropdown {
               <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
+          <button type="button" class="filters-toggle-btn on" id="tl-breakdown-toggle" onclick="toggleTrackBreakdown()" title="Show / hide Sold Serial Breakdown">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+          </button>
           <button class="btn btn-ghost btn-sm" onclick="printTrackLabels()" title="Print serial labels">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12-3h12v5H6z"></path></svg>
             Print Labels
@@ -5081,10 +5085,7 @@ body.theme-light .autocomplete-dropdown {
               <button type="button" id="tl-view-cloud" class="active" onclick="setTrackViewMode('cloud')">Dense Cloud</button>
               <button type="button" id="tl-view-grouped" onclick="setTrackViewMode('grouped')">Grouped by Model</button>
             </div>
-            <button type="button" class="filters-toggle-btn on" id="tl-breakdown-toggle" onclick="toggleTrackBreakdown()" title="Show / hide serial breakdown">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-            </button>
+
           </div>
         </div>
         <div class="tl-tags-body">
