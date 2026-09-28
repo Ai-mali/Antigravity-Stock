@@ -2659,6 +2659,26 @@ body.theme-light .unit-action-btn {
   min-width: 0;
 }
 
+/* Freeze the view header (title + search group) on scroll. It pins at the
+   very top; the filter bar sticks just below it (offsets measured in
+   updateStickyHeaderOffsets). margin becomes padding so the header's bg
+   covers the gap — scrolled content can't peek between the two bars. */
+#view-available .view-header,
+#view-stock-out .view-header {
+  position: sticky;
+  top: var(--searchbar-sticky-top, 0);
+  z-index: 36;
+  background: var(--bg-app);
+  margin-bottom: 0 !important;
+  padding-bottom: 14px;
+}
+#view-available .search-filter-bar {
+  top: calc(var(--searchbar-sticky-top, 0px) + var(--vhdr-avail, 0px));
+}
+#view-stock-out .search-filter-bar {
+  top: calc(var(--searchbar-sticky-top, 0px) + var(--vhdr-so, 0px));
+}
+
 #stockout-brands-container {
   display: block;
 }
@@ -4766,7 +4786,7 @@ body.theme-light .autocomplete-dropdown {
 
         <!-- Middle: header + search + model accordions -->
         <div class="stockout-left-col">
-          <div class="view-header" style="margin-bottom:10px; align-items:center;">
+          <div class="view-header" style="align-items:center;">
             <div class="view-title" style="display:flex; align-items:center; gap:8px;">
               Stock Out &amp; Dispatch
               <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
@@ -5923,6 +5943,15 @@ function renderBrandPills() {
    STICKY HEADER OFFSETS AUTO-CALCULATOR
    ========================================================= */
 function updateStickyHeaderOffsets() {
+  // Re-measure whenever a view header resizes (search group wrap, picked
+  // date chip growing taller, window resize) — not just on our own calls.
+  if (!window.__vhdrWatched && window.ResizeObserver) {
+    window.__vhdrWatched = true;
+    ['#view-available .view-header', '#view-stock-out .view-header'].forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el) new ResizeObserver(() => updateStickyHeaderOffsets()).observe(el);
+    });
+  }
   requestAnimationFrame(() => {
     const navHeader = document.querySelector('header');
     // In the desktop shell, <main> is the scroll container (body is locked)
@@ -5937,18 +5966,24 @@ function updateStickyHeaderOffsets() {
 
     document.documentElement.style.setProperty('--searchbar-sticky-top', `${stickyBase}px`);
 
+    const availHdr = document.querySelector('#view-available .view-header');
+    const availHdrH = availHdr ? availHdr.offsetHeight : 0;
+    document.documentElement.style.setProperty('--vhdr-avail', `${availHdrH}px`);
     const availSearchBar = document.querySelector('#view-available .search-filter-bar');
     if (availSearchBar) {
       const barHeight = availSearchBar.offsetHeight;
-      const brandTop = stickyBase + barHeight;
+      const brandTop = stickyBase + availHdrH + barHeight;
       document.documentElement.style.setProperty('--avail-brand-sticky-top', `${brandTop}px`);
       document.documentElement.style.setProperty('--avail-model-sticky-top', `${brandTop + 43}px`);
     }
 
+    const soHdr = document.querySelector('#view-stock-out .view-header');
+    const soHdrH = soHdr ? soHdr.offsetHeight : 0;
+    document.documentElement.style.setProperty('--vhdr-so', `${soHdrH}px`);
     const soSearchBar = document.querySelector('#view-stock-out .search-filter-bar');
     if (soSearchBar) {
       const barHeight = soSearchBar.offsetHeight;
-      const brandTop = stickyBase + barHeight;
+      const brandTop = stickyBase + soHdrH + barHeight;
       document.documentElement.style.setProperty('--stockout-brand-sticky-top', `${brandTop}px`);
       document.documentElement.style.setProperty('--stockout-model-sticky-top', `${brandTop + 43}px`);
     }
