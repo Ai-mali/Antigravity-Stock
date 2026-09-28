@@ -1137,6 +1137,29 @@ body.theme-light .search-filter-bar {
   background: var(--green-bright);
   animation: tl-ping 1.6s infinite ease-in-out;
 }
+
+/* Big unit-count pill beside the view title */
+.units-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  background: var(--green-badge-bg);
+  border: 1px solid var(--green-badge-border);
+  white-space: nowrap;
+}
+.units-pill .units-num {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--green-bright);
+}
+.units-pill .units-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
 /* Filters show/hide switch — same look as the theme toggle */
 .filters-toggle-btn {
   background: var(--surface2);
@@ -4722,7 +4745,7 @@ body.theme-light .autocomplete-dropdown {
             <div>
               <div class="view-title" style="display:flex; align-items:center; gap:10px;">
                 Available Stock
-                <span class="mono" style="font-size:16px; font-weight:800; color:var(--green-bright);"><span id="avail-total-big">115</span> <span style="font-size:11px; font-weight:600; color:var(--text-sub);">Units</span></span>
+                <span class="units-pill"><span class="units-num" id="avail-total-big">115</span><span class="units-lbl">Units</span></span>
                 <span class="arrival-badge" id="avail-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
               </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
