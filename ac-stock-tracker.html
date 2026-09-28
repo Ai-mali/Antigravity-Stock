@@ -1137,24 +1137,33 @@ body.theme-light .search-filter-bar {
   background: var(--green-bright);
   animation: tl-ping 1.6s infinite ease-in-out;
 }
-.mode-wrap {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10px; flex-shrink: 0;
+/* Filters show/hide switch — same look as the theme toggle */
+.filters-toggle-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all .2s ease;
+  font-family: inherit;
+  user-select: none;
+  flex-shrink: 0;
 }
-.mode-label { color: var(--text-sub); font-family: 'JetBrains Mono', Consolas, monospace; }
-.mode-pill {
-  padding: 3px 9px; border-radius: 5px;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+.filters-toggle-btn:hover { border-color: var(--border-light); color: var(--text); }
+.filters-toggle-btn .ft-label { font-size: 10.5px; }
+.filters-toggle-btn.on .theme-toggle-thumb { left: 14px; }
+.filters-toggle-btn:not(.on) .theme-toggle-thumb {
+  background: var(--text-muted);
+  box-shadow: none;
 }
-.mode-pill.full {
-  color: var(--text-sub);
-  background: var(--surface2); border: 1px solid var(--border);
-}
-.mode-pill.filtered {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.45);
-}
+.filters-toggle-btn.on { color: var(--text); }
+.filters-bar-hidden { display: none !important; }
 
 .search-box-wrap input {
   width: 100%;
@@ -4716,7 +4725,6 @@ body.theme-light .autocomplete-dropdown {
                 Available Stock
                 <span class="mono" style="font-size:16px; font-weight:800; color:var(--green-bright);"><span id="avail-total-big">115</span> <span style="font-size:11px; font-weight:600; color:var(--text-sub);">Units</span></span>
                 <span class="arrival-badge" id="avail-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
-                <span class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="avail-mode-pill">FULL INVENTORY</span></span>
               </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
@@ -4745,11 +4753,16 @@ body.theme-light .autocomplete-dropdown {
                   <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
+              <button type="button" class="filters-toggle-btn on" id="avail-filters-toggle" onclick="toggleFiltersBar('avail')" title="Show / hide Quick Date &amp; brand filters">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+                <span class="ft-label">Filters</span>
+              </button>
             </div>
           </div>
 
           <!-- Quick Date chips + Brand Filter Pills -->
-          <div class="search-filter-bar">
+          <div class="search-filter-bar" id="avail-filter-bar">
             <span class="quick-date-label">Quick Date:</span>
             <span class="quick-dates" id="avail-quick-dates"></span>
             <span class="qd-divider"></span>
@@ -4790,7 +4803,6 @@ body.theme-light .autocomplete-dropdown {
             <div class="view-title" style="display:flex; align-items:center; gap:8px;">
               Stock Out &amp; Dispatch
               <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
-              <span class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="so-mode-pill">FULL INVENTORY</span></span>
             </div>
             <div class="hdr-search-side">
               <!-- Grouped search: Date In chip + serial/model input -->
@@ -4817,11 +4829,16 @@ body.theme-light .autocomplete-dropdown {
                   <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
+              <button type="button" class="filters-toggle-btn on" id="so-filters-toggle" onclick="toggleFiltersBar('so')" title="Show / hide Quick Date &amp; brand filters">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+                <span class="ft-label">Filters</span>
+              </button>
             </div>
           </div>
 
           <!-- Quick Date chips + Brand Filter Pills -->
-          <div class="search-filter-bar">
+          <div class="search-filter-bar" id="so-filter-bar">
             <span class="quick-date-label">Quick Date:</span>
             <span class="quick-dates" id="so-quick-dates"></span>
             <span class="qd-divider"></span>
@@ -5817,6 +5834,8 @@ async function refreshData() {
   DB.availSidebarMini = !!(uiPrefs && uiPrefs.availMini);
   DB.soSidebarW = (uiPrefs && uiPrefs.soW) || 0;
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
+  DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
+  DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
   applySidebarWidth('so-sidebar', DB.soSidebarW);
   applySidebarWidth('avail-sidebar', DB.availSidebarW);
   renderBrandPills();
@@ -7630,18 +7649,36 @@ function shortDateLabel(iso) {
 function updateSearchModeUI(kind) {
   const sel = kind === 'avail' ? DB.availDateFilter : DB.soDateFilter;
   const badge = document.getElementById(`${kind}-arrival-badge`);
-  const pill = document.getElementById(`${kind}-mode-pill`);
   const grp = document.getElementById(`${kind}-search-group`);
   const inp = document.getElementById(kind === 'avail' ? 'avail-search' : 'stockout-search');
   if (badge) badge.style.display = sel ? 'inline-flex' : 'none';
-  if (pill) {
-    pill.textContent = sel ? 'DATE-IN FILTERED' : 'FULL INVENTORY';
-    pill.className = 'mode-pill ' + (sel ? 'filtered' : 'full');
-  }
   if (grp) grp.classList.toggle('sg-filtered', !!sel);
   if (inp) inp.placeholder = sel
     ? `Search serial or model within ${shortDateLabel(sel)} batch...`
     : 'Serial or model...';
+}
+
+/* Filters bar show/hide toggle (persists via /api/ui-prefs) */
+function applyFiltersBarState(kind) {
+  const hidden = !!DB[kind === 'avail' ? 'availBarHidden' : 'soBarHidden'];
+  const bar = document.getElementById(kind === 'avail' ? 'avail-filter-bar' : 'so-filter-bar');
+  const btn = document.getElementById(kind === 'avail' ? 'avail-filters-toggle' : 'so-filters-toggle');
+  if (bar) bar.classList.toggle('filters-bar-hidden', hidden);
+  if (btn) {
+    btn.classList.toggle('on', !hidden);
+    const lbl = btn.querySelector('.ft-label');
+    if (lbl) lbl.textContent = hidden ? 'Hidden' : 'Filters';
+    btn.title = hidden ? 'Show Quick Date & brand filters' : 'Hide Quick Date & brand filters';
+  }
+  updateStickyHeaderOffsets();
+}
+
+function toggleFiltersBar(kind) {
+  const key = kind === 'avail' ? 'availBarHidden' : 'soBarHidden';
+  const pref = kind === 'avail' ? 'availBar' : 'soBar';
+  DB[key] = !DB[key];
+  applyFiltersBarState(kind);
+  apiPost('/api/ui-prefs', { prefs: { [pref]: DB[key] } }).catch(() => {});
 }
 
 /* Quick Date chips: All Dates / Today / top batches by units / Custom… */
@@ -8013,6 +8050,7 @@ function renderAvailable(searchTerm) {
   renderAvailBrandSidebar();
   renderQuickDates('avail');
   applyAvailSidebarMini();
+  applyFiltersBarState('avail');
   updateStickyHeaderOffsets();
 }
 
@@ -8546,6 +8584,7 @@ function renderStockOut(searchTerm) {
   renderSOBrandSidebar();
   renderQuickDates('so');
   applySOSidebarMini();
+  applyFiltersBarState('so');
   renderCartSidebar();
   updateStickyHeaderOffsets();
 }
