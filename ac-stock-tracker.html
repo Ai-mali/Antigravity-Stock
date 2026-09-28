@@ -9038,6 +9038,8 @@ async function processCartCheckout() {
     });
     showToast(`Successfully dispatched ${res.sold.length} serials to ${cust}!`);
     DB.stagedCart = [];
+    // Reset the dispatch date to today so a stale picked date can't tag the next sale
+    initDatePicker('dispatch-date-out-picker', new Date().toISOString().slice(0, 10));
     await refreshData();
   } catch (e) {
     showToast('Checkout failed: ' + e.message);
