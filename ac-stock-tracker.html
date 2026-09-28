@@ -11092,9 +11092,14 @@ function changeDatePickerMonth(id, delta) {
   renderDatePickerPopover(id);
 }
 
-// Close datepicker popovers when clicking outside
+// Close datepicker popovers when clicking outside.
+// Use composedPath(): nav clicks rebuild the popover mid-event, leaving
+// e.target detached — closest() would then wrongly report "outside".
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.custom-datepicker')) {
+  const path = e.composedPath ? e.composedPath() : [];
+  const inside = (e.target.closest && e.target.closest('.custom-datepicker'))
+    || path.some(n => n.classList && n.classList.contains('custom-datepicker'));
+  if (!inside) {
     document.querySelectorAll('.custom-datepicker.open').forEach(p => p.classList.remove('open'));
   }
 });
