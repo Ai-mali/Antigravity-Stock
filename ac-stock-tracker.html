@@ -1049,9 +1049,11 @@ body.theme-light .search-filter-bar {
 .hdr-search-side .search-group { flex: 0 1 auto; max-width: 520px; min-width: 235px; }
 .hdr-search-side .search-group .search-box-wrap { min-width: 70px; }
 .hdr-search-side .search-group .search-box-wrap input { padding-right: 6px; min-width: 0; }
-/* Track List search group — two date pickers + text, may wrap on narrow */
-.tl-search-group { flex-wrap: wrap; max-width: 640px; }
-.search-group .search-box-wrap.tl-search { min-width: 130px; max-width: none; flex: 1 1 130px; }
+/* Track List search group — two date pickers + text on ONE row; the input
+   shrinks instead of wrapping to a second line inside the boundary */
+.tl-search-group { flex-wrap: nowrap; max-width: 640px; flex: 0 0 auto; min-width: 0; }
+.search-group .search-box-wrap.tl-search { min-width: 74px; max-width: none; flex: 1 1 74px; }
+.search-group .search-box-wrap.tl-search input { padding-right: 6px; min-width: 0; }
 /* dp-filter inside the group must size to content (base rule fixes it at 172px) */
 .search-group .custom-datepicker.dp-filter { width: auto; flex: 0 0 auto; max-width: none; }
 .search-group.sg-filtered {
