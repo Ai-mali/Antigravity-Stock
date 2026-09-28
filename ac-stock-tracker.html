@@ -2516,6 +2516,8 @@ body.theme-light .model-accordion-header {
   border-radius: 3px;
   padding: 0 2px;
 }
+.tl-row-hit { background: rgba(38, 208, 124, 0.06); }
+.tl-warr-hit { box-shadow: 0 0 0 1px var(--green-bright); border-radius: 99px; display: inline-flex; }
 
 .avail-unit-card .avail-card-header {
   display: flex;
@@ -8965,6 +8967,7 @@ function getFilteredTrackList() {
       (r.serial || '').toLowerCase().includes(q) ||
       (r.model || '').toLowerCase().includes(q) ||
       (r.customer || '').toLowerCase().includes(q) ||
+      resolveItemBrand(r).toLowerCase().includes(q) ||
       (r.warranty && r.warranty.status && r.warranty.status.toLowerCase().includes(q))
     );
   }
@@ -9104,6 +9107,11 @@ function renderTrackTable(list, modelColors) {
   const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>';
   const eyeSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
 
+  const q = (DB.trackSearch || '').trim();
+  const ql = q.toLowerCase();
+  const dIn = DB.trackDateIn || '';
+  const dOut = DB.trackDateOut || '';
+
   tbody.innerHTML = '';
   if (!pageRows.length) {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
@@ -9112,14 +9120,23 @@ function renderTrackTable(list, modelColors) {
     const tr = document.createElement('tr');
     const mc = modelColors[r.model] || 'var(--green-bright)';
     const jsSerial = escapeHtml(escapeJs(r.serial));
+
+    const modelHit = q && ((r.model || '').toLowerCase().includes(ql) || resolveItemBrand(r).toLowerCase().includes(ql));
+    const serialHit = q && (r.serial || '').toLowerCase().includes(ql);
+    const custHit = q && (r.customer || '').toLowerCase().includes(ql);
+    const warrHit = q && r.warranty && (r.warranty.status || '').toLowerCase().includes(ql);
+    const inHit = dIn && dateMatchesQ(r.dateIn, dIn);
+    const outHit = dOut && dateMatchesQ(r.dateOut, dOut);
+    if (modelHit || serialHit || custHit || warrHit || inHit || outHit) tr.className = 'tl-row-hit';
+
     tr.innerHTML = `
       <td class="tl-no-col">${DB.trackPage * size + idx + 1}</td>
-      <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span>${escapeHtml(r.model)}</span></div></td>
-      <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;">${escapeHtml(r.serial)}</td>
-      <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateIn)}</td>
-      <td data-tlcol="dateOut" class="mono">${escapeHtml(r.dateOut)}</td>
-      <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i>${escapeHtml(r.customer)}</span></td>
-      <td data-tlcol="warranty">${trackWarrantyBadge(r)}</td>
+      <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span>${modelHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></div></td>
+      <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</td>
+      <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${inHit ? markMatchedText(r.dateIn, dIn) : escapeHtml(r.dateIn)}</td>
+      <td data-tlcol="dateOut" class="mono">${outHit ? markMatchedText(r.dateOut, dOut) : escapeHtml(r.dateOut)}</td>
+      <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i>${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></td>
+      <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
       <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
       <td data-tlcol="actions" style="text-align:right;"><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
     `;
