@@ -86,6 +86,11 @@ class _WNDCLASSEXW(ctypes.Structure):
                 ("hIconSm", wintypes.HICON)]
 
 
+class _MONITORINFO(ctypes.Structure):
+    _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT),
+                ("rcWork", wintypes.RECT), ("dwFlags", wintypes.DWORD)]
+
+
 _u32 = ctypes.windll.user32
 _g32 = ctypes.windll.gdi32
 _k32 = ctypes.windll.kernel32
@@ -133,6 +138,18 @@ _u32.DrawTextW.argtypes = [wintypes.HDC, ctypes.c_wchar_p, ctypes.c_int,
 _u32.SetProcessDPIAware.restype = wintypes.BOOL
 _u32.FindWindowW.restype = wintypes.HWND
 _u32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+_u32.MonitorFromWindow.restype = wintypes.HMONITOR
+_u32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
+_u32.GetMonitorInfoW.restype = wintypes.BOOL
+_u32.GetMonitorInfoW.argtypes = [wintypes.HMONITOR, ctypes.POINTER(_MONITORINFO)]
+_u32.IsZoomed.restype = wintypes.BOOL
+_u32.IsZoomed.argtypes = [wintypes.HWND]
+_u32.SetWindowPos.restype = wintypes.BOOL
+_u32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int,
+                              ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                              wintypes.UINT]
+_u32.GetWindowRect.restype = wintypes.BOOL
+_u32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
 _k32.OpenProcess.restype = wintypes.HANDLE
 _k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
 _k32.TerminateProcess.restype = wintypes.BOOL
@@ -514,10 +531,46 @@ class DesktopApi:
         if self._window:
             self._window.minimize()
 
+    def _get_work_area(self, hwnd):
+        """Rect of the monitor's work area (screen minus taskbar) holding the window."""
+        try:
+            MONITOR_DEFAULTTONEAREST = 2
+            hmon = _u32.MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST)
+            mi = _MONITORINFO()
+            mi.cbSize = ctypes.sizeof(_MONITORINFO)
+            if _u32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
+                r = mi.rcWork
+                return int(r.left), int(r.top), int(r.right - r.left), int(r.bottom - r.top)
+        except Exception:
+            pass
+        return None
+
+    def _is_zoomed(self, hwnd):
+        try:
+            return bool(hwnd and _u32.IsZoomed(hwnd))
+        except Exception:
+            return False
+
     def maximize(self):
-        """Snap-friendly maximize: only maximizes, never restores."""
+        """Snap-friendly maximize: sizes to the work area so the taskbar stays
+        visible (frameless windows otherwise cover it)."""
         if self._window and not getattr(self._window, '_is_maximized', False):
             try:
+                hwnd = self.get_hwnd()
+                if hwnd:
+                    if self._is_zoomed(hwnd):
+                        self._window._is_maximized = True
+                        return True
+                    wa = self._get_work_area(hwnd)
+                    if wa:
+                        rect = wintypes.RECT()
+                        _u32.GetWindowRect(hwnd, ctypes.byref(rect))
+                        self._window._restore_bounds = (
+                            int(rect.left), int(rect.top),
+                            int(rect.right - rect.left), int(rect.bottom - rect.top))
+                        _u32.SetWindowPos(hwnd, 0, wa[0], wa[1], wa[2], wa[3], 0x0004)
+                        self._window._is_maximized = True
+                        return True
                 self._window.maximize()
                 self._window._is_maximized = True
                 return True
@@ -527,36 +580,43 @@ class DesktopApi:
 
     def restore(self):
         """Snap-friendly restore: only restores a maximized window."""
-        if self._window and getattr(self._window, '_is_maximized', False):
-            try:
+        if not self._window:
+            return False
+        hwnd = self.get_hwnd()
+        if not getattr(self._window, '_is_maximized', False) and not self._is_zoomed(hwnd):
+            return False
+        try:
+            if hwnd:
+                if self._is_zoomed(hwnd):
+                    _u32.ShowWindow(hwnd, 9)  # SW_RESTORE
+                else:
+                    rb = getattr(self._window, '_restore_bounds', None)
+                    if rb:
+                        _u32.SetWindowPos(hwnd, 0, rb[0], rb[1], rb[2], rb[3], 0x0004)
+                    else:
+                        self._window.restore()
+            else:
                 self._window.restore()
-                self._window._is_maximized = False
-                return True
-            except Exception:
-                pass
+            self._window._is_maximized = False
+            return True
+        except Exception:
+            pass
         return False
 
     def is_maximized(self):
-        return bool(self._window and getattr(self._window, '_is_maximized', False))
+        if not self._window:
+            return False
+        if getattr(self._window, '_is_maximized', False):
+            return True
+        return self._is_zoomed(self.get_hwnd())
 
     def toggle_maximize(self):
-        if self._window:
-            try:
-                if getattr(self._window, '_is_maximized', False):
-                    self._window.restore()
-                    self._window._is_maximized = False
-                    return False
-                else:
-                    self._window.maximize()
-                    self._window._is_maximized = True
-                    return True
-            except Exception:
-                try:
-                    self._window.maximize()
-                    return True
-                except Exception:
-                    pass
-        return False
+        if not self._window:
+            return False
+        if self.is_maximized():
+            self.restore()
+            return False
+        return bool(self.maximize())
 
     def close(self):
         if self._window:
