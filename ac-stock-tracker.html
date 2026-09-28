@@ -738,6 +738,7 @@ main {
   justify-content: space-between;
   margin-bottom: 16px;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .view-title {
@@ -1028,16 +1029,20 @@ body.theme-light .search-filter-bar {
   border: none;
 }
 
-/* Full-width search row (mock: chip + input in one bar) */
-.search-group.sg-wide {
-  flex: 1 1 auto;
-  max-width: none;
+/* Header right side: mode pill + search group on the title row */
+.hdr-search-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   min-width: 0;
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 4px;
-  border-radius: 11px;
+  margin-left: auto;
 }
+.hdr-search-side .search-group { flex: 0 1 auto; max-width: 520px; min-width: 340px; }
+.hdr-search-side .search-group .search-box-wrap { min-width: 130px; }
+/* dp-filter inside the group must size to content (base rule fixes it at 172px) */
+.search-group .custom-datepicker.dp-filter { width: auto; flex: 0 0 auto; max-width: none; }
 .search-group.sg-filtered {
   border-color: rgba(38, 208, 124, 0.5);
   box-shadow: 0 0 0 1px rgba(38, 208, 124, 0.22);
@@ -1066,7 +1071,7 @@ body.theme-light .search-filter-bar {
 }
 .dp-filter.picked .datepicker-trigger:hover { border-color: #fbbf24 !important; }
 .dp-filter.picked .dp-date-caption { color: rgba(251, 191, 36, 0.9); }
-.dp-filter.picked .dp-date-text { color: #fff; font-weight: 700; font-family: 'JetBrains Mono', Consolas, monospace; }
+.dp-filter.picked .dp-date-text { color: #fff; font-weight: 700; font-family: 'JetBrains Mono', Consolas, monospace; overflow: visible; text-overflow: clip; }
 .dp-filter.picked .dp-icon-cal { color: #fbbf24; }
 
 /* Quick Date chip row (shares the pills bar) */
@@ -4683,33 +4688,34 @@ body.theme-light .autocomplete-dropdown {
                 Available Stock
                 <span class="mono" style="font-size:16px; font-weight:800; color:var(--green-bright);"><span id="avail-total-big">115</span> <span style="font-size:11px; font-weight:600; color:var(--text-sub);">Units</span></span>
                 <span class="arrival-badge" id="avail-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
+                <span class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="avail-mode-pill">FULL INVENTORY</span></span>
               </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
-            <div class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="avail-mode-pill">FULL INVENTORY</span></div>
-          </div>
-
-          <!-- Grouped search: Date In chip + serial/model input -->
-          <div class="search-group sg-wide" id="avail-search-group">
-            <div class="custom-datepicker dp-filter" id="avail-datein-picker">
-              <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
-                <span class="dp-icon-cal">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                </span>
-                <span class="dp-date-stack">
-                  <span class="dp-date-caption" id="avail-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
-                  <span class="dp-date-line"><span class="dp-date-text" id="avail-datein-picker-display">Date In</span><span class="dp-batch" id="avail-datein-picker-batch"></span></span>
-                </span>
-                <span class="dp-badge-relative" id="avail-datein-picker-relative" style="display:none;"></span>
-                <span class="dp-icon-chevron">&#9662;</span>
-              </button>
-              <button type="button" class="dp-filter-clear" id="avail-datein-clear" onclick="clearAvailDateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
-              <div class="datepicker-popover" id="avail-datein-picker-popover"></div>
-            </div>
-            <div class="search-box-wrap">
-              <span class="search-icon">&#128269;</span>
-              <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
-              <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
+            <div class="hdr-search-side">
+              <!-- Grouped search: Date In chip + serial/model input -->
+              <div class="search-group" id="avail-search-group">
+                <div class="custom-datepicker dp-filter" id="avail-datein-picker">
+                  <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
+                    <span class="dp-icon-cal">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </span>
+                    <span class="dp-date-stack">
+                      <span class="dp-date-caption" id="avail-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
+                      <span class="dp-date-line"><span class="dp-date-text" id="avail-datein-picker-display">Date In</span><span class="dp-batch" id="avail-datein-picker-batch"></span></span>
+                    </span>
+                    <span class="dp-badge-relative" id="avail-datein-picker-relative" style="display:none;"></span>
+                    <span class="dp-icon-chevron">&#9662;</span>
+                  </button>
+                  <button type="button" class="dp-filter-clear" id="avail-datein-clear" onclick="clearAvailDateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
+                  <div class="datepicker-popover" id="avail-datein-picker-popover"></div>
+                </div>
+                <div class="search-box-wrap">
+                  <span class="search-icon">&#128269;</span>
+                  <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
+                  <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -4755,31 +4761,32 @@ body.theme-light .autocomplete-dropdown {
             <div class="view-title" style="display:flex; align-items:center; gap:8px;">
               Stock Out &amp; Dispatch
               <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
+              <span class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="so-mode-pill">FULL INVENTORY</span></span>
             </div>
-            <div class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="so-mode-pill">FULL INVENTORY</span></div>
-          </div>
-
-          <!-- Grouped search: Date In chip + serial/model input -->
-          <div class="search-group sg-wide" id="so-search-group">
-            <div class="custom-datepicker dp-filter" id="so-datein-picker">
-              <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
-                <span class="dp-icon-cal">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                </span>
-                <span class="dp-date-stack">
-                  <span class="dp-date-caption" id="so-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
-                  <span class="dp-date-line"><span class="dp-date-text" id="so-datein-picker-display">Date In</span><span class="dp-batch" id="so-datein-picker-batch"></span></span>
-                </span>
-                <span class="dp-badge-relative" id="so-datein-picker-relative" style="display:none;"></span>
-                <span class="dp-icon-chevron">&#9662;</span>
-              </button>
-              <button type="button" class="dp-filter-clear" id="so-datein-clear" onclick="clearSODateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
-              <div class="datepicker-popover" id="so-datein-picker-popover"></div>
-            </div>
-            <div class="search-box-wrap">
-              <span class="search-icon">&#128269;</span>
-              <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
-              <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
+            <div class="hdr-search-side">
+              <!-- Grouped search: Date In chip + serial/model input -->
+              <div class="search-group" id="so-search-group">
+                <div class="custom-datepicker dp-filter" id="so-datein-picker">
+                  <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
+                    <span class="dp-icon-cal">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </span>
+                    <span class="dp-date-stack">
+                      <span class="dp-date-caption" id="so-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
+                      <span class="dp-date-line"><span class="dp-date-text" id="so-datein-picker-display">Date In</span><span class="dp-batch" id="so-datein-picker-batch"></span></span>
+                    </span>
+                    <span class="dp-badge-relative" id="so-datein-picker-relative" style="display:none;"></span>
+                    <span class="dp-icon-chevron">&#9662;</span>
+                  </button>
+                  <button type="button" class="dp-filter-clear" id="so-datein-clear" onclick="clearSODateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
+                  <div class="datepicker-popover" id="so-datein-picker-popover"></div>
+                </div>
+                <div class="search-box-wrap">
+                  <span class="search-icon">&#128269;</span>
+                  <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
+                  <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
+                </div>
+              </div>
             </div>
           </div>
 
