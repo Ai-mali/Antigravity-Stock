@@ -71,27 +71,32 @@ def parse_date_safe(d_str: str) -> datetime.date | None:
     return None
 
 
+def _add_months(d: datetime.date, months: int) -> datetime.date:
+    try:
+        year = d.year + (d.month + months - 1) // 12
+        month = (d.month + months - 1) % 12 + 1
+        day = min(d.day, 28) if month == 2 else min(d.day, 30) if month in (4, 6, 9, 11) else d.day
+        return datetime.date(year, month, day)
+    except Exception:
+        return d + datetime.timedelta(days=int(months * 30.4375))
+
+
 def compute_warranty(date_out_str: str, months: int = 12) -> dict:
     """Calculate warranty status, expiry date, and days remaining from Date Out."""
     d = parse_date_safe(date_out_str)
     if not d:
         return {"status": "none", "expiry": "", "daysRemaining": None, "months": months}
-    try:
-        year = d.year + (d.month + months - 1) // 12
-        month = (d.month + months - 1) % 12 + 1
-        day = min(d.day, 28) if month == 2 else min(d.day, 30) if month in (4, 6, 9, 11) else d.day
-        expiry = datetime.date(year, month, day)
-    except Exception:
-        expiry = d + datetime.timedelta(days=int(months * 30.4375))
+    expiry = _add_months(d, months)
+    warn_start = _add_months(d, months - 1)  # expiring window: last calendar month
 
     today = datetime.date.today()
     days_left = (expiry - today).days
-    if days_left > 30:
-        status = "active"
-    elif days_left >= 0:
+    if today >= expiry:
+        status = "expired"
+    elif today >= warn_start:
         status = "expiring"
     else:
-        status = "expired"
+        status = "active"
 
     return {
         "status": status,
