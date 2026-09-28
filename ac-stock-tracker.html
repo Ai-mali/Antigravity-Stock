@@ -8038,7 +8038,7 @@ function renderAvailable(searchTerm) {
       `;
     }
 
-    if (!modelsHtml && (hasFilter || DB.lowStockFilter)) return;
+    if (!brandUnits || !modelsHtml) return;
 
     // If searching, auto-expand matching brand unless user manually toggled it during this search
     const isBrandOpen = hasFilter 
@@ -8622,7 +8622,7 @@ function renderStockOut(searchTerm) {
       `;
     }
 
-    if (!modelsHtml && hasFilter) return;
+    if (!brandUnits || !modelsHtml) return;
 
     const isBrandOpen = hasFilter 
       ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
