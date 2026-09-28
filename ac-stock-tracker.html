@@ -990,6 +990,44 @@ body.theme-light .search-filter-bar {
   min-width: 260px;
 }
 
+/* Grouped search field: one boundary around text search + date picker */
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 1 400px;
+  max-width: 400px;
+  min-width: 250px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface2);
+  padding: 3px;
+}
+.search-group:focus-within { border-color: var(--green-bright); }
+.search-group .search-box-wrap { flex: 1 1 auto; min-width: 0; }
+.search-group .search-box-wrap input {
+  border: none;
+  background: transparent;
+  padding: 6px 12px 6px 34px;
+}
+.search-group .search-box-wrap input:focus { border: none; }
+.search-group-divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  margin: 5px 0;
+  background: var(--border);
+}
+.search-group .dp-filter { width: auto; flex: 0 0 auto; }
+.search-group .dp-filter .datepicker-trigger {
+  border: none;
+  background: transparent;
+  padding: 5px 8px;
+}
+.search-group .dp-filter .datepicker-trigger:hover {
+  background: rgba(38, 208, 124, 0.08);
+  border: none;
+}
+
 .search-box-wrap input {
   width: 100%;
   background: var(--surface2);
@@ -4546,12 +4584,13 @@ body.theme-light .autocomplete-dropdown {
               </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div class="search-box-wrap" style="width:210px; flex:0 0 210px;">
+            <div class="search-group">
+              <div class="search-box-wrap">
                 <span class="search-icon">&#128269;</span>
                 <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
                 <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
               </div>
+              <span class="search-group-divider"></span>
               <div class="custom-datepicker dp-filter" id="avail-datein-picker">
                 <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
                   <span class="dp-icon-cal">
@@ -4604,12 +4643,13 @@ body.theme-light .autocomplete-dropdown {
         <div class="stockout-left-col">
           <div class="view-header" style="margin-bottom:10px; align-items:center;">
             <div class="view-title">Stock Out &amp; Dispatch</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div class="search-box-wrap" style="width:210px; flex:0 0 210px;">
+            <div class="search-group">
+              <div class="search-box-wrap">
                 <span class="search-icon">&#128269;</span>
                 <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
                 <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
               </div>
+              <span class="search-group-divider"></span>
               <div class="custom-datepicker dp-filter" id="so-datein-picker">
                 <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
                   <span class="dp-icon-cal">
