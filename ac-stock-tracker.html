@@ -3511,6 +3511,7 @@ body.theme-light .tl-status-badge {
 .tl-sidebar {
   width: 300px;
   flex-shrink: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -3580,19 +3581,6 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   font-size: 11.5px;
 }
 .tl-side-search .search-icon { left: 12px; font-size: 12px; }
-.tl-side-avatars { display: flex; flex-shrink: 0; }
-.tl-side-avatars span {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid var(--surface);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  margin-left: -6px;
-}
 
 /* Sidebar tab chips (Customers | Warranty) — own darker strip */
 .tl-side-tabs {
@@ -3735,7 +3723,6 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 /* Mini rail mode — avatars only */
 .tl-sidebar.tl-side-mini { width: 60px; }
 .tl-side-mini .tl-side-search,
-.tl-side-mini .tl-side-avatars,
 .tl-side-mini .tl-side-tab span,
 .tl-side-mini .tl-side-tab b,
 .tl-side-mini .tl-cust-meta { display: none; }
@@ -4998,7 +4985,6 @@ body.theme-light .autocomplete-dropdown {
             <span class="search-icon">&#128269;</span>
             <input type="text" id="track-search-side" oninput="handleTrackSideSearchInput(this.value)" placeholder="Search customer...">
           </div>
-          <div class="tl-side-avatars" id="tl-side-avatars"></div>
         </div>
         <div class="tl-side-tabs">
           <button type="button" class="tl-side-tab active" id="tl-side-tab-cust" onclick="setTrackSideTab('customers')">
@@ -5012,6 +4998,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div class="tl-side-list" id="tl-customer-list"></div>
         <div class="tl-side-list" id="tl-warranty-list" style="display:none;"></div>
+        <div class="tl-side-resizer" id="tl-side-resizer" title="Drag to resize"></div>
       </aside>
 
       <!-- RIGHT: records workspace -->
@@ -5910,10 +5897,12 @@ async function refreshData() {
   DB.availSidebarMini = !!(uiPrefs && uiPrefs.availMini);
   DB.soSidebarW = (uiPrefs && uiPrefs.soW) || 0;
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
+  DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
   DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
   DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
   applySidebarWidth('so-sidebar', DB.soSidebarW);
   applySidebarWidth('avail-sidebar', DB.availSidebarW);
+  applySidebarWidth('tl-sidebar', DB.trackSidebarW);
   renderBrandPills();
   markDuplicateScans();
   renderAll();
@@ -8269,7 +8258,8 @@ function initSideResizer(handleId, sidebarId, prefKey, miniKey, applyMini) {
       handle.classList.remove('dragging');
       const prefs = {};
       prefs[prefKey] = curW >= SIDE_W_MIN ? curW : 0;
-      prefs[miniKey === 'availSidebarMini' ? 'availMini' : 'soMini'] = DB[miniKey];
+      const MINI_PREF = { availSidebarMini: 'availMini', soSidebarMini: 'soMini', trackSidebarMini: 'tlMini' };
+      prefs[MINI_PREF[miniKey] || miniKey] = DB[miniKey];
       apiPost('/api/ui-prefs', { prefs }).catch(() => {});
       document.removeEventListener('mouseup', onUp);
     };
@@ -9318,15 +9308,6 @@ function renderTrackSidebar() {
         <span class="tl-cust-line2"><span class="tl-cust-sub">&#128230; Purchased: <b>${units} unit${units === 1 ? '' : 's'}</b></span><span class="tl-cust-date">${escapeHtml(last || '—')}</span></span>
       </span>
     </button>`;
-
-  // Stacked avatar preview beside the search (top 2 customers)
-  const av = document.getElementById('tl-side-avatars');
-  if (av) {
-    av.innerHTML = customers.slice(0, 2).map(c => {
-      const col = trackCustomerColor(c.name);
-      return `<span style="background:${col}; color:#0b1015;">${escapeHtml(trackCustomerInitials(c.name))}</span>`;
-    }).join('');
-  }
 
   const sq = (DB.trackSideSearch || '').trim().toLowerCase();
   const visCust = sq ? customers.filter(c => (c.name || '').toLowerCase().includes(sq)) : customers;
@@ -11183,6 +11164,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initScanResultsDragSelect();
   initSideResizer('avail-side-resizer', 'avail-sidebar', 'availW', 'availSidebarMini', applyAvailSidebarMini);
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
+  initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
   
   // Initialize Custom Datepickers with today's date
   const todayStr = new Date().toISOString().split('T')[0];
