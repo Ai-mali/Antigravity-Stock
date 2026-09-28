@@ -2,8 +2,8 @@
 
 Commit Hash: 
 
-5bda341
-Commit Description: Track List split search + filters switch + sticky header + auto-hide text search + hide empty brands
+1923c50
+Commit Description: A-Z sidebar + running light + Track List resizer/avatars + 25-row default + track search highlighting
 Date: 2026-09-28 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
@@ -49,4 +49,9 @@ Filters Switch: Funnel-icon slide switch (theme-toggle style) at the end of each
 Track List Split Search: Sidebar search = customer names only; main group = [Date In picker][Date Out picker][serial/model/customer text] — dates filter independently and combine with text; group never wraps internally; Batch Dispatch button removed; Sold Serial Breakdown card has a persistent hide/show switch that removes the whole card (tlCollapsed).
 Date-Only Mode: Activating any date filter auto-hides the serial/model text input and clears its query; the input returns when all dates are cleared — all three screens (4f511f0).
 Empty Brands Hidden: Zero-unit brands (BIN, VOLVO) render in the sidebar but not as hollow accordions in the middle column (5bda341).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 5bda341"
+A-Z Sidebar: Brand lists sort alphabetically (0-9 then A-Z) instead of by units; All Brands stays pinned on top (e3bc5d5).
+Running Light: Active sidebar row gets a cyan (#00d5ff) sheen sweeping back and forth (1.7s), pauses during drag-resize; applies to brand + customer sidebars (e3bc5d5 → a4e85a2).
+Track List Sidebar: Same drag-resize handle as brand sidebars (180-440px, snap-to-mini, tlW pref); stacked customer avatars beside search removed (eb6e257).
+Pagination: Track List defaults to 25 rows/page; 10/25/50/100 selectable (7b66985).
+Track List Highlighting: Text search marks matching letters in model/serial/customer cells, rings warranty badges, tints matching rows; Date In/Out pickers mark date cells; brand names are searchable via the model cell (1923c50).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 1923c50"
