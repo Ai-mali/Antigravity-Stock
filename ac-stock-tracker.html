@@ -1005,6 +1005,14 @@ body.theme-light .search-filter-bar {
   padding: 3px;
 }
 .search-group:focus-within { border-color: var(--green-bright); }
+.sg-lead-icon {
+  flex: 0 0 auto;
+  padding-left: 8px;
+  color: var(--text-sub);
+  font-size: 12px;
+  pointer-events: none;
+  line-height: 1;
+}
 .search-group .search-box-wrap { flex: 1 1 auto; min-width: 0; }
 .search-group .search-box-wrap input {
   border: none;
@@ -4695,6 +4703,7 @@ body.theme-light .autocomplete-dropdown {
             <div class="hdr-search-side">
               <!-- Grouped search: Date In chip + serial/model input -->
               <div class="search-group" id="avail-search-group">
+                <span class="sg-lead-icon">&#128269;</span>
                 <div class="custom-datepicker dp-filter" id="avail-datein-picker">
                   <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
                     <span class="dp-icon-cal">
@@ -4766,6 +4775,7 @@ body.theme-light .autocomplete-dropdown {
             <div class="hdr-search-side">
               <!-- Grouped search: Date In chip + serial/model input -->
               <div class="search-group" id="so-search-group">
+                <span class="sg-lead-icon">&#128269;</span>
                 <div class="custom-datepicker dp-filter" id="so-datein-picker">
                   <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
                     <span class="dp-icon-cal">
