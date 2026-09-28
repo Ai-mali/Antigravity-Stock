@@ -5837,7 +5837,7 @@ const DB = {
   availDateFilter: '',      // picked Date In (ISO) for Available Stock
   soDateFilter: '',         // picked Date In (ISO) for Stock Out
   trackPage: 0,           // Fulfillment Records Log pagination
-  trackPageSize: 10,
+  trackPageSize: 25,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
@@ -9179,7 +9179,7 @@ function setTrackPage(p) {
 }
 
 function setTrackPageSize(v) {
-  DB.trackPageSize = parseInt(v, 10) || 10;
+  DB.trackPageSize = parseInt(v, 10) || 25;
   DB.trackPage = 0;
   renderTrackList(undefined, true);
 }
