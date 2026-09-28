@@ -1192,6 +1192,10 @@ body.theme-light .search-filter-bar {
 .filters-toggle-btn.on { color: var(--text); }
 .filters-bar-hidden { display: none !important; }
 
+/* Date filter active → text search box hides inside the group */
+.search-group.date-only .search-box-wrap,
+.search-group.date-only .sg-lead-icon { display: none; }
+
 .search-box-wrap input {
   width: 100%;
   background: var(--surface2);
@@ -7711,7 +7715,13 @@ function updateSearchModeUI(kind) {
   const grp = document.getElementById(`${kind}-search-group`);
   const inp = document.getElementById(kind === 'avail' ? 'avail-search' : 'stockout-search');
   if (badge) badge.style.display = sel ? 'inline-flex' : 'none';
-  if (grp) grp.classList.toggle('sg-filtered', !!sel);
+  if (grp) {
+    grp.classList.toggle('sg-filtered', !!sel);
+    grp.classList.toggle('date-only', !!sel);
+  }
+  // Date filter replaces text search — clear any typed query so nothing
+  // keeps filtering invisibly while the box is hidden.
+  if (sel && inp && inp.value) { inp.value = ''; inp.dispatchEvent(new Event('input')); }
   if (inp) inp.placeholder = sel
     ? `Search serial or model within ${shortDateLabel(sel)} batch...`
     : 'Serial or model...';
@@ -8836,11 +8846,36 @@ function handleTrackSideSearchInput(val) {
 }
 
 function handleTrackSearchInput(val) {
+  // Programmatic searches (serial jump, breakdown chip) must not be hidden
+  // by a stale date filter — drop the pickers before applying the query.
+  if (val && val.trim() && (DB.trackDateIn || DB.trackDateOut)) {
+    DB.trackDateIn = ''; DB.trackDateOut = '';
+    ['track-datein-picker', 'track-dateout-picker'].forEach(pid => {
+      const st = DatePickerState[pid];
+      if (st) { st.picked = false; updateDatePickerDisplay(pid); }
+    });
+    ['track-datein-clear', 'track-dateout-clear'].forEach(id => {
+      const c = document.getElementById(id);
+      if (c) c.style.display = 'none';
+    });
+  }
   DB.trackSearch = val;
   syncTrackSearchInputs(val);
+  syncTrackDateOnly();
   const clearBtn = document.getElementById('track-search-clear');
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
   renderTrackList();
+}
+
+/* While either track date filter is on, the text box is redundant — hide
+   it inside the group and clear any leftover query so nothing filters
+   invisibly. */
+function syncTrackDateOnly() {
+  const grp = document.getElementById('track-search-group');
+  const active = !!(DB.trackDateIn || DB.trackDateOut);
+  if (grp) grp.classList.toggle('date-only', active);
+  const inp = document.getElementById('track-search');
+  if (active && inp && inp.value) { inp.value = ''; inp.dispatchEvent(new Event('input')); }
 }
 
 function setTrackDateInFilter(iso) {
@@ -8849,6 +8884,7 @@ function setTrackDateInFilter(iso) {
   if (st) updateDatePickerDisplay('track-datein-picker');
   const clr = document.getElementById('track-datein-clear');
   if (clr) clr.style.display = iso ? 'flex' : 'none';
+  syncTrackDateOnly();
   renderTrackList();
 }
 
@@ -8858,6 +8894,7 @@ function setTrackDateOutFilter(iso) {
   if (st) updateDatePickerDisplay('track-dateout-picker');
   const clr = document.getElementById('track-dateout-clear');
   if (clr) clr.style.display = iso ? 'flex' : 'none';
+  syncTrackDateOnly();
   renderTrackList();
 }
 
@@ -8868,6 +8905,7 @@ function clearTrackDateInFilter(e) {
   if (st) { st.picked = false; updateDatePickerDisplay('track-datein-picker'); }
   const clr = document.getElementById('track-datein-clear');
   if (clr) clr.style.display = 'none';
+  syncTrackDateOnly();
   renderTrackList();
 }
 
@@ -8878,6 +8916,7 @@ function clearTrackDateOutFilter(e) {
   if (st) { st.picked = false; updateDatePickerDisplay('track-dateout-picker'); }
   const clr = document.getElementById('track-dateout-clear');
   if (clr) clr.style.display = 'none';
+  syncTrackDateOnly();
   renderTrackList();
 }
 
