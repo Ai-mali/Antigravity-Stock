@@ -592,6 +592,39 @@ class StockStore:
         self.save(backup=True)
         return rec, None
 
+    def release_quarantine(self, serial: str, date: str) -> tuple:
+        """Release a quarantined unit back to In Stock after inspection.
+        Flips the latest 'Quarantined' returns entry to 'Restocked' so the
+        unit keeps its second-hand flag. Returns (record, error)."""
+        key = serial.strip().lower()
+        rec = next((r for r in self.records
+                    if str(r["Serial"]).strip().lower() == key
+                    and str(r["Status"]).strip() == QUARANTINED), None)
+        if rec is None:
+            return None, "No quarantined unit found for serial " + serial
+        row = rec["_row"]
+        rec["Status"] = IN_STOCK
+        rec["Customer"] = ""
+        rec["Date Out"] = ""
+        self.recs.cell(row=row, column=5, value=IN_STOCK)
+        self.recs.cell(row=row, column=6, value="")
+        self.recs.cell(row=row, column=7, value="")
+        # Resolve the latest open quarantine in the returns registry
+        ret = next((r for r in reversed(self.returns)
+                    if str(r["Serial"]).strip().lower() == key
+                    and str(r.get("Action", "")).strip() == "Quarantined"), None)
+        if ret is not None:
+            ret["Action"] = "Restocked"
+            stamp = f"Released from quarantine {date}"
+            ret["Notes"] = (str(ret.get("Notes", "")).strip() + " | " + stamp).strip(" |")
+            ret_row = self.returns.index(ret) + 2
+            self.ret_sheet.cell(row=ret_row, column=6, value=str(ret["Notes"]))
+            self.ret_sheet.cell(row=ret_row, column=7, value="Restocked")
+        self.log_activity("Quarantine Released", model=str(rec["Model"]), count=1,
+                          details=f"Serial: {rec['Serial']} | back to stock {date}")
+        self.save(backup=True)
+        return rec, None
+
     def update_unit(self, old_serial: str, new_serial: str, model: str,
                     brand: str = "", date_in: str = "") -> tuple[dict | None, str]:
         """Edit an In-Stock unit's serial, model, brand, or date_in.

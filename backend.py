@@ -269,6 +269,21 @@ def create_return(body: ReturnBody):
     return {"ok": True}
 
 
+class ReleaseQuarantineBody(BaseModel):
+    serial: str
+
+
+@app.post("/api/returns/release")
+def release_quarantine(body: ReleaseQuarantineBody):
+    _fresh()
+    today = datetime.date.today().strftime("%m/%d/%Y")
+    rec, err = store.release_quarantine(body.serial, today)
+    if err:
+        return JSONResponse({"ok": False, "error": err}, status_code=404)
+    _saved()
+    return {"ok": True}
+
+
 class UpdateUnitBody(BaseModel):
     old_serial: str
     new_serial: str

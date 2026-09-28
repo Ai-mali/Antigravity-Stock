@@ -9836,6 +9836,10 @@ function renderReturnTable() {
     const badge = r.action === 'Restocked'
       ? '<span class="rma-action-pill restocked">Restocked</span>'
       : '<span class="rma-action-pill quarantined">Quarantined</span>';
+    const releaseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+    const releaseBtn = r.action === 'Quarantined'
+      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeJs(r.serial)}')" style="color:#f59e0b;">${releaseSvg}</button>`
+      : '';
     tr.innerHTML = `
       <td class="mono" style="font-weight:700; color:var(--green-bright);">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</td>
       <td style="font-weight:600;">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</td>
@@ -9845,6 +9849,7 @@ function renderReturnTable() {
       <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
       <td style="text-align:center;">${badge}</td>
       <td style="text-align:right; white-space:nowrap;">
+        ${releaseBtn}
         <button type="button" class="tl-eye-btn" title="Inspect details" onclick="inspectReturnRow('${escapeJs(r.serial)}')">${eyeSvg}</button>
         <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag('${escapeJs(r.serial)}')" style="color:var(--green-bright);">${printSvg}</button>
       </td>
@@ -9893,6 +9898,17 @@ function inspectReturnRow(serial) {
   const r = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
   if (!r) return;
   showToast(`${r.serial} · ${r.model} → ${r.customer} | ${r.reason} | ${r.condition || 'No condition'} | ${r.action} ${r.date}`);
+}
+
+async function releaseQuarantine(serial) {
+  if (!confirm(`Release ${serial} back to Available Stock?\n\nThe unit will be restocked and tagged as 2nd.`)) return;
+  try {
+    await apiPost('/api/returns/release', { serial });
+    showToast(`Released ${serial} back to stock`, '&#10003;');
+    await refreshData();
+  } catch (e) {
+    showToast('Release failed: ' + e.message);
+  }
 }
 
 function reprintRmaTag(serial) {
