@@ -6,6 +6,7 @@ background FastAPI backend server.
 """
 
 import sys
+import os
 import time
 import socket
 import threading
@@ -13,6 +14,9 @@ import ctypes
 from ctypes import wintypes
 
 APP_URL = 'http://127.0.0.1:8000/?app_mode=desktop'
+BACKEND_PORT = 8000
+HEALTH_URL = 'http://127.0.0.1:%d/api/ui-prefs' % BACKEND_PORT
+PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.vre_app.pid')
 
 # Shown instantly while the backend (heavy imports + workbook parse) boots
 # in a background thread; replaced via load_url() once port 8000 is live.
@@ -127,6 +131,16 @@ _u32.DrawTextW.restype = ctypes.c_int
 _u32.DrawTextW.argtypes = [wintypes.HDC, ctypes.c_wchar_p, ctypes.c_int,
                            ctypes.POINTER(wintypes.RECT), wintypes.UINT]
 _u32.SetProcessDPIAware.restype = wintypes.BOOL
+_u32.FindWindowW.restype = wintypes.HWND
+_u32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+_k32.OpenProcess.restype = wintypes.HANDLE
+_k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+_k32.TerminateProcess.restype = wintypes.BOOL
+_k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+_k32.CloseHandle.restype = wintypes.BOOL
+_k32.CloseHandle.argtypes = [wintypes.HANDLE]
+_k32.GetExitCodeProcess.restype = wintypes.BOOL
+_k32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
 _k32.GetModuleHandleW.restype = wintypes.HMODULE
 _g32.CreateSolidBrush.restype = wintypes.HBRUSH
 _g32.CreateSolidBrush.argtypes = [wintypes.DWORD]
@@ -557,6 +571,87 @@ def is_port_in_use(port: int) -> bool:
         return s.connect_ex(('127.0.0.1', port)) == 0
 
 
+def backend_healthy(timeout: float = 1.5) -> bool:
+    """True only if the backend answers HTTP — a zombie process can hold the
+    port open (accepts TCP, never responds) while it is dying."""
+    try:
+        import urllib.request
+        urllib.request.urlopen(HEALTH_URL, timeout=timeout).read(8)
+        return True
+    except Exception:
+        return False
+
+
+def _pid_alive(pid: int) -> bool:
+    try:
+        h = _k32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+        if h:
+            code = wintypes.DWORD(0)
+            _k32.GetExitCodeProcess(h, ctypes.byref(code))
+            _k32.CloseHandle(h)
+            return code.value == 259  # STILL_ACTIVE
+    except Exception:
+        pass
+    return False
+
+
+def _kill_pid(pid: int) -> bool:
+    try:
+        h = _k32.OpenProcess(0x0001, False, int(pid))  # PROCESS_TERMINATE
+        if h:
+            _k32.TerminateProcess(h, 1)
+            _k32.CloseHandle(h)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _pid_listening_on(port: int):
+    """Fallback: PID owning the listening socket via netstat (no extra deps)."""
+    try:
+        import subprocess
+        out = subprocess.check_output(
+            ['netstat', '-ano', '-p', 'tcp'],
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000),
+            stderr=subprocess.DEVNULL).decode('utf-8', 'ignore')
+        suffix = ':%d' % port
+        for line in out.splitlines():
+            if 'LISTENING' in line:
+                parts = line.split()
+                if len(parts) >= 5 and parts[1].endswith(suffix):
+                    return int(parts[-1])
+    except Exception:
+        pass
+    return None
+
+
+def cleanup_stale_backend():
+    """Kill leftover backend processes from a previous run.
+
+    Two cases: (a) PID file points at a live process with no app window —
+    a zombie; (b) port 8000 is open but the server doesn't answer HTTP —
+    kill whoever owns it. A healthy backend with a real window is reused.
+    """
+    my_pid = os.getpid()
+    try:
+        old_pid = int(open(PID_FILE, encoding='ascii').read().strip())
+    except Exception:
+        old_pid = None
+    if old_pid and old_pid != my_pid and _pid_alive(old_pid):
+        if not _u32.FindWindowW(None, 'VRE AC Stock'):
+            _kill_pid(old_pid)  # zombie: process alive, window gone
+
+    if is_port_in_use(BACKEND_PORT) and not backend_healthy():
+        pid = _pid_listening_on(BACKEND_PORT)
+        if pid and pid != my_pid:
+            _kill_pid(pid)
+        for _ in range(50):  # wait for the socket to be released
+            if not is_port_in_use(BACKEND_PORT):
+                break
+            time.sleep(0.1)
+
+
 def run_server():
     """Runs uvicorn in a daemon thread if not already running.
 
@@ -581,10 +676,19 @@ def main():
     splash = _NativeSplash()
     splash.start()
 
-    # 2. Backend boots in parallel (imports + workbook parse in the thread).
-    if not is_port_in_use(8000):
+    # 2. Reap a stale backend (zombie process or dead socket owner), record
+    # our PID for the next launch, then boot the backend in parallel.
+    cleanup_stale_backend()
+    try:
+        with open(PID_FILE, 'w', encoding='ascii') as f:
+            f.write(str(os.getpid()))
+    except Exception:
+        pass
+
+    if not is_port_in_use(BACKEND_PORT):
         t = threading.Thread(target=run_server, daemon=True)
         t.start()
+    # Port already serving a healthy backend = instant relaunch, reuse it.
 
     # 3. webview import happens AFTER splash is up — overlaps backend boot.
     import webview
@@ -609,7 +713,7 @@ def main():
         # Runs on a pywebview worker thread: wait for the backend, then swap
         # the splash for the real app.
         for _ in range(300):  # up to 30s for slow machines
-            if is_port_in_use(8000):
+            if backend_healthy():
                 break
             time.sleep(0.1)
         try:
@@ -620,9 +724,11 @@ def main():
         time.sleep(0.4)
         api.enable_window_features()
 
-    # Start the desktop window (blocking until closed)
+    # Start the desktop window (blocking until closed). os._exit skips the
+    # interpreter shutdown that can hang joining threads — the port and all
+    # resources are released immediately, so an instant relaunch works.
     webview.start(on_started, window, debug=False)
-    sys.exit(0)
+    os._exit(0)
 
 
 if __name__ == '__main__':
