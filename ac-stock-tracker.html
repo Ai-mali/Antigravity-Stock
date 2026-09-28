@@ -4097,6 +4097,116 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 16px;
+  flex: 1 1 0;
+  min-height: 0;
+  align-items: stretch;
+}
+.rma-inspect-card { display: flex; flex-direction: column; min-height: 0; }
+.rma-panel-head { border-bottom: 1px solid var(--border); background: var(--surface2); }
+.rma-panel-body {
+  display: flex; flex-direction: column; gap: 14px;
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+}
+.rma-panel-foot {
+  display: flex; gap: 10px; padding: 14px 16px;
+  border-top: 1px solid var(--border); background: var(--surface2);
+  flex-shrink: 0;
+}
+.rma-restock-btn {
+  flex: 1; justify-content: center; display: inline-flex;
+  align-items: center; gap: 7px;
+  background: linear-gradient(90deg, var(--green-bright), #0e9f6e);
+  box-shadow: 0 6px 18px rgba(38, 208, 124, 0.22);
+}
+.rma-quar-btn {
+  flex: 1; justify-content: center; display: inline-flex;
+  align-items: center; gap: 7px;
+  background: transparent; color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.rma-quar-btn:hover { background: rgba(245, 158, 11, 0.1); }
+.rma-field-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.rma-link { font-size: 10px; color: var(--green-bright); cursor: pointer; }
+.rma-link:hover { text-decoration: underline; }
+.rma-select-wrap .rma-select { padding-left: 32px; padding-right: 74px; width: 100%; }
+.rma-status-pill {
+  position: absolute; right: 26px; top: 50%; transform: translateY(-50%);
+  padding: 1px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace; pointer-events: none;
+}
+.rma-status-pill.active { background: rgba(38,208,124,.12); color: var(--green-bright); border: 1px solid rgba(38,208,124,.3); }
+.rma-status-pill.expiring { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+.rma-status-pill.expired { background: var(--red-badge-bg); color: var(--red-badge-text); border: 1px solid var(--red-badge-border); }
+.rma-meta-strip {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 4px; margin-top: 10px;
+  text-align: center; font-size: 11px;
+}
+.rma-meta-strip > div + div { border-left: 1px solid var(--border); }
+.rma-meta-strip span { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-sub); margin-bottom: 3px; }
+.rma-meta-strip b { font-size: 11.5px; color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; padding: 0 6px; }
+.rma-registry-card { display: flex; flex-direction: column; min-height: 0; }
+.rma-reg-head { border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rma-rec-pill {
+  display: inline-flex; align-items: center; padding: 2px 8px;
+  border-radius: 99px; font-size: 10px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--green-badge-bg); color: var(--green-bright);
+  border: 1px solid var(--green-badge-border);
+}
+.rma-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px 6px;
+  flex-wrap: wrap;
+}
+.rma-dateout-wrap { min-width: 200px; flex: 0 0 auto; }
+.rma-dateout-wrap .form-select { padding-left: 32px; width: 100%; }
+.rma-reset-btn {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-sub); cursor: pointer; transition: all .15s;
+}
+.rma-reset-btn:hover { color: var(--text); border-color: var(--border-light); }
+.rma-chip-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 4px 16px 10px; font-size: 11px;
+}
+.rma-chip-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-sub); margin-right: 2px; }
+.rma-chip {
+  padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer; transition: all .15s;
+}
+.rma-chip:hover { border-color: var(--border-light); color: var(--text); }
+.rma-chip.active {
+  background: var(--green-badge-bg); color: var(--green-bright);
+  border-color: var(--green-badge-border);
+}
+.rma-page-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 10px 16px;
+  border-top: 1px solid var(--border); background: var(--surface2);
+  font-size: 11px; color: var(--text-sub); flex-shrink: 0; flex-wrap: wrap;
+}
+.rma-cust-pill {
+  display: inline-flex; align-items: center; padding: 1px 8px;
+  border-radius: 6px; font-size: 10.5px; font-weight: 600;
+  background: var(--surface3); color: var(--text); border: 1px solid var(--border-light);
+}
+.rma-action-pill {
+  display: inline-flex; align-items: center; padding: 2px 10px;
+  border-radius: 99px; font-size: 10.5px; font-weight: 600;
+}
+.rma-action-pill.restocked { background: var(--green-badge-bg); color: var(--green-bright); border: 1px solid var(--green-badge-border); }
+.rma-action-pill.quarantined { background: var(--red-badge-bg); color: var(--red-badge-text); border: 1px solid var(--red-badge-border); }
+.rma-2nd {
+  display: inline-block; margin-left: 4px; padding: 0 5px;
+  border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .03em;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(245, 158, 11, 0.16); color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35); vertical-align: 1px;
 }
 
 /* Modal Overlay & Box */
@@ -5149,12 +5259,12 @@ body.theme-light .autocomplete-dropdown {
     <!-- 5. RETURN SCREEN -->
     <section id="view-return" class="view-section">
       <div class="return-screen-layout">
-        <!-- Left: Return form -->
-        <div class="card">
-          <div class="card-header">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div style="width:32px; height:32px; border-radius:8px; background:rgba(38,208,124,0.12); border:1px solid rgba(38,208,124,0.3); display:flex; align-items:center; justify-content:center; color:var(--green-bright); font-size:16px;">
-                &#8617;
+        <!-- LEFT: Return & RMA Inspection panel -->
+        <div class="card rma-inspect-card">
+          <div class="card-header rma-panel-head">
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+              <div class="tl-header-icon" style="width:34px; height:34px; margin-top:2px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
               </div>
               <div>
                 <div class="card-title">Return &amp; RMA Inspection</div>
@@ -5162,11 +5272,23 @@ body.theme-light .autocomplete-dropdown {
               </div>
             </div>
           </div>
-          <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+          <div class="card-body rma-panel-body">
             <div>
-              <label class="form-label">Select Dispatched Serial</label>
-              <select class="form-select" id="rma-serial-select" onchange="updateRmaWarrantyCard()"></select>
+              <div class="rma-field-head">
+                <label class="form-label" style="margin:0;">Search Dispatch Serial</label>
+                <span class="rma-link" onclick="switchTab('track-list')">View dispatch log</span>
+              </div>
+              <div class="search-box-wrap rma-select-wrap">
+                <span class="search-icon">&#128269;</span>
+                <select class="form-select rma-select" id="rma-serial-select" onchange="updateRmaWarrantyCard()"></select>
+                <span class="rma-status-pill" id="rma-status-pill" style="display:none;"></span>
+              </div>
               <div id="rma-warranty-card" style="display:none;"></div>
+              <div class="rma-meta-strip" id="rma-meta-strip" style="display:none;">
+                <div><span>Date In</span><b id="rma-meta-in" class="mono">&mdash;</b></div>
+                <div><span>Date Out</span><b id="rma-meta-out" class="mono">&mdash;</b></div>
+                <div><span>Customer</span><b id="rma-meta-cust">&mdash;</b></div>
+              </div>
             </div>
             <div>
               <label class="form-label">Return Reason</label>
@@ -5189,42 +5311,76 @@ body.theme-light .autocomplete-dropdown {
             </div>
             <div>
               <label class="form-label">Inspection Notes</label>
-              <textarea class="form-textarea" id="rma-notes" placeholder="Notes on physical condition..."></textarea>
+              <textarea class="form-textarea" id="rma-notes" placeholder="Notes on physical condition, packaging integrity, compressor seals..."></textarea>
             </div>
-            <div style="display:flex; gap:10px; padding-top:6px;">
-              <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="submitRmaAction(true)">
-                &#8634; Restock to Available
-              </button>
-              <button class="btn" style="flex:1; justify-content:center; background:#1c2730; color:#e6edf2; border:1px solid #2e3d48;" onclick="submitRmaAction(false)">
-                &#128274; Quarantine / Audit
-              </button>
-            </div>
+          </div>
+          <div class="rma-panel-foot">
+            <button class="btn btn-primary rma-restock-btn" onclick="submitRmaAction(true)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Restock to Available
+            </button>
+            <button class="btn rma-quar-btn" onclick="submitRmaAction(false)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              Quarantine / Audit
+            </button>
           </div>
         </div>
 
-        <!-- Right: Processed Returns Registry Table -->
-        <div class="card">
-          <div class="card-header">
+        <!-- RIGHT: Processed Returns Registry -->
+        <div class="card rma-registry-card">
+          <div class="card-header rma-reg-head">
             <div>
-              <div class="card-title">Processed Returns Registry</div>
-              <div style="font-size:11px; color:var(--text-sub);">Audit trail of equipment returns and warehouse dispositions</div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div class="card-title">Processed Returns Registry</div>
+                <span class="rma-rec-pill" id="rma-records-pill">0 Records Logged</span>
+              </div>
+              <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Audit trail of equipment returns, inspection dispositions, and restock logs</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="exportReturnsCsv()" title="Export CSV">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="printRmaTags()" title="Print RMA tags">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Print RMA Tags
+              </button>
             </div>
           </div>
-          <div class="table-container">
+          <div class="rma-toolbar">
+            <div class="search-box-wrap" style="flex:1; min-width:180px;">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="rma-search" oninput="handleRmaSearch(this.value)" placeholder="Search serial (e.g. K001492), model or customer...">
+            </div>
+            <div class="search-box-wrap rma-dateout-wrap">
+              <span class="search-icon" style="color:var(--green-bright);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </span>
+              <select class="form-select" id="rma-dateout" onchange="setRmaDateOut(this.value)"></select>
+            </div>
+            <button type="button" class="rma-reset-btn" onclick="resetRmaFilters()" title="Reset filters">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div class="rma-chip-row" id="rma-chip-row"></div>
+          <div class="table-container" style="flex:1 1 auto; min-height:0;">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Serial</th>
                   <th>Model</th>
                   <th>Customer</th>
+                  <th>Date Out (Dispatched)</th>
+                  <th>Date Returned</th>
                   <th>Reason</th>
-                  <th>Action Taken</th>
-                  <th style="text-align:right;">Date</th>
+                  <th style="text-align:center;">Action Taken</th>
+                  <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
               <tbody id="rma-table-tbody"></tbody>
             </table>
           </div>
+          <div class="rma-page-foot" id="rma-pagination"></div>
         </div>
       </div>
     </section>
@@ -5845,6 +6001,11 @@ const DB = {
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
 
   trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
+  rmaSearch: '',            // Return registry text search
+  rmaDateOut: '',           // Return registry Date Out filter (raw value)
+  rmaChip: 'ALL',           // 'ALL' | 'Restocked' | 'Quarantined' | 'Warranty'
+  rmaPage: 0,
+  rmaPageSize: 25,
   lowStockFilter: false,      // toggles showing only models with <= 2 units
   scans: [],        // filled by POST /api/scan or the manual + button
   modelBrands: {},  // model -> brand map (manual entry / ready-serial autofill)
@@ -7969,7 +8130,9 @@ function renderAvailable(searchTerm) {
 
       const cardsHtml = matchedSerials.map(s => {
         const staged = isSerialInCart(s);
-        const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
+        const unitData = (mData.units && mData.units[s]) || {};
+        const unitDateIn = unitData.dateIn || mData.dateIn || '';
+        const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
@@ -8000,7 +8163,7 @@ function renderAvailable(searchTerm) {
               <span>Rec: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
-                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}</span>
+                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? '<b class="rma-2nd">2nd</b>' : ''}</span>
               </span>
             </div>
           </div>
@@ -8567,7 +8730,9 @@ function renderStockOut(searchTerm) {
 
       const chipsHtml = serials.map(s => {
         const staged = isSerialInCart(s);
-        const unitDateIn = (mData.units && mData.units[s] && mData.units[s].dateIn) || mData.dateIn || '';
+        const unitData = (mData.units && mData.units[s]) || {};
+        const unitDateIn = unitData.dateIn || mData.dateIn || '';
+        const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
@@ -8582,7 +8747,7 @@ function renderStockOut(searchTerm) {
             </div>
             <div class="so-card-bottom">
               <span>In: ${dateDisplay}</span>
-              <span>${staged ? 'Staged &#10003;' : 'Ready'}</span>
+              <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? '<b class="rma-2nd">2nd</b>' : ''}</span>
             </div>
           </div>
         `;
@@ -9422,18 +9587,38 @@ function renderReturnScreen() {
   });
 
   updateRmaWarrantyCard();
+  renderRmaDateOutOptions();
   renderReturnTable();
 }
 
 function updateRmaWarrantyCard() {
   const card = document.getElementById('rma-warranty-card');
+  const strip = document.getElementById('rma-meta-strip');
+  const pill = document.getElementById('rma-status-pill');
   if (!card) return;
   const sel = document.getElementById('rma-serial-select');
-  if (!sel || !sel.value) {
-    card.style.display = 'none';
-    return;
+  const rec = sel && sel.value ? DB.trackList.find(r => r.serial === sel.value) : null;
+
+  if (pill) {
+    const ws = rec && rec.warranty && rec.warranty.status;
+    if (ws && ws !== 'none') {
+      pill.className = 'rma-status-pill ' + ws;
+      pill.textContent = ws.toUpperCase();
+      pill.style.display = 'inline-flex';
+    } else {
+      pill.style.display = 'none';
+    }
   }
-  const rec = DB.trackList.find(r => r.serial === sel.value);
+  if (strip) {
+    if (rec) {
+      strip.style.display = 'grid';
+      document.getElementById('rma-meta-in').textContent = rec.dateIn || '—';
+      document.getElementById('rma-meta-out').textContent = rec.dateOut || '—';
+      document.getElementById('rma-meta-cust').textContent = rec.customer || '—';
+    } else {
+      strip.style.display = 'none';
+    }
+  }
   if (!rec || !rec.warranty || rec.warranty.status === 'none') {
     card.style.display = 'none';
     return;
@@ -9452,24 +9637,213 @@ function updateRmaWarrantyCard() {
   }
 }
 
+/* ---- Return registry: search / date filter / chips / pagination ---- */
+function getFilteredReturns() {
+  const q = (DB.rmaSearch || '').trim().toLowerCase();
+  let list = [...DB.returns].reverse(); // newest processed first
+  if (DB.rmaChip === 'Warranty') {
+    list = list.filter(r => r.warranty && (r.warranty.status === 'active' || r.warranty.status === 'expiring'));
+  } else if (DB.rmaChip !== 'ALL') {
+    list = list.filter(r => r.action === DB.rmaChip);
+  }
+  if (DB.rmaDateOut) {
+    list = list.filter(r => (r.dateOut || '') === DB.rmaDateOut);
+  }
+  if (q) {
+    list = list.filter(r =>
+      (r.serial || '').toLowerCase().includes(q) ||
+      (r.model || '').toLowerCase().includes(q) ||
+      (r.customer || '').toLowerCase().includes(q));
+  }
+  return list;
+}
+
+function handleRmaSearch(v) {
+  DB.rmaSearch = v;
+  DB.rmaPage = 0;
+  renderReturnTable();
+}
+
+function setRmaDateOut(v) {
+  DB.rmaDateOut = v;
+  DB.rmaPage = 0;
+  renderReturnTable();
+}
+
+function setRmaChip(k) {
+  DB.rmaChip = k;
+  DB.rmaPage = 0;
+  renderReturnTable();
+}
+
+function resetRmaFilters() {
+  DB.rmaSearch = '';
+  DB.rmaDateOut = '';
+  DB.rmaChip = 'ALL';
+  DB.rmaPage = 0;
+  const inp = document.getElementById('rma-search');
+  if (inp) inp.value = '';
+  const dp = document.getElementById('rma-dateout');
+  if (dp) dp.value = '';
+  renderReturnTable();
+}
+
+function renderRmaChips() {
+  const el = document.getElementById('rma-chip-row');
+  if (!el) return;
+  const all = DB.returns.length;
+  const restocked = DB.returns.filter(r => r.action === 'Restocked').length;
+  const quar = DB.returns.filter(r => r.action === 'Quarantined').length;
+  const warr = DB.returns.filter(r => r.warranty && (r.warranty.status === 'active' || r.warranty.status === 'expiring')).length;
+  const chips = [
+    ['ALL', `All Returns (${all})`],
+    ['Restocked', `Restocked (${restocked})`],
+    ['Quarantined', `Quarantined (${quar})`],
+    ['Warranty', `🛡 Under Warranty (${warr})`]
+  ];
+  el.innerHTML = '<span class="rma-chip-label">Filter by:</span>' +
+    chips.map(([k, l]) => `<button type="button" class="rma-chip${DB.rmaChip === k ? ' active' : ''}" onclick="setRmaChip('${k}')">${l}</button>`).join('');
+}
+
+function renderRmaDateOutOptions() {
+  const sel = document.getElementById('rma-dateout');
+  if (!sel) return;
+  const cur = DB.rmaDateOut;
+  const dates = [...new Set(DB.returns.map(r => r.dateOut).filter(Boolean))].sort().reverse();
+  sel.innerHTML = '<option value="">📦 All Dates Out (Dispatched)</option>' +
+    dates.map((d, i) => `<option value="${escapeHtml(d)}"${d === cur ? ' selected' : ''}>📦 Date Out: ${escapeHtml(d)}${i === 0 ? ' (Latest)' : ''}</option>`).join('');
+}
+
 function renderReturnTable() {
   const tbody = document.getElementById('rma-table-tbody');
-  tbody.innerHTML = '';
+  if (!tbody) return;
+  const list = getFilteredReturns();
+  const total = list.length;
+  const size = DB.rmaPageSize;
+  const pages = Math.max(1, Math.ceil(total / size));
+  if (DB.rmaPage >= pages) DB.rmaPage = pages - 1;
+  if (DB.rmaPage < 0) DB.rmaPage = 0;
+  const rows = list.slice(DB.rmaPage * size, DB.rmaPage * size + size);
 
-  DB.returns.forEach(r => {
+  const pill = document.getElementById('rma-records-pill');
+  if (pill) pill.textContent = `${DB.returns.length} Record${DB.returns.length === 1 ? '' : 's'} Logged`;
+  renderRmaChips();
+
+  const eyeSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
+  const printSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10H7z"></path><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2"></path></svg>';
+  const q = (DB.rmaSearch || '').trim();
+  const ql = q.toLowerCase();
+
+  tbody.innerHTML = '';
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No returns match the current filters.</td></tr>';
+  }
+  rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.dataset.rmaSerial = String(r.serial || '').trim().toUpperCase();
-    const badge = r.action === 'Restocked' ? '<span class="badge badge-green">Restocked</span>' : '<span class="badge badge-red">Quarantined</span>';
+    const sHit = q && (r.serial || '').toLowerCase().includes(ql);
+    const mHit = q && (r.model || '').toLowerCase().includes(ql);
+    const cHit = q && (r.customer || '').toLowerCase().includes(ql);
+    const badge = r.action === 'Restocked'
+      ? '<span class="rma-action-pill restocked">Restocked</span>'
+      : '<span class="rma-action-pill quarantined">Quarantined</span>';
     tr.innerHTML = `
-      <td class="mono" style="font-weight:700;">${r.serial}</td>
-      <td style="font-weight:600;">${r.model}</td>
-      <td>${r.customer}</td>
-      <td style="color:var(--text-muted);">${r.reason}</td>
-      <td>${badge}</td>
-      <td style="text-align:right; color:var(--text-muted);">${r.date}</td>
+      <td class="mono" style="font-weight:700; color:var(--green-bright);">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</td>
+      <td style="font-weight:600;">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</td>
+      <td><span class="rma-cust-pill">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></td>
+      <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateOut || '—')}</td>
+      <td class="mono">${escapeHtml(r.date)}</td>
+      <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
+      <td style="text-align:center;">${badge}</td>
+      <td style="text-align:right; white-space:nowrap;">
+        <button type="button" class="tl-eye-btn" title="Inspect details" onclick="inspectReturnRow('${escapeJs(r.serial)}')">${eyeSvg}</button>
+        <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag('${escapeJs(r.serial)}')" style="color:var(--green-bright);">${printSvg}</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
+
+  renderRmaPagination(total, pages);
+}
+
+function renderRmaPagination(total, pages) {
+  const el = document.getElementById('rma-pagination');
+  if (!el) return;
+  const page = DB.rmaPage;
+  const size = DB.rmaPageSize;
+  const start = total ? page * size + 1 : 0;
+  const end = Math.min((page + 1) * size, total);
+  el.innerHTML = `
+    <div class="tl-page-left">
+      <span>Rows per page:</span>
+      <select class="tl-page-size" onchange="setRmaPageSize(this.value)">
+        ${[10, 25, 50].map(n => `<option value="${n}"${n === size ? ' selected' : ''}>${n}</option>`).join('')}
+      </select>
+      <span style="opacity:.5;">|</span>
+      <span>${start} - ${end} of ${total} records</span>
+    </div>
+    <div class="tl-page-btns">
+      <button type="button" class="tl-page-btn" ${page === 0 ? 'disabled' : ''} onclick="setRmaPage(${page - 1})" title="Previous page">&lsaquo;</button>
+      <button type="button" class="tl-page-btn active">${page + 1}</button>
+      <button type="button" class="tl-page-btn" ${page >= pages - 1 ? 'disabled' : ''} onclick="setRmaPage(${page + 1})" title="Next page">&rsaquo;</button>
+    </div>`;
+}
+
+function setRmaPage(p) {
+  DB.rmaPage = p;
+  renderReturnTable();
+}
+
+function setRmaPageSize(v) {
+  DB.rmaPageSize = parseInt(v, 10) || 25;
+  DB.rmaPage = 0;
+  renderReturnTable();
+}
+
+function inspectReturnRow(serial) {
+  const r = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
+  if (!r) return;
+  showToast(`${r.serial} · ${r.model} → ${r.customer} | ${r.reason} | ${r.condition || 'No condition'} | ${r.action} ${r.date}`);
+}
+
+function reprintRmaTag(serial) {
+  const r = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
+  if (!r) return;
+  const sheet = document.getElementById('tl-print-sheet');
+  if (!sheet) return;
+  sheet.innerHTML = `<div class="tl-print-label">
+    <div class="pl-serial">RMA: ${escapeHtml(r.serial)}</div>
+    <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.action)} &middot; ${escapeHtml(r.date)}</div>
+  </div>`;
+  setTimeout(() => window.print(), 60);
+}
+
+function exportReturnsCsv() {
+  if (!DB.returns.length) { showToast('No returns to export.'); return; }
+  let csv = 'SERIAL,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,CONDITION,ACTION\n';
+  DB.returns.forEach(r => {
+    csv += `"${r.serial}","${r.model}","${r.customer}","${r.dateOut || ''}","${r.date}","${(r.reason || '').replace(/"/g, '""')}","${(r.condition || '').replace(/"/g, '""')}","${r.action}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'returns_registry_export.csv';
+  a.click();
+  showToast('Exported returns_registry_export.csv');
+}
+
+function printRmaTags() {
+  const rows = getFilteredReturns();
+  if (!rows.length) { showToast('No records to print.'); return; }
+  const sheet = document.getElementById('tl-print-sheet');
+  if (!sheet) return;
+  sheet.innerHTML = rows.map(r => `
+    <div class="tl-print-label">
+      <div class="pl-serial">RMA: ${escapeHtml(r.serial)}</div>
+      <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.action)} &middot; ${escapeHtml(r.date)}</div>
+    </div>`).join('');
+  showToast(`Printing ${rows.length} RMA tag${rows.length === 1 ? '' : 's'}…`);
+  setTimeout(() => window.print(), 60);
 }
 
 async function submitRmaAction(isRestock) {

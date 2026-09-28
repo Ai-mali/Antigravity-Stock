@@ -35,7 +35,7 @@ DO_DIR = DB_PATH.parent / "delivery_orders"
 RECORD_HEADER = ["Brand", "Model", "Serial",
                  "Date In", "Status", "Customer", "Date Out"]
 RETURN_HEADER = ["Serial", "Model", "Customer", "Reason",
-                 "Condition", "Notes", "Action", "Date"]
+                 "Condition", "Notes", "Action", "Date", "Date Out"]
 ACTIVITY_HEADER = ["Timestamp", "Action", "Model",
                    "Serials Count", "Details", "Status"]
 
@@ -248,6 +248,12 @@ class StockStore:
             for col, title in enumerate(header, start=1):
                 ws.cell(row=1, column=col, value=title)
             self._schema_dirty = True
+        else:
+            # Backfill any newly-added trailing columns on existing sheets
+            for col, title in enumerate(header, start=1):
+                if ws.cell(row=1, column=col).value in (None, ""):
+                    ws.cell(row=1, column=col, value=title)
+                    self._schema_dirty = True
         return ws
 
     def _backup(self):
@@ -369,6 +375,9 @@ class StockStore:
     def inventory(self) -> dict:
         """In-stock units grouped Brand -> Model -> serials (UI shape)."""
         inv: dict[str, dict] = {}
+        # Serials that came back via a return stay marked as second-hand stock
+        restocked = {str(r["Serial"]).strip().lower() for r in self.returns
+                     if str(r.get("Action", "")).strip() == "Restocked"}
         for rec in self.records:
             if str(rec["Status"]).strip() != IN_STOCK:
                 continue
@@ -381,7 +390,8 @@ class StockStore:
             s = str(rec["Serial"]).strip()
             m["serials"].append(s)
             m["units"][s] = {
-                "dateIn": str(rec.get("Date In", "")).strip()
+                "dateIn": str(rec.get("Date In", "")).strip(),
+                "secondHand": s.lower() in restocked
             }
         # keep zero-stock brands visible too
         for brand in self.brands:
@@ -405,7 +415,9 @@ class StockStore:
         return [{"serial": str(r["Serial"]), "model": str(r["Model"]),
                  "customer": str(r["Customer"]), "reason": str(r["Reason"]),
                  "condition": str(r["Condition"]), "notes": str(r["Notes"]),
-                 "action": str(r["Action"]), "date": str(r["Date"])}
+                 "action": str(r["Action"]), "date": str(r["Date"]),
+                 "dateOut": str(r.get("Date Out", "")),
+                 "warranty": compute_warranty(str(r.get("Date Out", "")))}
                 for r in self.returns]
 
     def customer_history(self) -> list[dict]:
@@ -550,14 +562,15 @@ class StockStore:
         if rec is None:
             return None, "No sold unit found for serial " + serial
         action_label = "Restocked" if action == "restock" else "Quarantined"
+        date_out = str(rec.get("Date Out", "")).strip()
         self.ret_sheet.append([str(rec["Serial"]), str(rec["Model"]),
                                str(rec["Customer"]), reason, condition,
-                               notes, action_label, date])
+                               notes, action_label, date, date_out])
         self.returns.append({
             "Serial": rec["Serial"], "Model": rec["Model"],
             "Customer": rec["Customer"], "Reason": reason,
             "Condition": condition, "Notes": notes,
-            "Action": action_label, "Date": date})
+            "Action": action_label, "Date": date, "Date Out": date_out})
         row = rec["_row"]
         if action == "restock":
             rec["Status"] = IN_STOCK
