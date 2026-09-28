@@ -91,7 +91,7 @@ def compute_warranty(date_out_str: str, months: int = 12) -> dict:
 
     today = datetime.date.today()
     days_left = (expiry - today).days
-    if today >= expiry:
+    if today > expiry:
         status = "expired"
     elif today >= warn_start:
         status = "expiring"
