@@ -2,9 +2,9 @@
 
 Commit Hash: 
 
-e98b9d9
-Commit Description: Brand sidebars (Telegram-style) + date search + drag-resize + smooth-release fixes
-Date: 2026-10-15 +0700
+07cb677
+Commit Description: Stitch-style search dialog (Date In chip + quick dates) + responsive header fixes
+Date: 2026-09-28 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
 Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
@@ -27,7 +27,7 @@ Rebrand: App renamed to "VRE AC Stock" everywhere (window title, header, splash)
 Splash Polish: Emerald glow on "AC STOCK" (text-shadow halo in HTML, 4-pass dim halo in native GDI) + pulsing live dot beside "AI Scan" in both splash layers; header "AC Stock" glows to match.
 Accent Palette: Emerald theme throughout (--green #116852, --green-bright #26d07c); ocean-blue experiment reverted (854cf2f).
 Stock Out (Telegram-style brand sidebar): Left brand sidebar reusing Track List tl-* components — hamburger (collapses to 60px avatar rail, persisted via ui_prefs soMini) + sidebar search; "Brands & Bins" section label; rich rows (solid brand-color avatar, name + last-activity date, top-2 model preview "BCR50FF (66) • FCFVVXZ (36)", status line: Units Verified / ⚠ Low Stock Warning / Empty, count pill; zero-unit brands dimmed; sorted by units). Click-to-filter drives DB.soFilter; center brand pills restored alongside. Sidebar auto-height fix (tl-side-list flex-basis).
-Stock Out Search: Typing resets stale brand/LOW filter to ALL (same fix class as Track List jump); brand names are searchable ('part' → PART brand); sidebar rows mirror results — 'ca' → CARRIER+CAT, serial → owning brand; sidebar + main inputs mirror both ways.
+Stock Out Search: Typing resets stale brand/LOW filter to ALL (same fix class as Track List jump); brand names are searchable ('part' → PART brand); sidebar rows mirror results — 'ca' → CARRIER+CAT, serial → owning brand; sidebar rows are slim (model preview line removed; "All Brands" keeps its summary).
 Available Stock: Same brand sidebar as Stock Out (mini rail persisted via availMini, Brands & Bins label, rich rows, click-to-filter on DB.availFilter, identical search parity — reset-to-ALL, brand-name match, sidebar mirroring). Low-stock banner + serial cards unchanged.
 Layout: Both sidebars (and Stock Out's dispatch panel) span full column height — view header + search bar live inside the right column; sticky tops flush under the app header.
 Manual Stock Entry: Fixed dead "Add to Scan Results" — DB.modelBrands initialized (was always undefined → silent TypeError). Serial + non-serial modes verified.
@@ -35,8 +35,12 @@ Date Search: All three search screens match dates — Available Stock & Stock Ou
 Date Highlight: Date-matched serial cards get the same emerald glow+pulse as serial hits; the matched date text is marked (Rec:/In:); per-unit granularity so only units with the matching date glow.
 Resizable Sidebars: 6px col-resize handle on both brand sidebars (180-440px); drag below ~120px snaps to mini rail, drag out expands; width persists via ui_prefs (availW/soW).
 Smooth Drag: rAF-throttled width application (one reflow/frame) + animation-play-state:paused on serial cards during drag (no repaint cost, no release flash).
-Track List records: Header w/ icon tile + Live Movement Stream badge + Ctrl+K search + Print Labels/Export CSV/Batch Dispatch; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
+Track List records: Header w/ icon tile + Live Movement Stream badge + search + Print Labels/Export CSV/Batch Dispatch; collapsible serial breakdown cloud (model-colored chips, Dense Cloud / Grouped by Model switcher, state persisted via /api/ui-prefs → ui_prefs.json); Fulfillment Records Log flexes to viewport (pagination always visible), No. numbering column, sort toggle, Filter Columns dropdown, eye → Return/RMA inspect.
 Duplicate Navigation: "View in Track List" resets stale customer/warranty filters — serial always found under ALL CUSTOMERS.
 Database Health: 333 total stock items loaded across 10 active brands (LG, VOLVO, CARRIER, DAIKIN, MITSUBISHI, CAT, KOMATSU, BIN, PART, OTHER).
 Data Protection: Real business data (daikin_stock.xlsx) is healthy and gitignored; no rewrite-on-launch.
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit e98b9d9"
+Search Split (Available Stock + Stock Out): Sidebar field = brand names only; header field = serial/model only; Date In is a separate picker. All three combine (text + date + brand pill) without mirroring into each other.
+Search Dialog (Stitch ref): Header-right grouped search — amber DATE IN chip (cal icon + DATE IN caption + mono date + "(Batch #N)" + N-DAYS-AGO badge + chevron) beside the serial/model input, one shared border; picked state gets amber/emerald gradient. Quick Date chips (All Dates / Today / top-3 date batches with unit counts / Custom…) share the pills bar; active chip marked emerald + "Active" tag. Title row shows "Arrival Date Active" badge + MODE: FULL INVENTORY / DATE-IN FILTERED pill; placeholder narrows to "within <date> batch..." when filtered.
+Responsive Search: Group compresses to ~235px before wrapping; on wrap it drops left-aligned under the title (Stock Out's narrow middle column wraps earlier); quick-date chips + brand pills wrap to extra rows instead of overflowing behind the dispatch panel. Picked chip auto-sizes (was clipped at fixed 172px).
+Ctrl+K keycap removed from Track List search bar (shortcut itself still works).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 07cb677"
