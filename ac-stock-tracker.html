@@ -1028,6 +1028,121 @@ body.theme-light .search-filter-bar {
   border: none;
 }
 
+/* Full-width search row (mock: chip + input in one bar) */
+.search-group.sg-wide {
+  flex: 1 1 auto;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 11px;
+}
+.search-group.sg-filtered {
+  border-color: rgba(38, 208, 124, 0.5);
+  box-shadow: 0 0 0 1px rgba(38, 208, 124, 0.22);
+}
+
+/* Date-In chip — compact trigger when idle, rich batch chip when picked */
+.dp-date-stack { display: flex; flex-direction: column; text-align: left; line-height: 1.1; min-width: 0; }
+.dp-date-caption {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-sub);
+  display: flex; align-items: center; gap: 4px;
+}
+.dp-date-line { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.dp-batch { font-size: 9px; font-weight: 400; color: #fbbf24; }
+.dp-live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green-bright);
+  display: inline-block;
+  animation: tl-ping 1.6s infinite ease-in-out;
+}
+.dp-filter.picked .datepicker-trigger {
+  background: linear-gradient(90deg, rgba(120, 53, 15, 0.5), rgba(6, 78, 59, 0.55));
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+.dp-filter.picked .datepicker-trigger:hover { border-color: #fbbf24 !important; }
+.dp-filter.picked .dp-date-caption { color: rgba(251, 191, 36, 0.9); }
+.dp-filter.picked .dp-date-text { color: #fff; font-weight: 700; font-family: 'JetBrains Mono', Consolas, monospace; }
+.dp-filter.picked .dp-icon-cal { color: #fbbf24; }
+
+/* Quick Date chip row (shares the pills bar) */
+.quick-date-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-sub);
+  white-space: nowrap; margin-right: 2px;
+}
+.quick-dates { display: flex; align-items: center; gap: 5px; }
+.qd-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 6px;
+  font-size: 10.5px; white-space: nowrap;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-sub); cursor: pointer; font-family: inherit;
+  transition: all 0.15s ease;
+}
+.qd-chip:hover { color: var(--text); border-color: var(--border-light); }
+.qd-chip.active {
+  background: rgba(6, 78, 59, 0.65);
+  color: var(--green-bright);
+  border-color: rgba(38, 208, 124, 0.6);
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(38, 208, 124, 0.2);
+}
+.qd-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green-bright);
+  box-shadow: 0 0 6px var(--green-bright);
+  animation: tl-ping 1.6s infinite ease-in-out;
+}
+.qd-active-tag {
+  font-size: 8px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(38, 208, 124, 0.18); color: var(--green-bright);
+  padding: 1px 5px; border-radius: 3px;
+}
+.qd-divider {
+  flex: 0 0 1px; align-self: stretch;
+  margin: 4px 6px; background: var(--border);
+}
+
+/* Header badges: arrival-active + MODE pill */
+.arrival-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 600;
+  color: var(--green-bright);
+  background: rgba(38, 208, 124, 0.09);
+  border: 1px solid rgba(38, 208, 124, 0.4);
+  border-radius: 20px; padding: 2px 10px;
+  white-space: nowrap;
+}
+.arrival-badge .ab-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green-bright);
+  animation: tl-ping 1.6s infinite ease-in-out;
+}
+.mode-wrap {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; flex-shrink: 0;
+}
+.mode-label { color: var(--text-sub); font-family: 'JetBrains Mono', Consolas, monospace; }
+.mode-pill {
+  padding: 3px 9px; border-radius: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+}
+.mode-pill.full {
+  color: var(--text-sub);
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.mode-pill.filtered {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
 .search-box-wrap input {
   width: 100%;
   background: var(--surface2);
@@ -2874,21 +2989,7 @@ body.theme-light .track-breakdown-chip:hover {
   max-width: 340px;
 }
 .tl-search input {
-  padding-right: 60px;
-}
-.tl-kbd {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 1px 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  color: var(--text-sub);
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  pointer-events: none;
+  padding-right: 34px;
 }
 
 /* Filter ribbon panel */
@@ -4578,36 +4679,45 @@ body.theme-light .autocomplete-dropdown {
         <div class="avail-left-col">
           <div class="view-header">
             <div>
-              <div class="view-title" style="display:flex; align-items:baseline; gap:10px;">
+              <div class="view-title" style="display:flex; align-items:center; gap:10px;">
                 Available Stock
                 <span class="mono" style="font-size:16px; font-weight:800; color:var(--green-bright);"><span id="avail-total-big">115</span> <span style="font-size:11px; font-weight:600; color:var(--text-sub);">Units</span></span>
+                <span class="arrival-badge" id="avail-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
               </div>
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
-            <div class="search-group">
-              <div class="search-box-wrap">
-                <span class="search-icon">&#128269;</span>
-                <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
-                <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
-              </div>
-              <span class="search-group-divider"></span>
-              <div class="custom-datepicker dp-filter" id="avail-datein-picker">
-                <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
-                  <span class="dp-icon-cal">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  </span>
-                  <span class="dp-date-text" id="avail-datein-picker-display">Date In</span>
-                  <span class="dp-badge-relative" id="avail-datein-picker-relative" style="display:none;"></span>
-                  <span class="dp-icon-chevron">&#9662;</span>
-                </button>
-                <button type="button" class="dp-filter-clear" id="avail-datein-clear" onclick="clearAvailDateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
-                <div class="datepicker-popover" id="avail-datein-picker-popover"></div>
-              </div>
+            <div class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="avail-mode-pill">FULL INVENTORY</span></div>
+          </div>
+
+          <!-- Grouped search: Date In chip + serial/model input -->
+          <div class="search-group sg-wide" id="avail-search-group">
+            <div class="custom-datepicker dp-filter" id="avail-datein-picker">
+              <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('avail-datein-picker', event)">
+                <span class="dp-icon-cal">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <span class="dp-date-stack">
+                  <span class="dp-date-caption" id="avail-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
+                  <span class="dp-date-line"><span class="dp-date-text" id="avail-datein-picker-display">Date In</span><span class="dp-batch" id="avail-datein-picker-batch"></span></span>
+                </span>
+                <span class="dp-badge-relative" id="avail-datein-picker-relative" style="display:none;"></span>
+                <span class="dp-icon-chevron">&#9662;</span>
+              </button>
+              <button type="button" class="dp-filter-clear" id="avail-datein-clear" onclick="clearAvailDateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
+              <div class="datepicker-popover" id="avail-datein-picker-popover"></div>
+            </div>
+            <div class="search-box-wrap">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="avail-search" oninput="handleAvailSearchInput(this.value)" placeholder="Serial or model...">
+              <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
 
-          <!-- Brand Filter Pills -->
+          <!-- Quick Date chips + Brand Filter Pills -->
           <div class="search-filter-bar">
+            <span class="quick-date-label">Quick Date:</span>
+            <span class="quick-dates" id="avail-quick-dates"></span>
+            <span class="qd-divider"></span>
             <div class="filter-pills-row" id="avail-pills-row"></div>
           </div>
 
@@ -4642,31 +4752,42 @@ body.theme-light .autocomplete-dropdown {
         <!-- Middle: header + search + model accordions -->
         <div class="stockout-left-col">
           <div class="view-header" style="margin-bottom:10px; align-items:center;">
-            <div class="view-title">Stock Out &amp; Dispatch</div>
-            <div class="search-group">
-              <div class="search-box-wrap">
-                <span class="search-icon">&#128269;</span>
-                <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
-                <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
-              </div>
-              <span class="search-group-divider"></span>
-              <div class="custom-datepicker dp-filter" id="so-datein-picker">
-                <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
-                  <span class="dp-icon-cal">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  </span>
-                  <span class="dp-date-text" id="so-datein-picker-display">Date In</span>
-                  <span class="dp-badge-relative" id="so-datein-picker-relative" style="display:none;"></span>
-                  <span class="dp-icon-chevron">&#9662;</span>
-                </button>
-                <button type="button" class="dp-filter-clear" id="so-datein-clear" onclick="clearSODateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
-                <div class="datepicker-popover" id="so-datein-picker-popover"></div>
-              </div>
+            <div class="view-title" style="display:flex; align-items:center; gap:8px;">
+              Stock Out &amp; Dispatch
+              <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
+            </div>
+            <div class="mode-wrap"><span class="mode-label">MODE:</span><span class="mode-pill full" id="so-mode-pill">FULL INVENTORY</span></div>
+          </div>
+
+          <!-- Grouped search: Date In chip + serial/model input -->
+          <div class="search-group sg-wide" id="so-search-group">
+            <div class="custom-datepicker dp-filter" id="so-datein-picker">
+              <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('so-datein-picker', event)">
+                <span class="dp-icon-cal">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <span class="dp-date-stack">
+                  <span class="dp-date-caption" id="so-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
+                  <span class="dp-date-line"><span class="dp-date-text" id="so-datein-picker-display">Date In</span><span class="dp-batch" id="so-datein-picker-batch"></span></span>
+                </span>
+                <span class="dp-badge-relative" id="so-datein-picker-relative" style="display:none;"></span>
+                <span class="dp-icon-chevron">&#9662;</span>
+              </button>
+              <button type="button" class="dp-filter-clear" id="so-datein-clear" onclick="clearSODateFilter(event)" style="display:none;" title="Clear date filter">&times;</button>
+              <div class="datepicker-popover" id="so-datein-picker-popover"></div>
+            </div>
+            <div class="search-box-wrap">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="stockout-search" oninput="handleSOSearchInput(this.value)" placeholder="Serial or model...">
+              <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
 
-          <!-- Brand Filter Pills -->
+          <!-- Quick Date chips + Brand Filter Pills -->
           <div class="search-filter-bar">
+            <span class="quick-date-label">Quick Date:</span>
+            <span class="quick-dates" id="so-quick-dates"></span>
+            <span class="qd-divider"></span>
             <div class="filter-pills-row" id="so-pills-row"></div>
           </div>
 
@@ -4820,7 +4941,6 @@ body.theme-light .autocomplete-dropdown {
             <span class="search-icon">&#128269;</span>
             <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, model or date...">
             <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
-            <kbd class="tl-kbd">Ctrl K</kbd>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="printTrackLabels()" title="Print serial labels">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12-3h12v5H6z"></path></svg>
@@ -7425,6 +7545,97 @@ function markMatchedText(text, q) {
   return esc.replace(re, '<mark class="search-match-text">$1</mark>');
 }
 
+/* ---- Date-In batch helpers (Quick Date chips + batch chip label) ---- */
+function getDateBatches() {
+  const map = {};
+  Object.values(DB.inventory).forEach(bd => {
+    Object.values(bd.models || {}).forEach(md => {
+      (md.serials || []).forEach(s => {
+        const raw = (md.units && md.units[s] && md.units[s].dateIn) || md.dateIn;
+        if (!raw) return;
+        const d = new Date(raw);
+        if (isNaN(d)) return;
+        const iso = formatDateISO(d);
+        map[iso] = (map[iso] || 0) + 1;
+      });
+    });
+  });
+  return Object.entries(map)
+    .map(([iso, count]) => ({ iso, count }))
+    .sort((a, b) => b.count - a.count || b.iso.localeCompare(a.iso));
+}
+
+function batchNoFor(iso) {
+  const i = getDateBatches().findIndex(b => b.iso === iso);
+  return i >= 0 ? i + 1 : 0;
+}
+
+function shortDateLabel(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/* Header badge + MODE pill + search-group ring + contextual placeholder */
+function updateSearchModeUI(kind) {
+  const sel = kind === 'avail' ? DB.availDateFilter : DB.soDateFilter;
+  const badge = document.getElementById(`${kind}-arrival-badge`);
+  const pill = document.getElementById(`${kind}-mode-pill`);
+  const grp = document.getElementById(`${kind}-search-group`);
+  const inp = document.getElementById(kind === 'avail' ? 'avail-search' : 'stockout-search');
+  if (badge) badge.style.display = sel ? 'inline-flex' : 'none';
+  if (pill) {
+    pill.textContent = sel ? 'DATE-IN FILTERED' : 'FULL INVENTORY';
+    pill.className = 'mode-pill ' + (sel ? 'filtered' : 'full');
+  }
+  if (grp) grp.classList.toggle('sg-filtered', !!sel);
+  if (inp) inp.placeholder = sel
+    ? `Search serial or model within ${shortDateLabel(sel)} batch...`
+    : 'Serial or model...';
+}
+
+/* Quick Date chips: All Dates / Today / top batches by units / Custom… */
+function renderQuickDates(kind) {
+  const el = document.getElementById(`${kind}-quick-dates`);
+  if (!el) return;
+  const isAvail = kind === 'avail';
+  const sel = isAvail ? DB.availDateFilter : DB.soDateFilter;
+  const batches = getDateBatches();
+  const todayIso = formatDateISO(new Date());
+  const pick = isAvail ? 'applyAvailDateFilter' : 'applySODateFilter';
+  const clear = isAvail ? 'clearAvailDateFilter' : 'clearSODateFilter';
+  const picker = isAvail ? 'avail-datein-picker' : 'so-datein-picker';
+
+  let h = `<button type="button" class="qd-chip${sel ? '' : ' active'}" onclick="${clear}()">All Dates</button>`;
+  h += `<button type="button" class="qd-chip${sel === todayIso ? ' active' : ''}" onclick="${pick}('${todayIso}')">&#128197; Today (${shortDateLabel(todayIso)})</button>`;
+  batches.filter(b => b.iso !== todayIso).slice(0, 3).forEach(b => {
+    const active = sel === b.iso;
+    h += `<button type="button" class="qd-chip${active ? ' active' : ''}" onclick="${pick}('${b.iso}')">` +
+      (active ? '<span class="qd-dot"></span>' : '&#128197; ') +
+      `${shortDateLabel(b.iso)} Batch (${b.count} unit${b.count === 1 ? '' : 's'})` +
+      (active ? '<span class="qd-active-tag">Active</span>' : '') +
+      `</button>`;
+  });
+  h += `<button type="button" class="qd-chip" onclick="toggleDatePicker('${picker}', event)">&#128198; Custom…</button>`;
+  el.innerHTML = h;
+}
+
+/* Quick-chip entry point: sync the picker display then apply the filter */
+function applyAvailDateFilter(iso) {
+  const st = DatePickerState['avail-datein-picker'];
+  if (st && iso) {
+    const d = new Date(iso + 'T00:00:00');
+    st.selectedDate = d; st.viewYear = d.getFullYear(); st.viewMonth = d.getMonth(); st.picked = true;
+  }
+  setAvailDateFilter(iso);
+}
+function applySODateFilter(iso) {
+  const st = DatePickerState['so-datein-picker'];
+  if (st && iso) {
+    const d = new Date(iso + 'T00:00:00');
+    st.selectedDate = d; st.viewYear = d.getFullYear(); st.viewMonth = d.getMonth(); st.picked = true;
+  }
+  setSODateFilter(iso);
+}
+
 let _availSavedExpandState = null;
 
 function handleAvailSearchInput(val) {
@@ -7447,8 +7658,11 @@ function handleAvailSideSearchInput(val) {
 
 function setAvailDateFilter(iso) {
   DB.availDateFilter = iso || '';
+  const st = DatePickerState['avail-datein-picker'];
+  if (st) { st.batchNo = iso ? batchNoFor(iso) : 0; updateDatePickerDisplay('avail-datein-picker'); }
   const clr = document.getElementById('avail-datein-clear');
   if (clr) clr.style.display = iso ? 'flex' : 'none';
+  updateSearchModeUI('avail');
   if (iso && DB.availFilter !== 'ALL') {
     DB.availFilter = 'ALL';
     renderBrandPills();
@@ -7461,9 +7675,10 @@ function clearAvailDateFilter(e) {
   if (e) { e.stopPropagation(); e.preventDefault(); }
   DB.availDateFilter = '';
   const st = DatePickerState['avail-datein-picker'];
-  if (st) { st.picked = false; updateDatePickerDisplay('avail-datein-picker'); }
+  if (st) { st.picked = false; st.batchNo = 0; updateDatePickerDisplay('avail-datein-picker'); }
   const clr = document.getElementById('avail-datein-clear');
   if (clr) clr.style.display = 'none';
+  updateSearchModeUI('avail');
   renderAvailable();
 }
 
@@ -7744,6 +7959,7 @@ function renderAvailable(searchTerm) {
     container.appendChild(emptyNotice);
   }
   renderAvailBrandSidebar();
+  renderQuickDates('avail');
   applyAvailSidebarMini();
   updateStickyHeaderOffsets();
 }
@@ -8078,8 +8294,11 @@ function handleSOSideSearchInput(val) {
 
 function setSODateFilter(iso) {
   DB.soDateFilter = iso || '';
+  const st = DatePickerState['so-datein-picker'];
+  if (st) { st.batchNo = iso ? batchNoFor(iso) : 0; updateDatePickerDisplay('so-datein-picker'); }
   const clr = document.getElementById('so-datein-clear');
   if (clr) clr.style.display = iso ? 'flex' : 'none';
+  updateSearchModeUI('so');
   if (iso && DB.soFilter !== 'ALL') {
     DB.soFilter = 'ALL';
     renderBrandPills();
@@ -8092,9 +8311,10 @@ function clearSODateFilter(e) {
   if (e) { e.stopPropagation(); e.preventDefault(); }
   DB.soDateFilter = '';
   const st = DatePickerState['so-datein-picker'];
-  if (st) { st.picked = false; updateDatePickerDisplay('so-datein-picker'); }
+  if (st) { st.picked = false; st.batchNo = 0; updateDatePickerDisplay('so-datein-picker'); }
   const clr = document.getElementById('so-datein-clear');
   if (clr) clr.style.display = 'none';
+  updateSearchModeUI('so');
   renderStockOut();
 }
 
@@ -8272,6 +8492,7 @@ function renderStockOut(searchTerm) {
   });
 
   renderSOBrandSidebar();
+  renderQuickDates('so');
   applySOSidebarMini();
   renderCartSidebar();
   updateStickyHeaderOffsets();
@@ -10013,11 +10234,19 @@ function updateDatePickerDisplay(id) {
     }
     if (input) input.value = isoText;
   } else {
-    // Generic filter pickers: show placeholder until a date is picked
+    // Generic filter pickers: placeholder until picked, then a batch chip
+    const container = document.getElementById(id);
     const disp = document.getElementById(`${id}-display`);
+    const cap = document.getElementById(`${id}-caption`);
+    const batch = document.getElementById(`${id}-batch`);
     const rel = document.getElementById(`${id}-relative`);
     const input = state.inputId ? document.getElementById(state.inputId) : null;
-    if (disp) disp.textContent = state.picked ? dateText : 'Date In';
+    if (container) container.classList.toggle('picked', !!state.picked);
+    if (cap) cap.style.display = state.picked ? 'flex' : 'none';
+    if (disp) disp.textContent = state.picked
+      ? state.selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'Date In';
+    if (batch) batch.textContent = (state.picked && state.batchNo) ? `(Batch #${state.batchNo})` : '';
     if (rel) {
       rel.textContent = state.picked ? relText : '';
       rel.style.display = (state.picked && relText) ? 'inline-block' : 'none';
