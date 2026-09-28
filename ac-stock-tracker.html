@@ -1049,6 +1049,9 @@ body.theme-light .search-filter-bar {
 .hdr-search-side .search-group { flex: 0 1 auto; max-width: 520px; min-width: 235px; }
 .hdr-search-side .search-group .search-box-wrap { min-width: 70px; }
 .hdr-search-side .search-group .search-box-wrap input { padding-right: 6px; min-width: 0; }
+/* Track List search group — two date pickers + text, may wrap on narrow */
+.tl-search-group { flex-wrap: wrap; max-width: 640px; }
+.search-group .search-box-wrap.tl-search { min-width: 130px; max-width: none; flex: 1 1 130px; }
 /* dp-filter inside the group must size to content (base rule fixes it at 172px) */
 .search-group .custom-datepicker.dp-filter { width: auto; flex: 0 0 auto; max-width: none; }
 .search-group.sg-filtered {
@@ -4974,7 +4977,7 @@ body.theme-light .autocomplete-dropdown {
           </button>
           <div class="search-box-wrap tl-side-search">
             <span class="search-icon">&#128269;</span>
-            <input type="text" id="track-search-side" oninput="handleTrackSearchInput(this.value)" placeholder="Search customer, model, serial, date...">
+            <input type="text" id="track-search-side" oninput="handleTrackSideSearchInput(this.value)" placeholder="Search customer...">
           </div>
           <div class="tl-side-avatars" id="tl-side-avatars"></div>
         </div>
@@ -5011,10 +5014,43 @@ body.theme-light .autocomplete-dropdown {
           </div>
         </div>
         <div class="tl-header-actions">
-          <div class="search-box-wrap tl-search">
-            <span class="search-icon">&#128269;</span>
-            <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Search serial, customer, model or date...">
-            <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
+          <div class="search-group tl-search-group" id="track-search-group">
+            <span class="sg-lead-icon">&#128269;</span>
+            <div class="custom-datepicker dp-filter" id="track-datein-picker">
+              <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('track-datein-picker', event)">
+                <span class="dp-icon-cal">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <span class="dp-date-stack">
+                  <span class="dp-date-caption" id="track-datein-picker-caption" style="display:none;">Date In <span class="dp-live-dot"></span></span>
+                  <span class="dp-date-line"><span class="dp-date-text" id="track-datein-picker-display">Date In</span></span>
+                </span>
+                <span class="dp-badge-relative" id="track-datein-picker-relative" style="display:none;"></span>
+                <span class="dp-icon-chevron">&#9662;</span>
+              </button>
+              <button type="button" class="dp-filter-clear" id="track-datein-clear" onclick="clearTrackDateInFilter(event)" style="display:none;" title="Clear Date In filter">&times;</button>
+              <div class="datepicker-popover" id="track-datein-picker-popover"></div>
+            </div>
+            <div class="custom-datepicker dp-filter" id="track-dateout-picker">
+              <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('track-dateout-picker', event)">
+                <span class="dp-icon-cal">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <span class="dp-date-stack">
+                  <span class="dp-date-caption" id="track-dateout-picker-caption" style="display:none;">Date Out <span class="dp-live-dot"></span></span>
+                  <span class="dp-date-line"><span class="dp-date-text" id="track-dateout-picker-display">Date Out</span></span>
+                </span>
+                <span class="dp-badge-relative" id="track-dateout-picker-relative" style="display:none;"></span>
+                <span class="dp-icon-chevron">&#9662;</span>
+              </button>
+              <button type="button" class="dp-filter-clear" id="track-dateout-clear" onclick="clearTrackDateOutFilter(event)" style="display:none;" title="Clear Date Out filter">&times;</button>
+              <div class="datepicker-popover" id="track-dateout-picker-popover"></div>
+            </div>
+            <div class="search-box-wrap tl-search">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="track-search" oninput="handleTrackSearchInput(this.value)" placeholder="Serial, model or customer...">
+              <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
+            </div>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="printTrackLabels()" title="Print serial labels">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12-3h12v5H6z"></path></svg>
@@ -5784,7 +5820,10 @@ const DB = {
   soFilter: 'ALL',
   trackFilter: 'ALL',
   trackWarrantyFilter: 'ALL', // 'ALL' | 'active' | 'expiring' | 'expired'
-  trackSearch: '',          // shared by both track-list search fields
+  trackSearch: '',          // main records search (serial/model/customer)
+  trackSideSearch: '',      // sidebar customer-name search (list only)
+  trackDateIn: '',          // picked Date In filter (ISO) for Track List
+  trackDateOut: '',         // picked Date Out filter (ISO) for Track List
   trackSideTab: 'customers', // sidebar tab: 'customers' | 'warranty'
   trackSidebarMini: false,  // sidebar collapsed to avatar rail
   soSidebarMini: false,     // Stock Out brand sidebar collapsed
@@ -8783,14 +8822,17 @@ async function processCartCheckout() {
 /* =========================================================
    4. TRACK LIST LOGIC
    ========================================================= */
-/* Both search fields (sidebar + main) drive the SAME query — typing in
-   either one live-filters the records identically and mirrors the text
-   into the other field (unless that field is the one being typed in). */
+/* Split search (same model as Available/Stock Out): the sidebar field
+   filters the customer list by name only; the main field filters records
+   by serial/model/customer; Date In / Date Out each get their own picker. */
 function syncTrackSearchInputs(v) {
-  ['track-search', 'track-search-side'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && document.activeElement !== el) el.value = v;
-  });
+  const el = document.getElementById('track-search');
+  if (el && document.activeElement !== el) el.value = v;
+}
+
+function handleTrackSideSearchInput(val) {
+  DB.trackSideSearch = val;
+  renderTrackSidebar();
 }
 
 function handleTrackSearchInput(val) {
@@ -8798,6 +8840,44 @@ function handleTrackSearchInput(val) {
   syncTrackSearchInputs(val);
   const clearBtn = document.getElementById('track-search-clear');
   if (clearBtn) clearBtn.style.display = val && val.trim() ? 'flex' : 'none';
+  renderTrackList();
+}
+
+function setTrackDateInFilter(iso) {
+  DB.trackDateIn = iso || '';
+  const st = DatePickerState['track-datein-picker'];
+  if (st) updateDatePickerDisplay('track-datein-picker');
+  const clr = document.getElementById('track-datein-clear');
+  if (clr) clr.style.display = iso ? 'flex' : 'none';
+  renderTrackList();
+}
+
+function setTrackDateOutFilter(iso) {
+  DB.trackDateOut = iso || '';
+  const st = DatePickerState['track-dateout-picker'];
+  if (st) updateDatePickerDisplay('track-dateout-picker');
+  const clr = document.getElementById('track-dateout-clear');
+  if (clr) clr.style.display = iso ? 'flex' : 'none';
+  renderTrackList();
+}
+
+function clearTrackDateInFilter(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  DB.trackDateIn = '';
+  const st = DatePickerState['track-datein-picker'];
+  if (st) { st.picked = false; updateDatePickerDisplay('track-datein-picker'); }
+  const clr = document.getElementById('track-datein-clear');
+  if (clr) clr.style.display = 'none';
+  renderTrackList();
+}
+
+function clearTrackDateOutFilter(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  DB.trackDateOut = '';
+  const st = DatePickerState['track-dateout-picker'];
+  if (st) { st.picked = false; updateDatePickerDisplay('track-dateout-picker'); }
+  const clr = document.getElementById('track-dateout-clear');
+  if (clr) clr.style.display = 'none';
   renderTrackList();
 }
 
@@ -8843,10 +8923,14 @@ function getFilteredTrackList() {
       (r.serial || '').toLowerCase().includes(q) ||
       (r.model || '').toLowerCase().includes(q) ||
       (r.customer || '').toLowerCase().includes(q) ||
-      (r.warranty && r.warranty.status && r.warranty.status.toLowerCase().includes(q)) ||
-      dateMatchesQ(r.dateIn, q) ||
-      dateMatchesQ(r.dateOut, q)
+      (r.warranty && r.warranty.status && r.warranty.status.toLowerCase().includes(q))
     );
+  }
+  if (DB.trackDateIn) {
+    list = list.filter(r => dateMatchesQ(r.dateIn, DB.trackDateIn));
+  }
+  if (DB.trackDateOut) {
+    list = list.filter(r => dateMatchesQ(r.dateOut, DB.trackDateOut));
   }
   return list;
 }
@@ -9190,9 +9274,11 @@ function renderTrackSidebar() {
     }).join('');
   }
 
+  const sq = (DB.trackSideSearch || '').trim().toLowerCase();
+  const visCust = sq ? customers.filter(c => (c.name || '').toLowerCase().includes(sq)) : customers;
   custListEl.innerHTML =
     mkCust('ALL', 'All Customers', DB.trackList.length, '', 'var(--green-bright)', '∞', 'none') +
-    customers.map(c => mkCust(c.name, c.name, c.units, c.last, trackCustomerColor(c.name), trackCustomerInitials(c.name), c.worst)).join('');
+    visCust.map(c => mkCust(c.name, c.name, c.units, c.last, trackCustomerColor(c.name), trackCustomerInitials(c.name), c.worst)).join('');
 
   // Warranty tab — status rows sharing the same row shell
   const mkWarr = (key, label, count, dot) => `
@@ -10354,7 +10440,7 @@ function updateDatePickerDisplay(id) {
     if (cap) cap.style.display = state.picked ? 'flex' : 'none';
     if (disp) disp.textContent = state.picked
       ? state.selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : 'Date In';
+      : (state.placeholder || 'Date In');
     if (batch) batch.textContent = (state.picked && state.batchNo) ? `(Batch #${state.batchNo})` : '';
     if (rel) {
       rel.textContent = state.picked ? relText : '';
@@ -11050,6 +11136,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   initDatePicker('dispatch-date-out-picker', todayStr);
   initDatePicker('avail-datein-picker', null, setAvailDateFilter);
   initDatePicker('so-datein-picker', null, setSODateFilter);
+  initDatePicker('track-datein-picker', null, setTrackDateInFilter);
+  initDatePicker('track-dateout-picker', null, setTrackDateOutFilter);
+  const _tout = DatePickerState['track-dateout-picker'];
+  if (_tout) { _tout.placeholder = 'Date Out'; updateDatePickerDisplay('track-dateout-picker'); }
 
   switchTab('stock-in');
 });
