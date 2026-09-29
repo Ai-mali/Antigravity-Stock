@@ -1325,6 +1325,17 @@ body.theme-light .search-filter-bar {
   color: var(--text-muted);
 }
 
+/* High-visibility count pill — glows in the brand's accent color */
+.badge-glow {
+  color: var(--brand-c, var(--green-bright));
+  background: color-mix(in srgb, var(--brand-c, var(--green)) 14%, transparent);
+  border: 1px solid var(--brand-c, var(--green));
+  font-weight: 800;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--brand-c, var(--green)) 75%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--brand-c, var(--green)) 40%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--brand-c, var(--green)) 15%, transparent);
+}
+
 .badge-red {
   background: var(--red-badge-bg);
   border: 1px solid var(--red-badge-border);
@@ -8949,7 +8960,7 @@ function renderAvailable(searchTerm) {
           <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
-          <span class="badge badge-neutral">${brandUnits} Units Total</span>
+          <span class="badge badge-glow">${brandUnits} Units Total</span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
@@ -9545,7 +9556,7 @@ function renderStockOut(searchTerm) {
           <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
-          <span class="badge badge-neutral">${brandUnits} Units Total</span>
+          <span class="badge badge-glow">${brandUnits} Units Total</span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
