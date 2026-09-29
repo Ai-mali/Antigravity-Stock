@@ -4247,6 +4247,46 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   color: var(--text-sub);
   font-size: 11.5px;
 }
+.rma-note-cell .rma-note-link {
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(110,132,148,0.5);
+}
+.rma-note-cell .rma-note-link:hover {
+  color: var(--green-bright);
+  border-bottom-color: var(--green-bright);
+}
+.rma-detail-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+.rma-detail-val {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+.rma-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+.rma-detail-notes {
+  margin-top: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow-y: auto;
+  user-select: text;
+  cursor: text;
+}
 .rma-reg-head { border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .rma-rec-pill {
   display: inline-flex; align-items: center; padding: 2px 8px;
@@ -6138,6 +6178,48 @@ body.theme-light .autocomplete-dropdown {
     <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn btn-ghost" onclick="resolveAppConfirm(false)">Cancel</button>
       <button class="btn btn-primary" id="app-confirm-ok" onclick="resolveAppConfirm(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- RETURN DETAIL MODAL -->
+<div class="modal-overlay" id="rma-detail-modal">
+  <div class="modal-dialog" style="max-width:520px;">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Return Record Detail</h3>
+        <div class="modal-subtitle">Full inspection &amp; disposition record for this unit</div>
+      </div>
+      <button class="btn-circle" onclick="closeReturnDetail()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
+      <div style="background:var(--surface2); border:1px solid var(--border-light); border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <div class="rma-detail-label">Serial Number</div>
+            <div id="rma-detail-serial" class="mono" style="font-size:15px; font-weight:800; color:var(--green-bright); margin-top:3px;"></div>
+          </div>
+          <div>
+            <div class="rma-detail-label">Model Code</div>
+            <div id="rma-detail-model" class="mono" style="font-size:15px; font-weight:800; margin-top:3px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rma-detail-grid">
+        <div><div class="rma-detail-label">Customer</div><div id="rma-detail-customer" class="rma-detail-val"></div></div>
+        <div><div class="rma-detail-label">Action Taken</div><div id="rma-detail-action" class="rma-detail-val"></div></div>
+        <div><div class="rma-detail-label">Date In</div><div id="rma-detail-datein" class="rma-detail-val mono"></div></div>
+        <div><div class="rma-detail-label">Date Out</div><div id="rma-detail-dateout" class="rma-detail-val mono"></div></div>
+        <div><div class="rma-detail-label">Date Returned</div><div id="rma-detail-dateret" class="rma-detail-val mono"></div></div>
+        <div><div class="rma-detail-label">Warranty (12 mo from Date Out)</div><div id="rma-detail-warranty" class="rma-detail-val"></div></div>
+        <div style="grid-column:1 / -1;"><div class="rma-detail-label">Return Reason</div><div id="rma-detail-reason" class="rma-detail-val"></div></div>
+      </div>
+      <div class="rma-detail-label" style="margin-top:12px;">Inspection Notes</div>
+      <div id="rma-detail-notes" class="rma-detail-notes"></div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" onclick="closeReturnDetail()">Close</button>
+      <button class="btn btn-primary" onclick="exportReturnDetail()" title="Download this record as CSV">&#8681; Export This Record</button>
     </div>
   </div>
 </div>
@@ -10164,6 +10246,7 @@ function renderReturnTable() {
     const releaseBtn = r.action === 'Quarantined'
       ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeJs(r.serial)}')" style="color:#f59e0b;">${releaseSvg}</button>`
       : '';
+    const rIdx = DB.returns.indexOf(r);
     tr.innerHTML = `
       <td class="mono" style="font-weight:700; color:var(--green-bright);"><span class="tl-copy" title="Click to copy serial" onclick="copySerial('${escapeHtml(escapeJs(r.serial))}')">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
       <td style="font-weight:600;"><span class="tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(r.model))}')">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></td>
@@ -10172,11 +10255,11 @@ function renderReturnTable() {
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateOut || '—')}</td>
       <td class="mono">${escapeHtml(r.date)}</td>
       <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
-      <td class="rma-note-cell" title="${escapeHtml(r.notes || '')}">${r.notes ? escapeHtml(r.notes) : '<span style="opacity:.35;">—</span>'}</td>
+      <td class="rma-note-cell" title="${escapeHtml(r.notes || '')}">${r.notes ? `<span class="rma-note-link" onclick="openReturnDetail(${rIdx})">${escapeHtml(r.notes)}</span>` : '<span style="opacity:.35;">—</span>'}</td>
       <td style="text-align:center;">${badge}</td>
       <td style="text-align:right; white-space:nowrap;">
         ${releaseBtn}
-        <button type="button" class="tl-eye-btn" title="Inspect details" onclick="inspectReturnRow('${escapeJs(r.serial)}')">${eyeSvg}</button>
+        <button type="button" class="tl-eye-btn" title="Inspect details" onclick="inspectReturnRow(${rIdx})">${eyeSvg}</button>
         <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag('${escapeJs(r.serial)}')" style="color:var(--green-bright);">${printSvg}</button>
       </td>
     `;
@@ -10220,10 +10303,62 @@ function setRmaPageSize(v) {
   renderReturnTable();
 }
 
-function inspectReturnRow(serial) {
-  const r = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
+/* Return record detail modal — full inspection view for one registry row */
+let _rmaDetailIdx = null;
+
+function openReturnDetail(idx) {
+  const r = DB.returns[idx];
   if (!r) return;
-  showToast(`${r.serial} · ${r.model} → ${r.customer} | ${r.reason} | ${r.action} ${r.date}${r.notes ? ` | 📝 ${r.notes}` : ''}`);
+  _rmaDetailIdx = idx;
+
+  document.getElementById('rma-detail-serial').textContent = r.serial || '—';
+  document.getElementById('rma-detail-model').textContent = r.model || '—';
+  document.getElementById('rma-detail-customer').textContent = r.customer || '—';
+  document.getElementById('rma-detail-action').innerHTML = r.action === 'Restocked'
+    ? '<span class="rma-action-pill restocked">Restocked</span>'
+    : '<span class="rma-action-pill quarantined">Quarantined</span>';
+  document.getElementById('rma-detail-datein').textContent = r.dateIn || '—';
+  document.getElementById('rma-detail-dateout').textContent = r.dateOut || '—';
+  document.getElementById('rma-detail-dateret').textContent = r.date || '—';
+  const w = r.warranty || {};
+  const wTxt = { active: 'Active', expiring: 'Expiring Soon', expired: 'Expired', none: 'No warranty' }[w.status] || '—';
+  const wColor = { active: 'var(--green-bright)', expiring: '#fbbf24', expired: '#f87171', none: 'var(--text-sub)' }[w.status] || 'var(--text-sub)';
+  document.getElementById('rma-detail-warranty').innerHTML = w.status && w.status !== 'none'
+    ? `<span style="color:${wColor}; font-weight:700;">${wTxt}</span> <span style="color:var(--text-sub); font-size:11px;">expires ${escapeHtml(w.expiry || '')} · ${w.daysRemaining}d left</span>`
+    : `<span style="color:var(--text-sub);">—</span>`;
+  document.getElementById('rma-detail-reason').textContent = r.reason || '—';
+  const notesEl = document.getElementById('rma-detail-notes');
+  notesEl.textContent = r.notes || '';
+  if (!r.notes) notesEl.innerHTML = '<span style="opacity:.4;">No inspection notes recorded.</span>';
+
+  document.getElementById('rma-detail-modal').classList.add('open');
+}
+
+function closeReturnDetail() {
+  document.getElementById('rma-detail-modal').classList.remove('open');
+  _rmaDetailIdx = null;
+}
+
+function inspectReturnRow(idx) {
+  openReturnDetail(idx);
+}
+
+function exportReturnDetail() {
+  const r = DB.returns[_rmaDetailIdx];
+  if (!r) return;
+  const w = r.warranty || {};
+  const wTxt = w.status && w.status !== 'none'
+    ? `${w.status} (expires ${w.expiry}, ${w.daysRemaining}d left)` : 'none';
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = 'SERIAL,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
+    + [r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
+        .map(esc).join(',') + '\n';
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `return_${String(r.serial || 'record').replace(/[^\w-]+/g, '_')}.csv`;
+  a.click();
+  showToast(`Exported return record for ${r.serial}`, '&#10003;');
 }
 
 /* ---- Generic themed confirm dialog (replaces native confirm()) ---- */
@@ -11682,6 +11817,7 @@ document.addEventListener('keydown', e => {
     closeConfirmDeleteModal();
     closeDoPhotosModal();
     closePhotoViewerModal();
+    closeReturnDetail();
     resolveAppConfirm(false);
   }
 });
@@ -11708,6 +11844,7 @@ onBackdropPress(document.getElementById('edit-unit-modal'), () => closeEditUnitM
 onBackdropPress(document.getElementById('confirm-delete-modal'), () => closeConfirmDeleteModal());
 onBackdropPress(document.getElementById('do-photos-modal'), () => closeDoPhotosModal());
 onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoViewerModal());
+onBackdropPress(document.getElementById('rma-detail-modal'), () => closeReturnDetail());
 
 /* Day / Dark Theme toggle — View Transitions crossfade: GPU snapshot swap
    whose cost is independent of DOM size (fixes the lag on expanded data).
