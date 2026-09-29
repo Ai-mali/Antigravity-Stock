@@ -448,7 +448,10 @@ def remove_key(provider: str, index: int):
 
 
 # ------------------------------------------------------------------ ui prefs
-UI_PREFS_PATH = Path(__file__).parent / "ui_prefs.json"
+if getattr(sys, "frozen", False):
+    UI_PREFS_PATH = Path(sys.executable).parent / "ui_prefs.json"
+else:
+    UI_PREFS_PATH = Path(__file__).parent / "ui_prefs.json"
 
 
 def _read_ui_prefs() -> dict:

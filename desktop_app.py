@@ -16,7 +16,9 @@ from ctypes import wintypes
 APP_URL = 'http://127.0.0.1:8000/?app_mode=desktop'
 BACKEND_PORT = 8000
 HEALTH_URL = 'http://127.0.0.1:%d/api/ui-prefs' % BACKEND_PORT
-PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.vre_app.pid')
+_APP_DIR = (os.path.dirname(sys.executable) if getattr(sys, 'frozen', False)
+            else os.path.dirname(os.path.abspath(__file__)))
+PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 
 # Shown instantly while the backend (heavy imports + workbook parse) boots
 # in a background thread; replaced via load_url() once port 8000 is live.
