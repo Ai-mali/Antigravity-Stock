@@ -6840,6 +6840,10 @@ function openReadySerialModal(rowIdx, serial) {
   if (rowIdx < 0 || rowIdx >= DB.scans.length) return;
   const row = DB.scans[rowIdx];
   if (!row) return;
+  if (row.sev === 'error') {
+    showToast((row.warn || 'Row has an error') + ' \u2014 fix with the pencil first.', '\u26a0');
+    return;
+  }
 
   _readyModalRowIdx = rowIdx;
   _readyModalSerial = serial;
@@ -6903,6 +6907,11 @@ async function commitSingleReadySerialFromModal() {
   if (_readyModalRowIdx === null || !_readyModalSerial) return;
   const row = DB.scans[_readyModalRowIdx];
   if (!row) {
+    closeReadySerialModal();
+    return;
+  }
+  if (row.sev === 'error') {
+    showToast((row.warn || 'Row has an error') + ' \u2014 fix with the pencil first.', '\u26a0');
     closeReadySerialModal();
     return;
   }
@@ -7068,9 +7077,12 @@ function renderScanResultsTable() {
     else if (row.sev === 'warn') trCls.push('scan-row-warn');
     if (trCls.length) tr.className = trCls.join(' ');
 
+    const isErrRow = row.sev === 'error' && !isAllDupe;
+    const commitBlocked = isAllDupe || isErrRow;
     const commitTooltip = isAllDupe
       ? 'All serials are duplicates \u2014 cannot commit to stock'
-      : (isPartial ? `Commit ${validSerials.length} valid unit(s) to stock (keep duplicate)` : 'Commit Model to Available Stock');
+      : (isErrRow ? `${(row.warn || 'Row has an error')} \u2014 fix with the pencil first`
+        : (isPartial ? `Commit ${validSerials.length} valid unit(s) to stock (keep duplicate)` : 'Commit Model to Available Stock'));
 
     tr.innerHTML = `
       <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no !== undefined ? row.no : (idx + 1)}</td>
@@ -7099,7 +7111,7 @@ function renderScanResultsTable() {
           <button class="btn-action-icon" onclick="event.stopPropagation(); editScanRow(${idx})" title="Edit Serials" aria-label="Edit Model Serials">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
           </button>
-          <button class="btn-action-icon btn-action-commit ${isAllDupe ? 'btn-action-disabled' : ''}" ${isAllDupe ? 'disabled' : `onclick="event.stopPropagation(); commitScanRow(${idx})"`} title="${commitTooltip}" aria-label="Commit Model to Stock">
+          <button class="btn-action-icon btn-action-commit ${commitBlocked ? 'btn-action-disabled' : ''}" ${commitBlocked ? 'disabled' : `onclick="event.stopPropagation(); commitScanRow(${idx})"`} title="${commitTooltip}" aria-label="Commit Model to Stock">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
           </button>
         </div>
@@ -7773,6 +7785,10 @@ function commitSerialsOf(row) {
 async function commitScanRow(idx, assignedBrand = null) {
   const row = DB.scans[idx];
   if (!row) return;
+  if (row.sev === 'error') {
+    showToast((row.warn || 'Row has an error') + ' \u2014 fix with the pencil first.', '\u26a0');
+    return;
+  }
   const serials = commitSerialsOf(row);
   if (!serials.length && !row.desc) {
     showToast('Row has no serials \u2014 edit it first.');
@@ -7850,14 +7866,19 @@ async function commitSelectedOrAllScans() {
     return;
   }
 
-  // Only non-duplicate rows can be committed
+  // Only non-duplicate, non-error rows can be committed
   const hasSpecificSelection = selectedScanIndices.size > 0;
+  const isCommittable = i => {
+    const r = DB.scans[i];
+    return r && !r.isDuplicate && r.sev !== 'error';
+  };
   const indices = hasSpecificSelection
-    ? Array.from(selectedScanIndices).filter(i => i >= 0 && i < DB.scans.length && !DB.scans[i].isDuplicate).sort((a, b) => b - a)
-    : DB.scans.map((r, i) => (!r.isDuplicate ? i : -1)).filter(i => i >= 0).reverse();
+    ? Array.from(selectedScanIndices).filter(i => i >= 0 && i < DB.scans.length && isCommittable(i)).sort((a, b) => b - a)
+    : DB.scans.map((r, i) => (isCommittable(i) ? i : -1)).filter(i => i >= 0).reverse();
+  const errCount = DB.scans.filter(r => r.sev === 'error' && !r.isDuplicate).length;
 
   if (!indices.length) {
-    showToast('No valid rows to commit. Resolve or delete duplicates first.', '&#9888;');
+    showToast('No valid rows to commit. Resolve or delete duplicates/errors first.', '&#9888;');
     return;
   }
 
@@ -7930,6 +7951,7 @@ async function commitSelectedOrAllScans() {
   await refreshData();
   let msg = `Committed ${done} row(s)`;
   if (dupeCount) msg += `, kept ${dupeCount} duplicate row(s) blinking in scan list`;
+  if (errCount) msg += `, held ${errCount} error row(s) — fix with pencil`;
   if (skipped) msg += `, skipped ${skipped}`;
   showToast(msg + '.');
 }
