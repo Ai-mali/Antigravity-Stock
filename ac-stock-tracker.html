@@ -4270,6 +4270,12 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   font-family: 'JetBrains Mono', monospace;
   background: rgba(245, 158, 11, 0.16); color: #f59e0b;
   border: 1px solid rgba(245, 158, 11, 0.35); vertical-align: 1px;
+  cursor: pointer;
+  transition: background .12s, box-shadow .12s;
+}
+.rma-2nd:hover {
+  background: rgba(245, 158, 11, 0.32);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
 }
 
 /* Modal Overlay & Box */
@@ -8317,7 +8323,7 @@ function renderAvailable(searchTerm) {
               <span>Rec: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
-                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? '<b class="rma-2nd">2nd</b>' : ''}</span>
+                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
               </span>
             </div>
           </div>
@@ -8901,7 +8907,7 @@ function renderStockOut(searchTerm) {
             </div>
             <div class="so-card-bottom">
               <span>In: ${dateDisplay}</span>
-              <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? '<b class="rma-2nd">2nd</b>' : ''}</span>
+              <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
             </div>
           </div>
         `;
@@ -9568,6 +9574,26 @@ function inspectTrackRow(serial) {
       setTimeout(() => { inp.style.outline = ''; inp.style.outlineOffset = ''; }, 1800);
     }
     showToast(`Inspecting ${serial} in Return & RMA`, '&#128065;');
+  }, 150);
+}
+
+/* Clicking a "2nd" badge on a stock card jumps to the Return screen and
+   filters the registry to that serial so its return history shows. */
+function viewReturnHistory(serial) {
+  switchTab('return');
+  setTimeout(() => {
+    DB.rmaSearch = serial;
+    DB.rmaDateOut = '';
+    DB.rmaChip = 'ALL';
+    DB.rmaPage = 0;
+    const inp = document.getElementById('rma-search');
+    if (inp) inp.value = serial;
+    const dp = document.getElementById('rma-dateout');
+    if (dp) dp.value = '';
+    renderReturnTable();
+    const tbody = document.getElementById('rma-table-tbody');
+    if (tbody) tbody.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    showToast(`Return history for ${serial}`, '&#128065;');
   }, 150);
 }
 
