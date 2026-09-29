@@ -6026,7 +6026,7 @@ body.theme-light .autocomplete-dropdown {
             <div style="font-size:11px; color:var(--text-sub);">Safe manual snapshot saved to local backups directory</div>
           </div>
           <div style="display:flex; gap:8px;">
-            <a href="/api/backup/download" class="btn btn-ghost btn-sm" style="text-decoration:none; display:inline-flex; align-items:center;" title="Download active Excel file">
+            <a href="/api/backup/download" class="btn btn-ghost btn-sm" onclick="event.preventDefault(); downloadServerFile(this.href, 'daikin_stock.xlsx')" style="text-decoration:none; display:inline-flex; align-items:center;" title="Download active Excel file">
               &#11015; Download Active .xlsx
             </a>
             <button class="btn btn-primary btn-sm" onclick="triggerManualBackup()">
@@ -6197,7 +6197,7 @@ body.theme-light .autocomplete-dropdown {
         <div style="font-size:11px; color:var(--text-sub);" id="photo-viewer-sub"></div>
       </div>
       <div style="display:flex; gap:8px;">
-        <a id="photo-viewer-download" href="#" target="_blank" download class="btn btn-ghost btn-sm">&#11015; Download</a>
+        <a id="photo-viewer-download" href="#" class="btn btn-ghost btn-sm" onclick="event.preventDefault(); downloadServerFile(this.href, document.getElementById('photo-viewer-title').textContent || 'photo.jpg')">&#11015; Download</a>
         <button class="btn-circle" onclick="closePhotoViewerModal()">&#10005;</button>
       </div>
     </div>
@@ -8402,15 +8402,63 @@ async function closeBrandModal(cancelled) {
 
 
 
+/* Save a blob via a native Save-As dialog so the user picks the folder.
+   Order: pywebview bridge (native Windows dialog) > File System Access
+   API > classic silent download. Returns true when a file was written. */
+async function saveBlobWithPicker(blob, filename) {
+  const api = window.pywebview && window.pywebview.api;
+  if (api && api.save_file) {
+    const b64 = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result).split(',')[1] || '');
+      fr.onerror = () => rej(new Error('read failed'));
+      fr.readAsDataURL(blob);
+    });
+    const path = await api.save_file(filename, b64);
+    if (path) {
+      showToast(`Saved to ${path}`, '&#10003;');
+      return true;
+    }
+    showToast('Save cancelled.');
+    return false; // user cancelled the dialog
+  }
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await showSaveFilePicker({ suggestedName: filename });
+      const w = await handle.createWritable();
+      await w.write(blob);
+      await w.close();
+      showToast(`Saved ${filename}`, '&#10003;');
+      return true;
+    } catch (e) {
+      if (e.name === 'AbortError') { showToast('Save cancelled.'); return false; }
+    }
+  }
+  // Last resort: silent download to the browser's Downloads folder
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast(`Exported ${filename} to Downloads`, '&#10003;');
+  return true;
+}
+
+/* Fetch a server-served file then route it through the picker. */
+async function downloadServerFile(url, filename) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    await saveBlobWithPicker(blob, filename);
+  } catch (e) {
+    showToast('Download failed: ' + e.message, '&#9888;');
+  }
+}
+
 function downloadScanCsv() {
   let csv = 'No,Model,Serials,Qty\n';
   DB.scans.forEach(r => csv += `${r.no},"${r.model}","${r.serials.join(';')}",${r.qty}\n`);
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'scan_results.csv';
-  a.click();
-  showToast('Exported scan_results.csv');
+  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'scan_results.csv');
 }
 
 /* =========================================================
@@ -10229,12 +10277,7 @@ function exportTrackCsv() {
     const w = r.warranty || { status: '', expiry: '' };
     csv += `"${r.model}","${r.serial}","${r.dateIn}","${r.dateOut}","${r.customer}","${w.status}","${w.expiry}","Dispatched"\n`;
   });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'track_list_export.csv';
-  a.click();
-  showToast('Exported track_list_export.csv');
+  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'sell_record_export.csv');
 }
 
 /* =========================================================
@@ -10625,12 +10668,8 @@ function exportReturnDetail() {
   const csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
     + [r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
         .map(esc).join(',') + '\n';
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `return_${String(r.serial || 'record').replace(/[^\w-]+/g, '_')}.csv`;
-  a.click();
-  showToast(`Exported return record for ${r.serial}`, '&#10003;');
+  const fname = `return_${String(r.serial || 'record').replace(/[^\w-]+/g, '_')}.csv`;
+  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), fname);
 }
 
 /* ---- Generic themed confirm dialog (replaces native confirm()) ---- */
@@ -10709,12 +10748,7 @@ function exportReturnsCsv() {
   DB.returns.forEach(r => {
     csv += `"${r.serial}","${r.model}","${r.customer}","${r.dateOut || ''}","${r.date}","${(r.reason || '').replace(/"/g, '""')}","${(r.notes || '').replace(/"/g, '""')}","${r.action}"\n`;
   });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'returns_registry_export.csv';
-  a.click();
-  showToast('Exported returns_registry_export.csv');
+  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'returns_registry_export.csv');
 }
 
 function printRmaTags() {
@@ -11336,7 +11370,7 @@ function renderBackupsTable() {
       <td class="mono" style="color:var(--text-muted); font-size:11px;">${b.modified}</td>
       <td class="mono" style="color:var(--text-sub);">${sizeKb}</td>
       <td style="text-align:right; white-space:nowrap;">
-        <a href="/api/backup/download?filename=${encodeURIComponent(b.filename)}" class="btn btn-ghost btn-sm" style="padding:4px 8px; text-decoration:none; display:inline-flex; align-items:center;" title="Download this snapshot">
+        <a href="/api/backup/download?filename=${encodeURIComponent(b.filename)}" class="btn btn-ghost btn-sm" onclick="event.preventDefault(); downloadServerFile(this.href, '${escapeJs(b.filename)}')" style="padding:4px 8px; text-decoration:none; display:inline-flex; align-items:center;" title="Download this snapshot">
           ⬇ Download
         </a>
         <button class="btn btn-sm" style="padding:4px 8px; background:rgba(220,38,38,0.12); color:#f87171; border:1px solid rgba(220,38,38,0.3); margin-left:6px;" onclick="restoreBackupFile('${b.filename}')" title="Restore daikin_stock.xlsx from this snapshot">

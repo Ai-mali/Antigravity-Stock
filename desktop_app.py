@@ -533,6 +533,26 @@ class DesktopApi:
         if self._window:
             self._window.minimize()
 
+    def save_file(self, filename: str, content_b64: str):
+        """Native Save-As dialog then write file. Returns saved path or None."""
+        try:
+            import webview
+            import base64
+            if not self._window:
+                return None
+            result = self._window.create_file_dialog(
+                webview.SAVE_DIALOG,
+                save_filename=filename,
+                file_types=('All files (*.*)',))
+            if not result:
+                return None
+            path = result if isinstance(result, str) else result[0]
+            with open(path, 'wb') as f:
+                f.write(base64.b64decode(content_b64))
+            return str(path)
+        except Exception:
+            return None
+
     def _get_work_area(self, hwnd):
         """Rect of the monitor's work area (screen minus taskbar) holding the window."""
         try:
