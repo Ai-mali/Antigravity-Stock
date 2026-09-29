@@ -5657,6 +5657,11 @@ body.theme-light .autocomplete-dropdown {
     <div class="modal-body">
       <input type="hidden" id="edit-scan-idx" value="">
 
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button type="button" id="edit-scan-mode-ser" class="btn btn-ghost btn-sm" onclick="setEditScanMode('ser')" style="flex:1; padding:7px 10px; font-size:11.5px; font-weight:700; letter-spacing:0.4px;">&#129824; SERIALIZED</button>
+        <button type="button" id="edit-scan-mode-ns" class="btn btn-ghost btn-sm" onclick="setEditScanMode('ns')" style="flex:1; padding:7px 10px; font-size:11.5px; font-weight:700; letter-spacing:0.4px;">&#128230; NON-SERIAL PART</button>
+      </div>
+
       <div style="display:grid; grid-template-columns: 90px 1fr 110px; gap:12px; margin-bottom:16px;">
         <div>
           <label class="form-label" for="edit-scan-no">No.</label>
@@ -7523,6 +7528,47 @@ function closeZoomScanModal() {
 }
 
 let currentEditingScanIdx = null;
+let editScanMode = 'ser';
+
+function setEditScanMode(mode) {
+  editScanMode = mode;
+  const isNS = mode === 'ns';
+  const sBlock = document.getElementById('edit-scan-serials-block');
+  const dBlock = document.getElementById('edit-scan-desc-block');
+  if (sBlock) sBlock.style.display = isNS ? 'none' : '';
+  if (dBlock) dBlock.style.display = isNS ? '' : 'none';
+  const serBtn = document.getElementById('edit-scan-mode-ser');
+  const nsBtn = document.getElementById('edit-scan-mode-ns');
+  if (serBtn) {
+    serBtn.style.borderColor = isNS ? '' : 'var(--green-dim)';
+    serBtn.style.color = isNS ? '' : 'var(--green-bright)';
+    serBtn.style.background = isNS ? '' : 'rgba(0,200,150,0.08)';
+  }
+  if (nsBtn) {
+    nsBtn.style.borderColor = isNS ? 'var(--green-dim)' : '';
+    nsBtn.style.color = isNS ? 'var(--green-bright)' : '';
+    nsBtn.style.background = isNS ? 'rgba(0,200,150,0.08)' : '';
+  }
+  // switching modes refills the active field from the row's data
+  const row = DB.scans[currentEditingScanIdx];
+  if (row) populateEditScanFields(row);
+}
+
+function populateEditScanFields(row) {
+  if (editScanMode === 'ns') {
+    const dInput = document.getElementById('edit-scan-desc');
+    if (dInput) {
+      dInput.value = row.desc ||
+        (row.serials && row.serials[0]
+          ? String(row.serials[0]).split(' #')[0].trim() : '');
+    }
+  } else {
+    document.getElementById('edit-scan-serials').value =
+      (row.serials && row.serials.length)
+        ? row.serials.join(', ') : (row.desc || '');
+    updateEditScanSerialCount();
+  }
+}
 
 function editScanRow(idx) {
   const row = DB.scans[idx];
@@ -7534,22 +7580,8 @@ function editScanRow(idx) {
   document.getElementById('edit-scan-model').value = row.model || '';
   document.getElementById('edit-scan-qty').value = row.qty || '';
 
-  const isNS = isNonSerialRow(row);
-  const sBlock = document.getElementById('edit-scan-serials-block');
-  const dBlock = document.getElementById('edit-scan-desc-block');
-  if (sBlock) sBlock.style.display = isNS ? 'none' : '';
-  if (dBlock) dBlock.style.display = isNS ? '' : 'none';
-  if (isNS) {
-    const dInput = document.getElementById('edit-scan-desc');
-    if (dInput) {
-      dInput.value = row.desc ||
-        (row.serials[0] ? String(row.serials[0]).split(' #')[0].trim() : '');
-    }
-  } else {
-    document.getElementById('edit-scan-serials').value =
-      row.serials.length ? row.serials.join(', ') : (row.desc || '');
-    updateEditScanSerialCount();
-  }
+  setEditScanMode(isNonSerialRow(row) ? 'ns' : 'ser');
+  populateEditScanFields(row);
 
   const modal = document.getElementById('edit-scan-modal');
   if (modal) {
@@ -7620,7 +7652,7 @@ function saveEditScanModal() {
 
   /* Non-serial part rows edit Description + Quantity — the 'NAME #n'
      unit IDs are regenerated so the count always matches the qty. */
-  if (isNonSerialRow(row)) {
+  if (editScanMode === 'ns') {
     const descVal = ((document.getElementById('edit-scan-desc')?.value || '')
       .trim().toUpperCase().replace(/\s+/g, ' '));
     if (!descVal) {
