@@ -4239,6 +4239,14 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 .rma-meta-strip b { font-size: 11.5px; color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; padding: 0 6px; }
 .rma-registry-card { display: flex; flex-direction: column; min-height: 0; }
 .rma-registry-card .table-container { overflow-y: auto; }
+.rma-note-cell {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-sub);
+  font-size: 11.5px;
+}
 .rma-reg-head { border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .rma-rec-pill {
   display: inline-flex; align-items: center; padding: 2px 8px;
@@ -5500,6 +5508,7 @@ body.theme-light .autocomplete-dropdown {
                   <th>Date Out</th>
                   <th>Date Returned</th>
                   <th>Reason</th>
+                  <th>Notes</th>
                   <th style="text-align:center;">Action Taken</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
@@ -10056,7 +10065,8 @@ function getFilteredReturns() {
     list = list.filter(r =>
       (r.serial || '').toLowerCase().includes(q) ||
       (r.model || '').toLowerCase().includes(q) ||
-      (r.customer || '').toLowerCase().includes(q));
+      (r.customer || '').toLowerCase().includes(q) ||
+      (r.notes || '').toLowerCase().includes(q));
   }
   return list;
 }
@@ -10139,7 +10149,7 @@ function renderReturnTable() {
 
   tbody.innerHTML = '';
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No returns match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No returns match the current filters.</td></tr>';
   }
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -10162,6 +10172,7 @@ function renderReturnTable() {
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateOut || '—')}</td>
       <td class="mono">${escapeHtml(r.date)}</td>
       <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
+      <td class="rma-note-cell" title="${escapeHtml(r.notes || '')}">${r.notes ? escapeHtml(r.notes) : '<span style="opacity:.35;">—</span>'}</td>
       <td style="text-align:center;">${badge}</td>
       <td style="text-align:right; white-space:nowrap;">
         ${releaseBtn}
@@ -10212,7 +10223,7 @@ function setRmaPageSize(v) {
 function inspectReturnRow(serial) {
   const r = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
   if (!r) return;
-  showToast(`${r.serial} · ${r.model} → ${r.customer} | ${r.reason} | ${r.condition || 'No condition'} | ${r.action} ${r.date}`);
+  showToast(`${r.serial} · ${r.model} → ${r.customer} | ${r.reason} | ${r.action} ${r.date}${r.notes ? ` | 📝 ${r.notes}` : ''}`);
 }
 
 /* ---- Generic themed confirm dialog (replaces native confirm()) ---- */
@@ -10287,9 +10298,9 @@ function reprintRmaTag(serial) {
 
 function exportReturnsCsv() {
   if (!DB.returns.length) { showToast('No returns to export.'); return; }
-  let csv = 'SERIAL,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,CONDITION,ACTION\n';
+  let csv = 'SERIAL,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
   DB.returns.forEach(r => {
-    csv += `"${r.serial}","${r.model}","${r.customer}","${r.dateOut || ''}","${r.date}","${(r.reason || '').replace(/"/g, '""')}","${(r.condition || '').replace(/"/g, '""')}","${r.action}"\n`;
+    csv += `"${r.serial}","${r.model}","${r.customer}","${r.dateOut || ''}","${r.date}","${(r.reason || '').replace(/"/g, '""')}","${(r.notes || '').replace(/"/g, '""')}","${r.action}"\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
