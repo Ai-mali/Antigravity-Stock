@@ -4192,7 +4192,7 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 .rma-suggest-item .rsi-warr.expired { background: var(--red-badge-bg); color: var(--red-badge-text); }
 .rma-suggest-empty { padding: 14px 12px; font-size: 11px; color: var(--text-sub); text-align: center; }
 .rma-status-pill {
-  position: absolute; right: 26px; top: 50%; transform: translateY(-50%);
+  position: absolute; right: 32px; top: 50%; transform: translateY(-50%);
   padding: 1px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700;
   font-family: 'JetBrains Mono', monospace; pointer-events: none;
 }
@@ -5382,7 +5382,7 @@ body.theme-light .autocomplete-dropdown {
                        placeholder="Search serial, model, or scan barcode..."
                        oninput="handleRmaSerialInput(this.value)"
                        onfocus="handleRmaSerialFocus()">
-                <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none; position:static; transform:none; flex-shrink:0;" title="Clear">&times;</button>
+                <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none; right:6px;" title="Clear">&times;</button>
                 <span class="rma-status-pill" id="rma-status-pill" style="display:none;"></span>
                 <div class="rma-suggest" id="rma-serial-suggest" style="display:none;"></div>
               </div>
