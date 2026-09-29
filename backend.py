@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))  # embeddable Python lacks script dir
 
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
@@ -215,6 +215,8 @@ class StockInBody(BaseModel):
 @app.post("/api/stock-in")
 def stock_in(body: StockInBody):
     _fresh()
+    if not body.model.strip():
+        raise HTTPException(status_code=400, detail="model is required")
     serials = [s.strip().upper() for s in body.serials if s.strip()]
     if body.brand.strip():
         added, dupes = store.stock_in_with_brand(

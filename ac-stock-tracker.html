@@ -6827,6 +6827,11 @@ async function commitSingleReadySerialFromModal() {
   }
 
   const serial = _readyModalSerial;
+  if (!(row.model || '').trim()) {
+    showToast('This row has no model — use the pencil button to set one first.', '&#9888;');
+    closeReadySerialModal();
+    return;
+  }
   const fresh = (document.getElementById('ready-modal-brand-new')?.value || '').trim().toUpperCase();
   const picked = fresh || document.getElementById('ready-modal-brand-select')?.value;
 
