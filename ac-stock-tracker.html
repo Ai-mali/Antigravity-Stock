@@ -37,6 +37,8 @@
   --red-badge-border: rgba(220, 38, 38, 0.3);
   --red-badge-text: #f87171;
   --frame-bg: #39434c;
+  --scrollbar-thumb: #3d4a55;
+  --scrollbar-thumb-hover: #4d5c69;
 }
 
 body.theme-light {
@@ -61,6 +63,8 @@ body.theme-light {
   --red-badge-bg: rgba(220, 38, 38, 0.1);
   --red-badge-border: rgba(220, 38, 38, 0.25);
   --red-badge-text: #dc2626;
+  --scrollbar-thumb: #a8b7c2;
+  --scrollbar-thumb-hover: #8fa2b0;
   --frame-bg: #b6c1ca;
 }
 
@@ -276,8 +280,8 @@ body {
 /* Custom scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
 /* Main outer app container matching 6-screens frame */
 .app-container {
@@ -2079,12 +2083,12 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 }
 
 .scan-serials-wrap::-webkit-scrollbar-thumb {
-  background: var(--border-light);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 .scan-serials-wrap::-webkit-scrollbar-thumb:hover {
-  background: var(--text-sub);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .scan-serial-badge {
@@ -2134,12 +2138,12 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 }
 
 .stock-in-table-scroll::-webkit-scrollbar-thumb {
-  background: var(--border-light);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 .stock-in-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--text-sub);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .stock-in-table-scroll thead th {
@@ -2919,11 +2923,11 @@ body.theme-light .unit-action-btn {
   background: transparent;
 }
 #cart-items-container::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 #cart-items-container::-webkit-scrollbar-thumb:hover {
-  background: var(--text-sub);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Track List Elements */
