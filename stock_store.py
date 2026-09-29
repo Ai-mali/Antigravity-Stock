@@ -380,9 +380,11 @@ class StockStore:
     def inventory(self) -> dict:
         """In-stock units grouped Brand -> Model -> serials (UI shape)."""
         inv: dict[str, dict] = {}
-        # Serials that came back via a return stay marked as second-hand stock
+        # Only units that sat in Quarantine then were released are tagged 2nd.
+        # A plain restock (e.g. cancelled order, like-new) is not second-hand.
         restocked = {str(r["Serial"]).strip().lower() for r in self.returns
-                     if str(r.get("Action", "")).strip() == "Restocked"}
+                     if str(r.get("Action", "")).strip() == "Restocked"
+                     and "released from quarantine" in str(r.get("Notes", "")).lower()}
         for rec in self.records:
             if str(rec["Status"]).strip() != IN_STOCK:
                 continue

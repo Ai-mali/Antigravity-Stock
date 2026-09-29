@@ -5386,20 +5386,8 @@ body.theme-light .autocomplete-dropdown {
             <div>
               <label class="form-label">Return Reason</label>
               <select class="form-select" id="rma-reason">
-                <option>Order Cancelled / Wrong Entry</option>
-                <option>Defective / Failed Compressor</option>
-                <option>Excess Stock / Cancelled</option>
-                <option>Wrong Model Delivered</option>
-                <option>Customer Exchange</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Physical Condition</label>
-              <select class="form-select" id="rma-condition">
-                <option>Like New / Unopened Packaging</option>
-                <option>Opened - Tested Operational</option>
-                <option>Damaged Casing / Minor Cosmetic</option>
-                <option>Inoperative / Requires Service</option>
+                <option>Ordered Cancelled</option>
+                <option>Defective / Repair Needed</option>
               </select>
             </div>
             <div>
@@ -10128,7 +10116,7 @@ async function submitRmaAction(isRestock) {
     return;
   }
   const reason = document.getElementById('rma-reason').value;
-  const condition = document.getElementById('rma-condition').value;
+  const condition = '';
   const notes = (document.getElementById('rma-notes').value || '').trim();
   try {
     await apiPost('/api/returns', {
