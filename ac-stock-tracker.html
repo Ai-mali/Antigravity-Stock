@@ -4326,6 +4326,17 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   margin-top: 0;
 }
 
+/* Pulsing amber alert for a required-but-empty field (e.g. missing model) */
+@keyframes fieldAlertPulse {
+  0%, 100% { border-color: rgba(251,191,36,.85); box-shadow: 0 0 0 0 rgba(251,191,36,.45), 0 0 14px rgba(251,191,36,.25); }
+  50%      { border-color: rgba(251,191,36,.35); box-shadow: 0 0 0 5px rgba(251,191,36,0), 0 0 4px rgba(251,191,36,.15); }
+}
+.field-alert {
+  border: 1.5px solid rgba(251,191,36,.85) !important;
+  animation: fieldAlertPulse 1.1s ease-in-out infinite;
+}
+.field-alert::placeholder { color: #fbbf24; opacity:.75; }
+
 .modal-footer {
   padding: 14px 20px;
   border-top: 1px solid var(--border);
@@ -6002,6 +6013,8 @@ body.theme-light .autocomplete-dropdown {
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">MODEL CODE</div>
           <div id="ready-modal-model" class="mono" style="font-size:15px; font-weight:800; color:var(--text); margin-top:3px;">—</div>
+          <input type="text" id="ready-modal-model-input" class="form-input mono" placeholder="TYPE MODEL CODE" autocomplete="off"
+                 style="display:none; margin-top:3px; font-size:13px; font-weight:800; text-transform:uppercase; padding:7px 10px;">
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">SERIAL NUMBER</div>
@@ -6775,8 +6788,18 @@ function openReadySerialModal(rowIdx, serial) {
   _readyModalSerial = serial;
 
   const modelEl = document.getElementById('ready-modal-model');
+  const modelInp = document.getElementById('ready-modal-model-input');
   const serialEl = document.getElementById('ready-modal-serial');
-  if (modelEl) modelEl.textContent = row.model || '—';
+  const hasModel = !!(row.model || '').trim();
+  if (modelEl) {
+    modelEl.textContent = row.model || '—';
+    modelEl.style.display = hasModel ? '' : 'none';
+  }
+  if (modelInp) {
+    modelInp.style.display = hasModel ? 'none' : 'block';
+    modelInp.value = '';
+    modelInp.classList.toggle('field-alert', !hasModel);
+  }
   if (serialEl) serialEl.textContent = serial;
 
   const sel = document.getElementById('ready-modal-brand-select');
@@ -6799,6 +6822,7 @@ function openReadySerialModal(rowIdx, serial) {
 
   const modal = document.getElementById('ready-serial-modal');
   if (modal) modal.classList.add('open');
+  if (!hasModel && modelInp) setTimeout(() => modelInp.focus(), 120);
 }
 
 function closeReadySerialModal() {
@@ -6828,9 +6852,23 @@ async function commitSingleReadySerialFromModal() {
 
   const serial = _readyModalSerial;
   if (!(row.model || '').trim()) {
-    showToast('This row has no model — use the pencil button to set one first.', '&#9888;');
-    closeReadySerialModal();
-    return;
+    // Model missing — keep the modal open, the amber pulsing box is the field
+    // to fill. Adopt whatever was typed so the commit can proceed.
+    const modelInp = document.getElementById('ready-modal-model-input');
+    const typed = (modelInp?.value || '').trim().toUpperCase();
+    if (!typed) {
+      if (modelInp) {
+        modelInp.classList.remove('field-alert');
+        void modelInp.offsetWidth;   // restart the pulse animation
+        modelInp.classList.add('field-alert');
+        modelInp.focus();
+      }
+      return;
+    }
+    row.model = typed;
+    const modelEl = document.getElementById('ready-modal-model');
+    if (modelEl) { modelEl.textContent = typed; modelEl.style.display = ''; }
+    if (modelInp) { modelInp.style.display = 'none'; modelInp.classList.remove('field-alert'); }
   }
   const fresh = (document.getElementById('ready-modal-brand-new')?.value || '').trim().toUpperCase();
   const picked = fresh || document.getElementById('ready-modal-brand-select')?.value;
