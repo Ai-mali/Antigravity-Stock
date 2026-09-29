@@ -5480,18 +5480,9 @@ body.theme-light .autocomplete-dropdown {
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-        <div>
-          <label class="form-label">Brand *</label>
-          <select class="form-select" id="manual-brand-select" onchange="handleManualBrandChange(this.value)">
-            <!-- Populated dynamically -->
-          </select>
-          <input type="text" class="form-input" id="manual-brand-new" placeholder="Enter new brand name..." style="display:none; margin-top:6px;">
-        </div>
-        <div>
-          <label class="form-label">Model Code *</label>
-          <input type="text" class="form-input mono" id="manual-model-input" placeholder="e.g. FTKV25NVM" style="text-transform:uppercase;">
-        </div>
+      <div style="margin-bottom:12px;">
+        <label class="form-label">Model Code *</label>
+        <input type="text" class="form-input mono" id="manual-model-input" placeholder="e.g. FTKV25NVM" style="text-transform:uppercase;">
       </div>
 
       <!-- Serialized Units Mode -->
@@ -11176,20 +11167,6 @@ function openManualStockInModal() {
   const modal = document.getElementById('manual-entry-modal');
   if (!modal) return;
 
-  // Populate brand dropdown
-  const brandSelect = document.getElementById('manual-brand-select');
-  if (brandSelect) {
-    const brands = (DB.brands && DB.brands.length) ? DB.brands : ['DAIKIN', 'CARRIER', 'MITSUBISHI', 'LG', 'PANASONIC', 'TOSHIBA'];
-    brandSelect.innerHTML = brands.map(b => `<option value="${b}">${b}</option>`).join('') +
-      `<option value="__NEW__">+ Add New Brand...</option>`;
-    brandSelect.value = brands[0];
-  }
-  const brandNewInput = document.getElementById('manual-brand-new');
-  if (brandNewInput) {
-    brandNewInput.style.display = 'none';
-    brandNewInput.value = '';
-  }
-
   // Clear fields
   const modelInput = document.getElementById('manual-model-input');
   const serialsInput = document.getElementById('manual-serials-textarea');
@@ -11210,18 +11187,6 @@ function openManualStockInModal() {
 function closeManualStockInModal() {
   const modal = document.getElementById('manual-entry-modal');
   if (modal) modal.classList.remove('open');
-}
-
-function handleManualBrandChange(val) {
-  const brandNewInput = document.getElementById('manual-brand-new');
-  if (!brandNewInput) return;
-  if (val === '__NEW__') {
-    brandNewInput.style.display = 'block';
-    brandNewInput.focus();
-  } else {
-    brandNewInput.style.display = 'none';
-    brandNewInput.value = '';
-  }
 }
 
 function toggleManualEntryMode(mode) {
@@ -11255,33 +11220,13 @@ function updateManualSerialsCount() {
 }
 
 function submitManualStockIn() {
-  const brandSelect = document.getElementById('manual-brand-select');
-  const brandNewInput = document.getElementById('manual-brand-new');
   const modelInput = document.getElementById('manual-model-input');
-
-  let brand = brandSelect ? brandSelect.value : 'DAIKIN';
-  if (brand === '__NEW__') {
-    brand = (brandNewInput?.value || '').trim().toUpperCase();
-    if (!brand) {
-      showToast('Please enter a new brand name.', '&#9888;');
-      if (brandNewInput) brandNewInput.focus();
-      return;
-    }
-  }
 
   const model = (modelInput?.value || '').trim().toUpperCase();
   if (!model) {
     showToast('Please enter equipment Model Code.', '&#9888;');
     if (modelInput) modelInput.focus();
     return;
-  }
-
-  // Ensure model is registered to brand in DB
-  if (!DB.modelBrands[model]) {
-    DB.modelBrands[model] = brand;
-  }
-  if (!DB.brands.includes(brand)) {
-    DB.brands.push(brand);
   }
 
   if (manualEntryMode === 'serial') {
