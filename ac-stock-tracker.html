@@ -5524,7 +5524,8 @@ body.theme-light .autocomplete-dropdown {
           </div>
           <div>
             <label class="form-label">Part / Accessory Description</label>
-            <input type="text" class="form-input" id="manual-desc-input" placeholder="e.g. REMOTE CONTROLLER, COPPER PIPE KIT">
+            <input type="text" class="form-input" id="manual-desc-input" list="manual-desc-list" placeholder="e.g. REMOTE CONTROLLER, COPPER PIPE KIT" onfocus="populateManualDescList()" autocomplete="off">
+            <datalist id="manual-desc-list"></datalist>
           </div>
         </div>
       </div>
@@ -11402,6 +11403,30 @@ function toggleManualEntryMode(mode) {
   }
 }
 
+/* Suggest existing non-serial part descriptions for the typed model so a
+   new entry continues the same 'NAME #n' family instead of creating a
+   look-alike variant (FLOW 150 vs FLOW-150CMH → duplicate families). */
+function populateManualDescList() {
+  const dl = document.getElementById('manual-desc-list');
+  if (!dl) return;
+  const model = (document.getElementById('manual-model-input')?.value || '')
+    .trim().toUpperCase();
+  const prefixes = new Set();
+  const harvest = (serialStr, rowModel) => {
+    if (model && rowModel && String(rowModel).toUpperCase() !== model) return;
+    const i = String(serialStr).indexOf(' #');
+    if (i > 0) prefixes.add(String(serialStr).slice(0, i).trim());
+  };
+  for (const b in DB.inventory) {
+    for (const m in (DB.inventory[b]?.models || {})) {
+      (DB.inventory[b].models[m].serials || []).forEach(s => harvest(s, m));
+    }
+  }
+  (DB.trackList || []).forEach(r => harvest(r.serial, r.model));
+  dl.innerHTML = [...prefixes].sort()
+    .map(p => `<option value="${escapeHtml(p)}">`).join('');
+}
+
 function updateManualSerialsCount() {
   const textarea = document.getElementById('manual-serials-textarea');
   const hint = document.getElementById('manual-serial-count-hint');
@@ -11448,7 +11473,7 @@ function submitManualStockIn() {
     const qtyInput = document.getElementById('manual-qty-input');
     const descInput = document.getElementById('manual-desc-input');
     const qtyNum = parseInt(qtyInput?.value || '1', 10) || 1;
-    const descText = (descInput?.value || '').trim() || `${model} PART`;
+    const descText = ((descInput?.value || '').trim().toUpperCase().replace(/\s+/g, ' ')) || `${model} PART`;
 
     const newRow = {
       no: DB.scans.length + 1,
