@@ -9995,9 +9995,9 @@ function renderReturnTable() {
       ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeJs(r.serial)}')" style="color:#f59e0b;">${releaseSvg}</button>`
       : '';
     tr.innerHTML = `
-      <td class="mono" style="font-weight:700; color:var(--green-bright);">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</td>
-      <td style="font-weight:600;">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</td>
-      <td><span class="rma-cust-pill">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></td>
+      <td class="mono" style="font-weight:700; color:var(--green-bright);"><span class="tl-copy" title="Click to copy serial" onclick="copySerial('${escapeHtml(escapeJs(r.serial))}')">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
+      <td style="font-weight:600;"><span class="tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(r.model))}')">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></td>
+      <td><span class="rma-cust-pill"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateIn || '—')}</td>
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateOut || '—')}</td>
       <td class="mono">${escapeHtml(r.date)}</td>
