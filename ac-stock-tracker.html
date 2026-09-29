@@ -6064,8 +6064,16 @@ body.theme-light .autocomplete-dropdown {
     </div>
     <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
       <div id="app-confirm-banner" style="background:var(--surface2); border:1px solid var(--border-light); border-radius:8px; padding:12px 14px; margin-bottom:12px; display:none;">
-        <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;" id="app-confirm-banner-label"></div>
-        <div id="app-confirm-banner-value" class="mono" style="font-size:15px; font-weight:800; color:var(--green-bright); margin-top:3px;"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;" id="app-confirm-banner-label"></div>
+            <div id="app-confirm-banner-value" class="mono" style="font-size:15px; font-weight:800; color:var(--green-bright); margin-top:3px;"></div>
+          </div>
+          <div id="app-confirm-banner2-wrap" style="display:none;">
+            <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;" id="app-confirm-banner2-label"></div>
+            <div id="app-confirm-banner2-value" class="mono" style="font-size:15px; font-weight:800; color:var(--text); margin-top:3px;"></div>
+          </div>
+        </div>
       </div>
       <div id="app-confirm-msg" style="font-size:13px; color:var(--text-muted); line-height:1.55;"></div>
     </div>
@@ -10018,7 +10026,7 @@ function inspectReturnRow(serial) {
 /* ---- Generic themed confirm dialog (replaces native confirm()) ---- */
 let _appConfirmResolve = null;
 
-function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '', bannerValue = '', okText = 'Confirm' } = {}) {
+function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '', bannerValue = '', banner2Label = '', banner2Value = '', okText = 'Confirm' } = {}) {
   const modal = document.getElementById('app-confirm-modal');
   document.getElementById('app-confirm-title').textContent = title;
   const subEl = document.getElementById('app-confirm-sub');
@@ -10030,6 +10038,14 @@ function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '
     banner.style.display = '';
     document.getElementById('app-confirm-banner-label').textContent = bannerLabel;
     document.getElementById('app-confirm-banner-value').textContent = bannerValue;
+    const w2 = document.getElementById('app-confirm-banner2-wrap');
+    if (banner2Value) {
+      w2.style.display = '';
+      document.getElementById('app-confirm-banner2-label').textContent = banner2Label;
+      document.getElementById('app-confirm-banner2-value').textContent = banner2Value;
+    } else {
+      w2.style.display = 'none';
+    }
   } else {
     banner.style.display = 'none';
   }
@@ -10044,11 +10060,14 @@ function resolveAppConfirm(ok) {
 }
 
 async function releaseQuarantine(serial) {
+  const rec = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
   const ok = await appConfirm({
     title: 'Release from Quarantine',
     sub: 'Return this unit to sellable stock',
     bannerLabel: 'Serial Number',
     bannerValue: serial,
+    banner2Label: 'Model Code',
+    banner2Value: rec ? (rec.model || '') : '',
     message: 'The unit will be restocked into <b>Available Stock</b> and automatically tagged <b style="color:#fbbf24;">2nd</b> (second-hand).',
     okText: '&#10003; Release to Stock'
   });
