@@ -8321,7 +8321,7 @@ function renderAvailable(searchTerm) {
               </div>
             </div>
             <div class="meta-text">
-              <span>Rec: ${dateDisplay}</span>
+              <span>In: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
                 <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
