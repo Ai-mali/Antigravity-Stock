@@ -3338,6 +3338,16 @@ body.theme-light .track-breakdown-chip:hover {
   width: 6px;
   height: 6px;
 }
+.tl-copy {
+  cursor: copy;
+  transition: color .12s, text-shadow .12s;
+}
+.tl-copy:hover {
+  color: var(--green-bright) !important;
+  text-shadow: 0 0 8px rgba(38, 208, 124, 0.4);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
 .tl-status-badge {
   display: inline-flex;
   align-items: center;
@@ -9422,11 +9432,11 @@ function renderTrackTable(list, modelColors) {
 
     tr.innerHTML = `
       <td class="tl-no-col">${DB.trackPage * size + idx + 1}</td>
-      <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span>${modelHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></div></td>
-      <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</td>
+      <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span class="tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(r.model))}')">${modelHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></div></td>
+      <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;"><span class="tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
       <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${inHit ? markMatchedText(r.dateIn, dIn) : escapeHtml(r.dateIn)}</td>
       <td data-tlcol="dateOut" class="mono">${outHit ? markMatchedText(r.dateOut, dOut) : escapeHtml(r.dateOut)}</td>
-      <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i>${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></td>
+      <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
       <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
       <td data-tlcol="actions" style="text-align:right;"><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
