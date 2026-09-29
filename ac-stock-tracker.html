@@ -5672,7 +5672,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
       </div>
 
-      <div>
+      <div id="edit-scan-serials-block">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <label class="form-label" for="edit-scan-serials" style="margin-bottom:0;">Serial Numbers</label>
           <span style="font-size:11px; color:var(--green-bright); font-weight:600; font-family:'JetBrains Mono', monospace;" id="edit-scan-serials-count">0 serials</span>
@@ -5682,6 +5682,12 @@ body.theme-light .autocomplete-dropdown {
           <span>Separate with commas, spaces, or newlines</span>
           <button type="button" class="btn btn-ghost btn-sm" onclick="formatEditScanSerials()" style="padding:2px 8px; font-size:10.5px;">Auto-Format (Comma Separated)</button>
         </div>
+      </div>
+      <div id="edit-scan-desc-block" style="display:none;">
+        <label class="form-label" for="edit-scan-desc">Part / Accessory Description</label>
+        <input type="text" class="form-input mono" id="edit-scan-desc" placeholder="e.g. FLOW-150CMH" list="edit-scan-desc-list" onfocus="populateEditScanDescList()" autocomplete="off" style="font-weight:600;">
+        <datalist id="edit-scan-desc-list"></datalist>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:6px;">Non-serial part — units are auto-numbered (NAME #1, #2…) when stocked in.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -7527,10 +7533,23 @@ function editScanRow(idx) {
   document.getElementById('edit-scan-no').value = row.no !== undefined ? row.no : '';
   document.getElementById('edit-scan-model').value = row.model || '';
   document.getElementById('edit-scan-qty').value = row.qty || '';
-  document.getElementById('edit-scan-serials').value =
-    row.serials.length ? row.serials.join(', ') : (row.desc || '');
 
-  updateEditScanSerialCount();
+  const isNS = isNonSerialRow(row);
+  const sBlock = document.getElementById('edit-scan-serials-block');
+  const dBlock = document.getElementById('edit-scan-desc-block');
+  if (sBlock) sBlock.style.display = isNS ? 'none' : '';
+  if (dBlock) dBlock.style.display = isNS ? '' : 'none';
+  if (isNS) {
+    const dInput = document.getElementById('edit-scan-desc');
+    if (dInput) {
+      dInput.value = row.desc ||
+        (row.serials[0] ? String(row.serials[0]).split(' #')[0].trim() : '');
+    }
+  } else {
+    document.getElementById('edit-scan-serials').value =
+      row.serials.length ? row.serials.join(', ') : (row.desc || '');
+    updateEditScanSerialCount();
+  }
 
   const modal = document.getElementById('edit-scan-modal');
   if (modal) {
@@ -7589,18 +7608,42 @@ function saveEditScanModal() {
   const noVal = document.getElementById('edit-scan-no').value.trim();
   const modelVal = document.getElementById('edit-scan-model').value.trim().toUpperCase();
   const qtyVal = document.getElementById('edit-scan-qty').value.trim();
-  const rawSerialsText = document.getElementById('edit-scan-serials').value.trim();
-  const parsedSerials = parseSerialsInput(rawSerialsText).map(s => s.toUpperCase());
 
   if (!modelVal) {
     showToast('Please specify a Model name.', '&#9888;');
     return;
   }
-
   if (noVal !== '') {
     row.no = isNaN(Number(noVal)) ? noVal : Number(noVal);
   }
   row.model = modelVal;
+
+  /* Non-serial part rows edit Description + Quantity — the 'NAME #n'
+     unit IDs are regenerated so the count always matches the qty. */
+  if (isNonSerialRow(row)) {
+    const descVal = ((document.getElementById('edit-scan-desc')?.value || '')
+      .trim().toUpperCase().replace(/\s+/g, ' '));
+    if (!descVal) {
+      showToast('Please enter the part description.', '&#9888;');
+      return;
+    }
+    const q = parseInt((qtyVal.match(/\d+/) || ['0'])[0], 10) || 1;
+    row.desc = descVal;
+    row.qty = `${q} PC${q > 1 ? 'S' : ''}`;
+    row.serials = [];
+    row.flag = ''; row.sev = ''; row.warn = '';
+    row.isDuplicate = false;
+    delete row.dupeSerials;
+    markDuplicateScans();
+    renderScanResultsTable();
+    closeEditScanModal();
+    showToast(`Updated No. ${row.no} · ${row.model} (${descVal} ×${q})`);
+    return;
+  }
+
+  const rawSerialsText = document.getElementById('edit-scan-serials').value.trim();
+  const parsedSerials = parseSerialsInput(rawSerialsText).map(s => s.toUpperCase());
+
   row.serials = parsedSerials;
   if (parsedSerials.length === 0 && rawSerialsText) {
     row.desc = rawSerialsText;
@@ -11410,6 +11453,29 @@ function populateManualDescList() {
   const dl = document.getElementById('manual-desc-list');
   if (!dl) return;
   const model = (document.getElementById('manual-model-input')?.value || '')
+    .trim().toUpperCase();
+  const prefixes = new Set();
+  const harvest = (serialStr, rowModel) => {
+    if (model && rowModel && String(rowModel).toUpperCase() !== model) return;
+    const i = String(serialStr).indexOf(' #');
+    if (i > 0) prefixes.add(String(serialStr).slice(0, i).trim());
+  };
+  for (const b in DB.inventory) {
+    for (const m in (DB.inventory[b]?.models || {})) {
+      (DB.inventory[b].models[m].serials || []).forEach(s => harvest(s, m));
+    }
+  }
+  (DB.trackList || []).forEach(r => harvest(r.serial, r.model));
+  dl.innerHTML = [...prefixes].sort()
+    .map(p => `<option value="${escapeHtml(p)}">`).join('');
+}
+
+/* Same prefix suggestions as Manual Entry, for the Edit modal's
+   non-serial description field (edit-scan-desc-list). */
+function populateEditScanDescList() {
+  const dl = document.getElementById('edit-scan-desc-list');
+  if (!dl) return;
+  const model = (document.getElementById('edit-scan-model')?.value || '')
     .trim().toUpperCase();
   const prefixes = new Set();
   const harvest = (serialStr, rowModel) => {
