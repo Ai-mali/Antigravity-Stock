@@ -2,8 +2,8 @@
 
 Commit Hash: 
 
-a7e5be2
-Commit Description: Return/RMA overhaul + warranty fix + responsive sidebars + scrollbar polish + copy-click cells
+9e46b45
+Commit Description: Sell Record rename + scan-row edit modes + error-commit blocking + Stock In layout polish + search highlight/copy
 Date: 2026-09-29 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
@@ -67,4 +67,15 @@ Model-less Rows: Stock-in blocked when scan row has no model; Ready modal shows 
 Copy Cells: Track List model/serial/customer cells click-to-copy with green dotted-underline hover (ec46ecf).
 Return Inspection: Physical Condition removed; reasons = Ordered Cancelled / Defective-Repair Needed; Defective blacks out + blocks Restock (must quarantine); 2nd tag ONLY via quarantine release ("Released from quarantine" note marker) — plain restocks stay untagged; Date In always preserved (b5bb9e1, 72e638c).
 2nd Badge: Clickable — jumps to Return registry filtered to that serial's return history (a7e5be2).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit a7e5be2"
+Sell Record: Track List renamed everywhere user-facing (nav, title, toasts, duplicate notices); internal identifiers unchanged (1d4d681).
+Card Dates: Serial cards show "IN:" (capitalized) in Available Stock + Stock Out; low-stock threshold = 3 units everywhere (9f7190d, ea8d410).
+Search Clear: X button on every search box — sidebar, main, Return picker, registry, Activity (26a364b, f5df2da).
+Non-Serial Families: Manual Entry description suggests existing part names per model (datalist) to prevent FLOW-150 vs FLOW 150 duplicate families (8f63eb2).
+Edit Scan Modal: Serialized/Non-Serial mode toggle — auto-detects row type via isNonSerialRow; non-serial edits Description+Qty (serial textarea hidden, no false qty_mismatch), serialized path unchanged; scanned no_serial rows can still be rescued by switching to Serialized (6321e8e, 7d64633).
+Error-Row Commit Block: qty_mismatch/no-serial error rows cannot stock in — row ▶ disabled, Ready modal refused, Commit All skips + reports held count; fix via pencil to unblock (09c5416).
+Modal Drag Fix: Backdrop close needs mousedown+mouseup both on the overlay — drag-selecting text past the modal edge no longer closes it (8dfe9d5).
+Datalist Flicker: Description suggestions populate on model input/modal open, not onfocus — first click opens and stays (b63923a).
+Stock In Layout: Status Log + Scan Results stretch to fill viewport height and refit on resize; log lines are selectable/copyable; commit lines read "Committed to BRAND : MODEL : serials" (7bde163).
+Model Search Highlight: Typing a model fragment (e.g. BCR) marks the model text in the group header and glows all its unit cards, Available Stock + Stock Out; model name click-to-copy (9e46b45).
+Frozen Paths: ui_prefs.json + .vre_app.pid resolve beside the .exe under PyInstaller instead of the temp _MEIPASS dir (d22e8cd).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 9e46b45"
