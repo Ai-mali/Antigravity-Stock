@@ -5385,7 +5385,7 @@ body.theme-light .autocomplete-dropdown {
             </div>
             <div>
               <label class="form-label">Return Reason</label>
-              <select class="form-select" id="rma-reason">
+              <select class="form-select" id="rma-reason" onchange="updateRmaReasonState()">
                 <option>Ordered Cancelled</option>
                 <option>Defective / Repair Needed</option>
               </select>
@@ -9729,8 +9729,24 @@ function renderReturnScreen() {
   DB.rmaSelectedSerial = '';
   hideRmaSuggest();
   updateRmaWarrantyCard();
+  updateRmaReasonState();
   renderRmaDateOutOptions();
   renderReturnTable();
+}
+
+/* Defective units must go through Quarantine — black out the restock
+   button so a failed unit can't be pushed straight back into stock. */
+function updateRmaReasonState() {
+  const defective = (document.getElementById('rma-reason')?.value || '')
+    .startsWith('Defective');
+  const btn = document.querySelector('.rma-restock-btn');
+  if (!btn) return;
+  btn.disabled = defective;
+  btn.style.opacity = defective ? '.3' : '';
+  btn.style.cursor = defective ? 'not-allowed' : '';
+  btn.title = defective
+    ? 'Defective / Repair Needed units must be Quarantined first'
+    : '';
 }
 
 /* Searchable dispatch-serial picker: type to filter sold units,
@@ -10116,6 +10132,11 @@ async function submitRmaAction(isRestock) {
     return;
   }
   const reason = document.getElementById('rma-reason').value;
+  if (isRestock && reason.startsWith('Defective')) {
+    showToast('Defective units must be Quarantined — restock is blocked.', '&#9888;');
+    updateRmaReasonState();
+    return;
+  }
   const condition = '';
   const notes = (document.getElementById('rma-notes').value || '').trim();
   try {
