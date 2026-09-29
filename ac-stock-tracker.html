@@ -5457,7 +5457,8 @@ body.theme-light .autocomplete-dropdown {
                   <th>Serial</th>
                   <th>Model</th>
                   <th>Customer</th>
-                  <th>Date Out (Dispatched)</th>
+                  <th>Date In</th>
+                  <th>Date Out</th>
                   <th>Date Returned</th>
                   <th>Reason</th>
                   <th style="text-align:center;">Action Taken</th>
@@ -9952,7 +9953,7 @@ function renderRmaDateOutOptions() {
   if (!sel) return;
   const cur = DB.rmaDateOut;
   const dates = [...new Set(DB.returns.map(r => r.dateOut).filter(Boolean))].sort().reverse();
-  sel.innerHTML = '<option value="">📦 All Dates Out (Dispatched)</option>' +
+  sel.innerHTML = '<option value="">📦 All Dates Out</option>' +
     dates.map((d, i) => `<option value="${escapeHtml(d)}"${d === cur ? ' selected' : ''}>📦 Date Out: ${escapeHtml(d)}${i === 0 ? ' (Latest)' : ''}</option>`).join('');
 }
 
@@ -9978,7 +9979,7 @@ function renderReturnTable() {
 
   tbody.innerHTML = '';
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No returns match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No returns match the current filters.</td></tr>';
   }
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -9997,6 +9998,7 @@ function renderReturnTable() {
       <td class="mono" style="font-weight:700; color:var(--green-bright);">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</td>
       <td style="font-weight:600;">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</td>
       <td><span class="rma-cust-pill">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></td>
+      <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateIn || '—')}</td>
       <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateOut || '—')}</td>
       <td class="mono">${escapeHtml(r.date)}</td>
       <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>

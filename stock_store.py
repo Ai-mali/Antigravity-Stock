@@ -419,10 +419,15 @@ class StockStore:
         return out
 
     def returns_list(self) -> list[dict]:
+        # Date In lives on the master record, not the returns row — join it in
+        date_in_map = {str(rec["Serial"]).strip().lower():
+                       str(rec.get("Date In", "")).strip()
+                       for rec in self.records}
         return [{"serial": str(r["Serial"]), "model": str(r["Model"]),
                  "customer": str(r["Customer"]), "reason": str(r["Reason"]),
                  "condition": str(r["Condition"]), "notes": str(r["Notes"]),
                  "action": str(r["Action"]), "date": str(r["Date"]),
+                 "dateIn": date_in_map.get(str(r["Serial"]).strip().lower(), ""),
                  "dateOut": str(r.get("Date Out", "")),
                  "warranty": compute_warranty(str(r.get("Date Out", "")))}
                 for r in self.returns]
