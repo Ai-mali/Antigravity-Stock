@@ -4945,6 +4945,7 @@ body.theme-light .autocomplete-dropdown {
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
               <input type="text" id="avail-search-side" oninput="handleAvailSideSearchInput(this.value)" placeholder="Search brand...">
+              <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
           <div class="so-side-section">
@@ -5024,6 +5025,7 @@ body.theme-light .autocomplete-dropdown {
             <div class="search-box-wrap tl-side-search">
               <span class="search-icon">&#128269;</span>
               <input type="text" id="stockout-search-side" oninput="handleSOSideSearchInput(this.value)" placeholder="Search brand...">
+              <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
           <div class="so-side-section">
@@ -5191,6 +5193,7 @@ body.theme-light .autocomplete-dropdown {
           <div class="search-box-wrap tl-side-search">
             <span class="search-icon">&#128269;</span>
             <input type="text" id="track-search-side" oninput="handleTrackSideSearchInput(this.value)" placeholder="Search customer...">
+            <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
           </div>
         </div>
         <div class="tl-side-tabs">
@@ -5379,6 +5382,7 @@ body.theme-light .autocomplete-dropdown {
                        placeholder="Search serial, model, or scan barcode..."
                        oninput="handleRmaSerialInput(this.value)"
                        onfocus="handleRmaSerialFocus()">
+                <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none; position:static; transform:none; flex-shrink:0;" title="Clear">&times;</button>
                 <span class="rma-status-pill" id="rma-status-pill" style="display:none;"></span>
                 <div class="rma-suggest" id="rma-serial-suggest" style="display:none;"></div>
               </div>
@@ -5438,6 +5442,7 @@ body.theme-light .autocomplete-dropdown {
             <div class="search-box-wrap" style="flex:1; min-width:180px;">
               <span class="search-icon">&#128269;</span>
               <input type="text" id="rma-search" oninput="handleRmaSearch(this.value)" placeholder="Search serial (e.g. K001492), model or customer...">
+              <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
             </div>
             <div class="search-box-wrap rma-dateout-wrap">
               <span class="search-icon" style="color:var(--green-bright);">
@@ -5743,7 +5748,10 @@ body.theme-light .autocomplete-dropdown {
       <!-- Tab 1: Activity History -->
       <div id="act-panel-history">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
-          <input type="text" id="act-search" class="form-input" style="max-width:280px; padding:6px 12px; font-size:12px;" placeholder="Search activity..." oninput="renderActivityTable(this.value)">
+          <span class="search-box-wrap" style="display:inline-flex; max-width:280px;">
+            <input type="text" id="act-search" class="form-input" style="padding:6px 28px 6px 12px; font-size:12px; width:100%;" placeholder="Search activity..." oninput="renderActivityTable(this.value)">
+            <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none; right:4px;" title="Clear search">&times;</button>
+          </span>
           <button class="btn btn-ghost btn-sm" onclick="fetchActivityLog(true)">&#8635; Refresh Log</button>
         </div>
         <div class="table-container" style="max-height:380px; overflow-y:auto;">
@@ -7954,6 +7962,22 @@ function copySerial(s) {
     showToast('Selected: ' + s, '&#10003;');
   }
 }
+
+/* ---- Generic clear (✕) button for any .search-box-wrap input ---- */
+function clearSearchBox(btn) {
+  const inp = btn.parentElement.querySelector('input, textarea');
+  if (!inp) return;
+  inp.value = '';
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  inp.focus();
+}
+
+document.addEventListener('input', e => {
+  const wrap = e.target && e.target.closest ? e.target.closest('.search-box-wrap') : null;
+  if (!wrap) return;
+  const btn = wrap.querySelector('.search-clear-btn');
+  if (btn) btn.style.display = e.target.value ? '' : 'none';
+});
 
 function setAvailFilter(filter) {
   DB.availFilter = filter;
