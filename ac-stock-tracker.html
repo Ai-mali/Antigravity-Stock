@@ -6120,7 +6120,7 @@ const DB = {
   rmaPage: 0,
   rmaPageSize: 25,
   rmaSelectedSerial: '',    // dispatch unit picked in the inspection form
-  lowStockFilter: false,      // toggles showing only models with <= 2 units
+  lowStockFilter: false,      // toggles showing only models with <= 3 units
   scans: [],        // filled by POST /api/scan or the manual + button
   modelBrands: {},  // model -> brand map (manual entry / ready-serial autofill)
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
@@ -8231,7 +8231,7 @@ function renderAvailable(searchTerm) {
     const bData = DB.inventory[bKey];
     for (const mKey in bData.models) {
       const sCount = (bData.models[mKey].serials || []).length;
-      if (sCount <= 2) {
+      if (sCount <= 3) {
         lowStockModels.push({ brand: bKey, model: mKey, count: sCount });
       }
     }
@@ -8245,7 +8245,7 @@ function renderAvailable(searchTerm) {
         <span style="font-size:18px;">⚠️</span>
         <div>
           <div style="font-weight:700; color:#f59e0b; font-size:12.5px;">
-            Low Stock Notice &middot; ${lowStockModels.length} Model${lowStockModels.length > 1 ? 's' : ''} have &le; 2 units remaining
+            Low Stock Notice &middot; ${lowStockModels.length} Model${lowStockModels.length > 1 ? 's' : ''} have &le; 3 units remaining
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
             Consider reordering or restocking soon to prevent order delays.
@@ -8273,7 +8273,7 @@ function renderAvailable(searchTerm) {
     for (const mKey of Object.keys(bData.models).sort()) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
-      if (DB.lowStockFilter && serials.length > 2) continue;
+      if (DB.lowStockFilter && serials.length > 3) continue;
 
       let matchedSerials = serials;
       if (q && !brandMatch) {
@@ -8321,7 +8321,7 @@ function renderAvailable(searchTerm) {
               </div>
             </div>
             <div class="meta-text">
-              <span>In: ${dateDisplay}</span>
+              <span>IN: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
                 <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
@@ -8337,7 +8337,7 @@ function renderAvailable(searchTerm) {
       if (count === 0) {
         badgeClass = 'badge-red';
         badgeText = 'Out of Stock (0)';
-      } else if (count <= 2) {
+      } else if (count <= 3) {
         badgeClass = 'badge-amber';
         badgeText = `⚠️ Low Stock: ${count}`;
       }
@@ -8645,7 +8645,7 @@ function setSOFilter(filter) {
 }
 
 /* Brand sidebar — Stitch/Telegram-style rich rows + filter chips */
-const SO_LOW_STOCK_MAX = 8;
+const SO_LOW_STOCK_MAX = 3;
 
 function selectSOBrand(key) {
   setSOFilter(key);
@@ -8907,7 +8907,7 @@ function renderStockOut(searchTerm) {
               <span class="indicator-dot"></span>
             </div>
             <div class="so-card-bottom">
-              <span>In: ${dateDisplay}</span>
+              <span>IN: ${dateDisplay}</span>
               <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
             </div>
           </div>
@@ -8920,7 +8920,7 @@ function renderStockOut(searchTerm) {
       if (soCount === 0) {
         soBadgeClass = 'badge-red';
         soBadgeText = 'Out of Stock (0)';
-      } else if (soCount <= 2) {
+      } else if (soCount <= 3) {
         soBadgeClass = 'badge-amber';
         soBadgeText = `⚠️ Low: ${soCount}`;
       }
