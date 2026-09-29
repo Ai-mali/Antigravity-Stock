@@ -8435,8 +8435,8 @@ function renderAvailable(searchTerm) {
       if (DB.lowStockFilter && serials.length > 3) continue;
 
       let matchedSerials = serials;
+      const modelNameMatch = !!(q && !brandMatch && mKey.toLowerCase().includes(q));
       if (q && !brandMatch) {
-        const modelNameMatch = mKey.toLowerCase().includes(q);
         matchedSerials = matchedSerials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
       }
       if (dq) {
@@ -8455,7 +8455,7 @@ function renderAvailable(searchTerm) {
         const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
-        const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
+        const highlightClass = (isSerialMatch || isDateMatch || modelNameMatch) ? 'avail-unit-card-highlighted' : '';
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
@@ -8506,12 +8506,13 @@ function renderAvailable(searchTerm) {
         ? (mData.searchOpen !== undefined ? mData.searchOpen : true)
         : (mData.open !== false);
 
+      const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
           <div class="model-accordion-header" onclick="toggleModelAcc('${brandKey}', '${mKey}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
-              <span style="font-weight:700; font-size:12.5px;">${mKey}</span>
+              <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeJs(mKey)}')" title="Click to copy model">${modelDisplay}</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -9035,8 +9036,8 @@ function renderStockOut(searchTerm) {
     for (const mKey of Object.keys(bData.models).sort()) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
+      const modelNameMatch = !!(q && !brandMatch && mKey.toLowerCase().includes(q));
       if (q && !brandMatch) {
-        const modelNameMatch = mKey.toLowerCase().includes(q);
         serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
       }
       if (dq) {
@@ -9058,7 +9059,7 @@ function renderStockOut(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch || modelNameMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
@@ -9093,7 +9094,7 @@ function renderStockOut(searchTerm) {
           <div class="model-accordion-header" onclick="toggleSOModelAcc('${brandKey}', '${mKey}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
-              <span style="font-weight:700; font-size:12.5px;">${mKey}</span>
+              <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeJs(mKey)}')" title="Click to copy model">${modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${soBadgeClass}">${soBadgeText}</span>
