@@ -591,6 +591,7 @@ class StockStore:
             self.recs.cell(row=row, column=5, value=IN_STOCK)
             self.recs.cell(row=row, column=6, value="")
             self.recs.cell(row=row, column=7, value="")
+            self._ensure_brand(rec.get("Brand", ""))
         else:
             rec["Status"] = QUARANTINED
             self.recs.cell(row=row, column=5, value=QUARANTINED)
@@ -616,6 +617,7 @@ class StockStore:
         self.recs.cell(row=row, column=5, value=IN_STOCK)
         self.recs.cell(row=row, column=6, value="")
         self.recs.cell(row=row, column=7, value="")
+        self._ensure_brand(rec.get("Brand", ""))
         # Resolve the latest open quarantine in the returns registry
         ret = next((r for r in reversed(self.returns)
                     if str(r["Serial"]).strip().lower() == key
@@ -728,3 +730,41 @@ class StockStore:
         self.brands_sheet.append([brand])
         self.save(backup=False)
         return True
+
+    def delete_brand(self, brand: str) -> tuple[bool, str]:
+        """Remove an empty brand: its Brands row + all ModelBrands mappings.
+        Refuses while In-Stock or Quarantined units still carry the name.
+        Sold records keep it — a later return re-registers the brand."""
+        name = brand.strip()
+        if name not in self.brands:
+            return False, "Brand not found: " + name
+        held = sum(1 for r in self.records
+                   if str(r.get("Brand", "")).strip().lower() == name.lower()
+                   and str(r.get("Status", "")).strip() in (IN_STOCK, QUARANTINED))
+        if held:
+            return False, f"{name} still has {held} unit(s) in stock/quarantine"
+        self.brands.remove(name)
+        for i in range(self.brands_sheet.max_row, 1, -1):
+            if str(self.brands_sheet.cell(row=i, column=1).value or "").strip() == name:
+                self.brands_sheet.delete_rows(i)
+        drop = [m for m, b in self.model_to_brand.items()
+                if str(b).strip().lower() == name.lower()]
+        for m in drop:
+            del self.model_to_brand[m]
+        for i in range(self.map_sheet.max_row, 1, -1):
+            if str(self.map_sheet.cell(row=i, column=2).value or "").strip().lower() == name.lower():
+                self.map_sheet.delete_rows(i)
+        self.log_activity("Brand Deleted", model=name, count=0,
+                          details=f"Removed empty brand | {len(drop)} model mapping(s) cleared")
+        self.save(backup=True)
+        return True, ""
+
+    def _ensure_brand(self, brand: str):
+        """Re-register a brand name after it was deleted while empty —
+        e.g. a sold unit returning to stock under its old brand.
+        Only the name is restored (not the model mapping) so a return
+        never overwrites a deliberate re-assignment made meanwhile."""
+        brand = str(brand).strip()
+        if brand and brand not in self.brands:
+            self.brands.append(brand)
+            self.brands_sheet.append([brand])

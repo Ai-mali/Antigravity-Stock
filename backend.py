@@ -242,6 +242,20 @@ def assign_brand(body: AssignBrandBody):
     return {"ok": True, "brands": store.brands}
 
 
+class DeleteBrandBody(BaseModel):
+    brand: str
+
+
+@app.post("/api/brands/delete")
+def delete_brand(body: DeleteBrandBody):
+    _fresh()
+    ok, err = store.delete_brand(body.brand)
+    if not ok:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True, "brands": store.brands}
+
+
 class StockOutBody(BaseModel):
     serials: list[str]
     customer: str

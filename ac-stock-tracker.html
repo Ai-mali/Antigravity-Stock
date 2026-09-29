@@ -3772,6 +3772,29 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   color: var(--text-sub);
   flex-shrink: 0;
 }
+.brand-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  border: 1px solid var(--border-light);
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+.brand-del.on {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, .45);
+  cursor: pointer;
+}
+.brand-del.on:hover {
+  background: rgba(248, 113, 113, .18);
+  box-shadow: 0 0 8px rgba(248, 113, 113, .3);
+}
+.brand-del.off { color: var(--text-sub); opacity: .35; cursor: not-allowed; }
+.tl-side-mini .brand-del { display: none; }
 
 /* Mini rail mode — avatars only */
 .tl-sidebar.tl-side-mini { width: 60px; }
@@ -9028,12 +9051,16 @@ function renderAvailBrandSidebar() {
     const pillStyle = active
       ? 'background:var(--green); color:#fff; border-color:var(--green);'
       : o.units === 0 ? 'opacity:.55;' : '';
+    const delBtn = (key === 'ALL' || key === 'UNBRANDED') ? ''
+      : o.units === 0
+        ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
+        : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
     return `
     <button type="button" class="tl-cust-item${active ? ' active' : ''}" style="align-items:flex-start;${o.units === 0 ? 'opacity:.62;' : ''}"
             onclick="selectAvailBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span class="tl-cust-date">${escapeHtml(o.date || '')}</span></span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
           <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
@@ -9244,12 +9271,16 @@ function renderSOBrandSidebar() {
     const pillStyle = active
       ? 'background:var(--green); color:#fff; border-color:var(--green);'
       : o.units === 0 ? 'opacity:.55;' : '';
+    const delBtn = (key === 'ALL' || key === 'UNBRANDED') ? ''
+      : o.units === 0
+        ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
+        : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
     return `
     <button type="button" class="tl-cust-item${active ? ' active' : ''}" style="align-items:flex-start;${o.units === 0 ? 'opacity:.62;' : ''}"
             onclick="selectSOBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span class="tl-cust-date">${escapeHtml(o.date || '')}</span></span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
           <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
@@ -10706,6 +10737,27 @@ function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '
 function resolveAppConfirm(ok) {
   document.getElementById('app-confirm-modal').classList.remove('open');
   if (_appConfirmResolve) { _appConfirmResolve(!!ok); _appConfirmResolve = null; }
+}
+
+async function confirmDeleteBrand(brand) {
+  const ok = await appConfirm({
+    title: 'Delete Brand',
+    sub: 'Remove this empty brand from the registry',
+    bannerLabel: 'Brand',
+    bannerValue: brand,
+    message: `Brand <b>${escapeHtml(brand)}</b> has no units in stock — it will be removed along with its model links.<br><span style="font-size:11px; color:var(--text-sub);">If a sold unit from this brand is returned later, the brand is restored automatically.</span>`,
+    okText: '&#128465; Delete Brand'
+  });
+  if (!ok) return;
+  try {
+    await apiPost('/api/brands/delete', { brand });
+    if (DB.availFilter === brand) DB.availFilter = 'ALL';
+    if (DB.soFilter === brand) DB.soFilter = 'ALL';
+    showToast(`Deleted brand ${brand}`, '&#128465;');
+    await refreshData();
+  } catch (e) {
+    showToast('Delete blocked: ' + e.message);
+  }
 }
 
 async function releaseQuarantine(serial) {
