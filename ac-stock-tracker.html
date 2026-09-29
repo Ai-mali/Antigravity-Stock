@@ -11634,48 +11634,29 @@ document.addEventListener('keydown', e => {
     resolveAppConfirm(false);
   }
 });
-const appConfirmModalEl = document.getElementById('app-confirm-modal');
-if (appConfirmModalEl) {
-  appConfirmModalEl.addEventListener('click', e => {
-    if (e.target === appConfirmModalEl) resolveAppConfirm(false);
+/* Backdrop-click-to-close: only when BOTH mousedown and mouseup land
+   directly on the overlay. A drag started inside the modal (e.g.
+   selecting text) that releases on the backdrop must NOT close it. */
+function onBackdropPress(el, onClose) {
+  if (!el) return;
+  el.addEventListener('mousedown', e => {
+    el._downOnBackdrop = (e.button === 0 && e.target === el);
+  });
+  el.addEventListener('mouseup', e => {
+    if (e.button === 0 && el._downOnBackdrop && e.target === el) onClose();
+    el._downOnBackdrop = false;
   });
 }
-const manualEntryModalEl = document.getElementById('manual-entry-modal');
-if (manualEntryModalEl) {
-  manualEntryModalEl.addEventListener('click', e => {
-    if (e.target === manualEntryModalEl) closeManualStockInModal();
-  });
-}
-document.getElementById('config-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('config-modal')) closeConfigModal();
-});
-document.getElementById('edit-scan-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('edit-scan-modal')) closeEditScanModal();
-});
-document.getElementById('zoom-scan-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('zoom-scan-modal')) closeZoomScanModal();
-});
-document.getElementById('activity-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('activity-modal')) closeActivityModal();
-});
-const editUnitModalEl = document.getElementById('edit-unit-modal');
-if (editUnitModalEl) {
-  editUnitModalEl.addEventListener('click', e => {
-    if (e.target === editUnitModalEl) closeEditUnitModal();
-  });
-}
-const confirmDelModalEl = document.getElementById('confirm-delete-modal');
-if (confirmDelModalEl) {
-  confirmDelModalEl.addEventListener('click', e => {
-    if (e.target === confirmDelModalEl) closeConfirmDeleteModal();
-  });
-}
-document.getElementById('do-photos-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('do-photos-modal')) closeDoPhotosModal();
-});
-document.getElementById('photo-viewer-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('photo-viewer-modal')) closePhotoViewerModal();
-});
+onBackdropPress(document.getElementById('app-confirm-modal'), () => resolveAppConfirm(false));
+onBackdropPress(document.getElementById('manual-entry-modal'), () => closeManualStockInModal());
+onBackdropPress(document.getElementById('config-modal'), () => closeConfigModal());
+onBackdropPress(document.getElementById('edit-scan-modal'), () => closeEditScanModal());
+onBackdropPress(document.getElementById('zoom-scan-modal'), () => closeZoomScanModal());
+onBackdropPress(document.getElementById('activity-modal'), () => closeActivityModal());
+onBackdropPress(document.getElementById('edit-unit-modal'), () => closeEditUnitModal());
+onBackdropPress(document.getElementById('confirm-delete-modal'), () => closeConfirmDeleteModal());
+onBackdropPress(document.getElementById('do-photos-modal'), () => closeDoPhotosModal());
+onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoViewerModal());
 
 /* Day / Dark Theme toggle — View Transitions crossfade: GPU snapshot swap
    whose cost is independent of DOM size (fixes the lag on expanded data).
