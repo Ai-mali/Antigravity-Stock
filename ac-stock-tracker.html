@@ -5503,7 +5503,7 @@ body.theme-light .autocomplete-dropdown {
 
       <div style="margin-bottom:12px;">
         <label class="form-label">Model Code *</label>
-        <input type="text" class="form-input mono" id="manual-model-input" placeholder="e.g. FTKV25NVM" style="text-transform:uppercase;">
+        <input type="text" class="form-input mono" id="manual-model-input" placeholder="e.g. FTKV25NVM" style="text-transform:uppercase;" oninput="populateManualDescList()">
       </div>
 
       <!-- Serialized Units Mode -->
@@ -5524,7 +5524,7 @@ body.theme-light .autocomplete-dropdown {
           </div>
           <div>
             <label class="form-label">Part / Accessory Description</label>
-            <input type="text" class="form-input" id="manual-desc-input" list="manual-desc-list" placeholder="e.g. REMOTE CONTROLLER, COPPER PIPE KIT" onfocus="populateManualDescList()" autocomplete="off">
+            <input type="text" class="form-input" id="manual-desc-input" list="manual-desc-list" placeholder="e.g. REMOTE CONTROLLER, COPPER PIPE KIT" autocomplete="off">
             <datalist id="manual-desc-list"></datalist>
           </div>
         </div>
@@ -5669,7 +5669,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div>
           <label class="form-label" for="edit-scan-model">Model</label>
-          <input type="text" class="form-input" id="edit-scan-model" placeholder="e.g. FCFC71AV1F" autocomplete="off" style="font-weight:600;">
+          <input type="text" class="form-input" id="edit-scan-model" placeholder="e.g. FCFC71AV1F" autocomplete="off" oninput="populateEditScanDescList()" style="font-weight:600;">
         </div>
         <div>
           <label class="form-label" for="edit-scan-qty">Quantity</label>
@@ -5690,7 +5690,7 @@ body.theme-light .autocomplete-dropdown {
       </div>
       <div id="edit-scan-desc-block" style="display:none;">
         <label class="form-label" for="edit-scan-desc">Part / Accessory Description</label>
-        <input type="text" class="form-input mono" id="edit-scan-desc" placeholder="e.g. FLOW-150CMH" list="edit-scan-desc-list" onfocus="populateEditScanDescList()" autocomplete="off" style="font-weight:600;">
+        <input type="text" class="form-input mono" id="edit-scan-desc" placeholder="e.g. FLOW-150CMH" list="edit-scan-desc-list" autocomplete="off" style="font-weight:600;">
         <datalist id="edit-scan-desc-list"></datalist>
         <div style="font-size:11px; color:var(--text-sub); margin-top:6px;">Non-serial part — units are auto-numbered (NAME #1, #2…) when stocked in.</div>
       </div>
@@ -7568,6 +7568,7 @@ function setEditScanMode(mode) {
 
 function populateEditScanFields(row) {
   if (editScanMode === 'ns') {
+    populateEditScanDescList();
     const dInput = document.getElementById('edit-scan-desc');
     if (dInput) {
       dInput.value = row.desc ||
@@ -11471,6 +11472,7 @@ function openManualStockInModal() {
 
   toggleManualEntryMode('serial');
   updateManualSerialsCount();
+  populateManualDescList();
   modal.classList.add('open');
   setTimeout(() => { if (modelInput) modelInput.focus(); }, 100);
 }
@@ -11497,6 +11499,7 @@ function toggleManualEntryMode(mode) {
     if (tabNonSerial) tabNonSerial.classList.add('active');
     if (modeSerialFields) modeSerialFields.style.display = 'none';
     if (modeNonSerialFields) modeNonSerialFields.style.display = 'block';
+    populateManualDescList();
   }
 }
 
