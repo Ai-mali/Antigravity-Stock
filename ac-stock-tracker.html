@@ -3521,7 +3521,9 @@ body.theme-light .tl-status-badge {
 .tl-sidebar {
   width: 300px;
   flex-shrink: 0;
-  position: relative;
+  position: sticky;
+  top: var(--searchbar-sticky-top, 0);
+  align-self: flex-start;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -3636,7 +3638,7 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 
 /* Sidebar scrolling list — Telegram-style rows */
 .tl-side-list {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -6287,6 +6289,23 @@ function updateStickyHeaderOffsets() {
       const brandTop = stickyBase + soHdrH + barHeight;
       document.documentElement.style.setProperty('--stockout-brand-sticky-top', `${brandTop}px`);
       document.documentElement.style.setProperty('--stockout-model-sticky-top', `${brandTop + 43}px`);
+    }
+
+    // Cap each sidebar to the space actually visible below its resting
+    // position — otherwise its tail is clipped by the viewport edge and the
+    // inner list never becomes the scroll region. Sticky is disabled for the
+    // read so the rect reports the resting position even while scrolled.
+    if (main) {
+      const mainRectTop = main.getBoundingClientRect().top;
+      for (const sid of ['avail-sidebar', 'so-sidebar', 'tl-sidebar']) {
+        const sb = document.getElementById(sid);
+        if (!sb || !sb.offsetParent) continue;
+        sb.style.position = 'relative';
+        const topInMain = sb.getBoundingClientRect().top - mainRectTop + main.scrollTop;
+        sb.style.position = '';
+        if (topInMain < 0 || topInMain > main.clientHeight) continue;
+        sb.style.maxHeight = Math.max(160, Math.floor(main.clientHeight - topInMain - 8)) + 'px';
+      }
     }
   });
 }
