@@ -3795,6 +3795,12 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 }
 .brand-del.off { color: var(--text-sub); opacity: .35; cursor: not-allowed; }
 .tl-side-mini .brand-del { display: none; }
+/* Empty-brand rows: muted text, but the delete icon + 0 pill stay full color */
+.tl-cust-item.brand-empty .tl-cust-avatar,
+.tl-cust-item.brand-empty .tl-cust-name,
+.tl-cust-item.brand-empty .tl-cust-date,
+.tl-cust-item.brand-empty .tl-cust-sub,
+.tl-cust-item.brand-empty .tl-cust-status { opacity: .55; }
 
 /* Mini rail mode — avatars only */
 .tl-sidebar.tl-side-mini { width: 60px; }
@@ -9048,22 +9054,23 @@ function renderAvailBrandSidebar() {
 
   const mkRow = (key, o) => {
     const active = DB.availFilter === key;
+    const empty = o.units === 0 && key !== 'ALL';
     const pillStyle = active
       ? 'background:var(--green); color:#fff; border-color:var(--green);'
-      : o.units === 0 ? 'opacity:.55;' : '';
+      : '';
     const delBtn = (key === 'ALL' || key === 'UNBRANDED') ? ''
-      : o.units === 0
+      : empty
         ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
         : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
     return `
-    <button type="button" class="tl-cust-item${active ? ' active' : ''}" style="align-items:flex-start;${o.units === 0 ? 'opacity:.62;' : ''}"
+    <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}" style="align-items:flex-start;"
             onclick="selectAvailBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
-          <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
+          <span class="tl-cust-status" style="font-size:10px; color:${o.statusColor};">${o.status}</span>
           <span class="tl-cust-units" style="${pillStyle}">${o.units}</span>
         </span>
       </span>
@@ -9268,22 +9275,23 @@ function renderSOBrandSidebar() {
 
   const mkRow = (key, o) => {
     const active = DB.soFilter === key;
+    const empty = o.units === 0 && key !== 'ALL';
     const pillStyle = active
       ? 'background:var(--green); color:#fff; border-color:var(--green);'
-      : o.units === 0 ? 'opacity:.55;' : '';
+      : '';
     const delBtn = (key === 'ALL' || key === 'UNBRANDED') ? ''
-      : o.units === 0
+      : empty
         ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
         : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
     return `
-    <button type="button" class="tl-cust-item${active ? ' active' : ''}" style="align-items:flex-start;${o.units === 0 ? 'opacity:.62;' : ''}"
+    <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}" style="align-items:flex-start;"
             onclick="selectSOBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${escapeHtml(o.name)}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
-          <span style="font-size:10px; color:${o.statusColor};">${o.status}</span>
+          <span class="tl-cust-status" style="font-size:10px; color:${o.statusColor};">${o.status}</span>
           <span class="tl-cust-units" style="${pillStyle}">${o.units}</span>
         </span>
       </span>
