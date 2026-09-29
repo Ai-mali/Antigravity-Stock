@@ -4390,6 +4390,7 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
     height: auto;
   }
   .stockout-layout {
+    display: flex;
     flex-direction: column;
     overflow: visible;
     height: auto;
@@ -4413,6 +4414,20 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   .stock-in-layout, .return-screen-layout {
     grid-template-columns: 1fr;
   }
+  /* Narrow window: stack the brand/customer rail above the content so the
+     middle column keeps its full width — the rail scrolls internally. */
+  .avail-layout, .tl-layout {
+    flex-direction: column;
+  }
+  #view-available .tl-sidebar,
+  #view-stock-out .tl-sidebar,
+  #view-track-list .tl-sidebar {
+    width: 100% !important;
+    position: static;
+    align-self: stretch;
+    max-height: 300px !important;
+  }
+  .tl-side-resizer { display: none; }
   .stockout-chips-grid {
     grid-template-columns: repeat(2, 1fr);
   }
