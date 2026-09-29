@@ -6052,6 +6052,30 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- GENERIC CONFIRM MODAL (replaces native confirm() popups) -->
+<div class="modal-overlay" id="app-confirm-modal">
+  <div class="modal-dialog" style="max-width: 420px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="app-confirm-title">Confirm</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;" id="app-confirm-sub"></div>
+      </div>
+      <button class="btn-circle" onclick="resolveAppConfirm(false)" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
+      <div id="app-confirm-banner" style="background:var(--surface2); border:1px solid var(--border-light); border-radius:8px; padding:12px 14px; margin-bottom:12px; display:none;">
+        <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;" id="app-confirm-banner-label"></div>
+        <div id="app-confirm-banner-value" class="mono" style="font-size:15px; font-weight:800; color:var(--green-bright); margin-top:3px;"></div>
+      </div>
+      <div id="app-confirm-msg" style="font-size:13px; color:var(--text-muted); line-height:1.55;"></div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" onclick="resolveAppConfirm(false)">Cancel</button>
+      <button class="btn btn-primary" id="app-confirm-ok" onclick="resolveAppConfirm(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -9991,8 +10015,44 @@ function inspectReturnRow(serial) {
   showToast(`${r.serial} · ${r.model} → ${r.customer} | ${r.reason} | ${r.condition || 'No condition'} | ${r.action} ${r.date}`);
 }
 
+/* ---- Generic themed confirm dialog (replaces native confirm()) ---- */
+let _appConfirmResolve = null;
+
+function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '', bannerValue = '', okText = 'Confirm' } = {}) {
+  const modal = document.getElementById('app-confirm-modal');
+  document.getElementById('app-confirm-title').textContent = title;
+  const subEl = document.getElementById('app-confirm-sub');
+  subEl.textContent = sub;
+  subEl.style.display = sub ? '' : 'none';
+  document.getElementById('app-confirm-msg').innerHTML = message;
+  const banner = document.getElementById('app-confirm-banner');
+  if (bannerValue) {
+    banner.style.display = '';
+    document.getElementById('app-confirm-banner-label').textContent = bannerLabel;
+    document.getElementById('app-confirm-banner-value').textContent = bannerValue;
+  } else {
+    banner.style.display = 'none';
+  }
+  document.getElementById('app-confirm-ok').innerHTML = okText;
+  modal.classList.add('open');
+  return new Promise(res => { _appConfirmResolve = res; });
+}
+
+function resolveAppConfirm(ok) {
+  document.getElementById('app-confirm-modal').classList.remove('open');
+  if (_appConfirmResolve) { _appConfirmResolve(!!ok); _appConfirmResolve = null; }
+}
+
 async function releaseQuarantine(serial) {
-  if (!confirm(`Release ${serial} back to Available Stock?\n\nThe unit will be restocked and tagged as 2nd.`)) return;
+  const ok = await appConfirm({
+    title: 'Release from Quarantine',
+    sub: 'Return this unit to sellable stock',
+    bannerLabel: 'Serial Number',
+    bannerValue: serial,
+    message: 'The unit will be restocked into <b>Available Stock</b> and automatically tagged <b style="color:#fbbf24;">2nd</b> (second-hand).',
+    okText: '&#10003; Release to Stock'
+  });
+  if (!ok) return;
   try {
     await apiPost('/api/returns/release', { serial });
     showToast(`Released ${serial} back to stock`, '&#10003;');
@@ -11346,8 +11406,15 @@ document.addEventListener('keydown', e => {
     closeConfirmDeleteModal();
     closeDoPhotosModal();
     closePhotoViewerModal();
+    resolveAppConfirm(false);
   }
 });
+const appConfirmModalEl = document.getElementById('app-confirm-modal');
+if (appConfirmModalEl) {
+  appConfirmModalEl.addEventListener('click', e => {
+    if (e.target === appConfirmModalEl) resolveAppConfirm(false);
+  });
+}
 const manualEntryModalEl = document.getElementById('manual-entry-modal');
 if (manualEntryModalEl) {
   manualEntryModalEl.addEventListener('click', e => {
