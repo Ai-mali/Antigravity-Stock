@@ -53,14 +53,19 @@ def _saved():
         pass
 
 
+# The desktop shell is a thin wrapper around this file — never let WebView2
+# serve a cached copy, or UI fixes don't show up until the cache expires.
+_NOCACHE = {"Cache-Control": "no-store"}
+
+
 @app.get("/")
 def index():
-    return FileResponse(HTML_PATH)
+    return FileResponse(HTML_PATH, headers=_NOCACHE)
 
 
 @app.get("/ac-stock-tracker.html")
 def index_alias():
-    return FileResponse(HTML_PATH)
+    return FileResponse(HTML_PATH, headers=_NOCACHE)
 
 
 @app.post("/api/reload")
