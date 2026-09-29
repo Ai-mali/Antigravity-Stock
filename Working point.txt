@@ -2,9 +2,9 @@
 
 Commit Hash: 
 
-1923c50
-Commit Description: A-Z sidebar + running light + Track List resizer/avatars + 25-row default + track search highlighting
-Date: 2026-09-28 +0700
+a7e5be2
+Commit Description: Return/RMA overhaul + warranty fix + responsive sidebars + scrollbar polish + copy-click cells
+Date: 2026-09-29 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
 Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
@@ -54,4 +54,17 @@ Running Light: Active sidebar row gets a cyan (#00d5ff) sheen sweeping back and 
 Track List Sidebar: Same drag-resize handle as brand sidebars (180-440px, snap-to-mini, tlW pref); stacked customer avatars beside search removed (eb6e257).
 Pagination: Track List defaults to 25 rows/page; 10/25/50/100 selectable (7b66985).
 Track List Highlighting: Text search marks matching letters in model/serial/customer cells, rings warranty badges, tints matching rows; Date In/Out pickers mark date cells; brand names are searchable via the model cell (1923c50).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 1923c50"
+Return & RMA Screen: Stitch-style split panel — searchable dispatch-serial combobox (serial/model/customer matching, highlight), warranty pill + alert card, Date In/Out/Customer meta strip, registry with chips (All/Restocked/Quarantined/Under Warranty), Date-Out filter, search highlight, pagination, CSV export, RMA tag printing (a869510, fb957df).
+Warranty: 12-month window from Date Out; EXPIRING starts one calendar month before expiry; expiry day still valid, EXPIRED the day after (76547d8, efb49db).
+Date Picker: « » year-jump arrows beside month arrows; nav clicks no longer close the popover (composedPath fix) (8753b70, 7314f8b).
+Quarantine Release: Amber ✓ on quarantined registry rows → themed confirm modal (serial + model banner) → back to In Stock with audit note + 2nd tag (3bb152c, 54583ee, 5c35c95).
+Dispatch Date: Picker auto-resets to today after each checkout — a stale picked date can no longer tag the next sale (3a0c9c1).
+Sidebar Scrolling: Sidebars cap to the visible viewport and scroll internally; rows keep natural height (flex-shrink fix); Track List sidebar included (3705224, 64bab5c).
+Narrow Windows (<1024px): Brand/customer rails stack full-width above content capped at 300px with own scrollbar; Stock Out actually stacks now (grid→flex); no horizontal clipping (d996ec4); backend serves HTML no-store so WebView2 never shows stale UI (4f95d83).
+Scrollbars: Slim 6px gray thumbs (--scrollbar-thumb per theme); removed scrollbar-width/color that forced bright native bars; color-scheme set (f24ad9a, 69c3fb6).
+Manual Entry: Brand field removed (brand is chosen per-row at scan commit); submit no longer touches DB.modelBrands (944bd86).
+Model-less Rows: Stock-in blocked when scan row has no model; Ready modal shows a pulsing amber inline MODEL CODE input — type it there and proceed (c6d297c, 1396c4d).
+Copy Cells: Track List model/serial/customer cells click-to-copy with green dotted-underline hover (ec46ecf).
+Return Inspection: Physical Condition removed; reasons = Ordered Cancelled / Defective-Repair Needed; Defective blacks out + blocks Restock (must quarantine); 2nd tag ONLY via quarantine release ("Released from quarantine" note marker) — plain restocks stay untagged; Date In always preserved (b5bb9e1, 72e638c).
+2nd Badge: Clickable — jumps to Return registry filtered to that serial's return history (a7e5be2).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit a7e5be2"
