@@ -5139,7 +5139,7 @@ body.theme-light .autocomplete-dropdown {
                 <tr>
                   <th style="width:44px; text-align:center;">No</th>
                   <th style="width:140px; text-align:center; white-space:nowrap;">Model <span id="scan-hdr-model-cnt" style="opacity:.6;">(0)</span></th>
-                  <th>Serial <span id="scan-hdr-serial-cnt" style="opacity:.6;">(0)</span></th>
+                  <th>Serial/Desc <span id="scan-hdr-serial-cnt" style="opacity:.6;">(0)</span></th>
                   <th style="width:70px; text-align:right; white-space:nowrap;">Qty <span id="scan-hdr-qty-cnt" style="opacity:.6;">(0)</span></th>
                   <th style="text-align:center; width:155px; white-space:nowrap;">Action</th>
                 </tr>
@@ -5570,7 +5570,7 @@ body.theme-light .autocomplete-dropdown {
               <tr>
                 <th class="tl-no-col">No.</th>
                 <th data-tlcol="model">Model &amp; Description</th>
-                <th data-tlcol="serial">Serial Number</th>
+                <th data-tlcol="serial">Serial Num/Desc</th>
                 <th data-tlcol="dateIn">Date In</th>
                 <th data-tlcol="dateOut">Dispatched At</th>
                 <th data-tlcol="customer">Customer Destination</th>
@@ -5607,7 +5607,7 @@ body.theme-light .autocomplete-dropdown {
           <div class="card-body rma-panel-body">
             <div>
               <div class="rma-field-head">
-                <label class="form-label" style="margin:0;">Search Dispatch Serial</label>
+                <label class="form-label" style="margin:0;">Search Dispatch Serial/Desc</label>
                 <span class="rma-link" onclick="switchTab('track-list')">View dispatch log</span>
               </div>
               <div class="search-box-wrap rma-select-wrap">
@@ -5693,7 +5693,7 @@ body.theme-light .autocomplete-dropdown {
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Serial</th>
+                  <th>Serial/Desc</th>
                   <th>Model</th>
                   <th>Customer</th>
                   <th>Date In</th>
@@ -5885,7 +5885,7 @@ body.theme-light .autocomplete-dropdown {
     <div class="modal-header">
       <div>
         <div class="modal-title">Edit Scanned Item</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Update row No, Model name, Quantity, and Serial numbers.</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Update row No, Model name, Quantity, and Serial/Desc.</div>
       </div>
       <button class="btn-circle" onclick="closeEditScanModal()" title="Close">&#10005;</button>
     </div>
@@ -6076,8 +6076,8 @@ body.theme-light .autocomplete-dropdown {
       <input type="hidden" id="edit-unit-old-serial" value="">
 
       <div style="margin-bottom:14px;">
-        <label class="form-label" for="edit-unit-serial">Serial Number *</label>
-        <input type="text" class="form-input mono" id="edit-unit-serial" placeholder="Serial Number" style="font-weight:700; font-size:14px; color:var(--green-bright);" autocomplete="off">
+        <label class="form-label" for="edit-unit-serial">Serial Num/Desc *</label>
+        <input type="text" class="form-input mono" id="edit-unit-serial" placeholder="Serial or Desc" style="font-weight:700; font-size:14px; color:var(--green-bright);" autocomplete="off">
       </div>
 
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
@@ -6131,7 +6131,7 @@ body.theme-light .autocomplete-dropdown {
     <div class="modal-body" style="padding-top:10px; padding-bottom:6px;">
       <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">Serial Number</div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">Serial/Desc</div>
           <div id="confirm-del-serial" class="mono" style="font-size:16px; font-weight:800; color:#ef4444; margin-top:3px;">—</div>
         </div>
         <div style="text-align:right;">
@@ -6277,7 +6277,7 @@ body.theme-light .autocomplete-dropdown {
                  style="display:none; margin-top:3px; font-size:13px; font-weight:800; text-transform:uppercase; padding:7px 10px;">
         </div>
         <div>
-          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">SERIAL NUMBER</div>
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">SERIAL NUM/DESC</div>
           <div id="ready-modal-serial" class="mono" style="font-size:15px; font-weight:800; color:var(--green-bright); margin-top:3px;">—</div>
         </div>
       </div>
@@ -6357,7 +6357,7 @@ body.theme-light .autocomplete-dropdown {
           <div>
             <span class="rma-detail-label" style="display:flex; align-items:center; gap:5px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>
-              Serial Number
+              Serial Num/Desc
             </span>
             <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
               <div class="mono" id="rma-detail-serial" style="font-size:21px; font-weight:800; color:var(--green-bright); letter-spacing:0.4px; user-select:all;"></div>
@@ -9886,7 +9886,7 @@ function toggleTrackBreakdown() {
 
 /* ---- Fulfillment Records Log table ---- */
 const TRACK_COL_DEFS = [
-  ['model', 'Model & Description'], ['serial', 'Serial Number'], ['dateIn', 'Date In'],
+  ['model', 'Model & Description'], ['serial', 'Serial Num/Desc'], ['dateIn', 'Date In'],
   ['dateOut', 'Dispatched At'], ['customer', 'Customer Destination'], ['warranty', 'Warranty'],
   ['status', 'Status'], ['actions', 'Actions']
 ];
@@ -10224,7 +10224,7 @@ function selectTrackWarranty(key) {
 }
 
 function exportTrackCsv() {
-  let csv = 'MODEL,SERIAL NUMBER,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
+  let csv = 'MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
   DB.trackList.forEach(r => {
     const w = r.warranty || { status: '', expiry: '' };
     csv += `"${r.model}","${r.serial}","${r.dateIn}","${r.dateOut}","${r.customer}","${w.status}","${w.expiry}","Dispatched"\n`;
@@ -10622,7 +10622,7 @@ function exportReturnDetail() {
   const wTxt = w.status && w.status !== 'none'
     ? `${w.status} (expires ${w.expiry}, ${w.daysRemaining}d left)` : 'none';
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const csv = 'SERIAL,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
+  const csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
     + [r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
         .map(esc).join(',') + '\n';
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -10674,7 +10674,7 @@ async function releaseQuarantine(serial) {
   const ok = await appConfirm({
     title: 'Release from Quarantine',
     sub: 'Return this unit to sellable stock',
-    bannerLabel: 'Serial Number',
+    bannerLabel: 'Serial Num/Desc',
     bannerValue: serial,
     banner2Label: 'Model Code',
     banner2Value: rec ? (rec.model || '') : '',
@@ -10705,7 +10705,7 @@ function reprintRmaTag(serial) {
 
 function exportReturnsCsv() {
   if (!DB.returns.length) { showToast('No returns to export.'); return; }
-  let csv = 'SERIAL,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
+  let csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
   DB.returns.forEach(r => {
     csv += `"${r.serial}","${r.model}","${r.customer}","${r.dateOut || ''}","${r.date}","${(r.reason || '').replace(/"/g, '""')}","${(r.notes || '').replace(/"/g, '""')}","${r.action}"\n`;
   });
