@@ -4673,11 +4673,11 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   align-items: center;
   gap: 8px;
   pointer-events: auto;
-  animation: toastIn .2s ease-out;
+  animation: toastIn .5s cubic-bezier(.2, 1.1, .4, 1);
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(30vh); }
   to { opacity: 1; transform: none; }
 }
 
