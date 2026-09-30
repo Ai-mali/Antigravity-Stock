@@ -49,18 +49,26 @@ The app reads daikin_stock.xlsx fresh every time it starts.
 So: edit while the app is CLOSED -> save in Excel -> next
 time the app launches it sees your edits automatically.
 
+NOTE: all sheets are PROTECTED against accidental edits.
+To unlock before editing:
+  Excel ribbon -> Review tab -> "Unprotect Sheet"
+  (no password needed - it is one click)
+The app re-locks the sheets automatically on its next save.
+
 To manually "stock out" a serial in MasterRecord:
-  1. Find the row with the matching Serial value.
-  2. Set Status     = Sold
-  3. Set Customer   = (customer name)
-  4. Set Date Out   = YYYY-MM-DD   (e.g. 2026-09-30)
-  5. Set Batch      = MANUAL-YYYYMMDD  (optional, recommended)
-  6. Save and close the file BEFORE opening the app.
+  1. Review tab -> Unprotect Sheet.
+  2. Find the row with the matching Serial value.
+  3. Set Status     = Sold
+  4. Set Customer   = (customer name)
+  5. Set Date Out   = YYYY-MM-DD   (e.g. 2026-09-30)
+  6. Set Batch      = MANUAL-YYYYMMDD  (optional, recommended)
+  7. Save and close the file BEFORE opening the app.
 
 To manually "return" / restock a serial:
-  1. Find the row.
-  2. Set Status     = In Stock
-  3. Clear Customer, Date Out and Batch.
+  1. Unprotect Sheet first (see above).
+  2. Find the row.
+  3. Set Status     = In Stock
+  4. Clear Customer, Date Out and Batch.
   (You can also add a row to the Returns sheet, but it is
    optional - Status on MasterRecord is what the app checks.)
 

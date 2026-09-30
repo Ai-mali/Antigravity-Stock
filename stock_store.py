@@ -260,6 +260,9 @@ class StockStore:
                 if ws.cell(row=1, column=col).value in (None, ""):
                     ws.cell(row=1, column=col, value=title)
                     self._schema_dirty = True
+        # Accident guard: protected in Excel (one click to unprotect,
+        # no password). openpyxl ignores this flag, so the app writes freely.
+        ws.protection.sheet = True
         return ws
 
     def _backup(self, suffix: str = ""):
