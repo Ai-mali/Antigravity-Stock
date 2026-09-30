@@ -2196,9 +2196,18 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 .actions-cell {
   text-align: center;
   white-space: nowrap;
-  width: 155px;
+  width: 196px;
   vertical-align: middle;
   padding: 8px 10px !important;
+}
+
+/* Fixed slot so the warn icon never shifts the action buttons */
+.scan-warn-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  flex-shrink: 0;
 }
 
 .actions-btn-group {
@@ -5188,7 +5197,7 @@ body.theme-light .autocomplete-dropdown {
                   <th style="width:140px; text-align:center; white-space:nowrap;">Model <span id="scan-hdr-model-cnt" style="opacity:.6;">(0)</span></th>
                   <th>Serial/Desc <span id="scan-hdr-serial-cnt" style="opacity:.6;">(0)</span></th>
                   <th style="width:70px; text-align:right; white-space:nowrap;">Qty <span id="scan-hdr-qty-cnt" style="opacity:.6;">(0)</span></th>
-                  <th style="text-align:center; width:155px; white-space:nowrap;">Action</th>
+                  <th style="text-align:center; width:196px; white-space:nowrap;">Action</th>
                 </tr>
               </thead>
               <tbody id="scan-results-tbody"></tbody>
@@ -7515,7 +7524,7 @@ function renderScanResultsTable() {
       <td class="mono" style="color:var(--text-muted); text-align:right; white-space:nowrap; width:70px;">${row.qty}</td>
       <td class="actions-cell">
         <div class="actions-btn-group">
-          ${warnIcon}
+          <span class="scan-warn-slot">${warnIcon}</span>
           <button class="btn-action-icon btn-action-trash" onclick="event.stopPropagation(); deleteScanRowDirect(${idx})" title="Remove Row from Scan Results" aria-label="Delete Row">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
