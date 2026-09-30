@@ -554,7 +554,7 @@ class StockStore:
             self._serial_set.add(s.lower())
         if serials:
             self.log_activity("Stock In", model=model, count=len(serials),
-                              details=f"Brand: {brand} | {len(serials)} units added")
+                              details=f"Brand: {brand} | {len(serials)} units added | Serials: {', '.join(serials)}")
             self.save(backup=True)
 
     def stock_out(self, serials: list[str], customer: str, date_out: str):
@@ -583,7 +583,7 @@ class StockStore:
         if done:
             model_summary = ", ".join(sorted(models_sold))
             self.log_activity("Stock Out", model=model_summary, count=len(done),
-                              details=f"Customer: {customer} | Batch: {batch} | {len(done)} units sold")
+                              details=f"Customer: {customer} | Batch: {batch} | {len(done)} units sold | Serials: {', '.join(done)}")
             self.save(backup=True)
         return done
 
@@ -621,7 +621,7 @@ class StockStore:
             self._ensure_brand(rec.get("Brand", ""))
         self.log_activity("Sale Reverted", model=", ".join(sorted(models)),
                           count=len(done),
-                          details=f"Customer: {customer} | Batch: {batch or 'legacy'} | {len(done)} units restored to stock")
+                          details=f"Customer: {customer} | Batch: {batch or 'legacy'} | {len(done)} units restored to stock | Serials: {', '.join(done)}")
         self.save(backup=True)
         return done, ""
 
