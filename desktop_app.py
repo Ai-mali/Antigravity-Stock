@@ -787,6 +787,7 @@ def main():
         min_size=(1050, 680),
         frameless=True,
         easy_drag=False,
+        text_select=True,
         background_color='#0f171c'
     )
     api.set_window(window)
