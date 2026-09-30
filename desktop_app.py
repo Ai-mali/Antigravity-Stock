@@ -553,6 +553,14 @@ class DesktopApi:
         except Exception:
             return None
 
+    def open_data_folder(self):
+        """Open the app data folder (workbook + backups) in Explorer."""
+        try:
+            os.startfile(_APP_DIR)
+            return True
+        except Exception:
+            return False
+
     def _get_work_area(self, hwnd):
         """Rect of the monitor's work area (screen minus taskbar) holding the window."""
         try:

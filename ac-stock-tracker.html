@@ -6442,6 +6442,9 @@ body.theme-light .autocomplete-dropdown {
             <button class="btn btn-primary btn-sm" onclick="triggerManualBackup()">
               &#128190; Backup Now
             </button>
+            <button class="btn btn-ghost btn-sm" onclick="openDataFolder()" title="Open the data folder (workbook + backups) in Explorer">
+              &#128193; Data Folder
+            </button>
           </div>
         </div>
 
@@ -12151,6 +12154,22 @@ async function triggerManualBackup() {
     await fetchActivityLog();
   } catch (e) {
     showToast('Backup failed: ' + e.message);
+  }
+}
+
+async function openDataFolder() {
+  try {
+    const api = window.pywebview && window.pywebview.api;
+    if (api && api.open_data_folder) {
+      const ok = await api.open_data_folder();
+      if (ok) {
+        showToast('📂 Data folder opened', 'Folder contains daikin_stock.xlsx + backups');
+        return;
+      }
+    }
+    showToast('Open the Stock-App folder next to the program files');
+  } catch (e) {
+    showToast('Open the Stock-App folder next to the program files');
   }
 }
 
