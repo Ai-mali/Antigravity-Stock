@@ -307,7 +307,7 @@ class StockStore:
         if not BACKUP_DIR.exists():
             return []
         files = sorted(BACKUP_DIR.glob("daikin_stock_*.xlsx"),
-                       key=lambda p: p.stat().st_mtime, reverse=True)
+                       key=lambda p: p.stat().st_ctime, reverse=True)
         out = []
         for f in files:
             st = f.stat()
@@ -315,7 +315,7 @@ class StockStore:
                 "filename": f.name,
                 "size": st.st_size,
                 "modified": datetime.datetime.fromtimestamp(
-                    st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    st.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
             })
         return out
 
