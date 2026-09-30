@@ -10075,7 +10075,7 @@ function renderTrackTable(list, modelColors) {
       <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
       <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
-      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" onmouseenter="highlightBatch(this, true)" onmouseleave="highlightBatch(this, false)" title="Undo dispatch — ${grpCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
+      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${grpCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -10779,12 +10779,19 @@ function resolveAppConfirm(ok) {
   if (_appConfirmResolve) { _appConfirmResolve(!!ok); _appConfirmResolve = null; }
 }
 
-function highlightBatch(btn, on) {
-  const tr = btn.closest('tr');
-  if (!tr || !tr.dataset.batch) return;
+/* Hovering a Sell Record row highlights its whole dispatch batch —
+   except over copyable cells (model/serial/customer) so click-to-copy
+   stays visually calm. */
+let _batchHoverKey = null;
+document.addEventListener('mouseover', e => {
+  if (!e.target.closest) return;
+  const tr = e.target.closest('#track-table-tbody tr[data-batch]');
+  const key = (tr && !e.target.closest('.tl-copy')) ? tr.dataset.batch : null;
+  if (key === _batchHoverKey) return;
+  _batchHoverKey = key;
   document.querySelectorAll('#track-table-tbody tr[data-batch]')
-    .forEach(x => x.classList.toggle('tl-batch-focus', on && x.dataset.batch === tr.dataset.batch));
-}
+    .forEach(x => x.classList.toggle('tl-batch-focus', !!key && x.dataset.batch === key));
+});
 
 async function confirmRevertSale(idx) {
   const r = DB.trackList[idx];
