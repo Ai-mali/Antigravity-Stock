@@ -2,8 +2,8 @@
 
 Commit Hash: 
 
-6b75c84
-Commit Description: Dispatch Batch id + per-batch Undo Sale w/ blue row-highlight preview + blank checkout customer w/ hideable Recent chips + toast sweep-up & longer hold
+01af28c
+Commit Description: Clipboard-paste photo scan + Stitch-style Undo Dispatch & Activity/Backups modals (resizable) + before/after snapshot pairs + audit log survives restore + CSV newest-first + serials in log + text selection + sheet protection + Data Folder button + README-RECOVERY + QA test assets
 Date: 2026-09-30 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
@@ -88,4 +88,15 @@ Toast Motion: Toasts sweep up ~30vh over 0.5s (overshoot settle) and hold 4.2s (
 Dispatch Batches: Every checkout stamps SALE-YYYYMMDD-HHMMSS on its units (MasterRecord col 8, auto-backfilled). Sell Record rows get an amber undo that reverts the whole batch to stock — no Returns-registry noise, 'Sale Reverted' logged (4216d08).
 Batch UX: Alternating row tint per dispatch group; hovering any row (except copy cells) highlights its batch in bolt-blue; undo tooltip shows unit count. Legacy rows group by customer+date (ca81694, 851e7ce, 3cae438).
 Checkout Field: Customer input blank by default and cleared after each dispatch; slide-toggle hides Recent chips (ui_pref soRecent) (6b75c84).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 6b75c84"
+Clipboard Scan: Ctrl+V pastes an image straight into the Stock In dropzone (text clipboard ignored); dropzone hint updated (49ee2c3).
+Scan Results Layout: Action column widened to ~196px and the warn-icon slot is reserved on every row — 5 controls never shift (73bf55b).
+Undo Dispatch Modal: Stitch design — emerald beam, DSP- batch badge, 3-col impact card (recipient/date/units), Sell→Available flow indicator, serial chip grid + Copy All Serials, safety note, Revert button (05a0221).
+Activity & Backups Modal: Stitch design — Live Sync badge, tab count chips, action-icon pills, All Actions filter, footer status, CSV audit export; resizable via corner grip, opens near-full size, tables flex-fill, no first-drag flicker (c6312c8, 09e0865, 942982b, a652c4a, cc88ccc).
+Restore UX: Native confirm() replaced by themed dialog; new pre-restore safety snapshot lands on top; snapshot times shown/sorted by real file creation (b2cf7b0, 1306eb0).
+Snapshot Pairs: Every mutating save writes BOTH a _before (undo point) and _after (state mirror) snapshot — BEFORE/AFTER/MANUAL badges in list; rotation raised to 60 files (0e54f52).
+Audit Survives Restore: Activity log preserved across restores — restore appends its own entry; Stock Out/In/Revert log entries now carry the serial list (08d3445, 376f6da).
+CSV Order: Sell Record export uses the on-screen filter+sort (default newest-first); Returns export newest-first (8e8efe2).
+Text Selection: pywebview text_select=True — click-drag select works everywhere; click-to-copy cells unchanged (fae14de).
+Data Safety: Data Folder button opens the app dir in Explorer; README-RECOVERY.txt documents emergency Excel access + manual stock-out edit; all sheets Excel-protected (no password) against accidental edits — app unaffected, re-locks on save (4ca5917, 25026cc).
+QA Assets: test_assets/ holds 14 DO images — clean sample, phone-photo sample with planted duplicate serial (C4216034), and 11 real DOs with serial ranges/checkmarks for external testing (a12ca37, 46dfa84, 01af28c).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 01af28c"
