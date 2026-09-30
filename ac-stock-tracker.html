@@ -12127,9 +12127,15 @@ async function triggerManualBackup() {
 }
 
 async function restoreBackupFile(filename) {
-  if (!confirm(`Are you sure you want to restore the database from '${filename}'?\n\nA safety snapshot of the current state will be taken before restoring.`)) {
-    return;
-  }
+  const ok = await appConfirm({
+    title: 'Restore Snapshot?',
+    sub: 'The database will travel back to this point in time',
+    bannerLabel: 'Snapshot File',
+    bannerValue: filename,
+    message: `Everything — stock, sales, returns — will be replaced by the contents of this snapshot.<br><span style="font-size:11px; color:var(--text-sub);">A safety snapshot of the <b>current</b> state is taken first, so you can undo the restore.</span>`,
+    okText: '&#8630; Restore Database'
+  });
+  if (!ok) return;
   try {
     await apiPost('/api/restore', { filename });
     showToast(`Successfully restored from ${filename}!`);
