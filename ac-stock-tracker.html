@@ -10022,6 +10022,7 @@ function renderTrackTable(list, modelColors) {
   const boltSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>';
   const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>';
   const eyeSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
+  const undoSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
 
   const q = (DB.trackSearch || '').trim();
   const ql = q.toLowerCase();
@@ -10054,7 +10055,7 @@ function renderTrackTable(list, modelColors) {
       <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
       <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
-      <td data-tlcol="actions" style="text-align:right;"><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
+      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn" title="Undo this dispatch — return its units to Available Stock" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -10756,6 +10757,37 @@ function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '
 function resolveAppConfirm(ok) {
   document.getElementById('app-confirm-modal').classList.remove('open');
   if (_appConfirmResolve) { _appConfirmResolve(!!ok); _appConfirmResolve = null; }
+}
+
+async function confirmRevertSale(idx) {
+  const r = DB.trackList[idx];
+  if (!r) return;
+  // The dispatch group: same Batch id, or (pre-batch sales) same
+  // customer + Date Out — never touches other sales to this customer.
+  const group = DB.trackList.filter(x =>
+    r.batch ? x.batch === r.batch
+            : (!x.batch && x.customer === r.customer && x.dateOut === r.dateOut));
+  const serials = group.map(x => x.serial).join(', ');
+  const ok = await appConfirm({
+    title: 'Undo This Dispatch',
+    sub: 'Return the whole checkout to Available Stock',
+    bannerLabel: 'Customer',
+    bannerValue: r.customer || '—',
+    banner2Label: 'Dispatch',
+    banner2Value: `${r.dateOut || '?'} · ${group.length} unit(s)`,
+    message: `This removes <b>${group.length} unit(s)</b> from the Sell Record and puts them back into <b>Available Stock</b>:<br><span class="mono" style="font-size:11px; color:var(--green-bright);">${escapeHtml(serials)}</span><br><span style="font-size:11px; color:var(--text-sub);">Other sales to this customer are not affected.</span>`,
+    okText: `&#8630; Revert ${group.length} Unit(s)`
+  });
+  if (!ok) return;
+  try {
+    const res = await apiPost('/api/sales/revert', {
+      batch: r.batch || '', customer: r.customer || '', date_out: r.dateOut || ''
+    });
+    showToast(`Reverted ${res.serials.length} unit(s) back to stock`, '&#8630;');
+    await refreshData();
+  } catch (e) {
+    showToast('Revert failed: ' + e.message);
+  }
 }
 
 async function confirmDeleteBrand(brand) {

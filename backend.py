@@ -256,6 +256,22 @@ def delete_brand(body: DeleteBrandBody):
     return {"ok": True, "brands": store.brands}
 
 
+class RevertSaleBody(BaseModel):
+    batch: str = ""
+    customer: str = ""
+    date_out: str = ""
+
+
+@app.post("/api/sales/revert")
+def revert_sale(body: RevertSaleBody):
+    _fresh()
+    done, err = store.revert_sale(body.batch, body.customer, body.date_out)
+    if err:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True, "serials": done}
+
+
 class StockOutBody(BaseModel):
     serials: list[str]
     customer: str

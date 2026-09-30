@@ -33,7 +33,7 @@ BACKUP_DIR = DB_PATH.parent / "backups"
 DO_DIR = DB_PATH.parent / "delivery_orders"
 
 RECORD_HEADER = ["Brand", "Model", "Serial",
-                 "Date In", "Status", "Customer", "Date Out"]
+                 "Date In", "Status", "Customer", "Date Out", "Batch"]
 RETURN_HEADER = ["Serial", "Model", "Customer", "Reason",
                  "Condition", "Notes", "Action", "Date", "Date Out"]
 ACTIVITY_HEADER = ["Timestamp", "Action", "Model",
@@ -198,6 +198,7 @@ class StockStore:
                            ("" if v is None else v for v in row)))
             if not rec.get("Serial"):
                 continue
+            rec["Batch"] = str(rec.get("Batch") or "")
             rec["_row"] = idx  # Excel row, so updates hit the right cells
             self.records.append(rec)
             self._serial_set.add(str(rec["Serial"]).strip().lower())
@@ -414,6 +415,7 @@ class StockStore:
         out = [{"model": str(r["Model"]), "serial": str(r["Serial"]),
                 "dateIn": str(r["Date In"]), "dateOut": str(r["Date Out"]),
                 "customer": str(r["Customer"]), "status": str(r["Status"]),
+                "batch": str(r.get("Batch") or ""),
                 "warranty": compute_warranty(str(r["Date Out"]))}
                for r in self.records if str(r["Status"]).strip() == SOLD]
         return out
@@ -539,7 +541,10 @@ class StockStore:
             self.save(backup=True)
 
     def stock_out(self, serials: list[str], customer: str, date_out: str):
-        """Mark units Sold with one Customer + Date Out for the whole cart."""
+        """Mark units Sold with one Customer + Date Out for the whole cart.
+        Every checkout stamps the same Batch id on all its units so a
+        mistaken dispatch can be reverted as one transaction."""
+        batch = "SALE-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         wanted = {s.strip().lower() for s in serials if s.strip()}
         done = []
         models_sold = set()
@@ -550,18 +555,58 @@ class StockStore:
             rec["Status"] = SOLD
             rec["Customer"] = customer
             rec["Date Out"] = date_out
+            rec["Batch"] = batch
             models_sold.add(str(rec["Model"]))
             row = rec["_row"]
             self.recs.cell(row=row, column=5, value=SOLD)
             self.recs.cell(row=row, column=6, value=customer)
             self.recs.cell(row=row, column=7, value=date_out)
+            self.recs.cell(row=row, column=8, value=batch)
             done.append(str(rec["Serial"]))
         if done:
             model_summary = ", ".join(sorted(models_sold))
             self.log_activity("Stock Out", model=model_summary, count=len(done),
-                              details=f"Customer: {customer} | {len(done)} units sold")
+                              details=f"Customer: {customer} | Batch: {batch} | {len(done)} units sold")
             self.save(backup=True)
         return done
+
+    def revert_sale(self, batch: str = "", customer: str = "",
+                    date_out: str = "") -> tuple[list[str], str]:
+        """Undo a whole dispatch: flip its Sold units back to In Stock and
+        clear Customer/Date Out/Batch. Matches by Batch id; legacy rows
+        without one match on Customer + Date Out. Returns (serials, error)."""
+        batch = (batch or "").strip()
+        cust = (customer or "").strip().lower()
+        dout = (date_out or "").strip()
+        if not batch and not (cust and dout):
+            return [], "Nothing identifies this dispatch"
+        targets = [r for r in self.records
+                   if str(r["Status"]).strip() == SOLD
+                   and ((batch and str(r.get("Batch") or "").strip() == batch)
+                        or (not batch and not str(r.get("Batch") or "").strip()
+                            and str(r.get("Customer") or "").strip().lower() == cust
+                            and str(r.get("Date Out") or "").strip() == dout))]
+        if not targets:
+            return [], "No sold units found for this dispatch"
+        done, models = [], set()
+        for rec in targets:
+            row = rec["_row"]
+            rec["Status"] = IN_STOCK
+            rec["Customer"] = ""
+            rec["Date Out"] = ""
+            rec["Batch"] = ""
+            self.recs.cell(row=row, column=5, value=IN_STOCK)
+            self.recs.cell(row=row, column=6, value="")
+            self.recs.cell(row=row, column=7, value="")
+            self.recs.cell(row=row, column=8, value="")
+            done.append(str(rec["Serial"]))
+            models.add(str(rec["Model"]))
+            self._ensure_brand(rec.get("Brand", ""))
+        self.log_activity("Sale Reverted", model=", ".join(sorted(models)),
+                          count=len(done),
+                          details=f"Customer: {customer} | Batch: {batch or 'legacy'} | {len(done)} units restored to stock")
+        self.save(backup=True)
+        return done, ""
 
     def create_return(self, serial: str, reason: str, condition: str,
                       notes: str, action: str, date: str):
@@ -584,6 +629,8 @@ class StockStore:
             "Condition": condition, "Notes": notes,
             "Action": action_label, "Date": date, "Date Out": date_out})
         row = rec["_row"]
+        rec["Batch"] = ""
+        self.recs.cell(row=row, column=8, value="")
         if action == "restock":
             rec["Status"] = IN_STOCK
             rec["Customer"] = ""
@@ -617,6 +664,8 @@ class StockStore:
         self.recs.cell(row=row, column=5, value=IN_STOCK)
         self.recs.cell(row=row, column=6, value="")
         self.recs.cell(row=row, column=7, value="")
+        rec["Batch"] = ""
+        self.recs.cell(row=row, column=8, value="")
         self._ensure_brand(rec.get("Brand", ""))
         # Resolve the latest open quarantine in the returns registry
         ret = next((r for r in reversed(self.returns)
