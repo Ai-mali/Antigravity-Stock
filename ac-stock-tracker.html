@@ -5390,9 +5390,14 @@ body.theme-light .autocomplete-dropdown {
             
             <div class="card-body" style="padding:11px 14px; display:flex; flex-direction:column; gap:9px; overflow:visible;">
               <div>
-                <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Customer / Client Name *</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                  <label class="form-label" style="margin-bottom:0; font-size:11px; font-weight:600;">Customer / Client Name *</label>
+                  <button type="button" class="filters-toggle-btn on" id="so-recent-toggle" onclick="toggleRecentCustomers()" title="Show / hide recent customer chips" style="padding:2px 7px; gap:4px;">
+                    <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+                  </button>
+                </div>
                 <div class="autocomplete-wrap" style="position:relative;">
-                  <input type="text" class="form-input" id="cart-customer" value="Neath Air Conditioning Ltd" autocomplete="off" oninput="handleCustomerInput(this.value)" onfocus="handleCustomerFocus()" onkeydown="handleCustomerKeydown(event)" placeholder="Type or select customer...">
+                  <input type="text" class="form-input" id="cart-customer" value="" autocomplete="off" oninput="handleCustomerInput(this.value)" onfocus="handleCustomerFocus()" onkeydown="handleCustomerKeydown(event)" placeholder="Type or select customer...">
                   <div class="autocomplete-dropdown" id="cart-customer-dropdown"></div>
                 </div>
                 <!-- Quick Select Recent Customers -->
@@ -6545,6 +6550,7 @@ const DB = {
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
 
   trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
+  soRecentHidden: false, // hide the Recent customer chips row (ui_pref soRecent)
   rmaSearch: '',            // Return registry text search
   rmaDateOut: '',           // Return registry Date Out filter (raw value)
   rmaChip: 'ALL',           // 'ALL' | 'Restocked' | 'Quarantined' | 'Warranty'
@@ -6608,6 +6614,7 @@ async function refreshData() {
   DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
   DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
   DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
+  DB.soRecentHidden = !!(uiPrefs && uiPrefs.soRecent);
   applySidebarWidth('so-sidebar', DB.soSidebarW);
   applySidebarWidth('avail-sidebar', DB.availSidebarW);
   applySidebarWidth('tl-sidebar', DB.trackSidebarW);
@@ -6617,6 +6624,7 @@ async function refreshData() {
   updateGlobalBadges();
   updateDoPhotosBadge();
   renderRecentCustomerChips();
+  applyRecentCustState();
   checkCustomerInputStatus();
 }
 
@@ -9749,6 +9757,9 @@ async function processCartCheckout() {
     });
     showToast(`Successfully dispatched ${res.sold.length} serials to ${cust}!`);
     DB.stagedCart = [];
+    // Blank the customer field for the next checkout — recent chips stay
+    const custInput = document.getElementById('cart-customer');
+    if (custInput) { custInput.value = ''; handleCustomerInput(''); }
     // Reset the dispatch date to today so a stale picked date can't tag the next sale
     initDatePicker('dispatch-date-out-picker', new Date().toISOString().slice(0, 10));
     await refreshData();
@@ -11269,6 +11280,24 @@ function checkCustomerInputStatus() {
   } else {
     tag.innerHTML = `<span class="badge badge-green" style="white-space:nowrap; font-size:10px; padding:2px 7px;" title="New customer destination">+ New Customer</span>`;
   }
+}
+
+/* Recent-customer chips show/hide toggle (persists via /api/ui-prefs) */
+function applyRecentCustState() {
+  const hidden = !!DB.soRecentHidden;
+  const row = document.getElementById('recent-customers-chips');
+  const btn = document.getElementById('so-recent-toggle');
+  if (row) row.style.display = hidden ? 'none' : '';
+  if (btn) {
+    btn.classList.toggle('on', !hidden);
+    btn.title = hidden ? 'Show recent customers' : 'Hide recent customers';
+  }
+}
+
+function toggleRecentCustomers() {
+  DB.soRecentHidden = !DB.soRecentHidden;
+  applyRecentCustState();
+  apiPost('/api/ui-prefs', { prefs: { soRecent: DB.soRecentHidden } }).catch(() => {});
 }
 
 function renderRecentCustomerChips() {
