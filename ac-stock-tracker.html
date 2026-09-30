@@ -4799,6 +4799,16 @@ body.light .act-code { background: var(--surface3); }
 }
 .act-ping::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #10b981; }
 @keyframes actPing { 75%, 100% { transform: scale(2); opacity: 0; } }
+.act-resize-grip {
+  position: absolute; right: 5px; bottom: 5px;
+  width: 14px; height: 14px;
+  cursor: nwse-resize; z-index: 6;
+  background: repeating-linear-gradient(-45deg, var(--text-muted) 0 1.5px, transparent 1.5px 4.5px);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  opacity: 0.45; touch-action: none;
+  transition: opacity .15s;
+}
+.act-resize-grip:hover { opacity: 0.9; }
 @media (max-width: 560px) {
   .rma-detail-metrics { grid-template-columns: 1fr; }
   .rma-hero-grid { grid-template-columns: 1fr; }
@@ -6347,7 +6357,7 @@ body.theme-light .autocomplete-dropdown {
 
 <!-- DATABASE ACTIVITY & BACKUPS MODAL -->
 <div class="modal-overlay" id="activity-modal">
-  <div class="modal-dialog" style="max-width: 920px; max-height: 88vh; display:flex; flex-direction:column;">
+  <div class="modal-dialog" id="activity-dialog" style="position:relative; max-width: 920px; max-height: 88vh; display:flex; flex-direction:column;">
     <div class="modal-header" style="flex-direction:column; align-items:stretch; padding-bottom:0;">
       <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
         <div>
@@ -6461,6 +6471,7 @@ body.theme-light .autocomplete-dropdown {
         <button class="btn btn-ghost" onclick="closeActivityModal()">Close</button>
       </div>
     </div>
+    <div class="act-resize-grip" id="act-resize-grip" title="Drag to resize"></div>
   </div>
 </div>
 
@@ -12891,6 +12902,30 @@ onBackdropPress(document.getElementById('do-photos-modal'), () => closeDoPhotosM
 onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoViewerModal());
 onBackdropPress(document.getElementById('rma-detail-modal'), () => closeReturnDetail());
 onBackdropPress(document.getElementById('undo-dispatch-modal'), () => closeUndoDispatch());
+
+/* Drag-resize the Activity & Backups dialog from its corner grip */
+(function() {
+  const dlg = document.getElementById('activity-dialog');
+  const grip = document.getElementById('act-resize-grip');
+  if (!dlg || !grip) return;
+  grip.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const r = dlg.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY, sw = r.width, sh = r.height;
+    dlg.style.maxWidth = 'none';
+    dlg.style.maxHeight = 'none';
+    const move = ev => {
+      dlg.style.width = Math.min(Math.max(sw + ev.clientX - sx, 560), window.innerWidth - 24) + 'px';
+      dlg.style.height = Math.min(Math.max(sh + ev.clientY - sy, 380), window.innerHeight - 24) + 'px';
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  });
+})();
 
 /* Day / Dark Theme toggle — View Transitions crossfade: GPU snapshot swap
    whose cost is independent of DOM size (fixes the lag on expanded data).
