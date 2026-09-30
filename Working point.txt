@@ -2,8 +2,8 @@
 
 Commit Hash: 
 
-3972c06
-Commit Description: Save-As exports + brand delete w/ return-resurrection + Return detail modal (Stitch) + Serial Num/Desc labels + glowing brand pills + notes surfaced in registry
+6b75c84
+Commit Description: Dispatch Batch id + per-batch Undo Sale w/ blue row-highlight preview + blank checkout customer w/ hideable Recent chips + toast sweep-up & longer hold
 Date: 2026-09-30 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
@@ -84,4 +84,8 @@ Return Detail Modal: Stitch design — gradient bar, #RET-ID badge, hero serial/
 Save-As Exports: Every export/download opens a native Windows Save-As dialog via pywebview bridge (save_file); browser fallback chain (File System Access API → blob download). Covers Scan CSV, Sell Record CSV, Returns CSV, per-record CSV, active .xlsx, backup snapshots, DO photos (4eeef73).
 Brand Delete: Trash icon on empty brand rows (red/full-color when 0 units, grayed + toast when stocked); refuses In-Stock/Quarantined units; removes Brands row + ModelBrands mappings; sold-unit returns auto re-register the brand name (df02120, 7e51db4).
 Glow Pill: "N Units Total" per-brand header glows in the brand's accent color (border + text glow + halo) (3972c06).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 3972c06"
+Toast Motion: Toasts sweep up ~30vh over 0.5s (overshoot settle) and hold 4.2s (aee5d24, a2ac95e).
+Dispatch Batches: Every checkout stamps SALE-YYYYMMDD-HHMMSS on its units (MasterRecord col 8, auto-backfilled). Sell Record rows get an amber undo that reverts the whole batch to stock — no Returns-registry noise, 'Sale Reverted' logged (4216d08).
+Batch UX: Alternating row tint per dispatch group; hovering any row (except copy cells) highlights its batch in bolt-blue; undo tooltip shows unit count. Legacy rows group by customer+date (ca81694, 851e7ce, 3cae438).
+Checkout Field: Customer input blank by default and cleared after each dispatch; slide-toggle hides Recent chips (ui_pref soRecent) (6b75c84).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 6b75c84"
