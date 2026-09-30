@@ -343,9 +343,26 @@ class StockStore:
         if not src.exists():
             return False, f"Backup file '{safe_name}' not found"
         self._backup()  # snapshot current before restoring
+        # The audit log should not be rewound — keep the events that happened
+        # between the snapshot and now so the history stays complete.
+        prev_activities = list(self.activities)
         try:
             shutil.copy2(src, self.path)
             self.load()
+            # Restored log is normally a prefix of the live log; append whatever
+            # came after it back onto the sheet and into memory.
+            common = 0
+            restored = list(self.activities)
+            for a, b in zip(restored, prev_activities):
+                if a != b:
+                    break
+                common += 1
+            extras = prev_activities[common:]
+            for e in extras:
+                self.activities.append(e)
+                if self.act_sheet is not None:
+                    self.act_sheet.append([e["Timestamp"], e["Action"], e["Model"],
+                                           e["Serials Count"], e["Details"], e["Status"]])
             self.log_activity("Restore", details=f"Restored from {safe_name}")
             self.save(backup=False)
             return True, ""
