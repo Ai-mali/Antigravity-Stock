@@ -4634,6 +4634,171 @@ body.light .undo-serial-box { background: var(--surface2); }
   0%, 100% { opacity: 1; transform: translateX(0); }
   50% { opacity: 0.55; transform: translateX(3px); }
 }
+
+/* --- Activity & Backups modal (Stitch) --- */
+.act-sync-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 10px; border-radius: 99px;
+  font-size: 10.5px; font-weight: 600;
+  background: rgba(16,185,129,0.1); color: #34d399;
+  border: 1px solid rgba(16,185,129,0.25);
+}
+.act-sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; animation: actPulse 1.6s ease-in-out infinite; }
+@keyframes actPulse { 50% { opacity: 0.35; } }
+.act-file-meta {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 5px; font-size: 11.5px; color: var(--text-sub);
+}
+.act-file-name { color: #22d3ee; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.act-tabs {
+  display: flex; gap: 8px;
+  margin-top: 15px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.act-tab {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 14px; border-radius: 9px;
+  border: 1px solid transparent; background: none;
+  color: var(--text-sub); font-size: 12.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all .15s;
+}
+.act-tab:hover { color: var(--text); background: var(--surface3); }
+.act-tab.active { color: var(--text); background: var(--surface3); border-color: var(--border-light); }
+.act-tab.active::after {
+  content: ''; position: absolute; left: 50%; bottom: -13px;
+  transform: translateX(-50%);
+  width: 30px; height: 2px; border-radius: 99px;
+  background: #22d3ee; box-shadow: 0 0 8px #22d3ee;
+}
+.act-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; padding: 1px 6px; border-radius: 99px;
+  font-size: 10px; font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  background: #22d3ee; color: #06202a;
+}
+.act-tab:not(.active) .act-tab-count { background: none; color: var(--text-muted); min-width: 0; padding: 0; font-weight: 600; }
+.act-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.act-search-wrap { position: relative; flex: 1; max-width: 340px; min-width: 190px; display: flex; align-items: center; }
+.act-search-wrap > svg { position: absolute; left: 10px; color: var(--text-muted); pointer-events: none; }
+.act-search-wrap .form-input { padding: 7px 26px 7px 32px; font-size: 12px; border-radius: 9px; }
+.act-select {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 26px 6px 10px;
+  font-size: 11.5px; font-weight: 600; color: var(--text);
+  font-family: inherit; cursor: pointer;
+}
+.act-refresh-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface3); border: 1px solid var(--border-light);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 11.5px; font-weight: 600; color: var(--text);
+  font-family: inherit; cursor: pointer; transition: all .15s;
+}
+.act-refresh-btn:hover { background: var(--surface2); }
+.act-refresh-btn:hover svg { color: #22d3ee; transform: rotate(180deg); }
+.act-refresh-btn svg { color: var(--text-muted); transition: all .3s; }
+.act-live {
+  display: flex; align-items: center; gap: 8px;
+  padding-left: 11px; border-left: 1px solid var(--border);
+  font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
+  color: var(--text-sub); white-space: nowrap;
+}
+.act-live-dot { position: relative; width: 8px; height: 8px; flex-shrink: 0; }
+.act-live-dot::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: #34d399; opacity: 0.75;
+  animation: actRadar 2s cubic-bezier(0,0,0.2,1) infinite;
+}
+.act-live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #10b981; }
+@keyframes actRadar {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  70%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.act-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 7px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.act-pill svg { width: 11px; height: 11px; flex-shrink: 0; }
+.act-pill-cyan { background: rgba(8,145,178,0.16); color: #67e8f9; border: 1px solid rgba(34,211,238,0.32); }
+.act-pill-amber { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.act-pill-emerald { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.act-pill-rose { background: rgba(244,63,94,0.1); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
+.act-pill-violet { background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+.act-pill-slate { background: var(--surface3); color: var(--text-sub); border: 1px solid var(--border-light); }
+.act-units {
+  display: inline-block; padding: 2px 9px; border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  background: var(--surface3); color: #67e8f9; border: 1px solid var(--border-light);
+}
+.act-ok {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 9px; border-radius: 99px;
+  font-size: 10.5px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(16,185,129,0.1); color: #34d399;
+  border: 1px solid rgba(16,185,129,0.25);
+}
+.act-ok .act-ok-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
+.act-ok-bad { background: rgba(244,63,94,0.1); color: #fb7185; border-color: rgba(244,63,94,0.3); }
+.act-ok-bad .act-ok-dot { background: #fb7185; box-shadow: 0 0 6px #fb7185; }
+.act-code {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  background: rgba(2,6,23,0.6); padding: 1px 7px; border-radius: 5px;
+  border: 1px solid var(--border); color: var(--text);
+}
+body.light .act-code { background: var(--surface3); }
+.act-detail { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-sub); }
+.act-detail b { color: var(--text); font-weight: 600; }
+.act-detail .act-sep { color: var(--border-light); }
+.act-detail .act-tail { color: var(--text-muted); }
+.act-detail .act-tail.amber { color: rgba(251,191,36,0.85); font-weight: 600; }
+.act-table td { vertical-align: middle; }
+.act-row:hover td { background: rgba(148,163,184,0.05); }
+.bk-latest {
+  display: inline-block; padding: 1px 7px; border-radius: 5px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em;
+  background: rgba(16,185,129,0.15); color: #34d399;
+  border: 1px solid rgba(16,185,129,0.3); margin-left: 8px;
+  vertical-align: middle;
+}
+.bk-size {
+  display: inline-block; padding: 2px 8px; border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  background: var(--surface3); color: var(--text);
+  border: 1px solid var(--border-light);
+}
+.bk-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 7px;
+  font-size: 11px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all .15s; text-decoration: none;
+}
+.bk-btn-dl { background: var(--surface3); border: 1px solid var(--border-light); color: var(--text); }
+.bk-btn-dl:hover { background: var(--surface2); }
+.bk-btn-dl svg { color: var(--text-muted); }
+.bk-btn-rs { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #fb7185; margin-left: 6px; }
+.bk-btn-rs:hover { background: rgba(244,63,94,0.2); color: #fda4af; }
+.bk-count-pill {
+  padding: 2px 8px; border-radius: 6px; font-size: 10.5px;
+  font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  background: var(--surface3); color: var(--text-sub);
+  border: 1px solid var(--border-light); text-transform: none;
+  letter-spacing: 0;
+}
+.act-footer-status { display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--text-sub); }
+.act-ping { position: relative; width: 9px; height: 9px; flex-shrink: 0; }
+.act-ping::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: #34d399; opacity: 0.6; animation: actPing 1.6s cubic-bezier(0,0,0.2,1) infinite;
+}
+.act-ping::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #10b981; }
+@keyframes actPing { 75%, 100% { transform: scale(2); opacity: 0; } }
 @media (max-width: 560px) {
   .rma-detail-metrics { grid-template-columns: 1fr; }
   .rma-hero-grid { grid-template-columns: 1fr; }
@@ -4642,6 +4807,8 @@ body.light .undo-serial-box { background: var(--surface2); }
   .undo-sum-cell { padding: 8px 0; }
   .undo-sum-cell + .undo-sum-cell { border-left: none; border-top: 1px solid var(--border); }
   .undo-flow-note { text-align: left; }
+  .act-live { display: none; }
+  .act-footer-status .act-sha { display: none; }
 }
 .rma-reg-head { border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .rma-rec-pill {
@@ -6180,46 +6347,62 @@ body.theme-light .autocomplete-dropdown {
 
 <!-- DATABASE ACTIVITY & BACKUPS MODAL -->
 <div class="modal-overlay" id="activity-modal">
-  <div class="modal-dialog" style="max-width: 840px; max-height: 85vh; display:flex; flex-direction:column;">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title">Database Activity &amp; Backups</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
-          daikin_stock.xlsx &middot; Automatic snapshot history &amp; transaction audit log
+  <div class="modal-dialog" style="max-width: 920px; max-height: 88vh; display:flex; flex-direction:column;">
+    <div class="modal-header" style="flex-direction:column; align-items:stretch; padding-bottom:0;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h3 class="modal-title" style="font-size:19px;">Database Activity &amp; Backups</h3>
+            <span class="act-sync-badge"><span class="act-sync-dot"></span>Live Sync</span>
+          </div>
+          <div class="act-file-meta">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="#22d3ee"><path clip-rule="evenodd" fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"/></svg>
+            <span class="act-file-name">daikin_stock.xlsx</span>
+            <span style="color:var(--border-light);">&bull;</span>
+            <span>Automatic snapshot history &amp; transaction audit log</span>
+          </div>
         </div>
+        <button class="btn-circle" onclick="closeActivityModal()" title="Close">&#10005;</button>
       </div>
-      <button class="btn-circle" onclick="closeActivityModal()" title="Close">&#10005;</button>
+      <div class="act-tabs">
+        <button class="act-tab active" id="btn-act-tab-history" onclick="switchActivityModalTab('history')">
+          Activity History <span class="act-tab-count" id="act-count-history">0</span>
+        </button>
+        <button class="act-tab" id="btn-act-tab-backups" onclick="switchActivityModalTab('backups')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          Backups &amp; Snapshots <span class="act-tab-count" id="act-count-backups">0</span>
+        </button>
+      </div>
     </div>
-    <div class="modal-body" style="overflow-y:auto; flex:1; padding-bottom:10px;">
-      <!-- Modal Subtabs -->
-      <div class="modal-tabs">
-        <button class="modal-tab-btn active" id="btn-act-tab-history" onclick="switchActivityModalTab('history')">
-          Activity History
-        </button>
-        <button class="modal-tab-btn" id="btn-act-tab-backups" onclick="switchActivityModalTab('backups')">
-          Backups &amp; Snapshots
-        </button>
-      </div>
+    <div class="modal-body" style="overflow-y:auto; flex:1; padding-top:14px; padding-bottom:12px;">
 
       <!-- Tab 1: Activity History -->
       <div id="act-panel-history">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
-          <span class="search-box-wrap" style="display:inline-flex; max-width:280px;">
-            <input type="text" id="act-search" class="form-input" style="padding:6px 28px 6px 12px; font-size:12px; width:100%;" placeholder="Search activity..." oninput="renderActivityTable(this.value)">
+        <div class="act-toolbar">
+          <div class="act-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-4.35-4.35M16.65 10.65a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+            <input type="text" id="act-search" class="form-input" placeholder="Search activity by customer, model, or batch..." oninput="renderActivityTable()" autocomplete="off">
             <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none; right:4px;" title="Clear search">&times;</button>
-          </span>
-          <button class="btn btn-ghost btn-sm" onclick="fetchActivityLog(true)">&#8635; Refresh Log</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <select class="act-select" id="act-action-filter" onchange="renderActivityTable()"></select>
+            <button type="button" class="act-refresh-btn" onclick="fetchActivityLog(true)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Refresh Log
+            </button>
+            <span class="act-live"><span class="act-live-dot"></span>Live Sync</span>
+          </div>
         </div>
-        <div class="table-container" style="max-height:380px; overflow-y:auto;">
-          <table class="data-table">
+        <div class="table-container" style="max-height:400px; overflow-y:auto;">
+          <table class="data-table act-table">
             <thead>
               <tr>
-                <th>TIMESTAMP</th>
-                <th>ACTION</th>
-                <th>MODEL</th>
-                <th>UNITS</th>
-                <th>DETAILS</th>
-                <th style="text-align:right;">STATUS</th>
+                <th style="width:165px;">Timestamp</th>
+                <th style="width:140px;">Action</th>
+                <th style="width:110px;">Model</th>
+                <th style="width:70px; text-align:center;">Units</th>
+                <th>Transaction Details</th>
+                <th style="width:90px; text-align:right;">Status</th>
               </tr>
             </thead>
             <tbody id="act-table-tbody"></tbody>
@@ -6229,7 +6412,7 @@ body.theme-light .autocomplete-dropdown {
 
       <!-- Tab 2: Backups -->
       <div id="act-panel-backups" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:var(--surface3); padding:12px 16px; border-radius:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; background:var(--surface3); padding:12px 16px; border-radius:10px; border:1px solid var(--border);">
           <div>
             <div style="font-weight:700; font-size:13px;">Create Instant Snapshot</div>
             <div style="font-size:11px; color:var(--text-sub);">Safe manual snapshot saved to local backups directory</div>
@@ -6244,17 +6427,21 @@ body.theme-light .autocomplete-dropdown {
           </div>
         </div>
 
-        <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">
-          AVAILABLE SNAPSHOTS (MAX 30 AUTO-ROTATING)
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 2px;">
+          <div style="display:flex; align-items:center; gap:9px; font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.05em;">
+            Available Snapshots (max 30 auto-rotating)
+            <span class="bk-count-pill" id="bk-stored-pill">0 of 30 stored</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub);">Sort: <span style="color:var(--text); font-weight:600;">Newest first</span></div>
         </div>
-        <div class="table-container" style="max-height:320px; overflow-y:auto;">
-          <table class="data-table">
+        <div class="table-container" style="max-height:330px; overflow-y:auto;">
+          <table class="data-table act-table">
             <thead>
               <tr>
-                <th>BACKUP FILE</th>
-                <th>CREATED</th>
-                <th>SIZE</th>
-                <th style="text-align:right;">ACTIONS</th>
+                <th>Backup File</th>
+                <th style="width:170px;">Created Timestamp</th>
+                <th style="width:90px;">Size</th>
+                <th style="width:200px; text-align:right;">Actions</th>
               </tr>
             </thead>
             <tbody id="backups-table-tbody"></tbody>
@@ -6262,9 +6449,17 @@ body.theme-light .autocomplete-dropdown {
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <span style="font-size:11px; color:var(--text-sub);" id="act-modal-footer-text">Auto-backup enabled before every change</span>
-      <button class="btn btn-ghost" onclick="closeActivityModal()">Close</button>
+    <div class="modal-footer" style="display:flex; align-items:center; justify-content:space-between;">
+      <div class="act-footer-status">
+        <span class="act-ping"></span>
+        <span>Auto-backup enabled before every change</span>
+        <span class="act-sha" style="color:var(--border-light);">&bull;</span>
+        <span class="act-sha mono" style="font-size:10.5px; color:var(--text-muted);">SHA-256 Verified</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" id="act-export-btn" onclick="exportActivityCsv()">Export Audit (.CSV)</button>
+        <button class="btn btn-ghost" onclick="closeActivityModal()">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -8812,7 +9007,7 @@ function clearSearchBox(btn) {
 }
 
 document.addEventListener('input', e => {
-  const wrap = e.target && e.target.closest ? e.target.closest('.search-box-wrap') : null;
+  const wrap = e.target && e.target.closest ? e.target.closest('.search-box-wrap, .act-search-wrap') : null;
   if (!wrap) return;
   const btn = wrap.querySelector('.search-clear-btn');
   if (btn) btn.style.display = e.target.value ? '' : 'none';
@@ -11743,16 +11938,19 @@ function switchActivityModalTab(tab) {
   const pnlHist = document.getElementById('act-panel-history');
   const pnlBk = document.getElementById('act-panel-backups');
 
+  const exportBtn = document.getElementById('act-export-btn');
   if (tab === 'history') {
     btnHist.classList.add('active');
     btnBk.classList.remove('active');
     pnlHist.style.display = 'block';
     pnlBk.style.display = 'none';
+    if (exportBtn) exportBtn.style.display = '';
   } else {
     btnHist.classList.remove('active');
     btnBk.classList.add('active');
     pnlHist.style.display = 'none';
     pnlBk.style.display = 'block';
+    if (exportBtn) exportBtn.style.display = 'none';
     fetchBackups();
   }
 }
@@ -11768,48 +11966,104 @@ async function fetchActivityLog(notify = false) {
   }
 }
 
-function renderActivityTable(searchTerm = '') {
-  const tbody = document.getElementById('act-table-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  const q = (searchTerm || '').trim().toLowerCase();
+const ACT_STYLE = {
+  'Stock In':            { cls: 'act-pill-emerald', icon: 'M12 5v14m0 0l-5-5m5 5l5-5' },
+  'Stock Out':           { cls: 'act-pill-cyan',    icon: 'M7 17L17 7M8 7h9v9' },
+  'Sale Reverted':       { cls: 'act-pill-amber',   icon: 'M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3' },
+  'Return':              { cls: 'act-pill-amber',   icon: 'M9 14l-4-4 4-4M5 10h11a4 4 0 0 1 0 8h-1' },
+  'Quarantine Released': { cls: 'act-pill-emerald', icon: 'M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0' },
+  'Unit Edited':         { cls: 'act-pill-violet',  icon: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 1 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' },
+  'Unit Deleted':        { cls: 'act-pill-rose',    icon: 'M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' },
+  'Brand Assigned':      { cls: 'act-pill-violet',  icon: 'M7 7h.01M7 3h5a2 2 0 0 1 1.414.586l7 7a2 2 0 0 1 0 2.828l-7 7a2 2 0 0 1-2.828 0l-7-7A2 2 0 0 1 3 12V7a4 4 0 0 1 4-4z' },
+  'Brand Deleted':       { cls: 'act-pill-rose',    icon: 'M7 7h.01M7 3h5a2 2 0 0 1 1.414.586l7 7a2 2 0 0 1 0 2.828l-7 7a2 2 0 0 1-2.828 0l-7-7A2 2 0 0 1 3 12V7a4 4 0 0 1 4-4z' },
+  'Manual Backup':       { cls: 'act-pill-slate',   icon: 'M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4' },
+  'Restore':             { cls: 'act-pill-rose',    icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15' }
+};
 
+function actPill(action) {
+  const s = ACT_STYLE[action] || { cls: 'act-pill-slate', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0' };
+  return `<span class="act-pill ${s.cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${s.icon}"/></svg>${escapeHtml(action || 'Event')}</span>`;
+}
+
+function actDetailsHtml(details) {
+  if (!details) return '<span style="opacity:.4;">—</span>';
+  return escapeHtml(details).split(' | ').map(part => {
+    const m = part.match(/^([\w ]+):\s*(.*)$/);
+    if (m) {
+      if (m[1] === 'Batch') return `<span>Batch:</span> <code class="act-code">${m[2]}</code>`;
+      return `<span>${m[1]}: <b>${m[2]}</b></span>`;
+    }
+    const amber = /restored|reverted/i.test(part) ? ' amber' : '';
+    return `<span class="act-tail${amber}">${part}</span>`;
+  }).join('<span class="act-sep">|</span>');
+}
+
+function getFilteredActivities() {
+  const q = (document.getElementById('act-search')?.value || '').trim().toLowerCase();
+  const act = document.getElementById('act-action-filter')?.value || '';
   let list = DB.activities || [];
+  if (act) list = list.filter(a => a.Action === act);
   if (q) {
-    list = list.filter(a => 
-      (a.Action && a.Action.toLowerCase().includes(q)) ||
-      (a.Model && a.Model.toLowerCase().includes(q)) ||
-      (a.Details && a.Details.toLowerCase().includes(q)) ||
-      (a.Timestamp && a.Timestamp.toLowerCase().includes(q))
+    list = list.filter(a =>
+      (a.Action || '').toLowerCase().includes(q) ||
+      (a.Model || '').toLowerCase().includes(q) ||
+      (a.Details || '').toLowerCase().includes(q) ||
+      (a.Timestamp || '').toLowerCase().includes(q)
     );
   }
+  return list;
+}
 
+function renderActivityTable() {
+  const tbody = document.getElementById('act-table-tbody');
+  if (!tbody) return;
+
+  // Keep the action filter in sync with actions present in the log
+  const sel = document.getElementById('act-action-filter');
+  if (sel) {
+    const actions = [...new Set((DB.activities || []).map(a => a.Action).filter(Boolean))];
+    const sig = actions.join('|');
+    if (sel.dataset.sig !== sig) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">All Actions</option>' +
+        actions.map(a => `<option${a === cur ? ' selected' : ''}>${escapeHtml(a)}</option>`).join('');
+      sel.dataset.sig = sig;
+    }
+  }
+  const histCount = document.getElementById('act-count-history');
+  if (histCount) histCount.textContent = (DB.activities || []).length;
+
+  const list = getFilteredActivities();
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-sub); padding:24px;">No activity events recorded yet.</td></tr>`;
     return;
   }
 
-  list.forEach(a => {
-    const tr = document.createElement('tr');
-    let actBadge = '<span class="badge badge-neutral">' + (a.Action || 'Event') + '</span>';
-    if (a.Action === 'Stock In') actBadge = '<span class="badge badge-green">Stock In</span>';
-    else if (a.Action === 'Stock Out') actBadge = '<span class="badge badge-blue">Stock Out</span>';
-    else if (a.Action === 'Return') actBadge = '<span class="badge badge-amber">Return</span>';
-    else if (a.Action && a.Action.includes('Backup')) actBadge = '<span class="badge badge-neutral">💾 Backup</span>';
-    else if (a.Action === 'Brand Assigned') actBadge = '<span class="badge badge-neutral">Brand Map</span>';
+  tbody.innerHTML = list.map(a => {
+    const ts = String(a.Timestamp || '—');
+    const sp = ts.indexOf(' ');
+    const tsHtml = sp > 0
+      ? `${escapeHtml(ts.slice(0, sp))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
+      : escapeHtml(ts);
+    const ok = (a.Status || 'OK') === 'OK';
+    return `<tr class="act-row">
+      <td class="mono" style="font-size:11px; color:var(--text-sub); white-space:nowrap;">${tsHtml}</td>
+      <td>${actPill(a.Action)}</td>
+      <td class="mono" style="font-weight:700; font-size:12px; white-space:nowrap;">${escapeHtml(a.Model || '—')}</td>
+      <td style="text-align:center;">${a['Serials Count'] ? `<span class="act-units">${a['Serials Count']}</span>` : '<span style="opacity:.35;">—</span>'}</td>
+      <td><div class="act-detail">${actDetailsHtml(a.Details)}</div></td>
+      <td style="text-align:right;"><span class="act-ok${ok ? '' : ' act-ok-bad'}"><span class="act-ok-dot"></span>${escapeHtml(a.Status || 'OK')}</span></td>
+    </tr>`;
+  }).join('');
+}
 
-    tr.innerHTML = `
-      <td class="mono" style="font-size:11px; color:var(--text-muted);">${a.Timestamp || '—'}</td>
-      <td>${actBadge}</td>
-      <td style="font-weight:600;">${a.Model || '—'}</td>
-      <td class="mono">${a['Serials Count'] !== undefined ? a['Serials Count'] : '—'}</td>
-      <td style="color:var(--text); font-size:12px;">${a.Details || '—'}</td>
-      <td style="text-align:right;">
-        <span class="badge ${a.Status === 'OK' ? 'badge-green' : 'badge-red'}">${a.Status || 'OK'}</span>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+function exportActivityCsv() {
+  const list = getFilteredActivities();
+  if (!list.length) { showToast('Nothing to export'); return; }
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = 'TIMESTAMP,ACTION,MODEL,UNITS,DETAILS,STATUS\n'
+    + list.map(a => [a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(esc).join(',')).join('\n') + '\n';
+  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'activity_audit.csv');
 }
 
 async function fetchBackups() {
@@ -11825,31 +12079,40 @@ async function fetchBackups() {
 function renderBackupsTable() {
   const tbody = document.getElementById('backups-table-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '';
 
-  if (!DB.backups || !DB.backups.length) {
+  const n = (DB.backups || []).length;
+  const bkCount = document.getElementById('act-count-backups');
+  if (bkCount) bkCount.textContent = n;
+  const stored = document.getElementById('bk-stored-pill');
+  if (stored) stored.textContent = `${n} of 30 stored`;
+
+  if (!n) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-sub); padding:24px;">No snapshot files found in backups/ directory.</td></tr>`;
     return;
   }
 
-  DB.backups.forEach(b => {
-    const tr = document.createElement('tr');
+  tbody.innerHTML = DB.backups.map((b, i) => {
     const sizeKb = (b.size / 1024).toFixed(1) + ' KB';
-    tr.innerHTML = `
-      <td class="mono" style="font-weight:700; color:var(--green-bright);">${b.filename}</td>
-      <td class="mono" style="color:var(--text-muted); font-size:11px;">${b.modified}</td>
-      <td class="mono" style="color:var(--text-sub);">${sizeKb}</td>
+    const ts = String(b.modified || '—');
+    const sp = ts.indexOf(' ');
+    const tsHtml = sp > 0
+      ? `${escapeHtml(ts.slice(0, sp))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
+      : escapeHtml(ts);
+    return `<tr class="act-row">
+      <td class="mono" style="font-weight:600; font-size:11.5px; color:#34d399;">${escapeHtml(b.filename)}${i === 0 ? '<span class="bk-latest">LATEST</span>' : ''}</td>
+      <td class="mono" style="color:var(--text-sub); font-size:11px; white-space:nowrap;">${tsHtml}</td>
+      <td><span class="bk-size">${sizeKb}</span></td>
       <td style="text-align:right; white-space:nowrap;">
-        <a href="/api/backup/download?filename=${encodeURIComponent(b.filename)}" class="btn btn-ghost btn-sm" onclick="event.preventDefault(); downloadServerFile(this.href, '${escapeJs(b.filename)}')" style="padding:4px 8px; text-decoration:none; display:inline-flex; align-items:center;" title="Download this snapshot">
-          ⬇ Download
-        </a>
-        <button class="btn btn-sm" style="padding:4px 8px; background:rgba(220,38,38,0.12); color:#f87171; border:1px solid rgba(220,38,38,0.3); margin-left:6px;" onclick="restoreBackupFile('${b.filename}')" title="Restore daikin_stock.xlsx from this snapshot">
-          ↺ Restore
+        <a href="/api/backup/download?filename=${encodeURIComponent(b.filename)}" class="bk-btn bk-btn-dl" onclick="event.preventDefault(); downloadServerFile(this.href, '${escapeJs(b.filename)}')" title="Download this snapshot">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+          Download
+        </a><button class="bk-btn bk-btn-rs" onclick="restoreBackupFile('${escapeJs(b.filename)}')" title="Restore daikin_stock.xlsx from this snapshot">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Restore
         </button>
       </td>
-    `;
-    tbody.appendChild(tr);
-  });
+    </tr>`;
+  }).join('');
 }
 
 async function triggerManualBackup() {
