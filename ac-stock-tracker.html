@@ -740,12 +740,6 @@ main {
   min-height: 100%;
 }
 
-#view-activity.active {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: none; }
@@ -4961,9 +4955,6 @@ body.theme-light .autocomplete-dropdown {
       <button class="tab-btn" id="btn-tab-return" onclick="switchTab('return')">
         Return <span class="tab-badge" id="badge-return">2</span>
       </button>
-      <button class="tab-btn" id="btn-tab-activity" onclick="switchTab('activity')">
-        Activity
-      </button>
     </nav>
 
     <!-- Header Right Actions -->
@@ -5758,54 +5749,6 @@ body.theme-light .autocomplete-dropdown {
             </table>
           </div>
           <div class="rma-page-foot" id="rma-pagination"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. ACTIVITY SCREEN -->
-    <section id="view-activity" class="view-section">
-      <div class="card" style="display:flex; flex-direction:column; flex:1; min-height:0;">
-        <div class="card-header rma-reg-head">
-          <div>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div class="tl-header-icon" style="width:34px; height:34px;">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-              </div>
-              <div class="card-title">Activity Log</div>
-              <span class="rma-rec-pill" id="act-records-pill">0 Events</span>
-            </div>
-            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Complete audit trail — every action is written permanently to daikin_stock.xlsx</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button class="btn btn-ghost btn-sm" onclick="exportActivityCsv()" title="Export CSV">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Export CSV
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="refreshActivityScreen(true)" title="Reload the log">&#8635; Refresh</button>
-          </div>
-        </div>
-        <div class="rma-toolbar">
-          <div class="search-box-wrap" style="flex:1; min-width:180px;">
-            <span class="search-icon">&#128269;</span>
-            <input type="text" id="act-scr-search" oninput="renderActivityScreenTable()" placeholder="Search action, model, serial, customer, brand...">
-            <button type="button" class="search-clear-btn" onclick="clearSearchBox(this)" style="display:none;" title="Clear search">&times;</button>
-          </div>
-        </div>
-        <div class="rma-chip-row" id="act-chip-row"></div>
-        <div class="table-container" style="flex:1 1 auto; min-height:0; overflow-y:auto;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Action</th>
-                <th>Model</th>
-                <th>Units</th>
-                <th>Details</th>
-                <th style="text-align:right;">Status</th>
-              </tr>
-            </thead>
-            <tbody id="act-scr-tbody"></tbody>
-          </table>
         </div>
       </div>
     </section>
@@ -6611,7 +6554,6 @@ const DB = {
   brands: [],       // from /api/inventory
   customers: [],    // GET /api/customers
   activities: [],   // GET /api/activity
-  actFilter: 'all', // Activity screen chip filter
   backups: [],      // GET /api/backups
   photoFile: null,  // File picked for scanning
   config: null,     // GET /api/config      (active provider/model)
@@ -6679,8 +6621,7 @@ const SCREEN_RENDERERS = {
   'available':  () => renderAvailable(),
   'stock-out':  () => { renderStockOut(); renderCartSidebar(); },
   'track-list': () => renderTrackList(),
-  'return':     () => renderReturnScreen(),
-  'activity':   () => refreshActivityScreen()
+  'return':     () => renderReturnScreen()
 };
 const dirtyScreens = new Set(Object.keys(SCREEN_RENDERERS));
 
@@ -6857,17 +6798,14 @@ window.addEventListener('resize', updateStickyHeaderOffsets);
    ========================================================= */
 function switchTab(tab) {
   DB.activeTab = tab;
-  ['stock-in', 'available', 'stock-out', 'track-list', 'return', 'activity'].forEach(t => {
+  ['stock-in', 'available', 'stock-out', 'track-list', 'return'].forEach(t => {
     const view = document.getElementById('view-' + t);
     const btn = document.getElementById('btn-tab-' + t);
     if (view) view.classList.toggle('active', t === tab);
     if (btn) btn.classList.toggle('active', t === tab);
   });
 
-  const wasDirty = dirtyScreens.has(tab);
   renderScreenIfDirty(tab);
-  // Activity always re-fetches on entry so the audit trail is current
-  if (tab === 'activity' && !wasDirty) refreshActivityScreen();
 
   updateGlobalBadges();
   updateStickyHeaderOffsets();
@@ -11422,53 +11360,22 @@ function switchActivityModalTab(tab) {
 
 async function fetchActivityLog(notify = false) {
   try {
-    const res = await apiGet('/api/activity?limit=500');
+    const res = await apiGet('/api/activity?limit=100');
     DB.activities = res.records || [];
     renderActivityTable();
-    renderActivityScreenTable();
     if (notify) showToast('Activity log refreshed');
   } catch (e) {
     showToast('Failed to load activity log: ' + e.message);
   }
 }
 
-function actActionBadge(action) {
-  const act = action || 'Event';
-  const map = {
-    'Stock In':            ['badge-green', '📥 Stock In'],
-    'Stock Out':           ['badge-blue', '📤 Stock Out'],
-    'Return':              ['badge-amber', '↩ Return'],
-    'Quarantine Released': ['badge-amber', '🔓 Quarantine Released'],
-    'Unit Edited':         ['badge-neutral', '✏ Unit Edited'],
-    'Unit Deleted':        ['badge-red', '🗑 Unit Deleted'],
-    'Brand Assigned':      ['badge-neutral', '🏷 Brand Map'],
-    'Brand Deleted':       ['badge-red', '🗑 Brand Deleted'],
-    'Restore':             ['badge-amber', '↺ Restore'],
-  };
-  if (map[act]) return `<span class="badge ${map[act][0]}">${map[act][1]}</span>`;
-  if (act.includes('Backup')) return '<span class="badge badge-neutral">💾 Backup</span>';
-  return `<span class="badge badge-neutral">${escapeHtml(act)}</span>`;
-}
-
-function actActionMatch(a, f) {
-  const act = a.Action || '';
-  if (f === 'return') return act === 'Return' || act === 'Quarantine Released';
-  if (f === 'edit')   return act === 'Unit Edited' || act === 'Unit Deleted';
-  if (f === 'brand')  return act.includes('Brand');
-  if (f === 'backup') return act.includes('Backup') || act === 'Restore';
-  return act === f; // 'Stock In', 'Stock Out'
-}
-
-function renderActivityTable(searchTerm = '', tbodyId = 'act-table-tbody', actionFilter = '') {
-  const tbody = document.getElementById(tbodyId);
+function renderActivityTable(searchTerm = '') {
+  const tbody = document.getElementById('act-table-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
   const q = (searchTerm || '').trim().toLowerCase();
 
   let list = DB.activities || [];
-  if (actionFilter) {
-    list = list.filter(a => actActionMatch(a, actionFilter));
-  }
   if (q) {
     list = list.filter(a => 
       (a.Action && a.Action.toLowerCase().includes(q)) ||
@@ -11485,7 +11392,12 @@ function renderActivityTable(searchTerm = '', tbodyId = 'act-table-tbody', actio
 
   list.forEach(a => {
     const tr = document.createElement('tr');
-    const actBadge = actActionBadge(a.Action);
+    let actBadge = '<span class="badge badge-neutral">' + (a.Action || 'Event') + '</span>';
+    if (a.Action === 'Stock In') actBadge = '<span class="badge badge-green">Stock In</span>';
+    else if (a.Action === 'Stock Out') actBadge = '<span class="badge badge-blue">Stock Out</span>';
+    else if (a.Action === 'Return') actBadge = '<span class="badge badge-amber">Return</span>';
+    else if (a.Action && a.Action.includes('Backup')) actBadge = '<span class="badge badge-neutral">💾 Backup</span>';
+    else if (a.Action === 'Brand Assigned') actBadge = '<span class="badge badge-neutral">Brand Map</span>';
 
     tr.innerHTML = `
       <td class="mono" style="font-size:11px; color:var(--text-muted);">${a.Timestamp || '—'}</td>
@@ -11499,71 +11411,6 @@ function renderActivityTable(searchTerm = '', tbodyId = 'act-table-tbody', actio
     `;
     tbody.appendChild(tr);
   });
-}
-
-/* ---------------- Activity screen ---------------- */
-const ACT_CHIPS = [
-  ['all', 'All'], ['Stock In', '📥 Stock In'], ['Stock Out', '📤 Stock Out'],
-  ['return', '↩ Returns'], ['edit', '✏ Edits'], ['brand', '🏷 Brands'],
-  ['backup', '💾 Backups & Restores']
-];
-
-async function refreshActivityScreen(notify = false) {
-  renderActChips();
-  renderActivityScreenTable(); // paint cached rows instantly, then fetch fresh
-  await fetchActivityLog(notify);
-}
-
-function renderActChips() {
-  const el = document.getElementById('act-chip-row');
-  if (!el) return;
-  el.innerHTML = '<span class="rma-chip-label">Filter:</span>' +
-    ACT_CHIPS.map(([k, l]) =>
-      `<button type="button" class="rma-chip${(DB.actFilter || 'all') === k ? ' active' : ''}" onclick="setActChip('${k}')">${l}</button>`
-    ).join('');
-}
-
-function setActChip(key) {
-  DB.actFilter = key;
-  renderActChips();
-  renderActivityScreenTable();
-}
-
-function actFilteredList() {
-  const q = ((document.getElementById('act-scr-search') || {}).value || '').trim().toLowerCase();
-  const f = DB.actFilter || 'all';
-  let list = DB.activities || [];
-  if (f !== 'all') list = list.filter(a => actActionMatch(a, f));
-  if (q) list = list.filter(a =>
-    (a.Action && a.Action.toLowerCase().includes(q)) ||
-    (a.Model && a.Model.toLowerCase().includes(q)) ||
-    (a.Details && a.Details.toLowerCase().includes(q)) ||
-    (a.Timestamp && a.Timestamp.toLowerCase().includes(q)));
-  return list;
-}
-
-function renderActivityScreenTable() {
-  const tbody = document.getElementById('act-scr-tbody');
-  if (!tbody) return;
-  const q = ((document.getElementById('act-scr-search') || {}).value || '').trim();
-  const f = DB.actFilter || 'all';
-  renderActivityTable(q, 'act-scr-tbody', f === 'all' ? '' : f);
-  const pill = document.getElementById('act-records-pill');
-  if (pill) {
-    const total = (DB.activities || []).length;
-    const shown = actFilteredList().length;
-    pill.textContent = shown === total ? `${total} Events` : `${shown} of ${total} Events`;
-  }
-}
-
-function exportActivityCsv() {
-  const list = actFilteredList();
-  if (!list.length) { showToast('No activity rows to export'); return; }
-  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-  const csv = ['TIMESTAMP,ACTION,MODEL,UNITS,DETAILS,STATUS',
-    ...list.map(a => [a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status || 'OK'].map(esc).join(','))
-  ].join('\r\n');
-  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'activity_log_export.csv');
 }
 
 async function fetchBackups() {
