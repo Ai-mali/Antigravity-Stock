@@ -3886,6 +3886,13 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 #track-table.tl-hide-customer [data-tlcol="customer"],
 #track-table.tl-hide-warranty [data-tlcol="warranty"],
 #track-table.tl-hide-status  [data-tlcol="status"],
+/* Sell Record: per-dispatch group tint + undo hover preview */
+#track-table tbody tr.tl-batch-alt td { background: rgba(255, 255, 255, .028); }
+#track-table tbody tr.tl-batch-focus td { background: rgba(38, 208, 124, .09); }
+#track-table tbody tr.tl-batch-focus td:first-child { box-shadow: inset 3px 0 0 var(--green-bright); }
+body.theme-light #track-table tbody tr.tl-batch-alt td { background: rgba(0, 0, 0, .045); }
+body.theme-light #track-table tbody tr.tl-batch-focus td { background: rgba(38, 208, 124, .14); }
+
 #track-table.tl-hide-actions [data-tlcol="actions"] {
   display: none;
 }
@@ -10013,6 +10020,16 @@ function renderTrackTable(list, modelColors) {
   }
 
   const sorted = getSortedTrackList(list);
+  // Dispatch groups: batch id, or legacy customer+date — drives the
+  // alternating tint, the hover-preview, and the undo unit count.
+  const grpKey = r => r.batch || ('LEG:' + (r.customer || '') + '|' + (r.dateOut || ''));
+  const grpParity = new Map();
+  const grpCount = new Map();
+  sorted.forEach(r => {
+    const k = grpKey(r);
+    if (!grpParity.has(k)) grpParity.set(k, grpParity.size % 2);
+    grpCount.set(k, (grpCount.get(k) || 0) + 1);
+  });
   const size = DB.trackPageSize;
   const pages = Math.max(1, Math.ceil(sorted.length / size));
   if (DB.trackPage >= pages) DB.trackPage = pages - 1;
@@ -10045,6 +10062,9 @@ function renderTrackTable(list, modelColors) {
     const inHit = dIn && dateMatchesQ(r.dateIn, dIn);
     const outHit = dOut && dateMatchesQ(r.dateOut, dOut);
     if (modelHit || serialHit || custHit || warrHit || inHit || outHit) tr.className = 'tl-row-hit';
+    const bKey = grpKey(r);
+    tr.dataset.batch = bKey;
+    if (grpParity.get(bKey)) tr.classList.add('tl-batch-alt');
 
     tr.innerHTML = `
       <td class="tl-no-col">${DB.trackPage * size + idx + 1}</td>
@@ -10055,7 +10075,7 @@ function renderTrackTable(list, modelColors) {
       <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
       <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
-      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn" title="Undo this dispatch — return its units to Available Stock" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
+      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" onmouseenter="highlightBatch(this, true)" onmouseleave="highlightBatch(this, false)" title="Undo dispatch — ${grpCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -10757,6 +10777,13 @@ function appConfirm({ title = 'Confirm', sub = '', message = '', bannerLabel = '
 function resolveAppConfirm(ok) {
   document.getElementById('app-confirm-modal').classList.remove('open');
   if (_appConfirmResolve) { _appConfirmResolve(!!ok); _appConfirmResolve = null; }
+}
+
+function highlightBatch(btn, on) {
+  const tr = btn.closest('tr');
+  if (!tr || !tr.dataset.batch) return;
+  document.querySelectorAll('#track-table-tbody tr[data-batch]')
+    .forEach(x => x.classList.toggle('tl-batch-focus', on && x.dataset.batch === tr.dataset.batch));
 }
 
 async function confirmRevertSale(idx) {
