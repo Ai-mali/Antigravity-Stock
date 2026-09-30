@@ -262,20 +262,30 @@ class StockStore:
                     self._schema_dirty = True
         return ws
 
-    def _backup(self):
-        """Make an automatic snapshot of daikin_stock.xlsx before overwriting."""
+    def _backup(self, suffix: str = ""):
+        """Snapshot daikin_stock.xlsx as it exists on disk right now.
+
+        Called BEFORE a change (suffix='before' -> undo point) and again
+        AFTER wb.save() (suffix='after' -> state mirror). Same-second
+        collisions get a numeric suffix.
+        """
         if not self.path.exists():
             return
         try:
             BACKUP_DIR.mkdir(parents=True, exist_ok=True)
             now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            dest = BACKUP_DIR / f"daikin_stock_{now_str}.xlsx"
+            stem = f"daikin_stock_{now_str}" + (f"_{suffix}" if suffix else "")
+            dest = BACKUP_DIR / f"{stem}.xlsx"
+            i = 2
+            while dest.exists():
+                dest = BACKUP_DIR / f"{stem}_{i}.xlsx"
+                i += 1
             shutil.copy2(self.path, dest)
-            self._prune_backups(keep=30)
+            self._prune_backups(keep=60)  # 60 files = 30 before+after pairs
         except Exception:
             pass
 
-    def _prune_backups(self, keep: int = 30):
+    def _prune_backups(self, keep: int = 60):
         if not BACKUP_DIR.exists():
             return
         files = sorted(BACKUP_DIR.glob("daikin_stock_*.xlsx"),
@@ -289,8 +299,10 @@ class StockStore:
 
     def save(self, backup: bool = False):
         if backup:
-            self._backup()
+            self._backup("before")   # undo point: state before the change
         self.wb.save(self.path)
+        if backup:
+            self._backup("after")    # mirror: state including the change
 
     def log_activity(self, action: str, model: str = "", count: int = 0,
                      details: str = "", status: str = "OK"):
@@ -311,9 +323,15 @@ class StockStore:
         out = []
         for f in files:
             st = f.stat()
+            kind = ""
+            for k in ("_before", "_after", "_manual"):
+                if f.stem.endswith(k):
+                    kind = k[1:]
+                    break
             out.append({
                 "filename": f.name,
                 "size": st.st_size,
+                "kind": kind,
                 "modified": datetime.datetime.fromtimestamp(
                     st.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
             })
@@ -322,7 +340,11 @@ class StockStore:
     def manual_backup(self) -> dict:
         BACKUP_DIR.mkdir(parents=True, exist_ok=True)
         now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        dest = BACKUP_DIR / f"daikin_stock_{now_str}.xlsx"
+        dest = BACKUP_DIR / f"daikin_stock_{now_str}_manual.xlsx"
+        i = 2
+        while dest.exists():
+            dest = BACKUP_DIR / f"daikin_stock_{now_str}_manual_{i}.xlsx"
+            i += 1
         if self.path.exists():
             shutil.copy2(self.path, dest)
         else:
@@ -342,7 +364,7 @@ class StockStore:
         src = BACKUP_DIR / safe_name
         if not src.exists():
             return False, f"Backup file '{safe_name}' not found"
-        self._backup()  # snapshot current before restoring
+        self._backup("before")  # safety snapshot of current state before restoring
         # The audit log should not be rewound — keep the events that happened
         # between the snapshot and now so the history stays complete.
         prev_activities = list(self.activities)

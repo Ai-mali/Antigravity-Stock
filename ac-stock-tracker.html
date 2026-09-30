@@ -4784,6 +4784,14 @@ body.light .act-code { background: var(--surface3); }
 .bk-btn-dl svg { color: var(--text-muted); }
 .bk-btn-rs { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #fb7185; margin-left: 6px; }
 .bk-btn-rs:hover { background: rgba(244,63,94,0.2); color: #fda4af; }
+.bk-kind {
+  display: inline-block; padding: 1px 7px; border-radius: 5px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em;
+  margin-left: 8px; vertical-align: middle;
+}
+.bk-kind-before { background: rgba(245,158,11,0.14); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.bk-kind-after { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.bk-kind-manual { background: rgba(34,211,238,0.12); color: #67e8f9; border: 1px solid rgba(34,211,238,0.3); }
 .bk-count-pill {
   padding: 2px 8px; border-radius: 6px; font-size: 10.5px;
   font-family: 'JetBrains Mono', monospace; font-weight: 600;
@@ -6439,7 +6447,7 @@ body.theme-light .autocomplete-dropdown {
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 2px;">
           <div style="display:flex; align-items:center; gap:9px; font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.05em;">
-            Available Snapshots (max 30 auto-rotating)
+            Available Snapshots (max 60 auto-rotating)
             <span class="bk-count-pill" id="bk-stored-pill">0 of 30 stored</span>
           </div>
           <div style="font-size:11px; color:var(--text-sub);">Sort: <span style="color:var(--text); font-weight:600;">Newest first</span></div>
@@ -12103,7 +12111,7 @@ function renderBackupsTable() {
   const bkCount = document.getElementById('act-count-backups');
   if (bkCount) bkCount.textContent = n;
   const stored = document.getElementById('bk-stored-pill');
-  if (stored) stored.textContent = `${n} of 30 stored`;
+  if (stored) stored.textContent = `${n} of 60 stored`;
 
   if (!n) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-sub); padding:24px;">No snapshot files found in backups/ directory.</td></tr>`;
@@ -12117,8 +12125,9 @@ function renderBackupsTable() {
     const tsHtml = sp > 0
       ? `${escapeHtml(ts.slice(0, sp))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
       : escapeHtml(ts);
+    const kindBadge = { before: '<span class="bk-kind bk-kind-before">BEFORE</span>', after: '<span class="bk-kind bk-kind-after">AFTER</span>', manual: '<span class="bk-kind bk-kind-manual">MANUAL</span>' }[b.kind] || '';
     return `<tr class="act-row">
-      <td class="mono" style="font-weight:600; font-size:11.5px; color:#34d399;">${escapeHtml(b.filename)}${i === 0 ? '<span class="bk-latest">LATEST</span>' : ''}</td>
+      <td class="mono" style="font-weight:600; font-size:11.5px; color:#34d399;">${escapeHtml(b.filename)}${i === 0 ? '<span class="bk-latest">LATEST</span>' : ''}${kindBadge}</td>
       <td class="mono" style="color:var(--text-sub); font-size:11px; white-space:nowrap;">${tsHtml}</td>
       <td><span class="bk-size">${sizeKb}</span></td>
       <td style="text-align:right; white-space:nowrap;">
