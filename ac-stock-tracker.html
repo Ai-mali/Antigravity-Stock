@@ -12919,14 +12919,20 @@ onBackdropPress(document.getElementById('undo-dispatch-modal'), () => closeUndoD
   grip.addEventListener('pointerdown', e => {
     e.preventDefault();
     const r = dlg.getBoundingClientRect();
-    const sx = e.clientX, sy = e.clientY, sw = r.width, sh = r.height;
+    // Pin the current pixel size BEFORE dropping the caps, so clearing
+    // max-width/max-height can't reflow the dialog for a frame.
+    dlg.style.width = r.width + 'px';
+    dlg.style.height = r.height + 'px';
     dlg.style.maxWidth = 'none';
     dlg.style.maxHeight = 'none';
+    document.body.classList.add('no-select-drag');
+    const sx = e.clientX, sy = e.clientY, sw = r.width, sh = r.height;
     const move = ev => {
       dlg.style.width = Math.min(Math.max(sw + ev.clientX - sx, 560), window.innerWidth - 24) + 'px';
       dlg.style.height = Math.min(Math.max(sh + ev.clientY - sy, 380), window.innerHeight - 24) + 'px';
     };
     const up = () => {
+      document.body.classList.remove('no-select-drag');
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
     };
