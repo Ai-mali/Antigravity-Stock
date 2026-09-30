@@ -4490,10 +4490,158 @@ body.theme-light #track-table tbody tr.tl-batch-focus td { background: rgba(59, 
   filter: brightness(1.08);
   box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
 }
+
+/* --- Undo Dispatch modal (Stitch) --- */
+.undo-topbar {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(16,185,129,0.65), transparent);
+}
+.undo-icon-pill {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.22);
+  color: var(--green-bright);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 15px -3px rgba(16,185,129,0.18), 0 0 6px -2px rgba(16,185,129,0.12);
+}
+.undo-batch-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 11px; border-radius: 99px;
+  font-size: 11px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface3);
+  border: 1px solid var(--border-light);
+  color: var(--text-sub);
+}
+.undo-batch-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #fbbf24;
+  position: relative; flex-shrink: 0;
+}
+.undo-batch-dot::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(251,191,36,0.6);
+  animation: rmaPulse 1.6s ease-out infinite;
+}
+.undo-summary {
+  display: grid; grid-template-columns: 1.2fr 1fr 1fr;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.undo-sum-cell { padding: 0 12px; }
+.undo-sum-cell:first-child { padding-left: 0; }
+.undo-sum-cell + .undo-sum-cell { border-left: 1px solid var(--border); }
+.undo-avatar {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(16,185,129,0.18);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: var(--green-bright);
+  font-size: 12px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.undo-verified {
+  font-size: 9.5px; font-weight: 600; color: var(--green-bright);
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.undo-flow {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  background: rgba(15,23,42,0.35);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+body.light .undo-flow { background: var(--surface2); }
+.undo-flow-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border-radius: 9px;
+  font-size: 11.5px; font-weight: 600;
+}
+.undo-flow-dot { width: 6px; height: 6px; border-radius: 50%; }
+.undo-flow-sell { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; }
+.undo-flow-avail { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7; }
+.undo-flow-note { font-size: 11px; color: var(--text-sub); line-height: 1.5; flex: 1; min-width: 160px; text-align: right; }
+.undo-items-pill {
+  padding: 2px 9px; border-radius: 7px;
+  font-size: 11px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(16,185,129,0.1); color: var(--green-bright);
+  border: 1px solid rgba(16,185,129,0.22);
+}
+.undo-copy-all {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer;
+  font-size: 11.5px; font-weight: 600; color: var(--text-sub);
+  font-family: inherit; padding: 3px 5px; border-radius: 6px;
+  transition: color .15s;
+}
+.undo-copy-all:hover { color: var(--green-bright); }
+.undo-serial-box {
+  background: rgba(7,11,20,0.7);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 190px;
+  overflow-y: auto;
+}
+body.light .undo-serial-box { background: var(--surface2); }
+.undo-serial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+.undo-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--surface3);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: 9px;
+  transition: all .15s;
+}
+.undo-chip:hover { border-color: rgba(16,185,129,0.5); }
+.undo-chip-serial {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px; font-weight: 600;
+  color: #6ee7b7; letter-spacing: 0.4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.undo-chip-serial::before {
+  content: ''; width: 4px; height: 4px; border-radius: 50%;
+  background: #34d399; flex-shrink: 0;
+}
+.undo-chip-idx {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; color: var(--text-muted); flex-shrink: 0;
+}
+.undo-safe {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 11.5px; color: var(--text-sub); line-height: 1.55;
+}
+.undo-safe strong { color: var(--text); }
+@keyframes undoArrowPulse {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  50% { opacity: 0.55; transform: translateX(3px); }
+}
 @media (max-width: 560px) {
   .rma-detail-metrics { grid-template-columns: 1fr; }
   .rma-hero-grid { grid-template-columns: 1fr; }
   .rma-hero-model { border-left: none; padding-left: 0; border-top: 1px solid var(--border-light); padding-top: 12px; }
+  .undo-summary { grid-template-columns: 1fr; }
+  .undo-sum-cell { padding: 8px 0; }
+  .undo-sum-cell + .undo-sum-cell { border-left: none; border-top: 1px solid var(--border); }
+  .undo-flow-note { text-align: left; }
 }
 .rma-reg-head { border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .rma-rec-pill {
@@ -6519,6 +6667,99 @@ body.theme-light .autocomplete-dropdown {
       <button class="btn btn-primary rma-export-btn" onclick="exportReturnDetail()" title="Download this record as CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1"/><path d="M12 12v9"/><path d="m16 16-4 4-4-4"/></svg>
         Export This Record
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO DISPATCH MODAL -->
+<div class="modal-overlay" id="undo-dispatch-modal">
+  <div class="modal-dialog rma-detail-dialog" style="max-width:620px;">
+    <div class="undo-topbar"></div>
+    <div class="modal-header" style="align-items:flex-start;">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <div class="undo-icon-pill">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3"/></svg>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h3 class="modal-title" style="font-size:18px;">Undo This Dispatch</h3>
+            <span class="undo-batch-badge"><span class="undo-batch-dot"></span><span id="undo-batch-id">DSP-—</span></span>
+          </div>
+          <div class="modal-subtitle">Return the whole checkout allocation back to Available Stock</div>
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeUndoDispatch()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:16px; padding-bottom:14px; display:flex; flex-direction:column; gap:14px;">
+
+      <!-- Impact summary -->
+      <div class="undo-summary">
+        <div class="undo-sum-cell">
+          <span class="rma-detail-label">Recipient</span>
+          <div style="display:flex; align-items:center; gap:9px; margin-top:7px;">
+            <div class="undo-avatar" id="undo-avatar">?</div>
+            <div style="min-width:0;">
+              <div id="undo-customer" style="font-size:13.5px; font-weight:700; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
+              <span class="undo-verified" id="undo-verified">&#10003; Verified Client</span>
+            </div>
+          </div>
+        </div>
+        <div class="undo-sum-cell">
+          <span class="rma-detail-label">Dispatch Date</span>
+          <div style="display:flex; align-items:center; gap:7px; margin-top:9px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/></svg>
+            <span class="mono" id="undo-date" style="font-size:13px; font-weight:600;">—</span>
+          </div>
+        </div>
+        <div class="undo-sum-cell">
+          <span class="rma-detail-label">Total Quantity</span>
+          <div style="display:flex; align-items:baseline; gap:6px; margin-top:5px;">
+            <span class="mono" id="undo-count" style="font-size:21px; font-weight:800; color:var(--green-bright);">0</span>
+            <span style="font-size:11px; font-weight:600; color:var(--text-sub);">unit(s) in batch</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory flow -->
+      <div class="undo-flow">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <span class="undo-flow-pill undo-flow-sell"><span class="undo-flow-dot" style="background:#fb7185;"></span>Sell Record</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:undoArrowPulse 1.4s ease-in-out infinite;"><path d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          <span class="undo-flow-pill undo-flow-avail"><span class="undo-flow-dot" style="background:#34d399;"></span>Available Stock</span>
+        </div>
+        <p class="undo-flow-note">Units will be released immediately into active inventory for re-sale.</p>
+      </div>
+
+      <!-- Affected serials -->
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="rma-detail-label">Affected Serialized Units</span>
+            <span class="undo-items-pill" id="undo-items-pill">0 items</span>
+          </div>
+          <button type="button" class="undo-copy-all" id="undo-copy-btn" onclick="copyUndoSerials()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7v8a2 2 0 0 0 2 2h6M8 7V5a2 2 0 0 1 2-2h4.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V15a2 2 0 0 1-2 2h-2M8 7H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2"/></svg>
+            <span id="undo-copy-text">Copy All Serials</span>
+          </button>
+        </div>
+        <div class="undo-serial-box">
+          <div class="undo-serial-grid" id="undo-serial-grid"></div>
+        </div>
+      </div>
+
+      <!-- Safe operation note -->
+      <div class="undo-safe">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <p style="margin:0;"><strong>Safe Operation:</strong> Non-destructive to customer profile. Other sales and invoices for <span id="undo-safe-cust" style="color:var(--text); font-weight:600;">this customer</span> will not be altered.</p>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" onclick="closeUndoDispatch()">Cancel</button>
+      <button class="btn btn-primary rma-export-btn" id="undo-confirm-btn" onclick="doUndoDispatch()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a5 5 0 0 1 5 5v2m0 0l-3-3m3 3l3-3M3 10l3-3M3 10l3 3"/></svg>
+        <span id="undo-confirm-label">Revert Unit(s)</span>
       </button>
     </div>
   </div>
@@ -10834,7 +11075,9 @@ document.addEventListener('mouseover', e => {
     .forEach(x => x.classList.toggle('tl-batch-focus', !!key && x.dataset.batch === key));
 });
 
-async function confirmRevertSale(idx) {
+let _undoCtx = null;
+
+function confirmRevertSale(idx) {
   const r = DB.trackList[idx];
   if (!r) return;
   // The dispatch group: same Batch id, or (pre-batch sales) same
@@ -10842,21 +11085,52 @@ async function confirmRevertSale(idx) {
   const group = DB.trackList.filter(x =>
     r.batch ? x.batch === r.batch
             : (!x.batch && x.customer === r.customer && x.dateOut === r.dateOut));
-  const serials = group.map(x => x.serial).join(', ');
-  const ok = await appConfirm({
-    title: 'Undo This Dispatch',
-    sub: 'Return the whole checkout to Available Stock',
-    bannerLabel: 'Customer',
-    bannerValue: r.customer || '—',
-    banner2Label: 'Dispatch',
-    banner2Value: `${r.dateOut || '?'} · ${group.length} unit(s)`,
-    message: `This removes <b>${group.length} unit(s)</b> from the Sell Record and puts them back into <b>Available Stock</b>:<br><span class="mono" style="font-size:11px; color:var(--green-bright);">${escapeHtml(serials)}</span><br><span style="font-size:11px; color:var(--text-sub);">Other sales to this customer are not affected.</span>`,
-    okText: `&#8630; Revert ${group.length} Unit(s)`
+  _undoCtx = {
+    batch: r.batch || '', customer: r.customer || '', date_out: r.dateOut || '',
+    serials: group.map(x => x.serial)
+  };
+
+  const batchLabel = r.batch
+    ? r.batch.replace(/^SALE-/, 'DSP-')
+    : `DSP-${(r.dateOut || '????').replace(/-/g, '')}-LEGACY`;
+  document.getElementById('undo-batch-id').textContent = batchLabel;
+  document.getElementById('undo-avatar').textContent = (r.customer || '?').trim().charAt(0).toUpperCase() || '?';
+  document.getElementById('undo-customer').textContent = r.customer || '—';
+  document.getElementById('undo-verified').style.display = r.customer ? '' : 'none';
+  document.getElementById('undo-date').textContent = r.dateOut || '—';
+  document.getElementById('undo-count').textContent = group.length;
+  document.getElementById('undo-items-pill').textContent = `${group.length} items`;
+  document.getElementById('undo-safe-cust').textContent = r.customer || 'this customer';
+  document.getElementById('undo-confirm-label').textContent = `Revert ${group.length} Unit(s)`;
+  document.getElementById('undo-serial-grid').innerHTML = group.map((x, i) =>
+    `<div class="undo-chip"><span class="undo-chip-serial" title="${escapeHtml(x.serial)}">${escapeHtml(x.serial)}</span><span class="undo-chip-idx">#${String(i + 1).padStart(2, '0')}</span></div>`
+  ).join('');
+  document.getElementById('undo-copy-text').textContent = 'Copy All Serials';
+
+  document.getElementById('undo-dispatch-modal').classList.add('open');
+}
+
+function closeUndoDispatch() {
+  document.getElementById('undo-dispatch-modal').classList.remove('open');
+  _undoCtx = null;
+}
+
+function copyUndoSerials() {
+  if (!_undoCtx || !_undoCtx.serials.length) return;
+  navigator.clipboard.writeText(_undoCtx.serials.join(', ')).then(() => {
+    const t = document.getElementById('undo-copy-text');
+    t.textContent = 'Copied!';
+    setTimeout(() => { t.textContent = 'Copy All Serials'; }, 2000);
   });
-  if (!ok) return;
+}
+
+async function doUndoDispatch() {
+  if (!_undoCtx) return;
+  const ctx = _undoCtx;
+  closeUndoDispatch();
   try {
     const res = await apiPost('/api/sales/revert', {
-      batch: r.batch || '', customer: r.customer || '', date_out: r.dateOut || ''
+      batch: ctx.batch, customer: ctx.customer, date_out: ctx.date_out
     });
     showToast(`Reverted ${res.serials.length} unit(s) back to stock`, '&#8630;');
     await refreshData();
@@ -12347,6 +12621,7 @@ onBackdropPress(document.getElementById('confirm-delete-modal'), () => closeConf
 onBackdropPress(document.getElementById('do-photos-modal'), () => closeDoPhotosModal());
 onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoViewerModal());
 onBackdropPress(document.getElementById('rma-detail-modal'), () => closeReturnDetail());
+onBackdropPress(document.getElementById('undo-dispatch-modal'), () => closeUndoDispatch());
 
 /* Day / Dark Theme toggle — View Transitions crossfade: GPU snapshot swap
    whose cost is independent of DOM size (fixes the lag on expanded data).
