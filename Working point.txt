@@ -2,9 +2,9 @@
 
 Commit Hash: 
 
-9e46b45
-Commit Description: Sell Record rename + scan-row edit modes + error-commit blocking + Stock In layout polish + search highlight/copy
-Date: 2026-09-29 +0700
+3972c06
+Commit Description: Save-As exports + brand delete w/ return-resurrection + Return detail modal (Stitch) + Serial Num/Desc labels + glowing brand pills + notes surfaced in registry
+Date: 2026-09-30 +0700
 Repository Status: Synced directly to main on GitHub (Ai-mali/Antigravity-Stock repo).
 Verified Working Features at this Stop Point:
 Desktop App Shell: Stable PyWebView frameless window (run_desktop.vbs — silent, no console flash).
@@ -78,4 +78,10 @@ Datalist Flicker: Description suggestions populate on model input/modal open, no
 Stock In Layout: Status Log + Scan Results stretch to fill viewport height and refit on resize; log lines are selectable/copyable; commit lines read "Committed to BRAND : MODEL : serials" (7bde163).
 Model Search Highlight: Typing a model fragment (e.g. BCR) marks the model text in the group header and glows all its unit cards, Available Stock + Stock Out; model name click-to-copy (9e46b45).
 Frozen Paths: ui_prefs.json + .vre_app.pid resolve beside the .exe under PyInstaller instead of the temp _MEIPASS dir (d22e8cd).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 9e46b45"
+Serial Labels: "Serial Number" renamed to Serial Num/Desc / Serial/Desc everywhere a unit ID is displayed; serial-only inputs keep "Serial Numbers" (f860544).
+Return Registry: Notes column (hover full text), note text searchable, eye opens detail, NOTES in CSV (9503f2d).
+Return Detail Modal: Stitch design — gradient bar, #RET-ID badge, hero serial/model card, action/reason/customer tiles, warranty gauge bar, movement chronology, terminal notes, Export This Record (b60d440, 45dbe37).
+Save-As Exports: Every export/download opens a native Windows Save-As dialog via pywebview bridge (save_file); browser fallback chain (File System Access API → blob download). Covers Scan CSV, Sell Record CSV, Returns CSV, per-record CSV, active .xlsx, backup snapshots, DO photos (4eeef73).
+Brand Delete: Trash icon on empty brand rows (red/full-color when 0 units, grayed + toast when stocked); refuses In-Stock/Quarantined units; removes Brands row + ModelBrands mappings; sold-unit returns auto re-register the brand name (df02120, 7e51db4).
+Glow Pill: "N Units Total" per-brand header glows in the brand's accent color (border + text glow + halo) (3972c06).
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 3972c06"
