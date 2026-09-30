@@ -10831,10 +10831,14 @@ function selectTrackWarranty(key) {
 }
 
 function exportTrackCsv() {
+  // Export the same filtered + sorted view shown on screen
+  const list = getSortedTrackList(getFilteredTrackList());
+  if (!list.length) { showToast('Nothing to export'); return; }
   let csv = 'MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
-  DB.trackList.forEach(r => {
+  list.forEach(r => {
     const w = r.warranty || { status: '', expiry: '' };
-    csv += `"${r.model}","${r.serial}","${r.dateIn}","${r.dateOut}","${r.customer}","${w.status}","${w.expiry}","Dispatched"\n`;
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    csv += [r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(esc).join(',') + '\n';
   });
   saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'sell_record_export.csv');
 }
@@ -11402,9 +11406,13 @@ function reprintRmaTag(serial) {
 
 function exportReturnsCsv() {
   if (!DB.returns.length) { showToast('No returns to export.'); return; }
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  // Newest returns first (dates may be MM/DD/YYYY or ISO — parse them)
+  const dval = s => { const d = new Date(s); return isNaN(d) ? 0 : d.getTime(); };
+  const list = [...DB.returns].sort((a, b) => dval(b.date) - dval(a.date));
   let csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
-  DB.returns.forEach(r => {
-    csv += `"${r.serial}","${r.model}","${r.customer}","${r.dateOut || ''}","${r.date}","${(r.reason || '').replace(/"/g, '""')}","${(r.notes || '').replace(/"/g, '""')}","${r.action}"\n`;
+  list.forEach(r => {
+    csv += [r.serial, r.model, r.customer, r.dateOut || '', r.date, r.reason, r.notes, r.action].map(esc).join(',') + '\n';
   });
   saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'returns_registry_export.csv');
 }
