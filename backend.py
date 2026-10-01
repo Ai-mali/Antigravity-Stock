@@ -7,6 +7,7 @@ it calls. Run:
     python backend.py        # opens http://localhost:8000
 """
 
+import asyncio
 import datetime
 import json
 import sys
@@ -31,6 +32,20 @@ if not HTML_PATH.exists():
 app = FastAPI(title="VRE AC Stock")
 store = StockStore()
 _mtime = store.path.stat().st_mtime if store.path.exists() else 0
+
+# The Excel workbook + in-memory store are not concurrency-safe: two requests
+# can interleave a load/mutate/save and one of them reads a half-written file.
+# Serialize every /api/ request — calls take milliseconds and this app is
+# single-operator, so a simple global lock is the correct model here.
+_store_lock = asyncio.Lock()
+
+
+@app.middleware("http")
+async def _serialize_api(request, call_next):
+    if request.url.path.startswith("/api/"):
+        async with _store_lock:
+            return await call_next(request)
+    return await call_next(request)
 
 
 def _fresh():

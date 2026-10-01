@@ -289,7 +289,9 @@ body {
 .app-container {
   width: 100%;
   max-width: 1360px;
-  min-height: calc(100vh - 32px);
+  /* definite height so child views' height:100%/min-height:100% resolve —
+     <main> scrolls internally, same as in the desktop shell */
+  height: calc(100vh - 32px);
   background: var(--bg-app);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -712,11 +714,22 @@ body.is-desktop-shell .desktop-window-controls {
   color: var(--text);
 }
 
-/* Main Views */
+/* Main Views — main must be a definite-height flex column so the active
+   view's height:100% resolves (browser mode collapsed without this;
+   the desktop shell's is-desktop-shell overrides were masking it). */
 main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
   padding: 16px 20px;
   box-sizing: border-box;
+}
+
+main > .view-section.active {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .view-section {
@@ -744,6 +757,15 @@ main {
   from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: none; }
 }
+
+/* Extreme-length model/serial strings must wrap instead of bleeding
+   over neighbouring panels */
+.model-accordion-header, .tl-model-cell, .tl-copy, .chip-model,
+.rma-hero-model, .scan-serial-badge, .so-serial-card {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.tl-model-cell { white-space: normal; }
 
 /* Page Headers */
 .view-header {
@@ -7082,6 +7104,16 @@ async function refreshData() {
   DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
   DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
   DB.soRecentHidden = !!(uiPrefs && uiPrefs.soRecent);
+  // Restore a staged dispatch cart that survived refresh/restart — drop
+  // entries whose unit is no longer In Stock.
+  if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
+    DB.stagedCart = uiPrefs.stagedCart.filter(i =>
+      i && i.serial && i.brand && i.model &&
+      DB.inventory[i.brand] && DB.inventory[i.brand].models &&
+      DB.inventory[i.brand].models[i.model] &&
+      DB.inventory[i.brand].models[i.model].units &&
+      DB.inventory[i.brand].models[i.model].units[i.serial]);
+  }
   applySidebarWidth('so-sidebar', DB.soSidebarW);
   applySidebarWidth('avail-sidebar', DB.availSidebarW);
   applySidebarWidth('tl-sidebar', DB.trackSidebarW);
@@ -7501,6 +7533,14 @@ function showDuplicateLocation(serial, modelHint) {
   if (!serial) return;
   const target = String(serial).trim().toUpperCase();
   const loc = locateSerialInSystem(target);
+  const jt = escapeHtml(escapeJs(target));
+  const jBrand = loc ? escapeHtml(escapeJs(loc.brand || '')) : '';
+  const jModel = loc ? escapeHtml(escapeJs(loc.model || '')) : '';
+  if (loc) {
+    for (const k in loc) {
+      if (typeof loc[k] === 'string') loc[k] = escapeHtml(loc[k]);
+    }
+  }
 
   const modal = document.getElementById('duplicate-location-modal');
   if (!modal) return;
@@ -7548,7 +7588,7 @@ function showDuplicateLocation(serial, modelHint) {
     `;
 
     actionBtnHtml = `
-      <button class="btn btn-primary" onclick="jumpToDuplicateInStock('${loc.brand}', '${loc.model}', '${target}')">
+      <button class="btn btn-primary" onclick="jumpToDuplicateInStock('${jBrand}', '${jModel}', '${jt}')">
         View in Available Stock &rarr;
       </button>
     `;
@@ -7584,7 +7624,7 @@ function showDuplicateLocation(serial, modelHint) {
     `;
 
     actionBtnHtml = `
-      <button class="btn btn-primary" onclick="jumpToDuplicateInTrack('${target}')">
+      <button class="btn btn-primary" onclick="jumpToDuplicateInTrack('${jt}')">
         View in Sell Record &rarr;
       </button>
     `;
@@ -7620,7 +7660,7 @@ function showDuplicateLocation(serial, modelHint) {
     `;
 
     actionBtnHtml = `
-      <button class="btn btn-primary" onclick="jumpToDuplicateInReturn('${target}')">
+      <button class="btn btn-primary" onclick="jumpToDuplicateInReturn('${jt}')">
         View in Returns &rarr;
       </button>
     `;
@@ -7922,26 +7962,26 @@ function renderScanResultsTable() {
       const desc = (row.desc || row.model || 'PART').trim();
       const startIdx = getNonSerialNextIndex(row.model, desc);
       const units = Array.from({ length: rowQty }, (_, i) => `${desc} #${startIdx + i}`);
-      serialChips = units.map(u => 
-        `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${u}')" title="NON-SERIAL PART \u2014 Click to stock in unit">${u}</span>`
+      serialChips = units.map(u =>
+        `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${escapeHtml(escapeJs(u))}')" title="NON-SERIAL PART \u2014 Click to stock in unit">${escapeHtml(u)}</span>`
       ).join('');
     } else if ((row.serials || []).length) {
       serialChips = row.serials.map(s => {
         const isDupe = dupeSet.has(String(s).trim().toUpperCase());
         if (isDupe) {
-          return `<span class="scan-serial-badge scan-serial-badge-dupe" onclick="event.stopPropagation(); showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system">${s}</span>`;
+          return `<span class="scan-serial-badge scan-serial-badge-dupe" onclick="event.stopPropagation(); showDuplicateLocation('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(row.model || ''))}')" title="DUPLICATE SERIAL \u2014 Click to view location in system">${escapeHtml(s)}</span>`;
         } else {
-          return `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${s}')" title="READY TO STOCK IN \u2014 Click to review &amp; assign brand">${s}</span>`;
+          return `<span class="scan-serial-badge scan-serial-badge-ready" onclick="event.stopPropagation(); openReadySerialModal(${idx}, '${escapeHtml(escapeJs(s))}')" title="READY TO STOCK IN \u2014 Click to review &amp; assign brand">${escapeHtml(s)}</span>`;
         }
       }).join('');
     } else {
-      serialChips = `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${row.desc || 'No serials'}</span>`;
+      serialChips = `<span style="color:var(--text-sub); font-size:12px; font-weight:500;">${escapeHtml(row.desc || 'No serials')}</span>`;
     }
 
     const firstDupeSerial = (row.dupeSerials && row.dupeSerials[0]) || (row.serials && row.serials[0]) || '';
     let statusBadge = '';
     if (isAllDupe) {
-      statusBadge = `<span class="scan-dupe-badge-blink" onclick="event.stopPropagation(); showDuplicateLocation('${firstDupeSerial}', '${(row.model || '').replace(/'/g, "\\'")}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`;
+      statusBadge = `<span class="scan-dupe-badge-blink" onclick="event.stopPropagation(); showDuplicateLocation('${escapeHtml(escapeJs(firstDupeSerial))}', '${escapeHtml(escapeJs(row.model || ''))}')" title="DUPLICATE SERIAL \u2014 Click to view location in system"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>DUPLICATE</span>`;
     } else if (isPartial) {
       statusBadge = `<span class="scan-partial-badge" title="${validSerials.length} new unit(s) ready, ${dupeSerials.length} duplicate(s)"><span class="traffic-dot-green"></span>${validSerials.length} READY <span style="opacity:0.4; margin:0 2px;">|</span> <span class="traffic-dot-red"></span>${dupeSerials.length} DUP</span>`;
     } else if (isReady) {
@@ -7949,7 +7989,7 @@ function renderScanResultsTable() {
     }
 
     const warnIcon = row.sev && !isAllDupe && !isPartial
-      ? `<span class="scan-warn-icon ${row.sev === 'error' ? 'warn-red' : 'warn-yellow'}" title="${(row.warn || row.flag || '').replace(/"/g, '&quot;')}" style="display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; font-size:13px; cursor:help; flex-shrink:0;">&#9888;</span>`
+      ? `<span class="scan-warn-icon ${row.sev === 'error' ? 'warn-red' : 'warn-yellow'}" title="${escapeHtml(row.warn || row.flag || '')}" style="display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; font-size:13px; cursor:help; flex-shrink:0;">&#9888;</span>`
       : '';
 
     const tr = document.createElement('tr');
@@ -7971,15 +8011,15 @@ function renderScanResultsTable() {
         : (isPartial ? `Commit ${validSerials.length} valid unit(s) to stock (keep duplicate)` : 'Commit Model to Available Stock'));
 
     tr.innerHTML = `
-      <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no !== undefined ? row.no : (idx + 1)}</td>
+      <td class="mono" style="color:var(--text-sub); text-align:center; width:44px;">${row.no !== undefined ? escapeHtml(row.no) : (idx + 1)}</td>
       <td style="font-weight:700; white-space:nowrap; width:140px; text-align:center;">
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
-          <div>${row.model || '<span style="color:var(--text-muted);">\u2014</span>'}</div>
+          <div>${row.model ? escapeHtml(row.model) : '<span style="color:var(--text-muted);">\u2014</span>'}</div>
           ${statusBadge}
         </div>
       </td>
       <td><div class="scan-serials-wrap">${serialChips}</div></td>
-      <td class="mono" style="color:var(--text-muted); text-align:right; white-space:nowrap; width:70px;">${row.qty}</td>
+      <td class="mono" style="color:var(--text-muted); text-align:right; white-space:nowrap; width:70px;">${escapeHtml(row.qty)}</td>
       <td class="actions-cell">
         <div class="actions-btn-group">
           <span class="scan-warn-slot">${warnIcon}</span>
@@ -8434,9 +8474,9 @@ function zoomScanRow(idx) {
   wrap.innerHTML = (row.serials || []).length
     ? row.serials.map(s => {
         const isDupe = dupeSet.has(String(s).trim().toUpperCase()) || row.isDuplicate;
-        return '<span class="scan-serial-badge ' + (isDupe ? 'scan-serial-badge-dupe' : '') + '" style="font-size:15px; padding:7px 13px; border-radius:8px;" ' + (isDupe ? `onclick="showDuplicateLocation('${s}', '${(row.model || '').replace(/'/g, "\\'")}')"` : '') + ' title="' + (isDupe ? 'DUPLICATE SERIAL \u2014 Click to view location' : '') + '">' + s + (isDupe ? ' (DUPLICATE)' : '') + '</span>';
+        return '<span class="scan-serial-badge ' + (isDupe ? 'scan-serial-badge-dupe' : '') + '" style="font-size:15px; padding:7px 13px; border-radius:8px;" ' + (isDupe ? `onclick="showDuplicateLocation('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(row.model || ''))}')"` : '') + ' title="' + (isDupe ? 'DUPLICATE SERIAL \u2014 Click to view location' : '') + '">' + escapeHtml(s) + (isDupe ? ' (DUPLICATE)' : '') + '</span>';
       }).join('')
-    : '<span style="color:var(--text-sub); font-size:14px;">' + (row.desc || 'No serials') + '</span>';
+    : '<span style="color:var(--text-sub); font-size:14px;">' + escapeHtml(row.desc || 'No serials') + '</span>';
 
   document.getElementById('zoom-scan-modal').classList.add('open');
 }
@@ -8663,7 +8703,7 @@ function addScanRowManual() {
 function scanBatchFields() {
   const d = document.getElementById('scan-date-in');
   return {
-    date_in: (d && d.value) || new Date().toISOString().slice(0, 10)
+    date_in: (d && d.value) || formatDateISO(new Date())
   };
 }
 
@@ -8771,6 +8811,7 @@ function deleteSelectedScans() {
 }
 
 async function commitSelectedOrAllScans() {
+  if (DB._commitBusy) return;   // in-flight guard: no double commit
   if (!DB.scans.length) {
     showToast('No scanned rows to commit.');
     return;
@@ -8792,6 +8833,7 @@ async function commitSelectedOrAllScans() {
     return;
   }
 
+  DB._commitBusy = true;
   let done = 0, skipped = 0, dupeCount = 0;
   let batchChosenBrand = null; // Stays active for all rows in this selected batch!
 
@@ -8864,6 +8906,7 @@ async function commitSelectedOrAllScans() {
   if (errCount) msg += `, held ${errCount} error row(s) — fix with pencil`;
   if (skipped) msg += `, skipped ${skipped}`;
   showToast(msg + '.');
+  DB._commitBusy = false;
 }
 
 async function commitAllScansToStock() {
@@ -9051,14 +9094,35 @@ function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/* Parses every date format the workbook can contain: ISO (2026-09-20),
+   MM/DD/YYYY, DD/MM/YYYY (unambiguous when first part > 12, matching
+   backend parse_date_safe's MM/DD preference), plus native fallbacks.
+   Returns a Date or null — NEVER use bare `new Date(str)` on workbook
+   dates: it rejects DD/MM/YYYY outright. */
+function parseDateAny(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  if (m) {
+    const a = +m[1], b = +m[2];
+    const mo = (a > 12 && b <= 12) ? b : a;   // 14/09 → DD/MM; else MM/DD
+    const dy = (a > 12 && b <= 12) ? a : b;
+    return new Date(+m[3], mo - 1, dy);
+  }
+  const t = new Date(s);
+  return isNaN(t) ? null : t;
+}
+
 /* Matches a workbook date string against the search query in common formats:
    raw text, 2026-09-18, 09/18/2026, 18/09/2026, "sep 18", "sep 18, 2026". */
 function dateMatchesQ(dateStr, q) {
   if (!dateStr || !q) return false;
   const raw = String(dateStr).toLowerCase();
   if (raw.includes(q)) return true;
-  const t = new Date(dateStr);
-  if (isNaN(t)) return false;
+  const t = parseDateAny(dateStr);
+  if (!t) return false;
   const mm = String(t.getMonth() + 1).padStart(2, '0');
   const dd = String(t.getDate()).padStart(2, '0');
   const variants = [
@@ -9093,8 +9157,8 @@ function getDateBatches() {
       (md.serials || []).forEach(s => {
         const raw = (md.units && md.units[s] && md.units[s].dateIn) || md.dateIn;
         if (!raw) return;
-        const d = new Date(raw);
-        if (isNaN(d)) return;
+        const d = parseDateAny(raw);
+        if (!d) return;
         const iso = formatDateISO(d);
         map[iso] = (map[iso] || 0) + 1;
       });
@@ -9380,19 +9444,19 @@ function renderAvailable(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" onclick="copySerial('${s}')" title="Click to copy serial">
+          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="avail-card-header">
               <span class="serial-text">${serialDisplay}</span>
               <div class="avail-card-actions" onclick="event.stopPropagation()">
-                <button type="button" class="unit-action-btn btn-edit-unit" onclick="event.stopPropagation(); openEditUnitModal('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}', '${escapeJs(unitDateIn)}')" title="Edit unit (${s})">
+                <button type="button" class="unit-action-btn btn-edit-unit" onclick="event.stopPropagation(); openEditUnitModal('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(unitDateIn))}')" title="Edit unit (${escapeHtml(s)})">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                   </svg>
                 </button>
-                <button type="button" class="unit-action-btn btn-delete-unit" onclick="event.stopPropagation(); deleteUnitDirect('${s}', '${escapeJs(mKey)}')" title="Delete unit (${s})">
+                <button type="button" class="unit-action-btn btn-delete-unit" onclick="event.stopPropagation(); deleteUnitDirect('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}')" title="Delete unit (${escapeHtml(s)})">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -9404,7 +9468,7 @@ function renderAvailable(searchTerm) {
               <span>IN: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
-                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
+                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
               </span>
             </div>
           </div>
@@ -9430,10 +9494,10 @@ function renderAvailable(searchTerm) {
       const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
-          <div class="model-accordion-header" onclick="toggleModelAcc('${brandKey}', '${mKey}')">
+          <div class="model-accordion-header" onclick="toggleModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
-              <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeJs(mKey)}')" title="Click to copy model">${modelDisplay}</span>
+              <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeHtml(escapeJs(mKey))}')" title="Click to copy model">${modelDisplay}</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -9458,10 +9522,10 @@ function renderAvailable(searchTerm) {
     brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
     brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
     brandSection.innerHTML = `
-      <div class="brand-accordion-header" onclick="toggleBrandAcc('${brandKey}')">
+      <div class="brand-accordion-header" onclick="toggleBrandAcc('${escapeHtml(escapeJs(brandKey))}')">
         <div class="brand-title-group">
           <span class="brand-color-dot"></span>
-          <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
+          <span class="brand-name-tag" style="font-size:13px;">${escapeHtml(brandKey)}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-glow">${brandUnits} Units Total</span>
         </div>
@@ -9475,7 +9539,7 @@ function renderAvailable(searchTerm) {
     totalRenderedBrands++;
   });
 
-  if (q && totalRenderedBrands === 0) {
+  if (hasFilter && totalRenderedBrands === 0) {
     const otherLoc = locateSerialInSystem(rawSearch);
     let extraNotice = '';
     if (otherLoc && otherLoc.status !== 'UNKNOWN') {
@@ -9489,7 +9553,7 @@ function renderAvailable(searchTerm) {
               Serial <strong class="mono" style="color:var(--text);">${otherLoc.serial}</strong> (${otherLoc.model}) was sold to <strong>${otherLoc.customer}</strong> on ${otherLoc.dateOut}.
             </div>
             <div style="margin-top:10px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="jumpToDuplicateInTrack('${otherLoc.serial}')">View in Sell Record &rarr;</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="jumpToDuplicateInTrack('${escapeHtml(escapeJs(otherLoc.serial))}')">View in Sell Record &rarr;</button>
             </div>
           </div>
         `;
@@ -9503,7 +9567,7 @@ function renderAvailable(searchTerm) {
               Serial <strong class="mono" style="color:var(--text);">${otherLoc.serial}</strong> (${otherLoc.model}) is logged in Returns from <strong>${otherLoc.customer}</strong> (Reason: ${otherLoc.reason || '—'}).
             </div>
             <div style="margin-top:10px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="jumpToDuplicateInReturn('${otherLoc.serial}')">View in Returns &rarr;</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="jumpToDuplicateInReturn('${escapeHtml(escapeJs(otherLoc.serial))}')">View in Returns &rarr;</button>
             </div>
           </div>
         `;
@@ -9752,8 +9816,8 @@ function soBrandStats(b) {
 
 function soShortDate(d) {
   if (!d) return '';
-  const t = new Date(d);
-  if (isNaN(t)) return d;
+  const t = parseDateAny(d);
+  if (!t) return d;
   return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -9990,7 +10054,7 @@ function renderStockOut(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch || modelNameMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${s}', '${escapeJs(mKey)}', '${escapeJs(brandKey)}')">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch || modelNameMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}')">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
@@ -9999,7 +10063,7 @@ function renderStockOut(searchTerm) {
             </div>
             <div class="so-card-bottom">
               <span>IN: ${dateDisplay}</span>
-              <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeJs(s)}')">2nd</b>` : ''}</span>
+              <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
             </div>
           </div>
         `;
@@ -10022,10 +10086,10 @@ function renderStockOut(searchTerm) {
 
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
-          <div class="model-accordion-header" onclick="toggleSOModelAcc('${brandKey}', '${mKey}')">
+          <div class="model-accordion-header" onclick="toggleSOModelAcc('${escapeHtml(escapeJs(brandKey))}', '${escapeHtml(escapeJs(mKey))}')">
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
-              <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeJs(mKey)}')" title="Click to copy model">${modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey)}</span>
+              <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeHtml(escapeJs(mKey))}')" title="Click to copy model">${modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${soBadgeClass}">${soBadgeText}</span>
@@ -10054,10 +10118,10 @@ function renderStockOut(searchTerm) {
     brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
     brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
     brandSection.innerHTML = `
-      <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${brandKey}')">
+      <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${escapeHtml(escapeJs(brandKey))}')">
         <div class="brand-title-group">
           <span class="brand-color-dot"></span>
-          <span class="brand-name-tag" style="font-size:13px;">${brandKey}</span>
+          <span class="brand-name-tag" style="font-size:13px;">${escapeHtml(brandKey)}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="badge badge-glow">${brandUnits} Units Total</span>
         </div>
@@ -10069,6 +10133,10 @@ function renderStockOut(searchTerm) {
     `;
     container.appendChild(brandSection);
   });
+
+  if (hasFilter && !container.children.length) {
+    container.innerHTML = '<div style="text-align:center; padding:36px 20px; color:var(--text-sub); font-size:12.5px;">No stock matches the current search or date filter.<div style="margin-top:6px; font-size:11px; opacity:.7;">Try clearing the search box or the Date In filter.</div></div>';
+  }
 
   renderSOBrandSidebar();
   renderQuickDates('so');
@@ -10119,6 +10187,7 @@ function toggleSerialInCart(serial, model, brand) {
   updateGlobalBadges();
   renderStockOut();
   if (DB.activeTab === 'available') renderAvailable();
+  persistStagedCart();
 }
 
 function getBrandColor(brand) {
@@ -10215,12 +10284,18 @@ function renderCartSidebar() {
   });
 }
 
+/* Persist staging cart across refresh/restart via ui_prefs */
+function persistStagedCart() {
+  apiPost('/api/ui-prefs', { prefs: { stagedCart: DB.stagedCart } }).catch(() => {});
+}
+
 function removeFromCart(idx) {
   const item = DB.stagedCart[idx];
   DB.stagedCart.splice(idx, 1);
   showToast('Removed ' + item.serial);
   updateGlobalBadges();
   renderStockOut();
+  persistStagedCart();
 }
 
 function clearDispatchCart() {
@@ -10228,16 +10303,19 @@ function clearDispatchCart() {
   updateGlobalBadges();
   renderStockOut();
   showToast('Staging cart cleared.');
+  persistStagedCart();
 }
 
 async function processCartCheckout() {
+  if (DB._checkoutBusy) return;   // in-flight guard: no double dispatch
   if (DB.stagedCart.length === 0) {
     showToast('Staging cart is empty.');
     return;
   }
+  DB._checkoutBusy = true;
   const cust = document.getElementById('cart-customer').value.trim() || 'Customer';
   const dateOut = document.getElementById('cart-date-out').value
-    || new Date().toISOString().slice(0, 10);
+    || formatDateISO(new Date());
   try {
     const res = await apiPost('/api/stock-out', {
       serials: DB.stagedCart.map(i => i.serial),
@@ -10245,14 +10323,17 @@ async function processCartCheckout() {
     });
     showToast(`Successfully dispatched ${res.sold.length} serials to ${cust}!`);
     DB.stagedCart = [];
+    persistStagedCart();
     // Blank the customer field for the next checkout — recent chips stay
     const custInput = document.getElementById('cart-customer');
     if (custInput) { custInput.value = ''; handleCustomerInput(''); }
     // Reset the dispatch date to today so a stale picked date can't tag the next sale
-    initDatePicker('dispatch-date-out-picker', new Date().toISOString().slice(0, 10));
+    initDatePicker('dispatch-date-out-picker', formatDateISO(new Date()));
     await refreshData();
   } catch (e) {
     showToast('Checkout failed: ' + e.message);
+  } finally {
+    DB._checkoutBusy = false;
   }
 }
 
@@ -10404,7 +10485,9 @@ function getFilteredTrackList() {
 
 function getSortedTrackList(list) {
   return [...list].sort((a, b) => {
-    const cmp = String(a.dateOut || '').localeCompare(String(b.dateOut || ''))
+    const ta = (parseDateAny(a.dateOut) || new Date(0)).getTime();
+    const tb = (parseDateAny(b.dateOut) || new Date(0)).getTime();
+    const cmp = (ta - tb)
       || String(a.serial || '').localeCompare(String(b.serial || ''));
     return DB.trackSortDir === 'asc' ? cmp : -cmp;
   });
@@ -10913,7 +10996,7 @@ function renderRmaSuggest(q) {
       const ws = (r.warranty && r.warranty.status) || '';
       const wTag = ws && ws !== 'none' ? `<span class="rsi-warr ${ws}">${ws.toUpperCase()}</span>` : '';
       const serialHtml = ql && (r.serial || '').toLowerCase().includes(ql) ? markMatchedText(r.serial, q.trim()) : escapeHtml(r.serial);
-      return `<button type="button" class="rma-suggest-item" onmousedown="pickRmaSerial('${escapeJs(r.serial)}')">
+      return `<button type="button" class="rma-suggest-item" onmousedown="pickRmaSerial('${escapeHtml(escapeJs(r.serial))}')">
         <span class="rsi-serial">${serialHtml}</span>
         <span class="rsi-meta">${escapeHtml(r.model)} \u00b7 ${escapeHtml(r.customer)} \u00b7 Out ${escapeHtml(r.dateOut || '\u2014')}</span>
         ${wTag}
@@ -11100,7 +11183,7 @@ function renderReturnTable() {
       : '<span class="rma-action-pill quarantined">Quarantined</span>';
     const releaseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
     const releaseBtn = r.action === 'Quarantined'
-      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeJs(r.serial)}')" style="color:#f59e0b;">${releaseSvg}</button>`
+      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeHtml(escapeJs(r.serial))}')" style="color:#f59e0b;">${releaseSvg}</button>`
       : '';
     const rIdx = DB.returns.indexOf(r);
     tr.innerHTML = `
@@ -11116,7 +11199,7 @@ function renderReturnTable() {
       <td style="text-align:right; white-space:nowrap;">
         ${releaseBtn}
         <button type="button" class="tl-eye-btn" title="Inspect details" onclick="inspectReturnRow(${rIdx})">${eyeSvg}</button>
-        <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag('${escapeJs(r.serial)}')" style="color:var(--green-bright);">${printSvg}</button>
+        <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag('${escapeHtml(escapeJs(r.serial))}')" style="color:var(--green-bright);">${printSvg}</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -11419,7 +11502,7 @@ function exportReturnsCsv() {
   if (!DB.returns.length) { showToast('No returns to export.'); return; }
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   // Newest returns first (dates may be MM/DD/YYYY or ISO — parse them)
-  const dval = s => { const d = new Date(s); return isNaN(d) ? 0 : d.getTime(); };
+  const dval = s => { const d = parseDateAny(s); return d ? d.getTime() : 0; };
   const list = [...DB.returns].sort((a, b) => dval(b.date) - dval(a.date));
   let csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
   list.forEach(r => {
@@ -11662,7 +11745,7 @@ function renderProviderKeys(prov) {
       <td style="white-space:nowrap;"><span style="color:var(--green-bright); font-weight:700; font-size:10.5px;">${idx === 0 ? 'PRIMARY' : 'FAILOVER'}</span></td>
       <td style="color:var(--text-muted); white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis;" title="${k.remark || ''}">${k.remark || '\u2014'}</td>
       <td style="text-align:center; width:36px; padding:6px 4px; white-space:nowrap;">
-        <button style="background:none; border:none; color:#f87171; cursor:pointer; font-size:14px; padding:2px 4px; line-height:1; display:inline-flex; align-items:center; justify-content:center;" onclick="removeKey('${prov}', ${idx})" title="Remove key">&#128465;</button>
+        <button style="background:none; border:none; color:#f87171; cursor:pointer; font-size:14px; padding:2px 4px; line-height:1; display:inline-flex; align-items:center; justify-content:center;" onclick="removeKey('${escapeHtml(escapeJs(prov))}', ${idx})" title="Remove key">&#128465;</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -12482,7 +12565,7 @@ function initDatePicker(id, initialDateStr = null, onChange = null) {
   if (!container) return;
 
   const today = new Date();
-  const defStr = initialDateStr || today.toISOString().split('T')[0];
+  const defStr = initialDateStr || formatDateISO(today);
   const parts = defStr.split('-');
   const initialYear = parseInt(parts[0], 10);
   const initialMonth = parseInt(parts[1], 10) - 1; // 0-indexed
@@ -13293,7 +13376,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initSideResizer('tl-side-resizer', 'tl-sidebar', 'tlW', 'trackSidebarMini', applyTrackSidebarMini);
   
   // Initialize Custom Datepickers with today's date
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatDateISO(new Date());
   initDatePicker('scan-date-in-picker', todayStr);
   initDatePicker('dispatch-date-out-picker', todayStr);
   initDatePicker('avail-datein-picker', null, setAvailDateFilter);

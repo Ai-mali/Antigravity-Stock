@@ -82,6 +82,11 @@ Return ONLY a JSON array, one object per row, including rows without serials:
 
 _RANGE_RE = re.compile(
     r"([A-Za-z]{0,4})(\d{3,})\s*[-–]\s*([A-Za-z]{0,4})(\d{3,})")
+# Short-digit ranges (K1 - K5, A10 - A12): tried only as a fallback after
+# the strict pattern — real serials like K7Z-88123 never match because the
+# character before the dash is a letter.
+_RANGE_SHORT_RE = re.compile(
+    r"([A-Za-z]{0,4})(\d{1,2})\s*[-–]\s*([A-Za-z]{0,4})(\d{1,2})")
 
 _MIME_BY_EXT = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
                 "webp": "image/webp", "bmp": "image/bmp"}
@@ -304,6 +309,7 @@ def expand_serial_range(text: str) -> str:
     """
     def _sub(m):
         pa, na, pb, nb = m.group(1), m.group(2), m.group(3), m.group(4)
+        pb = pb or pa  # shorthand: 'AB12-15' means 'AB12 - AB15'
         if pa != pb or len(na) != len(nb):
             return m.group(0)
         start, end = int(na), int(nb)
@@ -312,12 +318,21 @@ def expand_serial_range(text: str) -> str:
         return ", ".join(f"{pa}{i:0{len(na)}d}"
                          for i in range(start, end + 1))
 
-    return _RANGE_RE.sub(_sub, text)
+    expanded = _RANGE_RE.sub(_sub, text)
+    return _RANGE_SHORT_RE.sub(_sub, expanded)
 
 
 def _split_ranges(text: str) -> str:
-    """Treat dashes as separators — 'A123 - A125' becomes 'A123, A125'."""
-    return _RANGE_RE.sub(r"\1\2, \3\4", text)
+    """Treat dashes as separators — 'A123 - A125' becomes 'A123, A125'.
+
+    When the right side omits the letters ('AB12-13'), it inherits the
+    left prefix ('AB12, AB13') rather than emitting a bare number.
+    """
+    def _sub(m):
+        pa, na, pb, nb = m.group(1), m.group(2), m.group(3), m.group(4)
+        return f"{pa}{na}, {pb or pa}{nb}"
+    out = _RANGE_RE.sub(_sub, text)
+    return _RANGE_SHORT_RE.sub(_sub, out)
 
 
 def _serial_count(serial: str) -> int:
@@ -372,6 +387,16 @@ def parse_scan_json(raw: str) -> list[dict]:
             serials = real
             if not serials:
                 flag = "no_serial"
+        # A token that still looks like an unresolved range must never be
+        # emitted as a unit ID — demote it to desc and flag for review.
+        ranged = [s for s in serials if re.search(r"\d\s*[-–]\s*\d", s)]
+        if ranged:
+            extra = " ".join(ranged)
+            desc = f"{desc} {extra}".strip() if desc else extra
+            serials = [s for s in serials if s not in ranged]
+            flag = flag or "qty_mismatch"
+            if not serials:
+                flag = "no_serial"
         sev, warn = _flag_detail(flag, len(serials), qty)
         rows.append({"no": no, "model": model.upper(), "qty": qty,
                      "serial": ", ".join(serials), "serials": serials,
@@ -416,7 +441,9 @@ def _resolve_serials(raw_serial: str, qty: str) -> tuple:
         return "", ""
     q = _qty_int(qty)
     expanded = expand_serial_range(raw_serial)
-    split = _split_ranges(raw_serial) if _RANGE_RE.search(raw_serial) else None
+    split = (_split_ranges(raw_serial)
+             if (_RANGE_RE.search(raw_serial)
+                 or _RANGE_SHORT_RE.search(raw_serial)) else None)
     if not q:
         return expanded, ""
     if _serial_count(expanded) == q:

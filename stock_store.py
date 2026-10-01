@@ -18,10 +18,14 @@ sheet Types -> Brands, ModelTypes -> ModelBrands, header Type -> Brand.
 Supplier column is automatically migrated and removed if present.
 """
 
+import calendar
 import datetime
+import os
 from pathlib import Path
+import re
 import shutil
 import sys
+import uuid
 
 from openpyxl import Workbook, load_workbook
 
@@ -75,7 +79,7 @@ def _add_months(d: datetime.date, months: int) -> datetime.date:
     try:
         year = d.year + (d.month + months - 1) // 12
         month = (d.month + months - 1) % 12 + 1
-        day = min(d.day, 28) if month == 2 else min(d.day, 30) if month in (4, 6, 9, 11) else d.day
+        day = min(d.day, calendar.monthrange(year, month)[1])
         return datetime.date(year, month, day)
     except Exception:
         return d + datetime.timedelta(days=int(months * 30.4375))
@@ -208,11 +212,14 @@ class StockStore:
         for row in self.map_sheet.iter_rows(min_row=2, values_only=True):
             if row and row[0] and row[1]:
                 self.model_to_brand[str(row[0]).upper()] = str(row[1])
-        for row in self.ret_sheet.iter_rows(min_row=2, values_only=True):
+        for idx, row in enumerate(
+                self.ret_sheet.iter_rows(min_row=2, values_only=True), start=2):
             if not row or row[0] in (None, ""):
                 continue
-            self.returns.append(dict(
-                zip(RETURN_HEADER, ("" if v is None else v for v in row))))
+            ret = dict(zip(RETURN_HEADER,
+                           ("" if v is None else v for v in row)))
+            ret["_row"] = idx  # Excel row — survives blank/deleted rows
+            self.returns.append(ret)
         for row in self.act_sheet.iter_rows(min_row=2, values_only=True):
             if not row or row[0] in (None, ""):
                 continue
@@ -230,6 +237,17 @@ class StockStore:
         if "ModelTypes" in names and "ModelBrands" not in names:
             self.wb["ModelTypes"].title = "ModelBrands"
             self._schema_dirty = True
+        # Fix leftover "Type" header cells inside the renamed sheets
+        if "Brands" in self.wb.sheetnames:
+            c = self.wb["Brands"].cell(row=1, column=1)
+            if str(c.value or "").strip() == "Type":
+                c.value = "Brand"
+                self._schema_dirty = True
+        if "ModelBrands" in self.wb.sheetnames:
+            c = self.wb["ModelBrands"].cell(row=1, column=2)
+            if str(c.value or "").strip() == "Type":
+                c.value = "Brand"
+                self._schema_dirty = True
         if "MasterRecord" in names:
             ws = self.wb["MasterRecord"]
             first_val = str(ws.cell(row=1, column=1).value or "").strip().lower()
@@ -273,20 +291,18 @@ class StockStore:
         collisions get a numeric suffix.
         """
         if not self.path.exists():
-            return
-        try:
-            BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-            now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            stem = f"daikin_stock_{now_str}" + (f"_{suffix}" if suffix else "")
-            dest = BACKUP_DIR / f"{stem}.xlsx"
-            i = 2
-            while dest.exists():
-                dest = BACKUP_DIR / f"{stem}_{i}.xlsx"
-                i += 1
-            shutil.copy2(self.path, dest)
-            self._prune_backups(keep=60)  # 60 files = 30 before+after pairs
-        except Exception:
-            pass
+            return None
+        BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        stem = f"daikin_stock_{now_str}" + (f"_{suffix}" if suffix else "")
+        dest = BACKUP_DIR / f"{stem}.xlsx"
+        i = 2
+        while dest.exists():
+            dest = BACKUP_DIR / f"{stem}_{i}.xlsx"
+            i += 1
+        shutil.copy2(self.path, dest)
+        self._prune_backups(keep=60)  # 60 files = 30 before+after pairs
+        return dest
 
     def _prune_backups(self, keep: int = 60):
         if not BACKUP_DIR.exists():
@@ -302,10 +318,41 @@ class StockStore:
 
     def save(self, backup: bool = False):
         if backup:
-            self._backup("before")   # undo point: state before the change
-        self.wb.save(self.path)
+            try:
+                self._backup("before")   # undo point: state before the change
+            except Exception as e:
+                # No undo point -> do NOT persist. Re-sync memory from disk
+                # so in-memory state matches the workbook again.
+                try:
+                    self.load()
+                except Exception:
+                    pass
+                raise RuntimeError(
+                    f"Pre-change backup failed — change not saved: {e}") from e
+        # Keep user-entered strings as text — a leading =,+,-,@ must never
+        # be written as a spreadsheet formula.
+        for ws in self.wb.worksheets:
+            for row in ws.iter_rows():
+                for c in row:
+                    if isinstance(c.value, str) and c.value[:1] in ("=", "+", "-", "@"):
+                        c.data_type = "s"
+        # Atomic write: build the file under a temp name, then swap it in so
+        # no reader ever observes a half-written workbook.
+        tmp = self.path.with_name(self.path.stem + ".tmp.xlsx")
+        self.wb.save(tmp)
+        os.replace(tmp, self.path)
         if backup:
-            self._backup("after")    # mirror: state including the change
+            try:
+                self._backup("after")    # mirror: state including the change
+            except Exception as e:
+                try:
+                    self.log_activity("Backup Failed",
+                                      details=f"after-snapshot: {e}",
+                                      status="FAIL")
+                    self.wb.save(tmp)
+                    os.replace(tmp, self.path)
+                except Exception:
+                    pass
 
     def log_activity(self, action: str, model: str = "", count: int = 0,
                      details: str = "", status: str = "OK"):
@@ -327,10 +374,9 @@ class StockStore:
         for f in files:
             st = f.stat()
             kind = ""
-            for k in ("_before", "_after", "_manual"):
-                if f.stem.endswith(k):
-                    kind = k[1:]
-                    break
+            m = re.search(r"_(before|after|manual)(_\d+)?$", f.stem)
+            if m:
+                kind = m.group(1)
             out.append({
                 "filename": f.name,
                 "size": st.st_size,
@@ -367,7 +413,10 @@ class StockStore:
         src = BACKUP_DIR / safe_name
         if not src.exists():
             return False, f"Backup file '{safe_name}' not found"
-        self._backup("before")  # safety snapshot of current state before restoring
+        try:
+            self._backup("before")  # safety snapshot of current state before restoring
+        except Exception as e:
+            return False, f"Safety snapshot failed — restore aborted: {e}"
         # The audit log should not be rewound — keep the events that happened
         # between the snapshot and now so the history stays complete.
         prev_activities = list(self.activities)
@@ -390,6 +439,13 @@ class StockStore:
                                            e["Serials Count"], e["Details"], e["Status"]])
             self.log_activity("Restore", details=f"Restored from {safe_name}")
             self.save(backup=False)
+            try:
+                self._backup("after")   # pair mirror: post-restore state
+            except Exception as e:
+                self.log_activity("Backup Failed",
+                                  details=f"after-snapshot: {e}",
+                                  status="FAIL")
+                self.save(backup=False)
             return True, ""
         except Exception as ex:
             return False, str(ex)
@@ -489,11 +545,13 @@ class StockStore:
             if cust not in stats:
                 stats[cust] = {"name": cust, "count": 0, "lastDate": date_out}
             stats[cust]["count"] += 1
-            if date_out and date_out > stats[cust]["lastDate"]:
+            cur = parse_date_safe(stats[cust]["lastDate"])
+            new = parse_date_safe(date_out)
+            if date_out and (cur is None or (new is not None and new > cur)):
                 stats[cust]["lastDate"] = date_out
 
         return sorted(stats.values(),
-                      key=lambda x: (x["count"], x["lastDate"]),
+                      key=lambda x: (x["count"], parse_date_safe(x["lastDate"]) or datetime.date.min),
                       reverse=True)
 
     def in_stock_units(self) -> list[dict]:
@@ -586,7 +644,8 @@ class StockStore:
         """Mark units Sold with one Customer + Date Out for the whole cart.
         Every checkout stamps the same Batch id on all its units so a
         mistaken dispatch can be reverted as one transaction."""
-        batch = "SALE-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        batch = ("SALE-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+                 + "-" + uuid.uuid4().hex[:5].upper())
         wanted = {s.strip().lower() for s in serials if s.strip()}
         done = []
         models_sold = set()
@@ -669,7 +728,8 @@ class StockStore:
             "Serial": rec["Serial"], "Model": rec["Model"],
             "Customer": rec["Customer"], "Reason": reason,
             "Condition": condition, "Notes": notes,
-            "Action": action_label, "Date": date, "Date Out": date_out})
+            "Action": action_label, "Date": date, "Date Out": date_out,
+            "_row": self.ret_sheet.max_row})
         row = rec["_row"]
         rec["Batch"] = ""
         self.recs.cell(row=row, column=8, value="")
@@ -717,7 +777,7 @@ class StockStore:
             ret["Action"] = "Restocked"
             stamp = f"Released from quarantine {date}"
             ret["Notes"] = (str(ret.get("Notes", "")).strip() + " | " + stamp).strip(" |")
-            ret_row = self.returns.index(ret) + 2
+            ret_row = ret.get("_row") or (self.returns.index(ret) + 2)
             self.ret_sheet.cell(row=ret_row, column=6, value=str(ret["Notes"]))
             self.ret_sheet.cell(row=ret_row, column=7, value="Restocked")
         self.log_activity("Quarantine Released", model=str(rec["Model"]), count=1,
