@@ -7355,7 +7355,7 @@ function getKnownMasterSerialsSet() {
 
 function isNonSerialRow(row) {
   if (!row) return false;
-  if (row.flag === 'no_serial') return true;
+  if (String(row.flag || '').includes('no_serial')) return true;
   if (!row.serials || !row.serials.length) return true;
   // If all serials contain ' #' (synthetic unit IDs), treat as non-serial
   return row.serials.every(s => String(s).includes(' #'));
@@ -7411,6 +7411,16 @@ function getNonSerialNextIndex(model, desc) {
 
 function markDuplicateScans() {
   const known = getKnownMasterSerialsSet();
+  // Serials repeated across DIFFERENT scan rows in the same sheet are
+  // just as wrong as serials already in stock — flag them pre-commit.
+  const inScanCount = {};
+  DB.scans.forEach(row => {
+    if (!row.serials) return;
+    row.serials.forEach(s => {
+      const k = String(s).trim().toUpperCase();
+      inScanCount[k] = (inScanCount[k] || 0) + 1;
+    });
+  });
   DB.scans.forEach(row => {
     // Non-serial items (accessories/piping kits) are not duplicate errors — they auto-increment sequentially
     if (isNonSerialRow(row)) {
@@ -7426,17 +7436,22 @@ function markDuplicateScans() {
 
     if (!row.serials || !row.serials.length) return;
     const foundDupes = row.serials.filter(ser => known.has(String(ser).trim().toUpperCase()));
-    if (foundDupes.length > 0) {
-      row.dupeSerials = foundDupes;
-      if (foundDupes.length === row.serials.length) {
+    const inScanDupes = row.serials.filter(ser => (inScanCount[String(ser).trim().toUpperCase()] || 0) > 1);
+    const allDupes = [...new Set([...foundDupes, ...inScanDupes])];
+    if (allDupes.length > 0) {
+      row.dupeSerials = allDupes;
+      const inStockMsg = foundDupes.length ? `in stock: ${foundDupes.join(', ')}` : '';
+      const inScanMsg = inScanDupes.length ? `repeated in this sheet: ${inScanDupes.join(', ')}` : '';
+      const why = [inStockMsg, inScanMsg].filter(Boolean).join('; ');
+      if (allDupes.length === row.serials.length) {
         row.isDuplicate = true; // All serials are duplicate
         row.isPartialDuplicate = false;
-        row.warn = `Duplicate serial(s) already in master record: ${foundDupes.join(', ')}`;
+        row.warn = `Duplicate serial(s) — ${why}`;
         row.sev = 'error';
       } else {
         row.isDuplicate = false;
         row.isPartialDuplicate = true; // Partial duplicate: some good, some duplicate
-        row.warn = `${foundDupes.length} duplicate & ${row.serials.length - foundDupes.length} valid serial(s)`;
+        row.warn = `${allDupes.length} duplicate & ${row.serials.length - allDupes.length} valid serial(s) — ${why}`;
         row.sev = 'warn';
       }
     } else {
@@ -8752,14 +8767,16 @@ async function commitScanRow(idx, assignedBrand = null) {
     const payload = {
       ...scanBatchFields(),
       model: row.model,
-      serials: serials
+      serials: serials,
+      auto_ids: isNonSerialRow(row),
+      brand: row.brand || ''
     };
     if (assignedBrand) {
       payload.brand = assignedBrand;
     }
     const res = await apiPost('/api/stock-in', payload);
     if (res.needs_brand) {
-      const brand = await askBrand(row.model, 1);
+      const brand = await askBrand(row.model, 1, row.brand || '');
       if (!brand) return;  // cancelled — row stays in the list
       return commitScanRow(idx, brand);  // retry now that the model is mapped AND pass the brand!
     }
@@ -8817,15 +8834,16 @@ async function commitSelectedOrAllScans() {
     return;
   }
 
-  // Only non-duplicate, non-error rows can be committed
+  // Only non-duplicate, non-error rows can be committed — in ROW ORDER,
+  // so a duplicate later in the sheet is the one held back, not the first.
   const hasSpecificSelection = selectedScanIndices.size > 0;
   const isCommittable = i => {
     const r = DB.scans[i];
     return r && !r.isDuplicate && r.sev !== 'error';
   };
   const indices = hasSpecificSelection
-    ? Array.from(selectedScanIndices).filter(i => i >= 0 && i < DB.scans.length && isCommittable(i)).sort((a, b) => b - a)
-    : DB.scans.map((r, i) => (isCommittable(i) ? i : -1)).filter(i => i >= 0).reverse();
+    ? Array.from(selectedScanIndices).filter(i => i >= 0 && i < DB.scans.length && isCommittable(i)).sort((a, b) => a - b)
+    : DB.scans.map((r, i) => (isCommittable(i) ? i : -1)).filter(i => i >= 0);
   const errCount = DB.scans.filter(r => r.sev === 'error' && !r.isDuplicate).length;
 
   if (!indices.length) {
@@ -8835,78 +8853,84 @@ async function commitSelectedOrAllScans() {
 
   DB._commitBusy = true;
   let done = 0, skipped = 0, dupeCount = 0;
-  let batchChosenBrand = null; // Stays active for all rows in this selected batch!
+  const committed = new Set();
 
-  for (const i of indices) {
+  const buildRows = brand => indices.map(i => {
     const row = DB.scans[i];
-    if (!row) continue;
-    if ((!row.serials.length && !row.desc) || !row.model) {
-      skipped++;
-      continue;
-    }
-    try {
-      // If a brand was chosen for this batch, pass it automatically so all rows go into the same brand!
-      const reqBrand = batchChosenBrand || '';
-      let res = await apiPost('/api/stock-in', {
+    return {
+      idx: i,
+      model: row.model,
+      serials: commitSerialsOf(row),
+      brand: brand || row.brand || '',
+      auto_ids: isNonSerialRow(row)
+    };
+  });
+
+  try {
+    let res = await apiPost('/api/stock-in-batch', {
+      ...scanBatchFields(),
+      rows: buildRows('')
+    });
+
+    if (res.needs_brands && res.needs_brands.length) {
+      // Prompt ONCE for the whole commit, then retry with the brand applied
+      const needModel = res.needs_brands[0];
+      const hintRow = DB.scans.find(r => (r.model || '').toUpperCase() === needModel.toUpperCase());
+      const brand = await askBrand(needModel, indices.length, (hintRow && hintRow.brand) || '');
+      if (!brand) {
+        showToast('Commit cancelled — no brand chosen.', '&#9888;');
+        return;
+      }
+      res = await apiPost('/api/stock-in-batch', {
         ...scanBatchFields(),
-        model: row.model,
-        serials: commitSerialsOf(row),
-        brand: reqBrand
+        rows: buildRows(brand)
       });
-
-      if (res.needs_brand) {
-        // Prompt ONCE for the batch of selected rows
-        const brand = await askBrand(row.model, indices.length);
-        if (!brand) {
-          skipped++;
-          continue;
-        }
-        batchChosenBrand = brand; // Remember this chosen brand for all remaining items in the batch!
-
-        // Retry committing this row with the chosen brand
-        res = await apiPost('/api/stock-in', {
-          ...scanBatchFields(),
-          model: row.model,
-          serials: commitSerialsOf(row),
-          brand: batchChosenBrand
-        });
+      if (res.needs_brands && res.needs_brands.length) {
+        showToast('Brand mapping still incomplete — commit cancelled.', '&#9888;');
+        return;
       }
+    }
 
-      reportCommit(row, res, batchChosenBrand || '');
+    const byIdx = {};
+    (res.results || []).forEach(r => { byIdx[r.idx] = r; });
 
-      if (res.added && res.added.length > 0) {
-        done++;
-      }
-
-      if (res.dupes && res.dupes.length > 0) {
+    for (const i of indices) {
+      const row = DB.scans[i];
+      if (!row) continue;
+      const r = byIdx[i];
+      if (!r) { skipped++; continue; }
+      reportCommit(row, { added: r.added, dupes: r.dupes }, r.brand || '');
+      if (r.added.length) done++;
+      if (r.dupes.length) {
         // KEEP DUPLICATES IN SCAN RESULT SCREEN BLINKING!
         row.isDuplicate = true;
         row.isPartialDuplicate = false;
-        row.dupeSerials = res.dupes;
-        row.serials = [...res.dupes];
-        row.qty = res.dupes.length + ' PC' + (res.dupes.length > 1 ? 'S' : '');
-        row.warn = `Duplicate serial(s) already in master record: ${res.dupes.join(', ')}`;
+        row.dupeSerials = r.dupes;
+        row.serials = [...r.dupes];
+        row.qty = r.dupes.length + ' PC' + (r.dupes.length > 1 ? 'S' : '');
+        row.warn = `Duplicate serial(s) already in master record: ${r.dupes.join(', ')}`;
         row.sev = 'error';
         dupeCount++;
       } else {
-        DB.scans.splice(i, 1);
-        selectedScanIndices.delete(i);
+        committed.add(i);
       }
-    } catch (e) {
-      showToast(`Row ${row.no || i + 1} failed: ${e.message}`);
-      skipped++;
     }
+    // Remove committed rows by index set — no mid-loop splice needed since
+    // rows are processed in ascending order in one batch call.
+    DB.scans = DB.scans.filter((_, i) => !committed.has(i));
+  } catch (e) {
+    showToast('Commit failed: ' + e.message, '&#9888;');
+  } finally {
+    selectedScanIndices.clear();
+    renderScanResultsTable();
+    await refreshData();
+    let msg = `Committed ${done} row(s)`;
+    if (dupeCount) msg += `, kept ${dupeCount} duplicate row(s) blinking in scan list`;
+    if (errCount) msg += `, held ${errCount} error row(s) — fix with pencil`;
+    if (skipped) msg += `, skipped ${skipped}`;
+    showToast(msg + '.');
+    DB._commitBusy = false;
   }
-
-  selectedScanIndices.clear();
-  renderScanResultsTable();
-  await refreshData();
-  let msg = `Committed ${done} row(s)`;
-  if (dupeCount) msg += `, kept ${dupeCount} duplicate row(s) blinking in scan list`;
-  if (errCount) msg += `, held ${errCount} error row(s) — fix with pencil`;
-  if (skipped) msg += `, skipped ${skipped}`;
-  showToast(msg + '.');
-  DB._commitBusy = false;
 }
 
 async function commitAllScansToStock() {
@@ -8927,7 +8951,7 @@ function updateBrandModalLiveDisplay() {
   }
 }
 
-function askBrand(model, batchCount = 1) {
+function askBrand(model, batchCount = 1, brandHint = '') {
   return new Promise(resolve => {
     _brandResolve = resolve;
     _currentBrandModel = (model || '').trim().toUpperCase();
@@ -8946,7 +8970,9 @@ function askBrand(model, batchCount = 1) {
         : '<option value="">\u2014 no brands yet \u2014</option>';
     }
     const inp = document.getElementById('brand-new');
-    if (inp) inp.value = '';
+    // Prefill the brand the scanner read off the document, if any —
+    // one less keystroke per new model.
+    if (inp) inp.value = (brandHint || '').toUpperCase();
 
     updateBrandModalLiveDisplay();
 
@@ -9043,8 +9069,8 @@ async function downloadServerFile(url, filename) {
 
 function downloadScanCsv() {
   let csv = 'No,Model,Serials,Qty\n';
-  DB.scans.forEach(r => csv += `${r.no},"${r.model}","${r.serials.join(';')}",${r.qty}\n`);
-  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'scan_results.csv');
+  DB.scans.forEach(r => csv += [r.no, r.model, r.serials.join(';'), r.qty].map(csvCell).join(',') + '\n');
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'scan_results.csv');
 }
 
 /* =========================================================
@@ -9089,6 +9115,16 @@ function toggleLowStockFilter() {
   DB.lowStockFilter = !DB.lowStockFilter;
   renderAvailable();
 }
+
+/* CSV cell: quote + double-quote escape, and prefix a ' on values that
+   Excel would otherwise evaluate as formulas (=, +, -, @). */
+function csvCell(v) {
+  let s = String(v ?? '');
+  if (/^[=+\-@]/.test(s)) s = "'" + s;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+/* BOM so Excel opens UTF-8 exports with the right encoding (Khmer etc.) */
+const CSV_BOM = '\ufeff';
 
 function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -10316,13 +10352,23 @@ async function processCartCheckout() {
   const cust = document.getElementById('cart-customer').value.trim() || 'Customer';
   const dateOut = document.getElementById('cart-date-out').value
     || formatDateISO(new Date());
+  const sent = DB.stagedCart.map(i => i.serial);
   try {
     const res = await apiPost('/api/stock-out', {
-      serials: DB.stagedCart.map(i => i.serial),
+      serials: sent,
       customer: cust, date_out: dateOut
     });
-    showToast(`Successfully dispatched ${res.sold.length} serials to ${cust}!`);
-    DB.stagedCart = [];
+    const soldSet = new Set((res.sold || []).map(s => String(s).toUpperCase()));
+    const skippedItems = DB.stagedCart.filter(i => !soldSet.has(String(i.serial).toUpperCase()));
+    if (skippedItems.length) {
+      // Keep skipped units staged — they were not dispatched (sold or
+      // quarantined elsewhere) and the user needs to see that.
+      showToast(`Dispatched ${res.sold.length} of ${sent.length} — skipped: ${skippedItems.map(i => i.serial).join(', ')} (no longer in stock)`, '&#9888;');
+      DB.stagedCart = skippedItems;
+    } else {
+      showToast(`Successfully dispatched ${res.sold.length} serials to ${cust}!`);
+      DB.stagedCart = [];
+    }
     persistStagedCart();
     // Blank the customer field for the next checkout — recent chips stay
     const custInput = document.getElementById('cart-customer');
@@ -10931,10 +10977,9 @@ function exportTrackCsv() {
   let csv = 'MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
   list.forEach(r => {
     const w = r.warranty || { status: '', expiry: '' };
-    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    csv += [r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(esc).join(',') + '\n';
+    csv += [r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(csvCell).join(',') + '\n';
   });
-  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'sell_record_export.csv');
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'sell_record_export.csv');
 }
 
 /* =========================================================
@@ -11180,7 +11225,9 @@ function renderReturnTable() {
     const cHit = q && (r.customer || '').toLowerCase().includes(ql);
     const badge = r.action === 'Restocked'
       ? '<span class="rma-action-pill restocked">Restocked</span>'
-      : '<span class="rma-action-pill quarantined">Quarantined</span>';
+      : (r.action === 'Closed'
+          ? '<span class="rma-action-pill" style="background:var(--surface3); color:var(--text-sub); border:1px solid var(--border);">Closed</span>'
+          : '<span class="rma-action-pill quarantined">Quarantined</span>');
     const releaseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
     const releaseBtn = r.action === 'Quarantined'
       ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeHtml(escapeJs(r.serial))}')" style="color:#f59e0b;">${releaseSvg}</button>`
@@ -11321,12 +11368,11 @@ function exportReturnDetail() {
   const w = r.warranty || {};
   const wTxt = w.status && w.status !== 'none'
     ? `${w.status} (expires ${w.expiry}, ${w.daysRemaining}d left)` : 'none';
-  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
     + [r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
-        .map(esc).join(',') + '\n';
+        .map(csvCell).join(',') + '\n';
   const fname = `return_${String(r.serial || 'record').replace(/[^\w-]+/g, '_')}.csv`;
-  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), fname);
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), fname);
 }
 
 /* ---- Generic themed confirm dialog (replaces native confirm()) ---- */
@@ -11500,15 +11546,14 @@ function reprintRmaTag(serial) {
 
 function exportReturnsCsv() {
   if (!DB.returns.length) { showToast('No returns to export.'); return; }
-  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   // Newest returns first (dates may be MM/DD/YYYY or ISO — parse them)
   const dval = s => { const d = parseDateAny(s); return d ? d.getTime() : 0; };
   const list = [...DB.returns].sort((a, b) => dval(b.date) - dval(a.date));
   let csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
   list.forEach(r => {
-    csv += [r.serial, r.model, r.customer, r.dateOut || '', r.date, r.reason, r.notes, r.action].map(esc).join(',') + '\n';
+    csv += [r.serial, r.model, r.customer, r.dateOut || '', r.date, r.reason, r.notes, r.action].map(csvCell).join(',') + '\n';
   });
-  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'returns_registry_export.csv');
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'returns_registry_export.csv');
 }
 
 function printRmaTags() {
@@ -12173,10 +12218,9 @@ function renderActivityTable() {
 function exportActivityCsv() {
   const list = getFilteredActivities();
   if (!list.length) { showToast('Nothing to export'); return; }
-  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = 'TIMESTAMP,ACTION,MODEL,UNITS,DETAILS,STATUS\n'
-    + list.map(a => [a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(esc).join(',')).join('\n') + '\n';
-  saveBlobWithPicker(new Blob([csv], { type: 'text/csv' }), 'activity_audit.csv');
+    + list.map(a => [a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(csvCell).join(',')).join('\n') + '\n';
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'activity_audit.csv');
 }
 
 async function fetchBackups() {

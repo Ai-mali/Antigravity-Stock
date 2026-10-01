@@ -76,8 +76,10 @@ Rules:
   without digits (DAIKIN, REFNET, JOINT, KIT, WIFI, CASSETTE, MULTI,
   VRV) are description text — put them in desc, NEVER in serial.
 - Ignore handwritten checkmarks, ticks, and pen annotations.
+- If the sheet prints a Brand/Manufacturer column or a brand name in the
+  letterhead (e.g. Daikin, LG, Panasonic), put it in brand; else empty.
 Return ONLY a JSON array, one object per row, including rows without serials:
-[{"no":"","model":"","serial":"","qty":"","desc":""}]
+[{"no":"","model":"","serial":"","qty":"","desc":"","brand":""}]
 """
 
 _RANGE_RE = re.compile(
@@ -310,7 +312,9 @@ def expand_serial_range(text: str) -> str:
     def _sub(m):
         pa, na, pb, nb = m.group(1), m.group(2), m.group(3), m.group(4)
         pb = pb or pa  # shorthand: 'AB12-15' means 'AB12 - AB15'
-        if pa != pb or len(na) != len(nb):
+        # A range with no letter prefix at all ('100-150') is a quantity
+        # span, not serial numbers — never expand it.
+        if not pa or pa != pb or len(na) != len(nb):
             return m.group(0)
         start, end = int(na), int(nb)
         if end < start or end - start > 500:
@@ -347,46 +351,72 @@ def _qty_int(qty: str):
 
 
 def parse_scan_json(raw: str) -> list[dict]:
-    """Pull the JSON array out of a model response (handles markdown fences)."""
+    """Pull the JSON array out of a model response (handles markdown fences,
+    prose containing stray brackets, and truncated replies)."""
     text = raw.strip()
     fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
     if fenced:
         text = fenced.group(1).strip()
-    start, end = text.find("["), text.rfind("]")
-    if start == -1 or end == -1:
-        raise ValueError("no JSON array found in response")
-    data = json.loads(text[start: end + 1])
-    if not isinstance(data, list):
-        raise ValueError("response is not a JSON array")
+    # A literal '[' can appear in prose before the real array — try
+    # raw_decode at each bracket position until a valid list parses.
+    data = None
+    decoder = json.JSONDecoder()
+    for m in re.finditer(r"\[", text):
+        try:
+            obj, _ = decoder.raw_decode(text, m.start())
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, list):
+            data = obj
+            break
+    if data is None:
+        tail = re.sub(r"\s+", " ", text[-120:]).strip()
+        raise ValueError("no complete JSON array found in response "
+                         "(reply may be truncated — tail: …" + tail + ")")
     rows = []
     for item in data:
         if not isinstance(item, dict):
             continue
-        model = str(item.get("model", "")).strip()
-        raw_serial = str(item.get("serial", "")).strip()
-        desc = str(item.get("desc", "")).strip()
-        no = str(item.get("no", "")).strip()
-        qty = str(item.get("qty", "")).strip()
+        # `or ""` — the model may emit real nulls; str(None) would inject
+        # the literal word "None" as a model name or description.
+        model = str(item.get("model") or "").strip()
+        raw_serial = str(item.get("serial") or "").strip()
+        desc = str(item.get("desc") or "").strip()
+        no = str(item.get("no") or "").strip()
+        qty = str(item.get("qty") or "").strip()
+        brand = str(item.get("brand") or "").strip()
         # keep rows that have a model OR serials — a model cut off from a
         # previous page still gets its serials, flagged for review
         if not (model or raw_serial or desc):
             continue
+        # Serials may arrive space/newline separated, not just comma —
+        # normalize unless a dash range is present (range syntax needs
+        # its surrounding spaces intact to resolve correctly).
+        if not (_RANGE_RE.search(raw_serial)
+                or _RANGE_SHORT_RE.search(raw_serial)):
+            raw_serial = ", ".join(t for t in re.split(r"[\s,]+", raw_serial)
+                                   if t)
         serial, flag = _resolve_serials(raw_serial, qty)
+        flags = [flag] if flag else []
         if not raw_serial:
-            flag = "no_serial"
+            flags.append("no_serial")
         if not model:
-            flag = flag or "no_model"
+            flags.append("no_model")
         serials = [s.strip().upper() for s in serial.split(",") if s.strip()]
         # description words the model placed in serial (no digits)
         # belong in desc, not the serial list
         real = [s for s in serials if any(c.isdigit() for c in s)]
         words = [s for s in serials if s not in real]
         if words:
-            extra = " ".join(words)
-            desc = f"{desc} {extra}".strip() if desc else extra
+            # Pure punctuation ('-', '—', '...') is noise, not description
+            real_words = [w for w in words
+                          if not re.fullmatch(r"[-–—.,;:/\\|_*]+", w)]
+            if real_words:
+                extra = " ".join(real_words)
+                desc = f"{desc} {extra}".strip() if desc else extra
             serials = real
             if not serials:
-                flag = "no_serial"
+                flags.append("no_serial")
         # A token that still looks like an unresolved range must never be
         # emitted as a unit ID — demote it to desc and flag for review.
         ranged = [s for s in serials if re.search(r"\d\s*[-–]\s*\d", s)]
@@ -394,35 +424,41 @@ def parse_scan_json(raw: str) -> list[dict]:
             extra = " ".join(ranged)
             desc = f"{desc} {extra}".strip() if desc else extra
             serials = [s for s in serials if s not in ranged]
-            flag = flag or "qty_mismatch"
+            if "qty_mismatch" not in flags:
+                flags.append("qty_mismatch")
             if not serials:
-                flag = "no_serial"
-        sev, warn = _flag_detail(flag, len(serials), qty)
+                flags.append("no_serial")
+        flag = "+".join(dict.fromkeys(flags))
+        sev, warn = _flag_detail(flags, len(serials), qty)
         rows.append({"no": no, "model": model.upper(), "qty": qty,
                      "serial": ", ".join(serials), "serials": serials,
-                     "desc": desc, "flag": flag or "",
+                     "desc": desc, "brand": brand, "flag": flag,
                      "sev": sev, "warn": warn})
     return rows
 
 
-def _flag_detail(flag: str, n_serials: int, qty: str) -> tuple:
-    """Map a flag code to (severity, human-readable message)."""
+def _flag_detail(flags, n_serials: int, qty: str) -> tuple:
+    """Map flag codes to (severity, human-readable message). A row can
+    carry several issues at once — severity is the worst of them."""
+    if isinstance(flags, str):
+        flags = [flags]
+    flags = list(dict.fromkeys(flags))
     parts, sev = [], ""
     q = _qty_int(qty)
-    if flag == "qty_mismatch":
+    if "qty_mismatch" in flags:
         parts.append(f"{n_serials} serials captured but Qty declares "
                      f"{q or '?'} — serials may be missing or merged from "
                      "another row")
         sev = "error"
-    elif flag == "qty_fixed":
+    if "qty_fixed" in flags:
         parts.append("dash separators were treated as separate serials "
                      f"to match the declared Qty {q or '?'} — please verify")
-        sev = "warn"
-    if flag == "no_serial":
+        sev = sev or "warn"
+    if "no_serial" in flags:
         parts.append("no serial number on this row — description captured "
                      "instead; still usable")
         sev = sev or "warn"
-    if flag == "no_model":
+    if "no_model" in flags:
         parts.append("no model name on this row — assign a model before "
                      "committing")
         sev = "error"
@@ -457,11 +493,18 @@ def _resolve_serials(raw_serial: str, qty: str) -> tuple:
 
 # ------------------------------------------------------------- providers
 def _retryable_http(err: Exception) -> bool:
-    s = str(err)
-    return any(t in s for t in ("500", "502", "503", "429",
-                                "Throttling", "quota", "Timeout",
-                                "overloaded", "UNAVAILABLE",
-                                "RESOURCE_EXHAUSTED"))
+    """Should this failure move on to the next configured key?
+
+    Includes auth errors (401/403) — a revoked or expired first key must
+    not kill the whole scan when a working second key exists."""
+    s = str(err).lower()
+    return any(t in s for t in (
+        "500", "502", "503", "429",
+        "400", "401", "403",
+        "throttling", "quota", "timeout", "timed out",
+        "overloaded", "unavailable", "resource_exhausted",
+        "unauthenticated", "permission_denied", "api key",
+        "api_key", "invalid_api_key"))
 
 
 def _scan_gemini(img_bytes: bytes, mime: str, cfg: dict, log) -> str:
@@ -572,6 +615,9 @@ def _scan_anthropic(img_bytes: bytes, mime: str, cfg: dict, log) -> str:
                      "Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=120) as r:
             body = json.loads(r.read().decode())
+        if body.get("stop_reason") == "max_tokens":
+            raise RuntimeError("Claude reply hit max_tokens — response "
+                               "truncated; retry or split the photo")
         return "".join(b.get("text", "") for b in body.get("content", []))
 
     import time

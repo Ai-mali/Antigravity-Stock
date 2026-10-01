@@ -7,12 +7,12 @@ owner over multiple sessions.
 ## 1. What this app is
 
 Daikin AC parts-list photo → AI vision scan → Excel-backed stock system.
-Flow: **Stock In (scan) → Available Stock → Stock Out → Track List →
+Flow: **Stock In (scan) → Available Stock → Stock Out → Sell Record →
 Return (RMA)**. Single-file HTML frontend + FastAPI backend; one process
 serves both at `http://localhost:8000`.
 
 - Repo: `github.com/Ai-mali/Antigravity-Stock`, work directly on `main`.
-- Owner runs: `D:\AI-Project\Stock New UI\Stock-App` on Windows, uses
+- Owner runs: `D:\AI-Project\Devin\Stock-App` on Windows, uses
   `git-pull.bat` + `run.bat` (both in repo).
 - **Deliver commits to `main` — the owner git-pulls and tests himself.**
 - Final packaging goal: a Python `.exe` (PyInstaller) — deferred to the
@@ -22,7 +22,7 @@ serves both at `http://localhost:8000`.
 
 | File | Role |
 |---|---|
-| `ac-stock-tracker.html` | The ENTIRE frontend: ~3700 lines, vanilla HTML/CSS/JS, no frameworks. All screens, modals, and logic live here. |
+| `ac-stock-tracker.html` | The ENTIRE frontend: ~13,400 lines, vanilla HTML/CSS/JS, no frameworks. All screens, modals, and logic live here. |
 | `backend.py` | FastAPI app: serves the HTML at `/` + `/ac-stock-tracker.html`, plus all `/api/*` endpoints. Auto-opens the browser. |
 | `scanner.py` | Vision engine: `PROVIDERS` dict (gemini/alibaba/openai/anthropic/deepseek), `PROMPT` sent to the vision model, `parse_scan_json`, per-provider scanners with **multi-key failover**, `list_models` (live model fetch with static fallback). |
 | `stock_store.py` | `StockStore` — openpyxl layer over `daikin_stock.xlsx`. Sheets: `MasterRecord` `Brand\|Model\|Serial\|Date In\|Status\|Customer\|Date Out` (one row per serial), `Brands`, `ModelBrands` (exact Model→Brand), `Returns` `Serial\|Model\|Customer\|Reason\|Condition\|Notes\|Action\|Date`, and `ActivityLog` `Timestamp\|Action\|Model\|Serials Count\|Details\|Status`. Automatic rotating backups in `backups/`, customer history ranking, and warranty tracking. |
@@ -114,14 +114,14 @@ desc, or no model, are skipped/blocked.
    - Stitch-styled autocomplete dropdown supporting keyboard navigation (↑/↓/Enter/Esc).
    - Quick-select "Recent Customers" chip bar for 1-click selection.
    - Dynamic tag indicating "Known Customer" vs "✦ New Customer".
-4. [DONE] **Low-stock alert (≤2 units per model)**:
+4. [DONE] **Low-stock alert (≤3 units per model)**:
    - Amber alert banner at the top of Available Stock highlighting low-stock models across all brands, with 1-click filter toggle (`⚡ View Low Stock Only`).
-   - Warning badge on model rows: `⚠️ Low Stock (N)` when ≤2 units, `Out of Stock (0)` when 0 units.
+   - Warning badge on model rows: `⚠️ Low Stock (N)` when ≤3 units, `Out of Stock (0)` when 0 units.
    - Warning badges also displayed in Stock Out view.
 5. [DONE] **Warranty tracking**:
    - Auto-computed from `Date Out` + duration (standard 12 months default).
-   - Track List displays `Active (Xd left)`, `Expiring Soon (Xd left)`, or `Expired` badges.
-   - Warranty filter pills in Track List (`All Warranty`, `🛡️ Active`, `⚠️ Expiring Soon`, `❌ Expired`) and CSV export inclusion.
+   - Sell Record displays `Active (Xd left)`, `Expiring Soon (Xd left)`, or `Expired` badges.
+   - Warranty filter pills in Sell Record (`All Warranty`, `🛡️ Active`, `⚠️ Expiring Soon`, `❌ Expired`) and CSV export inclusion.
    - Return (RMA) screen shows live warranty status banner for selected serial.
 6. [DONE] **Accidental Dispatch / Cancellation restock**:
    - Added `"Order Cancelled / Wrong Entry"` to Return (RMA) reasons.
@@ -152,7 +152,7 @@ desc, or no model, are skipped/blocked.
    - Clicking either the `[⚠️ DUPLICATE]` badge or any red duplicate serial chip opens the **Duplicate Serial Location** modal (`#duplicate-location-modal`).
    - The modal details exactly where the duplicate unit is located:
      - If **In Stock**: Shows Brand, Model, Date In, and provides a `"View in Available Stock →"` button that jumps directly to the unit and filters by brand.
-     - If **Sold**: Shows Brand, Model, Customer Name, and Date Out with a `"View in Track List →"` button that searches and highlights the sold record.
+     - If **Sold**: Shows Brand, Model, Customer Name, and Date Out with a `"View in Sell Record →"` button that searches and highlights the sold record.
      - If **Returned**: Shows RMA status, reason, customer, and return date with a `"View in Returns →"` button.
    - Added a direct Trash button (🗑️) in the row's Actions column right next to the Zoom button (🔍), enabling 1-click removal of duplicate or unwanted scan rows.
    - Automatic pre-check `markDuplicateScans()` flags known serials on scan extraction, manual addition, and data refresh.

@@ -10,6 +10,7 @@ it calls. Run:
 import asyncio
 import datetime
 import json
+import os
 import sys
 import threading
 import webbrowser
@@ -19,7 +20,8 @@ sys.path.insert(0, str(Path(__file__).parent))  # embeddable Python lacks script
 
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
 
 import scanner
 from stock_store import StockStore
@@ -42,7 +44,13 @@ _store_lock = asyncio.Lock()
 
 @app.middleware("http")
 async def _serialize_api(request, call_next):
+    # Local-only app: refuse /api/ calls whose Host isn't this machine so a
+    # web page on another origin (or DNS rebinding) can't drive the store.
     if request.url.path.startswith("/api/"):
+        host = (request.headers.get("host") or "").split(":")[0].lower()
+        if host not in ("localhost", "127.0.0.1", "::1"):
+            return JSONResponse({"ok": False, "error": "local access only"},
+                                status_code=403)
         async with _store_lock:
             return await call_next(request)
     return await call_next(request)
@@ -54,6 +62,11 @@ def _fresh():
     try:
         m = store.path.stat().st_mtime
     except FileNotFoundError:
+        # The file was deleted (or moved) while running — don't let the
+        # next save resurrect the stale in-memory copy over a fresh sheet.
+        if store.records or store.returns:
+            store.reinit_empty()
+        _mtime = 0
         return
     if m != _mtime:
         store.load()
@@ -95,8 +108,36 @@ def reload():
 def scan(file: UploadFile):
     logs: list[str] = []
     photo_name = ""
+    # Reject before anything is archived: a scan upload that isn't a sane
+    # image never touches delivery_orders/.
+    ext = (file.filename or "").rsplit(".", 1)[-1].lower()
+    is_image = ((file.content_type or "").startswith("image/")
+                or ext in ("jpg", "jpeg", "png", "webp", "bmp"))
+    if not is_image:
+        return JSONResponse({"ok": False, "log": logs,
+                             "error": "Only image files can be scanned"},
+                            status_code=200)
     try:
         img = file.file.read()
+    except Exception as ex:
+        return JSONResponse({"ok": False, "log": logs,
+                             "error": f"Upload read failed: {ex}"},
+                            status_code=200)
+    if not img or len(img) > 20 * 1024 * 1024:
+        return JSONResponse({"ok": False, "log": logs,
+                             "error": "Image is empty or over 20 MB"},
+                            status_code=200)
+    try:
+        providers = scanner.load_providers()
+        active = scanner.load_active(providers)
+        if not providers.get(active["provider"], {}).get("keys"):
+            label = scanner.PROVIDERS[active["provider"]]["label"]
+            return JSONResponse({"ok": False, "log": logs,
+                                 "error": f"No API key saved for {label} — open Scan Model and add one."},
+                                status_code=200)
+    except Exception:
+        pass  # config unreadable — let scan_image produce its own message
+    try:
         try:
             from stock_store import save_do_photo
             photo_name = save_do_photo(img, file.filename or "photo.jpg")
@@ -221,10 +262,11 @@ def download_backup(filename: str = ""):
 
 # ------------------------------------------------------------------ stock
 class StockInBody(BaseModel):
-    model: str
+    model: str = Field(min_length=1)
     serials: list[str]
     date_in: str
     brand: str = ""
+    auto_ids: bool = False  # ' #' unit IDs may auto-increment (non-serial rows)
 
 
 @app.post("/api/stock-in")
@@ -232,22 +274,49 @@ def stock_in(body: StockInBody):
     _fresh()
     if not body.model.strip():
         raise HTTPException(status_code=400, detail="model is required")
+    if not body.date_in.strip():
+        raise HTTPException(status_code=400, detail="date_in is required")
     serials = [s.strip().upper() for s in body.serials if s.strip()]
     if body.brand.strip():
         added, dupes = store.stock_in_with_brand(
-            body.model, serials, body.date_in, body.brand)
+            body.model, serials, body.date_in, body.brand,
+            auto_ids=body.auto_ids)
         needs_brand = False
     else:
         added, dupes, ok = store.stock_in(
-            body.model, serials, body.date_in)
+            body.model, serials, body.date_in, auto_ids=body.auto_ids)
         needs_brand = not ok
     _saved()
     return {"added": added, "dupes": dupes, "needs_brand": needs_brand}
 
 
-class AssignBrandBody(BaseModel):
+class StockInBatchRow(BaseModel):
     model: str
-    brand: str
+    serials: list[str]
+    brand: str = ""
+    auto_ids: bool = False
+
+
+class StockInBatchBody(BaseModel):
+    rows: list[StockInBatchRow] = Field(min_length=1, max_length=500)
+    date_in: str
+
+
+@app.post("/api/stock-in-batch")
+def stock_in_batch(body: StockInBatchBody):
+    """Commit a whole scan sheet in one write — one backup pair total."""
+    _fresh()
+    if not body.date_in.strip():
+        raise HTTPException(status_code=400, detail="date_in is required")
+    res = store.stock_in_batch(
+        [r.model_dump() for r in body.rows], body.date_in)
+    _saved()
+    return res
+
+
+class AssignBrandBody(BaseModel):
+    model: str = Field(min_length=1)
+    brand: str = Field(min_length=1)
 
 
 @app.post("/api/models/brand")
@@ -258,7 +327,7 @@ def assign_brand(body: AssignBrandBody):
 
 
 class DeleteBrandBody(BaseModel):
-    brand: str
+    brand: str = Field(min_length=1)
 
 
 @app.post("/api/brands/delete")
@@ -288,7 +357,7 @@ def revert_sale(body: RevertSaleBody):
 
 
 class StockOutBody(BaseModel):
-    serials: list[str]
+    serials: list[str] = Field(min_length=1)
     customer: str
     date_out: str
 
@@ -302,11 +371,11 @@ def stock_out(body: StockOutBody):
 
 
 class ReturnBody(BaseModel):
-    serial: str
+    serial: str = Field(min_length=1)
     reason: str = ""
     condition: str = ""
     notes: str = ""
-    action: str = "quarantine"  # 'restock' | 'quarantine'
+    action: Literal["restock", "quarantine"] = "quarantine"
 
 
 @app.post("/api/returns")
@@ -501,9 +570,17 @@ else:
 
 def _read_ui_prefs() -> dict:
     try:
-        return json.loads(UI_PREFS_PATH.read_text(encoding="utf-8"))
+        prefs = json.loads(UI_PREFS_PATH.read_text(encoding="utf-8"))
     except Exception:
         return {}
+    # Drop/clamp bad width values left by an earlier unvalidated write.
+    for k in list(prefs):
+        if k.endswith("W"):
+            try:
+                prefs[k] = max(60, min(900, int(prefs[k])))
+            except (TypeError, ValueError):
+                del prefs[k]
+    return prefs
 
 
 @app.get("/api/ui-prefs")
@@ -518,8 +595,19 @@ class UiPrefsBody(BaseModel):
 @app.post("/api/ui-prefs")
 def save_ui_prefs(body: UiPrefsBody):
     existing = _read_ui_prefs()
-    existing.update(body.prefs)
-    UI_PREFS_PATH.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    for k, v in body.prefs.items():
+        # *W keys are sidebar pixel widths — clamp to a sane range so a
+        # bad value can't stretch a sidebar across the whole window.
+        if k.endswith("W"):
+            try:
+                v = int(v)
+            except (TypeError, ValueError):
+                continue
+            v = max(60, min(900, v))
+        existing[k] = v
+    tmp = UI_PREFS_PATH.with_name("ui_prefs.tmp.json")
+    tmp.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    os.replace(tmp, UI_PREFS_PATH)
     return {"ok": True}
 
 

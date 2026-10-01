@@ -164,8 +164,8 @@ def save_do_photo(img_bytes: bytes, original_name: str = "do_scan.jpg") -> str:
 
 
 class StockStore:
-    def __init__(self, path: Path = DB_PATH):
-        self.path = Path(path)
+    def __init__(self, path: Path | None = None):
+        self.path = Path(path or DB_PATH)
         self.wb = None
         self.recs = self.brands_sheet = self.map_sheet = self.ret_sheet = None
         self.act_sheet = None
@@ -194,6 +194,7 @@ class StockStore:
 
         self.records, self.brands, self.model_to_brand = [], [], {}
         self.returns, self.activities, self._serial_set = [], [], set()
+        self._model_canon: dict[str, str] = {}   # UPPER(model) -> display case
         for idx, row in enumerate(
                 self.recs.iter_rows(min_row=2, values_only=True), start=2):
             if not row:
@@ -206,12 +207,16 @@ class StockStore:
             rec["_row"] = idx  # Excel row, so updates hit the right cells
             self.records.append(rec)
             self._serial_set.add(str(rec["Serial"]).strip().lower())
+            self._model_canon.setdefault(str(rec["Model"]).strip().upper(),
+                                         str(rec["Model"]).strip())
         for row in self.brands_sheet.iter_rows(min_row=2, values_only=True):
             if row and row[0] and row[0] not in self.brands:
                 self.brands.append(str(row[0]))
         for row in self.map_sheet.iter_rows(min_row=2, values_only=True):
             if row and row[0] and row[1]:
                 self.model_to_brand[str(row[0]).upper()] = str(row[1])
+                self._model_canon.setdefault(str(row[0]).strip().upper(),
+                                             str(row[0]).strip())
         for idx, row in enumerate(
                 self.ret_sheet.iter_rows(min_row=2, values_only=True), start=2):
             if not row or row[0] in (None, ""):
@@ -226,6 +231,12 @@ class StockStore:
             self.activities.append(dict(
                 zip(ACTIVITY_HEADER, ("" if v is None else v for v in row))))
         if self._schema_dirty:
+            # Migrated a legacy/older-schema file: keep the original on
+            # disk as a premigration snapshot before we overwrite it.
+            try:
+                self._backup("premigration")
+            except Exception:
+                pass
             self.save(backup=False)
 
     def _migrate_schema(self):
@@ -339,8 +350,22 @@ class StockStore:
         # Atomic write: build the file under a temp name, then swap it in so
         # no reader ever observes a half-written workbook.
         tmp = self.path.with_name(self.path.stem + ".tmp.xlsx")
-        self.wb.save(tmp)
-        os.replace(tmp, self.path)
+        try:
+            self.wb.save(tmp)
+            os.replace(tmp, self.path)
+        except Exception:
+            # Save failed (e.g. workbook open in Excel). Memory now differs
+            # from disk — reload so a later successful save can't persist
+            # the changes this failed write was supposed to contain.
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            try:
+                self.load()
+            except Exception:
+                pass
+            raise
         if backup:
             try:
                 self._backup("after")    # mirror: state including the change
@@ -358,6 +383,10 @@ class StockStore:
                      details: str = "", status: str = "OK"):
         """Record an action in the ActivityLog sheet and memory."""
         ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Excel cells cap at 32,767 chars — a huge serial list would break
+        # the file, so keep a margin and note what was cut.
+        if details and len(details) > 30000:
+            details = details[:30000] + " … (truncated)"
         entry = {"Timestamp": ts, "Action": action, "Model": model,
                  "Serials Count": count, "Details": details, "Status": status}
         self.activities.append(entry)
@@ -410,9 +439,24 @@ class StockStore:
 
     def restore_backup(self, filename: str) -> tuple[bool, str]:
         safe_name = Path(filename).name
+        # Only files this app wrote (or a premigration snapshot) are
+        # restorable — never copy an arbitrary extension into place.
+        if not re.fullmatch(r"daikin_stock_\d{8}_\d{6}(_(before|after|manual|premigration)(_\d+)?)?\.xlsx", safe_name):
+            return False, f"'{safe_name}' is not a backup snapshot"
         src = BACKUP_DIR / safe_name
         if not src.exists():
             return False, f"Backup file '{safe_name}' not found"
+        # Validate the candidate BEFORE touching the live workbook — a
+        # corrupt or non-workbook file must not overwrite good data.
+        try:
+            probe = load_workbook(src, read_only=True)
+            ok = "MasterRecord" in probe.sheetnames
+            probe.close()
+            if not ok:
+                return False, (f"'{safe_name}' has no MasterRecord sheet — "
+                               "not a stock workbook")
+        except Exception as e:
+            return False, f"Backup is not a readable workbook — restore aborted: {e}"
         try:
             self._backup("before")  # safety snapshot of current state before restoring
         except Exception as e:
@@ -569,41 +613,74 @@ class StockStore:
 
     # ---------------------------------------------------------- mutations
     def stock_in(self, model: str, serials: list[str],
-                 date_in: str):
+                 date_in: str, auto_ids: bool = False):
         """Shared save path for manual entry and scanned rows."""
         serials = [s.strip() for s in serials if s.strip()]
         if not model.strip() or not serials:
             return [], serials, True
-        dupes, new_serials = self._split_dupes(serials)
+        dupes, new_serials = self._split_dupes(serials, auto_ids)
         brand = self.brand_for(model)
         if not brand:
             return [], dupes, False
-        self._write_rows(model.strip(), brand,
+        self._write_rows(self._canon_model(model), brand,
                          new_serials, date_in)
         return new_serials, dupes, True
 
     def stock_in_with_brand(self, model: str, serials: list[str],
-                            date_in: str, brand: str):
+                            date_in: str, brand: str,
+                            auto_ids: bool = False):
         """Completes stock_in for a Model the user just assigned a Brand."""
-        brand = brand.strip()
+        brand = self._canon_brand(brand)
         if not brand:
             return [], serials
         self.assign_brand(model, brand)
         dupes, new_serials = self._split_dupes(
-            [s.strip() for s in serials if s.strip()])
-        self._write_rows(model.strip(), brand,
+            [s.strip() for s in serials if s.strip()], auto_ids)
+        self._write_rows(self._canon_model(model), brand,
                          new_serials, date_in)
         return new_serials, dupes
 
-    def _split_dupes(self, serials):
+    def _canon_brand(self, brand: str) -> str:
+        """Match an existing brand case-insensitively so 'daikin' and
+        'Daikin' can't fork into two groups; new names keep typed casing."""
+        name = brand.strip()
+        for b in self.brands:
+            if b.strip().lower() == name.lower():
+                return b
+        return name
+
+    def _canon_model(self, model: str) -> str:
+        """Reuse the stored display casing for a model ('ftkm35' and
+        'FTKM35' are the same SKU), else keep what was typed."""
+        name = model.strip()
+        return self._model_canon.get(name.upper(), name)
+
+    def reinit_empty(self):
+        """Reset to a fresh empty workbook in memory WITHOUT touching disk.
+        Used when the xlsx vanished — honors the deletion instead of
+        resurrecting stale rows on the next save."""
+        self.wb = Workbook()
+        self.wb.active.title = "MasterRecord"
+        self.recs = self._sheet("MasterRecord", RECORD_HEADER)
+        self.brands_sheet = self._sheet("Brands", ["Brand"])
+        self.map_sheet = self._sheet("ModelBrands", ["Model", "Brand"])
+        self.ret_sheet = self._sheet("Returns", RETURN_HEADER)
+        self.act_sheet = self._sheet("ActivityLog", ACTIVITY_HEADER)
+        self.records, self.brands, self.model_to_brand = [], [], {}
+        self.returns, self.activities, self._serial_set = [], [], set()
+        self._model_canon = {}
+        self._schema_dirty = False
+
+    def _split_dupes(self, serials, auto_ids: bool = False):
         """Known serials AND repeated serials inside the same batch are dupes.
-        However, non-serial synthetic unit IDs (containing ' #') automatically
-        increment to the next unique sequence number rather than being rejected as duplicates.
-        """
+        ' #' synthetic unit IDs auto-increment to the next free sequence
+        number — but ONLY for non-serial rows the caller flagged as
+        generated, so a real serial like 'SN #5001' can't be silently
+        renamed."""
         seen, dupes, new_serials = set(), [], []
         for raw_s in serials:
             s = str(raw_s).strip()
-            if " #" in s:
+            if auto_ids and " #" in s:
                 # Auto-increment synthetic non-serial part IDs until unique
                 prefix, num_str = s.rsplit(" #", 1)
                 try:
@@ -625,7 +702,8 @@ class StockStore:
             seen.add(s.lower())
         return dupes, new_serials
 
-    def _write_rows(self, model, brand, serials, date_in):
+    def _write_rows(self, model, brand, serials, date_in, save=True):
+        self._model_canon.setdefault(model.strip().upper(), model.strip())
         for s in serials:
             self.recs.append([brand, model, s, date_in,
                               IN_STOCK, "", ""])
@@ -638,7 +716,54 @@ class StockStore:
         if serials:
             self.log_activity("Stock In", model=model, count=len(serials),
                               details=f"Brand: {brand} | {len(serials)} units added | Serials: {', '.join(serials)}")
+            if save:
+                self.save(backup=True)
+
+    def stock_in_batch(self, rows: list[dict], date_in: str) -> dict:
+        """Commit many rows in ONE save — a 40-row scan produces one
+        before/after backup pair instead of flooding the rotation.
+
+        Two-phase: if any model has no mapped/provided brand, report
+        needs_brands WITHOUT mutating, so the caller can ask once and retry.
+        """
+        needs, plan = [], []
+        for pos, row in enumerate(rows):
+            model = str(row.get("model", "")).strip()
+            serials = [str(s).strip().upper()
+                       for s in row.get("serials", []) if str(s).strip()]
+            if not model or not serials:
+                continue
+            brand = str(row.get("brand", "")).strip() or self.brand_for(model)
+            idx = row.get("idx", pos)
+            if not brand:
+                needs.append(model)
+            else:
+                plan.append((idx, model, brand, serials,
+                             bool(row.get("auto_ids"))))
+        if needs:
+            return {"needs_brands": sorted(set(needs)), "results": []}
+        results = []
+        for idx, model, brand, serials, auto_ids in plan:
+            brand = self._canon_brand(brand)
+            key = model.upper()
+            # Register the mapping inline — assign_brand() would save()
+            # per row, defeating the single-save point of this method.
+            if self.model_to_brand.get(key) != brand:
+                self.model_to_brand[key] = brand
+                self.map_sheet.append([model, brand])
+            if brand not in self.brands:
+                self.brands.append(brand)
+                self.brands_sheet.append([brand])
+            dupes, new_serials = self._split_dupes(serials, auto_ids)
+            if new_serials:
+                self._write_rows(self._canon_model(model), brand,
+                                 new_serials, date_in, save=False)
+            results.append({"idx": idx, "model": model,
+                            "added": new_serials, "dupes": dupes,
+                            "brand": brand})
+        if results:
             self.save(backup=True)
+        return {"needs_brands": [], "results": results}
 
     def stock_out(self, serials: list[str], customer: str, date_out: str):
         """Mark units Sold with one Customer + Date Out for the whole cart.
@@ -733,6 +858,7 @@ class StockStore:
         row = rec["_row"]
         rec["Batch"] = ""
         self.recs.cell(row=row, column=8, value="")
+        prev_customer = str(rec["Customer"] or "")
         if action == "restock":
             rec["Status"] = IN_STOCK
             rec["Customer"] = ""
@@ -745,7 +871,7 @@ class StockStore:
             rec["Status"] = QUARANTINED
             self.recs.cell(row=row, column=5, value=QUARANTINED)
         self.log_activity("Return", model=str(rec["Model"]), count=1,
-                          details=f"Serial: {rec['Serial']} | Customer: {rec['Customer']} | Reason: {reason} | Action: {action_label}")
+                          details=f"Serial: {rec['Serial']} | Customer: {prev_customer} | Reason: {reason} | Action: {action_label}")
         self.save(backup=True)
         return rec, None
 
@@ -758,7 +884,27 @@ class StockStore:
                     if str(r["Serial"]).strip().lower() == key
                     and str(r["Status"]).strip() == QUARANTINED), None)
         if rec is None:
-            return None, "No quarantined unit found for serial " + serial
+            # Orphan registry row (e.g. legacy/migrated data): a Returns
+            # entry marked Quarantined whose unit no longer exists. Closing
+            # it keeps the registry resolvable instead of stuck forever.
+            orphan = next((r for r in reversed(self.returns)
+                           if str(r["Serial"]).strip().lower() == key
+                           and str(r.get("Action", "")).strip() == "Quarantined"),
+                          None)
+            if orphan is None:
+                return None, "No quarantined unit found for serial " + serial
+            orphan["Action"] = "Closed"
+            stamp = f"Registry closed {date} — no matching unit on record"
+            orphan["Notes"] = (str(orphan.get("Notes", "")).strip()
+                               + " | " + stamp).strip(" |")
+            o_row = orphan.get("_row") or (self.returns.index(orphan) + 2)
+            self.ret_sheet.cell(row=o_row, column=6, value=str(orphan["Notes"]))
+            self.ret_sheet.cell(row=o_row, column=7, value="Closed")
+            self.log_activity("Return Closed", model=str(orphan.get("Model", "")),
+                              count=1,
+                              details=f"Serial: {orphan.get('Serial')} | orphan quarantine entry closed")
+            self.save(backup=True)
+            return orphan, None
         row = rec["_row"]
         rec["Status"] = IN_STOCK
         rec["Customer"] = ""
@@ -780,6 +926,23 @@ class StockStore:
             ret_row = ret.get("_row") or (self.returns.index(ret) + 2)
             self.ret_sheet.cell(row=ret_row, column=6, value=str(ret["Notes"]))
             self.ret_sheet.cell(row=ret_row, column=7, value="Restocked")
+        else:
+            # Unit quarantined before the Returns registry tracked it
+            # (legacy/migrated rows) — append the entry so the release is
+            # auditable and the unit keeps its second-hand tag.
+            date_out = str(rec.get("Date Out", "")).strip()
+            self.ret_sheet.append([str(rec["Serial"]), str(rec["Model"]),
+                                   str(rec.get("Customer") or ""),
+                                   "Quarantined (legacy)", "",
+                                   f"Released from quarantine {date}",
+                                   "Restocked", date, date_out])
+            self.returns.append({
+                "Serial": str(rec["Serial"]), "Model": str(rec["Model"]),
+                "Customer": str(rec.get("Customer") or ""),
+                "Reason": "Quarantined (legacy)", "Condition": "",
+                "Notes": f"Released from quarantine {date}",
+                "Action": "Restocked", "Date": date, "Date Out": date_out,
+                "_row": self.ret_sheet.max_row})
         self.log_activity("Quarantine Released", model=str(rec["Model"]), count=1,
                           details=f"Serial: {rec['Serial']} | back to stock {date}")
         self.save(backup=True)
@@ -862,10 +1025,12 @@ class StockStore:
     # ---------------------------------------------------------- brands
     def assign_brand(self, model: str, brand: str):
         """Remember Model -> Brand permanently (exact full string match)."""
+        brand = self._canon_brand(brand)
         if brand not in self.brands:
             self.brands.append(brand)
             self.brands_sheet.append([brand])
         key = model.strip().upper()
+        self._model_canon.setdefault(key, model.strip())
         if self.model_to_brand.get(key) != brand:
             self.model_to_brand[key] = brand
             self.map_sheet.append([model.strip(), brand])
@@ -874,7 +1039,7 @@ class StockStore:
         self.save(backup=True)
 
     def add_brand(self, brand: str) -> bool:
-        brand = brand.strip()
+        brand = self._canon_brand(brand)
         if not brand or brand in self.brands:
             return False
         self.brands.append(brand)
