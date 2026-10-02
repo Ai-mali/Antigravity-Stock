@@ -7967,20 +7967,27 @@ function openReadySerialModal(rowIdx, serial) {
   if (serialEl) serialEl.textContent = serial;
 
   const sel = document.getElementById('ready-modal-brand-select');
-  if (sel) {
-    sel.innerHTML = DB.brands.length
-      ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
-      : '<option value="">— no brands yet —</option>';
-    
-    // Auto-select existing brand if model is already mapped
-    const existingBrand = (DB.modelBrands && DB.modelBrands[row.model]) || '';
-    if (existingBrand && DB.brands.includes(existingBrand)) {
-      sel.value = existingBrand;
-    }
-  }
-
   const inp = document.getElementById('ready-modal-brand-new');
-  if (inp) inp.value = '';
+  // Only preselect a brand we actually know: the model's saved mapping
+  // first, then the brand the scanner read off the document — never
+  // just the dropdown's first option.
+  const existingBrand = (DB.modelBrands && DB.modelBrands[row.model]) || '';
+  const hint = (row.brand || '').trim();
+  const hintMatch = hint
+    ? DB.brands.find(b => b.toUpperCase() === hint.toUpperCase())
+    : null;
+  const preselect = DB.brands.includes(existingBrand)
+    ? existingBrand : (hintMatch || '');
+  if (sel) {
+    sel.innerHTML =
+      '<option value="" disabled hidden>Click to select the existing brand</option>' +
+      (DB.brands.length
+        ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
+        : '<option value="">— no brands yet —</option>');
+    sel.value = preselect;
+  }
+  // A scanned brand that isn't in the list → prefill the create-new field
+  if (inp) inp.value = (!preselect && hint) ? hint.toUpperCase() : '';
 
   updateReadyModalBrandLiveDisplay();
 
