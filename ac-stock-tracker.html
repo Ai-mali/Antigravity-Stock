@@ -9623,10 +9623,10 @@ function renderAvailable(searchTerm) {
     if (!_availSavedExpandState) {
       _availSavedExpandState = { brands: {}, models: {} };
       for (const bKey in DB.inventory) {
-        _availSavedExpandState.brands[bKey] = DB.inventory[bKey].open !== false;
+        _availSavedExpandState.brands[bKey] = DB.inventory[bKey].open === true;
         _availSavedExpandState.models[bKey] = {};
         for (const mKey in DB.inventory[bKey].models) {
-          _availSavedExpandState.models[bKey][mKey] = DB.inventory[bKey].models[mKey].open !== false;
+          _availSavedExpandState.models[bKey][mKey] = DB.inventory[bKey].models[mKey].open === true;
         }
       }
     }
@@ -9776,7 +9776,7 @@ function renderAvailable(searchTerm) {
       // If searching, auto-expand unless user manually toggled it during this search
       const isModelOpen = hasFilter 
         ? (mData.searchOpen !== undefined ? mData.searchOpen : true)
-        : (mData.open !== false);
+        : (mData.open === true);
 
       const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
       modelsHtml += `
@@ -9803,7 +9803,7 @@ function renderAvailable(searchTerm) {
     // If searching, auto-expand matching brand unless user manually toggled it during this search
     const isBrandOpen = hasFilter 
       ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
-      : (bData.open !== false);
+      : (bData.open === true);
 
     const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
@@ -10060,7 +10060,7 @@ function toggleBrandAcc(brand) {
       const current = DB.inventory[brand].searchOpen !== undefined ? DB.inventory[brand].searchOpen : true;
       DB.inventory[brand].searchOpen = !current;
     } else {
-      DB.inventory[brand].open = (DB.inventory[brand].open === false) ? true : false;
+      DB.inventory[brand].open = !DB.inventory[brand].open;
     }
     renderAvailable();
   }
@@ -10075,7 +10075,7 @@ function toggleModelAcc(brand, model) {
       const current = mObj.searchOpen !== undefined ? mObj.searchOpen : true;
       mObj.searchOpen = !current;
     } else {
-      mObj.open = (mObj.open === false) ? true : false;
+      mObj.open = !mObj.open;
     }
     renderAvailable();
   }
@@ -10283,10 +10283,10 @@ function renderStockOut(searchTerm) {
     if (!_soSavedExpandState) {
       _soSavedExpandState = { brands: {}, models: {} };
       for (const bKey in DB.inventory) {
-        _soSavedExpandState.brands[bKey] = DB.inventory[bKey].open !== false;
+        _soSavedExpandState.brands[bKey] = DB.inventory[bKey].open === true;
         _soSavedExpandState.models[bKey] = {};
         for (const mKey in DB.inventory[bKey].models) {
-          _soSavedExpandState.models[bKey][mKey] = DB.inventory[bKey].models[mKey].open !== false;
+          _soSavedExpandState.models[bKey][mKey] = DB.inventory[bKey].models[mKey].open === true;
         }
       }
     }
@@ -10379,7 +10379,7 @@ function renderStockOut(searchTerm) {
 
       const isModelOpen = hasFilter 
         ? (mData.soSearchOpen !== undefined ? mData.soSearchOpen : true)
-        : (mData.open !== false);
+        : (mData.open === true);
 
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
@@ -10409,7 +10409,7 @@ function renderStockOut(searchTerm) {
 
     const isBrandOpen = hasFilter 
       ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
-      : (bData.open !== false);
+      : (bData.open === true);
 
     const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
@@ -10459,7 +10459,7 @@ function toggleSOBrandAcc(brand) {
       const current = DB.inventory[brand].soSearchOpen !== undefined ? DB.inventory[brand].soSearchOpen : true;
       DB.inventory[brand].soSearchOpen = !current;
     } else {
-      DB.inventory[brand].open = (DB.inventory[brand].open === false) ? true : false;
+      DB.inventory[brand].open = !DB.inventory[brand].open;
     }
     renderStockOut();
   }
@@ -10474,7 +10474,7 @@ function toggleSOModelAcc(brand, model) {
       const current = mObj.soSearchOpen !== undefined ? mObj.soSearchOpen : true;
       mObj.soSearchOpen = !current;
     } else {
-      mObj.open = (mObj.open === false) ? true : false;
+      mObj.open = !mObj.open;
     }
     renderStockOut();
   }
