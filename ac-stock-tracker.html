@@ -9732,6 +9732,7 @@ function renderAvailable(searchTerm) {
       ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
       : (bData.open !== false);
 
+    const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
     brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
     brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
@@ -9741,7 +9742,8 @@ function renderAvailable(searchTerm) {
           <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${escapeHtml(brandKey)}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
-          <span class="badge badge-glow">${brandUnits} Units Total</span>
+          <span class="badge badge-glow">${brandModels} ${brandModels === 1 ? 'Model' : 'Models'} / ${brandUnits} ${brandUnits === 1 ? 'Unit' : 'Units'}</span>
+          <span class="badge badge-glow" style="margin-left:6px;">Total</span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
@@ -10330,6 +10332,7 @@ function renderStockOut(searchTerm) {
       ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
       : (bData.open !== false);
 
+    const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
     brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
     brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
@@ -10339,7 +10342,8 @@ function renderStockOut(searchTerm) {
           <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${escapeHtml(brandKey)}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
-          <span class="badge badge-glow">${brandUnits} Units Total</span>
+          <span class="badge badge-glow">${brandModels} ${brandModels === 1 ? 'Model' : 'Models'} / ${brandUnits} ${brandUnits === 1 ? 'Unit' : 'Units'}</span>
+          <span class="badge badge-glow" style="margin-left:6px;">Total</span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
