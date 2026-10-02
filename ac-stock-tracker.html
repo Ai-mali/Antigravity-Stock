@@ -2508,6 +2508,79 @@ body.theme-light .model-accordion-header {
   flex-shrink: 0;
 }
 
+/* Brand header metric pill — "dot · N Models / M Units | Total" in the
+   brand's accent color (layout follows the Stitch top-bar design) */
+.brand-metrics-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-c) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 40%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--brand-c) 15%, transparent);
+  font-family: 'JetBrains Mono', monospace;
+}
+.bmp-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+.bmp-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--brand-c);
+  opacity: 0.6;
+  animation: actPing 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.bmp-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--brand-c);
+  box-shadow: 0 0 6px var(--brand-c);
+}
+.bmp-seg { display: flex; align-items: baseline; gap: 5px; }
+.bmp-num {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--brand-c);
+}
+.bmp-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--brand-c) 75%, var(--text-sub, #64748b));
+}
+.bmp-slash {
+  color: var(--text-sub, #64748b);
+  font-size: 11px;
+  opacity: 0.55;
+}
+.bmp-divider {
+  width: 1px;
+  height: 12px;
+  background: color-mix(in srgb, var(--brand-c) 25%, transparent);
+  flex-shrink: 0;
+}
+.bmp-total {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-c);
+  background: color-mix(in srgb, var(--brand-c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 30%, transparent);
+}
+
 .model-cards-grid-4, .model-cards-grid-3 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -9742,8 +9815,14 @@ function renderAvailable(searchTerm) {
           <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${escapeHtml(brandKey)}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
-          <span class="badge badge-glow">${brandModels} ${brandModels === 1 ? 'Model' : 'Models'} / ${brandUnits} ${brandUnits === 1 ? 'Unit' : 'Units'}</span>
-          <span class="badge badge-glow" style="margin-left:6px;">Total</span>
+          <span class="brand-metrics-pill">
+            <span class="bmp-dot"></span>
+            <span class="bmp-seg"><span class="bmp-num">${brandModels}</span><span class="bmp-label">${brandModels === 1 ? 'Model' : 'Models'}</span></span>
+            <span class="bmp-slash">/</span>
+            <span class="bmp-seg"><span class="bmp-num">${brandUnits}</span><span class="bmp-label">${brandUnits === 1 ? 'Unit' : 'Units'}</span></span>
+            <span class="bmp-divider"></span>
+            <span class="bmp-total">Total</span>
+          </span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
@@ -10342,8 +10421,14 @@ function renderStockOut(searchTerm) {
           <span class="brand-color-dot"></span>
           <span class="brand-name-tag" style="font-size:13px;">${escapeHtml(brandKey)}</span>
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
-          <span class="badge badge-glow">${brandModels} ${brandModels === 1 ? 'Model' : 'Models'} / ${brandUnits} ${brandUnits === 1 ? 'Unit' : 'Units'}</span>
-          <span class="badge badge-glow" style="margin-left:6px;">Total</span>
+          <span class="brand-metrics-pill">
+            <span class="bmp-dot"></span>
+            <span class="bmp-seg"><span class="bmp-num">${brandModels}</span><span class="bmp-label">${brandModels === 1 ? 'Model' : 'Models'}</span></span>
+            <span class="bmp-slash">/</span>
+            <span class="bmp-seg"><span class="bmp-num">${brandUnits}</span><span class="bmp-label">${brandUnits === 1 ? 'Unit' : 'Units'}</span></span>
+            <span class="bmp-divider"></span>
+            <span class="bmp-total">Total</span>
+          </span>
         </div>
         <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
       </div>
