@@ -414,7 +414,8 @@ class UpdateUnitBody(BaseModel):
 
 
 class DeleteUnitBody(BaseModel):
-    serial: str
+    serial: str = ""
+    serials: list[str] = []  # bulk path: one save for the whole selection
 
 
 @app.post("/api/inventory/update")
@@ -441,6 +442,10 @@ def update_inventory_unit(body: UpdateUnitBody):
 @app.post("/api/inventory/delete")
 def delete_inventory_unit(body: DeleteUnitBody):
     _fresh()
+    if body.serials:
+        deleted, missing = store.delete_units(body.serials)
+        _saved()
+        return {"ok": True, "deleted": deleted, "missing": missing}
     ok, err = store.delete_unit(body.serial)
     if not ok:
         return JSONResponse({"ok": False, "error": err}, status_code=400)

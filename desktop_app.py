@@ -801,6 +801,9 @@ def main():
     api.set_window(window)
 
     def on_started(w):
+        # The real window is already showing its identical HTML splash —
+        # hand off to it NOW so the two splashes never overlap on screen.
+        splash.close()
         # Runs on a pywebview worker thread: wait for the backend, then swap
         # the splash for the real app.
         for _ in range(300):  # up to 30s for slow machines
@@ -811,7 +814,6 @@ def main():
             w.load_url(APP_URL)
         except Exception:
             pass
-        splash.close()  # hand off — the webview's identical splash is beneath
         time.sleep(0.4)
         api.enable_window_features()
 

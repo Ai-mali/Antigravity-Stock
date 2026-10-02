@@ -1022,6 +1022,37 @@ class StockStore:
         self.save(backup=True)
         return True, ""
 
+    def delete_units(self, serials: list[str]) -> tuple[list[str], list[str]]:
+        """Delete many In-Stock units in ONE save — marquee bulk-delete.
+        Returns (deleted, missing): serials not In Stock are reported,
+        never silently ignored. One backup pair + one activity entry."""
+        wanted = {str(s).strip().lower() for s in serials if str(s).strip()}
+        targets = [r for r in self.records
+                   if str(r.get("Serial", "")).strip().lower() in wanted
+                   and str(r.get("Status", "")).strip() == IN_STOCK]
+        missing = [s for s in serials
+                   if str(s).strip().lower() not in
+                   {str(r["Serial"]).strip().lower() for r in targets}]
+        if not targets:
+            return [], missing
+        # Sheet rows die highest-first so earlier _row values stay valid
+        for r in sorted(targets, key=lambda x: x.get("_row", 0),
+                        reverse=True):
+            self.recs.delete_rows(r["_row"], 1)
+            self._serial_set.discard(str(r["Serial"]).strip().lower())
+        gone = {id(r) for r in targets}
+        self.records = [r for r in self.records if id(r) not in gone]
+        # records order mirrors sheet order — renumber rows wholesale
+        for i, r in enumerate(self.records, start=2):
+            r["_row"] = i
+        models = sorted({str(r.get("Model", "")) for r in targets})
+        deleted = [str(r["Serial"]) for r in targets]
+        self.log_activity("Units Deleted", model=", ".join(models[:6]),
+                          count=len(deleted),
+                          details=f"{len(deleted)} units deleted | Serials: {', '.join(deleted)}")
+        self.save(backup=True)
+        return deleted, missing
+
     # ---------------------------------------------------------- brands
     def assign_brand(self, model: str, brand: str):
         """Remember Model -> Brand permanently (exact full string match)."""

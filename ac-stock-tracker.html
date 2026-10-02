@@ -2569,6 +2569,53 @@ body.theme-light .model-accordion-header {
   transform: scaleY(1);
 }
 
+/* Marquee drag-select (click-hold-drag, then Del to bulk delete) */
+.avail-unit-card.avail-sel {
+  border-color: var(--green-bright) !important;
+  background: rgba(38, 208, 124, 0.14) !important;
+  box-shadow: 0 0 0 2px var(--green-bright), 0 0 16px rgba(38, 208, 124, 0.35) !important;
+}
+#marquee-box {
+  position: fixed;
+  border: 1px dashed var(--green-bright);
+  background: rgba(38, 208, 124, 0.12);
+  border-radius: 4px;
+  z-index: 9999;
+  pointer-events: none;
+}
+body.avail-marquee-active, body.avail-marquee-active * {
+  user-select: none !important;
+  cursor: crosshair !important;
+}
+#avail-sel-bar {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 16px;
+  background: rgba(15, 23, 28, 0.96);
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 14px rgba(38, 208, 124, 0.25);
+  font-size: 12.5px;
+  z-index: 9998;
+}
+#avail-sel-bar .avail-sel-count {
+  color: var(--green-bright);
+  font-weight: 700;
+}
+#avail-sel-bar kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface2);
+  font-family: inherit;
+  font-size: 11px;
+}
+
 .so-serial-card.so-highlighted {
   border-color: var(--green-bright) !important;
   box-shadow: 0 0 18px rgba(38, 208, 124, 0.55), inset 0 0 8px rgba(38, 208, 124, 0.18) !important;
@@ -7050,6 +7097,7 @@ const DB = {
   scans: [],        // filled by POST /api/scan or the manual + button
   modelBrands: {},  // model -> brand map (manual entry / ready-serial autofill)
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
+  availSel: new Set(), // marquee-selected serials awaiting bulk delete
   stagedCart: [],   // client-side staging; POST /api/stock-out on checkout
   trackList: [],    // GET /api/track       (sold units)
   returns: [],      // GET /api/returns
@@ -7117,6 +7165,7 @@ async function refreshData() {
   applySidebarWidth('so-sidebar', DB.soSidebarW);
   applySidebarWidth('avail-sidebar', DB.availSidebarW);
   applySidebarWidth('tl-sidebar', DB.trackSidebarW);
+  pruneAvailSelection();
   renderBrandPills();
   markDuplicateScans();
   renderAll();
@@ -7323,6 +7372,7 @@ function switchTab(tab) {
 
   updateGlobalBadges();
   updateStickyHeaderOffsets();
+  updateAvailSelBar();
 }
 
 /* =========================================================
@@ -9480,7 +9530,7 @@ function renderAvailable(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
+          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" data-serial="${escapeHtml(s)}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="avail-card-header">
@@ -9628,6 +9678,8 @@ function renderAvailable(searchTerm) {
   applyAvailSidebarMini();
   applyFiltersBarState('avail');
   updateStickyHeaderOffsets();
+  applyAvailSelClasses();
+  updateAvailSelBar();
 }
 
 /* Brand sidebar — same logic as Stock Out, driving DB.availFilter */
@@ -12480,6 +12532,142 @@ async function executeConfirmDelete() {
   }
 }
 
+/* ---- Available Stock: marquee drag-select + bulk delete ----
+   Click-hold-drag draws a selection box over serial cards; Del deletes
+   the selection after a confirm; Ctrl+A selects every visible card;
+   Esc clears. Ctrl/Shift held at drag-start ADDS to the selection. */
+let _marquee = null;      // {x0, y0, base:Set|null, box:div|null}
+let _marqueeDragged = false;
+
+function applyAvailSelClasses() {
+  const sel = DB.availSel;
+  document.querySelectorAll('#avail-accordion-container .avail-unit-card')
+    .forEach(c => c.classList.toggle('avail-sel', sel.has(c.dataset.serial)));
+}
+
+function updateAvailSelBar() {
+  let bar = document.getElementById('avail-sel-bar');
+  const n = DB.availSel.size;
+  if (!n || DB.activeTab !== 'available') {
+    if (bar) bar.remove();
+    return;
+  }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'avail-sel-bar';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML = `<span class="avail-sel-count">${n} selected</span>` +
+    `<span><kbd>Del</kbd> delete &nbsp;<kbd>Esc</kbd> clear &nbsp;<kbd>Ctrl+A</kbd> all</span>`;
+}
+
+function clearAvailSelection() {
+  if (!DB.availSel.size) return;
+  DB.availSel.clear();
+  applyAvailSelClasses();
+  updateAvailSelBar();
+}
+
+/* Drop selected serials that left stock — e.g. after a refresh or a
+   partial delete — so a stale pick can't pretend to still exist. */
+function pruneAvailSelection() {
+  const alive = new Set();
+  Object.values(DB.inventory || {}).forEach(b =>
+    Object.values(b.models || {}).forEach(m =>
+      (m.serials || []).forEach(s => alive.add(s))));
+  let changed = false;
+  [...DB.availSel].forEach(s => {
+    if (!alive.has(s)) { DB.availSel.delete(s); changed = true; }
+  });
+  if (changed) { applyAvailSelClasses(); updateAvailSelBar(); }
+}
+
+document.addEventListener('mousedown', e => {
+  if (e.button !== 0 || DB.activeTab !== 'available') return;
+  const cont = document.getElementById('avail-accordion-container');
+  if (!cont || !cont.contains(e.target)) return;
+  // Interactive bits keep their own behavior — no marquee from them
+  if (e.target.closest('button, a, input, textarea, select, [contenteditable], .unit-action-btn, .tl-copy, .rma-2nd')) return;
+  _marquee = { x0: e.clientX, y0: e.clientY,
+               base: (e.ctrlKey || e.shiftKey) ? new Set(DB.availSel) : null,
+               box: null };
+});
+
+document.addEventListener('mousemove', e => {
+  if (!_marquee) return;
+  if (!_marquee.box) {
+    if (Math.abs(e.clientX - _marquee.x0) + Math.abs(e.clientY - _marquee.y0) < 6) return;
+    _marqueeDragged = true;
+    _marquee.box = document.createElement('div');
+    _marquee.box.id = 'marquee-box';
+    document.body.appendChild(_marquee.box);
+    document.body.classList.add('avail-marquee-active');
+  }
+  const x1 = Math.min(_marquee.x0, e.clientX), y1 = Math.min(_marquee.y0, e.clientY);
+  const x2 = Math.max(_marquee.x0, e.clientX), y2 = Math.max(_marquee.y0, e.clientY);
+  Object.assign(_marquee.box.style, {
+    left: x1 + 'px', top: y1 + 'px',
+    width: (x2 - x1) + 'px', height: (y2 - y1) + 'px'
+  });
+  const hit = _marquee.base ? new Set(_marquee.base) : new Set();
+  document.querySelectorAll('#avail-accordion-container .avail-unit-card')
+    .forEach(c => {
+      const r = c.getBoundingClientRect();
+      if (r.left < x2 && r.right > x1 && r.top < y2 && r.bottom > y1)
+        hit.add(c.dataset.serial);
+    });
+  DB.availSel = hit;
+  applyAvailSelClasses();
+});
+
+document.addEventListener('mouseup', () => {
+  if (!_marquee) return;
+  if (_marquee.box) {
+    _marquee.box.remove();
+    document.body.classList.remove('avail-marquee-active');
+  }
+  _marquee = null;
+  updateAvailSelBar();
+});
+
+/* Swallow the click that follows a drag so it doesn't copy a serial. */
+document.addEventListener('click', e => {
+  if (_marqueeDragged) {
+    _marqueeDragged = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}, true);
+
+async function confirmDeleteSelected() {
+  const serials = [...DB.availSel];
+  if (!serials.length) return;
+  const shown = serials.slice(0, 40).map(s => escapeHtml(s)).join(', ');
+  const more = serials.length > 40 ? ` … +${serials.length - 40} more` : '';
+  const ok = await appConfirm({
+    title: 'Delete Selected Units',
+    sub: 'This permanently removes them from the workbook',
+    message: `<div style="margin-bottom:8px;">Delete <strong>${serials.length}</strong> unit(s) from Available Stock?</div>` +
+             `<div class="mono" style="max-height:140px; overflow:auto; font-size:11.5px; color:var(--text-muted); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">${shown}${escapeHtml(more)}</div>`,
+    okText: 'Sure, Delete'
+  });
+  if (!ok) return;
+  try {
+    const res = await apiPost('/api/inventory/delete', { serials });
+    const gone = new Set(res.deleted || []);
+    if (DB.stagedCart.length)
+      DB.stagedCart = DB.stagedCart.filter(i => !gone.has(i.serial));
+    serials.forEach(s => DB.availSel.delete(s));
+    await refreshData();
+    updateAvailSelBar();
+    const missed = (res.missing && res.missing.length)
+      ? ` — ${res.missing.length} already gone` : '';
+    showToast(`Deleted ${gone.size} unit(s)${missed}.`);
+  } catch (e) {
+    showToast('Delete failed: ' + e.message, '&#9888;');
+  }
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -13026,7 +13214,27 @@ document.addEventListener('keydown', e => {
     if (s) { s.focus(); s.select(); }
     return;
   }
+  // Available Stock bulk-select shortcuts — never while typing in a field
+  const typing = e.target && e.target.closest
+    && e.target.closest('input, textarea, select, [contenteditable]');
+  const modalOpen = !!document.querySelector('.modal-overlay.open');
+  if (!typing && !modalOpen && DB.activeTab === 'available') {
+    if (e.key === 'Delete' && DB.availSel.size) {
+      e.preventDefault();
+      confirmDeleteSelected();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      document.querySelectorAll('#avail-accordion-container .avail-unit-card')
+        .forEach(c => DB.availSel.add(c.dataset.serial));
+      applyAvailSelClasses();
+      updateAvailSelBar();
+      return;
+    }
+  }
   if (e.key === 'Escape') {
+    clearAvailSelection();
     closeConfigModal();
     closeManualStockInModal();
     closeEditScanModal();
