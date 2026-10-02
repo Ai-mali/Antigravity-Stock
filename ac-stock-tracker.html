@@ -1504,27 +1504,57 @@ body.no-select-drag {
 }
 
 #scan-results-tbody tr.scan-row-selected {
-  background: rgba(10, 245, 229, 0.10) !important;
+  background: rgba(10, 245, 229, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(10, 245, 229, 0.35), inset 0 -1px 0 rgba(10, 245, 229, 0.35),
+              inset 0 0 24px rgba(10, 245, 229, 0.10);
 }
 
 #scan-results-tbody tr.scan-row-selected td:first-child {
-  border-left: 3px solid #0af5e5;
+  border-left: 3.5px solid #0af5e5 !important;
+  box-shadow: inset 8px 0 14px -10px #0af5e5;
 }
 
 #scan-results-tbody tr.scan-row-selected:hover {
-  background: rgba(10, 245, 229, 0.16) !important;
+  background: rgba(10, 245, 229, 0.22) !important;
+}
+
+/* Selected row: serial chips + model name glow cyan so the pick is
+   unmistakable even at a glance */
+#scan-results-tbody tr.scan-row-selected .scan-serial-badge {
+  border-color: rgba(10, 245, 229, 0.75) !important;
+  color: #0af5e5 !important;
+  background: rgba(10, 245, 229, 0.12) !important;
+  box-shadow: 0 0 8px rgba(10, 245, 229, 0.30);
+}
+#scan-results-tbody tr.scan-row-selected .scan-serial-badge-dupe {
+  border-color: rgba(239, 68, 68, 0.8) !important;
+  color: #fca5a5 !important;
+  background: rgba(239, 68, 68, 0.14) !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.30);
+}
+#scan-results-tbody tr.scan-row-selected .scan-model-text,
+#scan-results-tbody tr.scan-row-selected td:nth-child(2) {
+  color: #7dfff0 !important;
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-selected {
-  background: rgba(8, 145, 178, 0.11) !important;
+  background: rgba(8, 145, 178, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(8, 145, 178, 0.3), inset 0 -1px 0 rgba(8, 145, 178, 0.3);
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-selected td:first-child {
-  border-left: 3px solid #0891b2;
+  border-left: 3.5px solid #0891b2 !important;
 }
 
 body.theme-light #scan-results-tbody tr.scan-row-selected:hover {
-  background: rgba(8, 145, 178, 0.17) !important;
+  background: rgba(8, 145, 178, 0.20) !important;
+}
+
+body.theme-light #scan-results-tbody tr.scan-row-selected .scan-serial-badge {
+  border-color: rgba(8, 145, 178, 0.7) !important;
+  color: #0e7490 !important;
+  background: rgba(8, 145, 178, 0.10) !important;
+  box-shadow: none;
 }
 
 /* Traffic Light: Good / Ready Row (Green) */
