@@ -12512,10 +12512,20 @@ function openEditUnitModal(serial, model, brand, dateIn) {
   document.getElementById('edit-unit-serial').value = serial || '';
   document.getElementById('edit-unit-model').value = model || '';
 
-  // Populate brand options
+  // Populate brand options — placeholder when the unit has no brand yet,
+  // so saving can't silently assign the first brand in the list.
   const brandSel = document.getElementById('edit-unit-brand');
   if (brandSel) {
     brandSel.innerHTML = '';
+    if (!brand) {
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = 'Click to select the existing brand';
+      ph.disabled = true;
+      ph.hidden = true;
+      ph.selected = true;
+      brandSel.appendChild(ph);
+    }
     const brandList = (DB.brands && DB.brands.length) ? DB.brands : Object.keys(DB.inventory || {});
     brandList.forEach(b => {
       const opt = document.createElement('option');
