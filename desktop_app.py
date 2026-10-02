@@ -443,6 +443,28 @@ class DesktopApi:
             pass
         return False
 
+    def bring_to_front(self):
+        """Raise the window to the top of the NORMAL z-order and take focus —
+        once, at startup. Deliberately no WS_EX_TOPMOST: afterwards the window
+        behaves like any other app and yields when the user clicks away."""
+        try:
+            hwnd = self.get_hwnd()
+            if not hwnd:
+                return
+            u = ctypes.windll.user32
+            # Windows only grants foreground rights to the foreground process.
+            # A no-op Alt press makes us eligible long enough to claim focus.
+            u.keybd_event(0x12, 0, 0, 0)          # VK_MENU down
+            u.keybd_event(0x12, 0, 0x0002, 0)     # VK_MENU up
+            u.ShowWindow(hwnd, 9)                  # SW_RESTORE
+            u.BringWindowToTop(hwnd)
+            _u32.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
+                              0x0001 | 0x0002 | 0x0040)  # NOSIZE|NOMOVE|SHOWWINDOW @ HWND_TOP
+            u.SetForegroundWindow(hwnd)
+            u.SetActiveWindow(hwnd)
+        except Exception:
+            pass
+
     def start_native_resize(self, direction: str):
         """Initiate native Windows OS smooth hardware resizing for frameless window."""
         dir_map = {
@@ -804,6 +826,9 @@ def main():
         # The real window is already showing its identical HTML splash —
         # hand off to it NOW so the two splashes never overlap on screen.
         splash.close()
+        # Jump the window in front of whatever launched it — one-shot raise,
+        # NOT always-on-top; it yields normally once the user clicks away.
+        api.bring_to_front()
         # Runs on a pywebview worker thread: wait for the backend, then swap
         # the splash for the real app.
         for _ in range(300):  # up to 30s for slow machines
@@ -816,6 +841,9 @@ def main():
             pass
         time.sleep(0.4)
         api.enable_window_features()
+        # The backend wait can take seconds — re-assert foreground once the
+        # real UI is actually displayed, in case focus drifted meanwhile.
+        api.bring_to_front()
 
     # Start the desktop window (blocking until closed). os._exit skips the
     # interpreter shutdown that can hang joining threads — the port and all
