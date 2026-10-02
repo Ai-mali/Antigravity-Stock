@@ -327,6 +327,53 @@ class StockStore:
                 except Exception:
                     pass
 
+    @staticmethod
+    def _as_date(v):
+        """Cell/record value -> date for sorting (handles str + datetime)."""
+        if isinstance(v, datetime.datetime):
+            return v.date()
+        if isinstance(v, datetime.date):
+            return v
+        return parse_date_safe(str(v or ""))
+
+    def _sort_sheet_rows(self):
+        """Newest activity floats to the TOP of MasterRecord + Returns, so
+        opening the workbook in Excel reads like the app's Sell Record.
+        Memory and sheet are rewritten together — every _row is renumbered
+        after the rewrite, so incremental edits stay aligned."""
+        epoch = datetime.date(1970, 1, 1)
+
+        # A unit's "activity date" = Date Out when sold/returned, else Date In
+        self.records.sort(
+            key=lambda r: self._as_date(r.get("Date Out"))
+                          or self._as_date(r.get("Date In")) or epoch,
+            reverse=True)
+        if self.recs.max_row > 1:
+            self.recs.delete_rows(2, self.recs.max_row - 1)
+        for i, rec in enumerate(self.records, start=2):
+            rec["_row"] = i
+            self.recs.append([rec.get("Brand", ""), rec.get("Model", ""),
+                              rec.get("Serial", ""), rec.get("Date In", ""),
+                              rec.get("Status", ""), rec.get("Customer", ""),
+                              rec.get("Date Out", ""), rec.get("Batch", "")])
+        # Excel convenience: frozen header + filter dropdowns on the columns
+        self.recs.freeze_panes = "A2"
+        self.recs.auto_filter.ref = f"A1:H{len(self.records) + 1}"
+
+        self.returns.sort(
+            key=lambda r: self._as_date(r.get("Date")) or epoch,
+            reverse=True)
+        if self.ret_sheet.max_row > 1:
+            self.ret_sheet.delete_rows(2, self.ret_sheet.max_row - 1)
+        for i, ret in enumerate(self.returns, start=2):
+            ret["_row"] = i
+            self.ret_sheet.append([ret.get("Serial", ""), ret.get("Model", ""),
+                                   ret.get("Customer", ""), ret.get("Reason", ""),
+                                   ret.get("Condition", ""), ret.get("Notes", ""),
+                                   ret.get("Action", ""), ret.get("Date", ""),
+                                   ret.get("Date Out", "")])
+        self.ret_sheet.freeze_panes = "A2"
+
     def save(self, backup: bool = False):
         if backup:
             try:
@@ -340,6 +387,9 @@ class StockStore:
                     pass
                 raise RuntimeError(
                     f"Pre-change backup failed — change not saved: {e}") from e
+        # Newest activity first in MasterRecord + Returns; memory _row
+        # values are renumbered to match the rewritten sheet.
+        self._sort_sheet_rows()
         # Keep user-entered strings as text — a leading =,+,-,@ must never
         # be written as a spreadsheet formula.
         for ws in self.wb.worksheets:
