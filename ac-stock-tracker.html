@@ -9014,15 +9014,24 @@ function askBrand(model, batchCount = 1, brandHint = '') {
       }
     }
     const sel = document.getElementById('brand-select');
+    const hint = (brandHint || '').trim();
+    // Match the hint against EXISTING brands — if it matches, preselect in
+    // the dropdown; otherwise it goes in the "new brand" field instead.
+    const match = hint
+      ? DB.brands.find(b => b.toUpperCase() === hint.toUpperCase())
+      : null;
     if (sel) {
-      sel.innerHTML = DB.brands.length
-        ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
-        : '<option value="">\u2014 no brands yet \u2014</option>';
+      sel.innerHTML =
+        '<option value="" disabled hidden>Click to select the existing brand</option>' +
+        (DB.brands.length
+          ? DB.brands.map(b => `<option value="${b}">${b}</option>`).join('')
+          : '<option value="">\u2014 no brands yet \u2014</option>');
+      sel.value = match || '';
     }
     const inp = document.getElementById('brand-new');
     // Prefill the brand the scanner read off the document, if any —
     // one less keystroke per new model.
-    if (inp) inp.value = (brandHint || '').toUpperCase();
+    if (inp) inp.value = match ? '' : hint.toUpperCase();
 
     updateBrandModalLiveDisplay();
 
