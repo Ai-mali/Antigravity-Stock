@@ -12642,13 +12642,22 @@ document.addEventListener('click', e => {
 async function confirmDeleteSelected() {
   const serials = [...DB.availSel];
   if (!serials.length) return;
-  const shown = serials.slice(0, 40).map(s => escapeHtml(s)).join(', ');
-  const more = serials.length > 40 ? ` … +${serials.length - 40} more` : '';
+  // serial -> model map so the prompt can name what is being deleted
+  const modelOf = {};
+  Object.values(DB.inventory || {}).forEach(b =>
+    Object.entries(b.models || {}).forEach(([m, d]) =>
+      (d.serials || []).forEach(s => { modelOf[s] = m; })));
+  const models = [...new Set(serials.map(s => modelOf[s] || '—'))];
+  const ask = models.length === 1
+    ? `Do you want to delete <strong>${serials.length}</strong> item(s) from <strong class="mono">${escapeHtml(models[0])}</strong>?`
+    : `Do you want to delete <strong>${serials.length}</strong> item(s) across <strong>${models.length}</strong> models?`;
+  const rows = serials.map(s =>
+    `<div>${escapeHtml(s)}${models.length > 1 ? ` <span style="opacity:.55;">· ${escapeHtml(modelOf[s] || '—')}</span>` : ''}</div>`).join('');
   const ok = await appConfirm({
     title: 'Delete Selected Units',
     sub: 'This permanently removes them from the workbook',
-    message: `<div style="margin-bottom:8px;">Delete <strong>${serials.length}</strong> unit(s) from Available Stock?</div>` +
-             `<div class="mono" style="max-height:140px; overflow:auto; font-size:11.5px; color:var(--text-muted); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">${shown}${escapeHtml(more)}</div>`,
+    message: `<div style="margin-bottom:8px;">${ask}</div>` +
+             `<div class="mono" style="max-height:160px; overflow:auto; font-size:11.5px; line-height:1.7; color:var(--text-muted); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 12px;">${rows}</div>`,
     okText: 'Sure, Delete'
   });
   if (!ok) return;
