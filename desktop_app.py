@@ -79,6 +79,8 @@ var CONFIG = {
   colorCycleMs: 6000, /* green -> cyan -> blue -> purple -> back        */
   tail: 0.24,         /* tail length, fraction of the border (0.24=24%) */
   segments: 30,       /* tail smoothness                                */
+  comets: 2,          /* how many comets (2 = second is 180deg behind)  */
+  colorOffsetMs: 0,   /* color-cycle offset between comets (e.g. 3000)  */
   radius: 18,         /* must match .card border-radius                 */
   ringWidth: 2.4,     /* sharp line thickness at the head               */
   glowWidth: 8,       /* glow thickness before blur                     */
@@ -92,10 +94,10 @@ var CONFIG = {
   var card = document.getElementById("card");
   var glowSvg = document.getElementById("glow");
   var ringSvg = document.getElementById("ring");
-  var N = CONFIG.segments, glow = [], ring = [], P = 1, segLen = 1, baseRect;
+  var N = CONFIG.segments, C = CONFIG.comets, glow = [], ring = [], P = 1, segLen = 1, baseRect;
 
   function mk(svg, list) {
-    for (var i = 0; i < N; i++) {
+    for (var i = 0; i < N * C; i++) {
       var r = document.createElementNS(NS, "rect");
       r.setAttribute("fill", "none");
       svg.appendChild(r);
@@ -125,15 +127,16 @@ var CONFIG = {
       r.setAttribute("width", W); r.setAttribute("height", H);
       r.setAttribute("rx", R); r.setAttribute("ry", R);
     });
-    for (var i = 0; i < N; i++) {
+    for (var j = 0; j < N * C; j++) {
+      var i = j % N;
       var k = i / (N - 1);
       var op = Math.pow(k, 1.5);
-      ring[i].setAttribute("stroke-dasharray", da);
-      ring[i].setAttribute("stroke-width", (CONFIG.ringWidth * (0.5 + 0.5 * k)).toFixed(2));
-      ring[i].setAttribute("stroke-opacity", op.toFixed(3));
-      glow[i].setAttribute("stroke-dasharray", da);
-      glow[i].setAttribute("stroke-width", (CONFIG.glowWidth * (0.4 + 0.6 * k)).toFixed(2));
-      glow[i].setAttribute("stroke-opacity", (op * 0.9).toFixed(3));
+      ring[j].setAttribute("stroke-dasharray", da);
+      ring[j].setAttribute("stroke-width", (CONFIG.ringWidth * (0.5 + 0.5 * k)).toFixed(2));
+      ring[j].setAttribute("stroke-opacity", op.toFixed(3));
+      glow[j].setAttribute("stroke-dasharray", da);
+      glow[j].setAttribute("stroke-width", (CONFIG.glowWidth * (0.4 + 0.6 * k)).toFixed(2));
+      glow[j].setAttribute("stroke-opacity", (op * 0.9).toFixed(3));
     }
   }
 
@@ -143,17 +146,22 @@ var CONFIG = {
   }
 
   function frame(now) {
-    var head = ((now % CONFIG.lapMs) / CONFIG.lapMs) * P;
-    for (var i = 0; i < N; i++) {
-      var k = i / (N - 1);
-      var s = head - CONFIG.tail * P + i * segLen;
-      s = ((s % P) + P) % P;
-      var light = 55 + 30 * Math.pow(k, 4);
-      var col = "hsl(" + hueAt(now - (N - 1 - i) * CONFIG.lagMs).toFixed(1) + ",90%," + light.toFixed(1) + "%)";
-      ring[i].setAttribute("stroke-dashoffset", -s);
-      ring[i].setAttribute("stroke", col);
-      glow[i].setAttribute("stroke-dashoffset", -s);
-      glow[i].setAttribute("stroke", col);
+    var base = ((now % CONFIG.lapMs) / CONFIG.lapMs) * P;
+    for (var c = 0; c < C; c++) {
+      var head = base + c * P / C;                 /* c=1 of 2 -> 180 degrees behind */
+      var tnow = now + c * CONFIG.colorOffsetMs;
+      for (var i = 0; i < N; i++) {
+        var j = c * N + i;
+        var k = i / (N - 1);
+        var s = head - CONFIG.tail * P + i * segLen;
+        s = ((s % P) + P) % P;
+        var light = 55 + 30 * Math.pow(k, 4);
+        var col = "hsl(" + hueAt(tnow - (N - 1 - i) * CONFIG.lagMs).toFixed(1) + ",90%," + light.toFixed(1) + "%)";
+        ring[j].setAttribute("stroke-dashoffset", -s);
+        ring[j].setAttribute("stroke", col);
+        glow[j].setAttribute("stroke-dashoffset", -s);
+        glow[j].setAttribute("stroke", col);
+      }
     }
     requestAnimationFrame(frame);
   }
@@ -455,6 +463,8 @@ class _NativeSplash:
     GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha) - fallback only
     GLOW_SIGMA     = 6.5      # glow softness outside the card edge (logical px)
     GLOW_AMP       = 0.85     # glow strength 0..1
+    COMETS         = 2        # 2 = second comet is 180 degrees behind
+    COMET_COLOR_OFFSET_MS = 0.0
     TITLE_SWEEP_MS = 4000     # title gradient sweep period (CSS shimmer 4s)
     CARD_R         = 18.0     # card corner radius (logical px)
     MARGIN         = 50       # transparent margin around the card — glow bleed
@@ -596,7 +606,8 @@ class _NativeSplash:
                 tail=self.TAIL, lag_total_ms=(self.SEGMENTS - 1) * self.LAG_MS,
                 hue_start=self.HUE_START, hue_span=self.HUE_SPAN,
                 ring_w=self.RING_W, glow_sigma=self.GLOW_SIGMA,
-                glow_amp=self.GLOW_AMP)
+                glow_amp=self.GLOW_AMP,
+                comets=self.COMETS, color_offset_ms=self.COMET_COLOR_OFFSET_MS)
             if self._gfx:                      # window may already be closing
                 self._cm = cm
         except Exception:
@@ -869,9 +880,11 @@ class _NativeSplash:
             head = (t_ms % self.LAP_MS) / self.LAP_MS * P
             tail = self.TAIL * P
             seg = tail / self.SEGMENTS
-            for ws, am in self.GLOW_PASSES:
-                self._comet(head, tail, seg, t_ms, self.GLOW_W * ws * sc, am)
-            self._comet(head, tail, seg, t_ms, self.RING_W * sc, 1.0)
+            for c in range(self.COMETS):
+                head_c = head + c * P / self.COMETS
+                for ws, am in self.GLOW_PASSES:
+                    self._comet(head_c, tail, seg, t_ms, self.GLOW_W * ws * sc, am)
+                self._comet(head_c, tail, seg, t_ms, self.RING_W * sc, 1.0)
 
         # ---- card contents (unchanged layout) ----
         m = self._m

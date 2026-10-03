@@ -34,9 +34,14 @@ class CometLayer:
     def __init__(self, arr, margin, card_w, card_h, radius, scale=1.0,
                  lap_ms=3000.0, cycle_ms=6000.0, tail=0.24,
                  lag_total_ms=1595.0, hue_start=155.0, hue_span=120.0,
-                 ring_w=2.4, glow_sigma=6.5, glow_amp=0.85):
+                 ring_w=2.4, glow_sigma=6.5, glow_amp=0.85,
+                 comets=2, color_offset_ms=0.0):
         """arr: (H, W, 4) uint8 view of the premultiplied BGRA DIB (shares memory).
-        All sizes are PHYSICAL pixels (already multiplied by DPI scale)."""
+        All sizes are PHYSICAL pixels (already multiplied by DPI scale).
+        comets: how many comets run around the card, spread evenly
+                (2 = the second one is 180 degrees / half a lap behind).
+        color_offset_ms: color-cycle offset between comets (0 = same colors;
+                set to colorCycle/2 so one is green while the other is purple)."""
         self.arr = arr
         self.flat = arr.reshape(-1, 4)
         H, W = arr.shape[:2]
@@ -49,6 +54,8 @@ class CometLayer:
         self.sig_o = float(glow_sigma) * sc      # glow falloff outside the card
         self.sig_i = 1.6 * sc                    # glow falloff inside (hidden mostly)
         self.glow_amp = float(glow_amp)
+        self.n_comets = max(1, int(comets))
+        self.color_offset_ms = float(color_offset_ms)
 
         r = float(radius)
         hx, hy = card_w / 2.0, card_h / 2.0
@@ -97,9 +104,16 @@ class CometLayer:
         self.s = s.ravel()[self.idx]
 
     def apply(self, t_ms):
-        """Composite the comet for time t_ms onto the DIB (premultiplied over)."""
+        """Composite all comets for time t_ms onto the DIB (premultiplied over)."""
+        P = self.P
+        base = (t_ms % self.lap_ms) / self.lap_ms * P
+        for c in range(self.n_comets):
+            head = (base + c * P / self.n_comets) % P     # c=1 of 2 -> 180 deg behind
+            self._one(head, t_ms + c * self.color_offset_ms)
+
+    def _one(self, head, t_ms):
+        """Composite ONE comet whose head is at arc-length `head`."""
         P, L, sc = self.P, self.L, self.sc
-        head = (t_ms % self.lap_ms) / self.lap_ms * P
         delta = np.mod(head - self.s + P / 2.0, P) - P / 2.0     # > 0 behind the head
         m = (delta > -3.0 * self.sig_o) & (delta < L)
         sel = np.flatnonzero(m)
