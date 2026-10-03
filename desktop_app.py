@@ -554,27 +554,27 @@ class _NativeSplash:
                            0x0001 | 0x0004 | 0x0020)
 
             # Shooting-star comet running the CARD border: hue-cycling
-            # head + closely-spaced trail dots blended toward white so it
-            # reads as a tapering streak, not discrete circles.
+            # head + a dense train of trail dots (every ~7px, shrinking)
+            # so it reads as a continuous tapering streak, not beads.
             cw, ch = W - 2 * m, H - 2 * m
             perim = 2 * cw + 2 * ch
             head = (self._phase * 7) % perim
             head_rgb = self._runner_rgb(head / perim)
             halo_rgb = self._blend(head_rgb, self._CARD_RGB, 0.8)
-            trail_pts = tuple(
-                (back, self._ref(self._blend(head_rgb, self._CARD_RGB, t)), rad)
-                for back, t, rad in ((14, 0.35, 3), (28, 0.55, 3),
-                                     (42, 0.75, 2), (56, 0.88, 1)))
-            for back, ref, rad in ((0, self._ref(head_rgb), 4),) + trail_pts:
+            x, y = self._perim_pt(head, m, m, cw, ch)
+            hb = _g32.CreateSolidBrush(self._ref(halo_rgb))
+            old2 = _g32.SelectObject(mem, hb)
+            _g32.Ellipse(mem, x - 8, y - 8, x + 8, y + 8)
+            _g32.SelectObject(mem, old2)
+            _g32.DeleteObject(hb)
+            for i in range(18):
+                k = i / 17                       # 0 = head … 1 = tail tip
+                back = i * 7
+                rad = max(1, round(4 * (1 - k) ** 1.4))
+                t = 0.15 + 0.8 * k ** 1.3        # fade into the card color
+                col = self._ref(self._blend(head_rgb, self._CARD_RGB, t))
                 x, y = self._perim_pt(head - back, m, m, cw, ch)
-                if back == 0:  # soft halo behind the head dot
-                    hb = _g32.CreateSolidBrush(self._ref(halo_rgb))
-                    old2 = _g32.SelectObject(mem, hb)
-                    _g32.Ellipse(mem, x - rad - 4, y - rad - 4,
-                                 x + rad + 4, y + rad + 4)
-                    _g32.SelectObject(mem, old2)
-                    _g32.DeleteObject(hb)
-                db = _g32.CreateSolidBrush(ref)
+                db = _g32.CreateSolidBrush(col)
                 old2 = _g32.SelectObject(mem, db)
                 _g32.Ellipse(mem, x - rad, y - rad, x + rad, y + rad)
                 _g32.SelectObject(mem, old2)
