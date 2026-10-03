@@ -22,108 +22,144 @@ PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 
 # Shown instantly while the backend (heavy imports + workbook parse) boots
 # in a background thread; replaced via load_url() once port 8000 is live.
-SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-/* ================= TUNABLES — edit these ================= */
-:root{
-  --glow-speed:3s;                /* one lap of the border arc          */
-  --text-beam-speed:2.8s;         /* logo running-light sweep           */
-  --border-thickness:2px;         /* sharp ring width                   */
-  --glow-blur:16px;               /* neon glow blur radius              */
-  --glow-opacity:.75;             /* glow strength                      */
-  --card-radius:20px;             /* card corner roundness              */
-  --c-green:#10B981;              /* border arc: green  */
-  --c-cyan:#06B6D4;               /* border arc: cyan   */
-  --c-blue:#3B82F6;               /* border arc: blue   */
-  --c-purple:#8B5CF6;             /* border arc: purple */
-  --c-white-hot:#ffffff;          /* beam hotspot       */
-  --border-base:rgba(226,232,240,.45); /* resting border tint            */
-  --card-bg:#151d30;              /* card surface (dark navy)           */
-  --page-bg:#0b0f19;              /* backdrop behind the card           */
-  --text-vre-base:#e2e8f0;        /* VRE letters (light on dark card)   */
-  --text-stock-base:#10B981;      /* AC STOCK letters                   */
-  --text-glow-spread:22px;        /* logo aura blur                     */
-  --text-glow-opacity:.85;        /* logo aura strength                 */
-}
-/* ========================================================= */
-@property --angle{syntax:'<angle>';initial-value:0deg;inherits:false}
-html,body{margin:0;height:100%;display:flex;align-items:center;
-justify-content:center;font-family:'Inter','Segoe UI',system-ui,sans-serif;
-overflow:hidden;user-select:none;-webkit-user-select:none;
-background:radial-gradient(circle at 50% 50%,rgba(30,41,59,.8) 0%,var(--page-bg) 100%)}
-.splash-container{position:relative;padding:40px}
-.card-wrap{position:relative;width:460px;max-width:86vw;border-radius:var(--card-radius)}
-/* layer 2 — blurred neon twin; masked to the border band so the glow
-   emanates from the edge itself */
-.glow-outer{position:absolute;inset:calc(-1 * var(--border-thickness));
-border-radius:calc(var(--card-radius) + var(--border-thickness));
-padding:var(--border-thickness);
-background:conic-gradient(from var(--angle),var(--c-green) 0deg,
-var(--c-cyan) 35deg,var(--c-blue) 70deg,var(--c-purple) 100deg,
-transparent 140deg,transparent 330deg,var(--c-green) 360deg);
--webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
--webkit-mask-composite:xor;mask-composite:exclude;
-filter:blur(var(--glow-blur));opacity:var(--glow-opacity);
-animation:rot var(--glow-speed) linear infinite;pointer-events:none;z-index:1}
-/* layer 1 — sharp 2px gradient ring, faint grey except the traveling arc */
-.glow-sharp{position:absolute;inset:calc(-1 * var(--border-thickness));
-border-radius:calc(var(--card-radius) + var(--border-thickness));
-padding:var(--border-thickness);
-background:conic-gradient(from var(--angle),var(--c-green) 0deg,
-var(--c-cyan) 30deg,var(--c-blue) 60deg,var(--c-purple) 90deg,
-var(--border-base) 140deg,var(--border-base) 330deg,var(--c-green) 360deg);
--webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
--webkit-mask-composite:xor;mask-composite:exclude;
-animation:rot var(--glow-speed) linear infinite;pointer-events:none;z-index:2}
-/* card surface — pristine, above both glow layers */
-.card{position:relative;z-index:3;background:var(--card-bg);
-border-radius:var(--card-radius);box-shadow:0 20px 40px -15px rgba(0,0,0,.6);
-padding:44px 40px 36px;display:flex;flex-direction:column;align-items:center;
-text-align:center}
-@keyframes rot{from{--angle:0deg}to{--angle:360deg}}
-/* ---- logo running-light beam ---- */
-.title-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
-.title-aura{position:absolute;inset:-8px -18px;
-background:linear-gradient(90deg,transparent 0%,transparent 25%,
-rgba(16,185,129,.2) 38%,rgba(6,182,212,.6) 48%,rgba(255,255,255,.85) 52%,
-rgba(59,130,246,.65) 56%,rgba(139,92,246,.3) 68%,transparent 78%,transparent 100%);
-background-size:280% 100%;filter:blur(var(--text-glow-spread));
-opacity:var(--text-glow-opacity);pointer-events:none;z-index:1;
-mix-blend-mode:screen;
-animation:beam var(--text-beam-speed) linear infinite}
-.title{position:relative;z-index:2;display:inline-flex;gap:.5rem;
-font-size:30px;font-weight:800;letter-spacing:.05em;
-background:linear-gradient(105deg,var(--text-vre-base) 0%,var(--text-vre-base) 18%,
-var(--text-stock-base) 28%,var(--c-green) 38%,var(--c-cyan) 44%,
-var(--c-white-hot) 50%,var(--c-cyan) 56%,var(--c-blue) 62%,var(--c-purple) 68%,
-var(--text-stock-base) 76%,var(--text-vre-base) 92%,var(--text-vre-base) 100%);
-background-size:320% 100%;-webkit-background-clip:text;background-clip:text;
--webkit-text-fill-color:transparent;color:transparent;
-animation:beam var(--text-beam-speed) linear infinite;
-filter:drop-shadow(0 0 1px rgba(16,185,129,.15))}
-@keyframes beam{0%{background-position:100% 50%}100%{background-position:-100% 50%}}
-.sub{margin-top:10px;display:flex;align-items:center;justify-content:center;
-gap:6px;font-size:12px;font-weight:500;letter-spacing:.05em;color:#64748b}
-.sub svg{width:14px;height:14px;color:var(--c-green);animation:spinSlow 8s linear infinite}
-.track{width:100%;max-width:240px;height:5px;background:#1e293b;border-radius:9999px;
-margin-top:38px;position:relative;overflow:hidden}
-.fill{position:absolute;top:0;bottom:0;width:40%;border-radius:9999px;
-background:linear-gradient(90deg,var(--c-green),var(--c-cyan));
+SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+/* Dark glass splash — SVG-comet border engine. Self-contained:
+   no CDN, no @property, no mask-composite. */
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+background:#05070a;font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;
+overflow:hidden;user-select:none;-webkit-user-select:none}
+.splash-container{padding:50px}
+.wrapper{position:relative;width:460px;max-width:86vw}
+.glow-svg,.ring-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.glow-svg{z-index:0;filter:blur(9px);opacity:.95}
+.ring-svg{z-index:2}
+.card{position:relative;z-index:1;background:linear-gradient(180deg,#151617 0%,#0b0c0d 100%);
+border-radius:18px;padding:42px 40px 34px;display:flex;flex-direction:column;align-items:center;
+text-align:center;box-shadow:0 24px 50px -18px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.04)}
+.brand{font-size:30px;font-weight:800;letter-spacing:.06em;
+background:linear-gradient(90deg,#475569 0%,#10B981 25%,#06B6D4 50%,#3B82F6 75%,#475569 100%);
+background-size:200% 100%;-webkit-background-clip:text;background-clip:text;
+-webkit-text-fill-color:transparent;color:transparent;animation:shimmer 4s linear infinite}
+@keyframes shimmer{from{background-position:0% 0}to{background-position:-200% 0}}
+.sub{margin-top:12px;display:flex;align-items:center;gap:6px;color:#cbd5e1;
+font-size:12px;font-weight:500;letter-spacing:.02em}
+.gear{width:14px;height:14px;color:#10B981;animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar{width:250px;height:5px;background:#222426;border-radius:9999px;margin-top:34px;
+position:relative;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:9999px;
+background:linear-gradient(90deg,#10B981,#14b8a6,#06B6D4);
+box-shadow:0 0 10px rgba(20,184,166,.6);
 animation:slide 2.2s cubic-bezier(.4,0,.2,1) infinite}
-@keyframes slide{0%{left:-40%}50%{left:45%;width:50%}100%{left:100%;width:30%}}
-.status{margin-top:16px;font-size:12px;color:#94a3b8;letter-spacing:.05em}
-@keyframes spinSlow{to{transform:rotate(360deg)}}
-</style></head><body><div class="splash-container"><div class="card-wrap">
-<div class="glow-outer"></div><div class="glow-sharp"></div>
-<div class="card">
-<div class="title-wrap"><div class="title-aura"></div>
-<div class="title"><span>VRE</span><span>AC STOCK</span></div></div>
-<div class="sub"><svg fill="none" stroke="currentColor" stroke-linecap="round"
-stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24">
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.status{margin-top:16px;font-size:12px;color:#cbd5e1;letter-spacing:.02em}
+</style></head><body>
+<div class="splash-container"><div class="wrapper" id="wrapper">
+<svg class="glow-svg" id="glow"></svg>
+<div class="card" id="card">
+<div class="brand">VRE AC STOCK</div>
+<div class="sub"><svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
 <path d="m12 2 2.4 2.4 3.4-.6 1.2 3.2 3.1 1.5-.7 3.3 2.1 2.7-2.1 2.7.7 3.3-3.1 1.5-1.2 3.2-3.4-.6L12 22l-2.4-2.4-3.4.6-1.2-3.2-3.1-1.5.7-3.3-2.1-2.7 2.1-2.7-.7-3.3 3.1-1.5 1.2-3.2 3.4.6z"/>
 <circle cx="12" cy="12" r="3"/></svg><span>AI Scan</span></div>
-<div class="track"><div class="fill"></div></div>
+<div class="bar"><i></i></div>
 <div class="status">Starting services&hellip;</div>
-</div></div></div></body></html>"""
+</div>
+<svg class="ring-svg" id="ring"></svg>
+</div></div>
+<script>
+/* ===================== EDIT THESE ===================== */
+var CONFIG = {
+  lapMs: 3000,        /* time for one lap around the card               */
+  colorCycleMs: 6000, /* green -> cyan -> blue -> purple -> back        */
+  tail: 0.24,         /* tail length, fraction of the border (0.24=24%) */
+  segments: 30,       /* tail smoothness                                */
+  radius: 18,         /* must match .card border-radius                 */
+  ringWidth: 2.4,     /* sharp line thickness at the head               */
+  glowWidth: 8,       /* glow thickness before blur                     */
+  hueStart: 155,      /* green                                          */
+  hueEnd: 275,        /* purple (passes cyan ~190, blue ~220)           */
+  lagMs: 55           /* color lag inside the tail = gradient streak    */
+};
+/* ====================================================== */
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  var card = document.getElementById("card");
+  var glowSvg = document.getElementById("glow");
+  var ringSvg = document.getElementById("ring");
+  var N = CONFIG.segments, glow = [], ring = [], P = 1, segLen = 1, baseRect;
+
+  function mk(svg, list) {
+    for (var i = 0; i < N; i++) {
+      var r = document.createElementNS(NS, "rect");
+      r.setAttribute("fill", "none");
+      svg.appendChild(r);
+      list.push(r);
+    }
+  }
+  baseRect = document.createElementNS(NS, "rect");
+  baseRect.setAttribute("fill", "none");
+  baseRect.setAttribute("stroke", "rgba(255,255,255,0.10)");
+  baseRect.setAttribute("stroke-width", "1");
+  ringSvg.appendChild(baseRect);
+  mk(glowSvg, glow);
+  mk(ringSvg, ring);
+
+  function layout() {
+    var W = card.offsetWidth, H = card.offsetHeight, R = CONFIG.radius;
+    [glowSvg, ringSvg].forEach(function (s) {
+      s.setAttribute("width", W); s.setAttribute("height", H);
+      s.setAttribute("viewBox", "0 0 " + W + " " + H);
+    });
+    P = 2 * (W - 2 * R) + 2 * (H - 2 * R) + 2 * Math.PI * R;
+    segLen = CONFIG.tail * P / N;
+    var dash = segLen + 0.8;
+    var da = dash + " " + (P - dash);
+    [baseRect].concat(glow, ring).forEach(function (r) {
+      r.setAttribute("x", 0); r.setAttribute("y", 0);
+      r.setAttribute("width", W); r.setAttribute("height", H);
+      r.setAttribute("rx", R); r.setAttribute("ry", R);
+    });
+    for (var i = 0; i < N; i++) {
+      var k = i / (N - 1);
+      var op = Math.pow(k, 1.5);
+      ring[i].setAttribute("stroke-dasharray", da);
+      ring[i].setAttribute("stroke-width", (CONFIG.ringWidth * (0.5 + 0.5 * k)).toFixed(2));
+      ring[i].setAttribute("stroke-opacity", op.toFixed(3));
+      glow[i].setAttribute("stroke-dasharray", da);
+      glow[i].setAttribute("stroke-width", (CONFIG.glowWidth * (0.4 + 0.6 * k)).toFixed(2));
+      glow[i].setAttribute("stroke-opacity", (op * 0.9).toFixed(3));
+    }
+  }
+
+  function hueAt(ms) {
+    var p = 0.5 - 0.5 * Math.cos(2 * Math.PI * ms / CONFIG.colorCycleMs);
+    return CONFIG.hueStart + (CONFIG.hueEnd - CONFIG.hueStart) * p;
+  }
+
+  function frame(now) {
+    var head = ((now % CONFIG.lapMs) / CONFIG.lapMs) * P;
+    for (var i = 0; i < N; i++) {
+      var k = i / (N - 1);
+      var s = head - CONFIG.tail * P + i * segLen;
+      s = ((s % P) + P) % P;
+      var light = 55 + 30 * Math.pow(k, 4);
+      var col = "hsl(" + hueAt(now - (N - 1 - i) * CONFIG.lagMs).toFixed(1) + ",90%," + light.toFixed(1) + "%)";
+      ring[i].setAttribute("stroke-dashoffset", -s);
+      ring[i].setAttribute("stroke", col);
+      glow[i].setAttribute("stroke-dashoffset", -s);
+      glow[i].setAttribute("stroke", col);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  layout();
+  window.addEventListener("resize", layout);
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(card);
+  requestAnimationFrame(frame);
+})();
+</script></body></html>"""
 
 
 # ------------------------------------------------------------------ native splash
@@ -278,17 +314,17 @@ class _NativeSplash:
 
     W, H = 460, 240
 
-    # COLORREF is 0x00BBGGRR — dark backdrop, white card, comet on the
-    # card edge (mirrors SPLASH_HTML)
-    _BG     = 0x00190F0B   # #0B0F19
-    _CARD   = 0x00301D15   # #151D30 — dark navy card
-    _CARD_RGB = (0x15, 0x1D, 0x30)   # card color as plain RGB for blends
-    _CARD_LINE = 0x00554133 # #334155 — faint card border
+    # COLORREF is 0x00BBGGRR — near-black backdrop, dark-glass card,
+    # comet on the card edge (mirrors SPLASH_HTML)
+    _BG     = 0x000A0705   # #05070A
+    _CARD   = 0x00131210   # #101213 — mid of the card's dark gradient
+    _CARD_RGB = (0x10, 0x12, 0x13)   # card color as plain RGB for blends
+    _CARD_LINE = 0x00272625 # ~white 10% over the card — faint border
     _ACCENT = 0x0081B910   # #10B981
-    _TEXT   = 0x00F0E8E2   # #E2E8F0
-    _SUB    = 0x008B7464   # #64748B
-    _STATUS = 0x00B8A394   # #94A3B8
-    _TRACK  = 0x003B291E   # #1E293B
+    _TEXT   = 0x00E1D5CB   # #CBD5E1
+    _SUB    = 0x00E1D5CB   # #CBD5E1
+    _STATUS = 0x00E1D5CB   # #CBD5E1
+    _TRACK  = 0x00262422   # #222426
     _ACCENT_DIM = 0x005A2E15  # dim teal — halo on the dark card
     _CARD_M  = 30          # card margin from window edge (px)
     # comet palette (plain RGB) — the head cycles through these as it
@@ -985,7 +1021,7 @@ def main():
         frameless=True,
         easy_drag=False,
         text_select=True,
-        background_color='#0b0f19'
+        background_color='#05070a'
     )
     api.set_window(window)
 
