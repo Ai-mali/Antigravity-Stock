@@ -393,6 +393,21 @@ body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8c
 
 /* ---- Appearance popover (accent swatches + background controls) ---- */
 .appearance-wrap { position: relative; }
+/* Rainbow disc inside the header button — reads as "change color" */
+.ap-btn-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: conic-gradient(#f87171, #fbbf24, #4ade80, #38bdf8, #a78bfa, #f87171);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
+  vertical-align: middle;
+}
+#appearance-btn:hover .ap-btn-swatch {
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+  transform: scale(1.1);
+}
 .appearance-popover {
   position: absolute;
   top: calc(100% + 8px);
@@ -6045,7 +6060,7 @@ body.theme-light .autocomplete-dropdown {
       <!-- Appearance: accent color + custom background -->
       <div class="appearance-wrap">
         <button class="icon-square-btn" id="appearance-btn" onclick="toggleAppearancePanel(event)"
-                title="Appearance: accent color &amp; background">&#9684;</button>
+                title="Appearance: accent color &amp; background"><span class="ap-btn-swatch"></span></button>
         <div class="appearance-popover" id="appearance-popover" onclick="event.stopPropagation()">
           <div class="ap-label">Accent</div>
           <div class="ap-swatches" id="ap-swatches">
