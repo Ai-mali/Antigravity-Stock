@@ -303,25 +303,25 @@ body.bg-wallpaper::after {
 /* Dark veil, heavier top-left so the header/sidebar text stays crisp */
 body.has-user-bg::after {
   background: linear-gradient(155deg,
-    rgba(6, 10, 14, calc(var(--veil-a, 0.6) + 0.08)) 0%,
-    rgba(9, 14, 19, calc(var(--veil-a, 0.6) + 0.03)) 45%,
-    rgba(11, 16, 21, var(--veil-a, 0.6)) 100%);
+    rgba(6, 10, 14, calc(var(--photo-dim, 0.6) + 0.08)) 0%,
+    rgba(9, 14, 19, calc(var(--photo-dim, 0.6) + 0.03)) 45%,
+    rgba(11, 16, 21, var(--photo-dim, 0.6)) 100%);
 }
 body.bg-wallpaper::after {     /* presets are already dark — lighter veil */
   background: linear-gradient(155deg,
-    rgba(8, 12, 16, calc(var(--veil-a, 0.6) * 0.65)) 0%,
-    rgba(10, 15, 20, calc(var(--veil-a, 0.6) * 0.55)) 100%);
+    rgba(8, 12, 16, calc(var(--photo-dim, 0.6) * 0.65)) 0%,
+    rgba(10, 15, 20, calc(var(--photo-dim, 0.6) * 0.55)) 100%);
 }
 body.theme-light.has-user-bg::after {
   background: linear-gradient(155deg,
-    rgba(236, 240, 245, calc(var(--veil-a, 0.6) + 0.08)) 0%,
-    rgba(240, 244, 248, calc(var(--veil-a, 0.6) + 0.03)) 45%,
-    rgba(234, 238, 243, var(--veil-a, 0.6)) 100%);
+    rgba(236, 240, 245, calc(var(--photo-dim, 0.6) + 0.08)) 0%,
+    rgba(240, 244, 248, calc(var(--photo-dim, 0.6) + 0.03)) 45%,
+    rgba(234, 238, 243, var(--photo-dim, 0.6)) 100%);
 }
 body.theme-light.bg-wallpaper::after {
   background: linear-gradient(155deg,
-    rgba(240, 244, 248, calc(var(--veil-a, 0.6) * 0.55)) 0%,
-    rgba(234, 239, 244, calc(var(--veil-a, 0.6) * 0.45)) 100%);
+    rgba(240, 244, 248, calc(var(--photo-dim, 0.6) * 0.55)) 0%,
+    rgba(234, 239, 244, calc(var(--photo-dim, 0.6) * 0.45)) 100%);
 }
 
 /* Glass retheme — translucent surface vars reach every panel at once.
@@ -340,22 +340,23 @@ body.is-desktop-shell.bg-wallpaper {
   background: transparent !important;
 }
 body.has-user-bg, body.bg-wallpaper {
-  --bg-app: rgba(15, 23, 30, 0.38);
-  --header-bg: rgba(15, 23, 30, 0.55);
-  --surface: rgba(15, 23, 30, 0.5);
-  --surface2: rgba(19, 27, 34, 0.45);
-  --surface3: rgba(26, 36, 44, 0.4);
+  /* --panel-opacity (0.2-1.0) scales every panel alpha live */
+  --bg-app: rgba(15, 23, 30, calc(var(--panel-opacity, 0.75) * 0.55));
+  --header-bg: rgba(15, 23, 30, calc(var(--panel-opacity, 0.75) * 0.8));
+  --surface: rgba(15, 23, 30, calc(var(--panel-opacity, 0.75) * 0.7));
+  --surface2: rgba(19, 27, 34, calc(var(--panel-opacity, 0.75) * 0.62));
+  --surface3: rgba(26, 36, 44, calc(var(--panel-opacity, 0.75) * 0.55));
   --border: rgba(255, 255, 255, 0.08);
   --border-light: rgba(255, 255, 255, 0.14);
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
 }
 body.theme-light.has-user-bg, body.theme-light.bg-wallpaper {
-  --bg-app: rgba(255, 255, 255, 0.45);
-  --header-bg: rgba(255, 255, 255, 0.55);
-  --surface: rgba(255, 255, 255, 0.55);
-  --surface2: rgba(250, 252, 254, 0.5);
-  --surface3: rgba(240, 245, 249, 0.45);
+  --bg-app: rgba(255, 255, 255, calc(var(--panel-opacity, 0.75) * 0.6));
+  --header-bg: rgba(255, 255, 255, calc(var(--panel-opacity, 0.75) * 0.73));
+  --surface: rgba(255, 255, 255, calc(var(--panel-opacity, 0.75) * 0.73));
+  --surface2: rgba(250, 252, 254, calc(var(--panel-opacity, 0.75) * 0.66));
+  --surface3: rgba(240, 245, 249, calc(var(--panel-opacity, 0.75) * 0.6));
   --border: rgba(15, 23, 42, 0.1);
   --border-light: rgba(15, 23, 42, 0.16);
 }
@@ -480,7 +481,7 @@ body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8c
   letter-spacing: 0.08em;
   color: var(--text-sub);
 }
-#bg-dim-slider {
+.ap-slider {
   flex: 1;
   height: 14px;
   -webkit-appearance: none;
@@ -488,12 +489,12 @@ body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8c
   background: transparent;
   cursor: pointer;
 }
-#bg-dim-slider::-webkit-slider-runnable-track {
+.ap-slider::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
   background: var(--surface3);
 }
-#bg-dim-slider::-webkit-slider-thumb {
+.ap-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
@@ -501,6 +502,10 @@ body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8c
   background: var(--green-bright);
   margin-top: -4px;
   box-shadow: 0 0 6px var(--green-glow);
+}
+.ap-reset {
+  width: 100%;
+  margin-top: 10px;
 }
 .ap-dim-val {
   font-size: 10px;
@@ -6016,11 +6021,18 @@ body.theme-light .autocomplete-dropdown {
             <button class="ap-btn" id="bg-remove-btn" onclick="removeUserBackground()">Remove</button>
           </div>
           <div class="ap-dim-row">
-            <span class="ap-dim-label">DIM</span>
-            <input type="range" id="bg-dim-slider" min="0" max="90" value="60"
-                   oninput="setBgDim(this.value, false)" onchange="setBgDim(this.value, true)">
-            <span class="ap-dim-val" id="bg-dim-val">60%</span>
+            <span class="ap-dim-label" title="Program transparency — how see-through the panels are">PANELS</span>
+            <input type="range" class="ap-slider" id="ap-panel-slider" min="20" max="100" value="75"
+                   oninput="setPanelOpacity(this.value, false)" onchange="setPanelOpacity(this.value, true)">
+            <span class="ap-dim-val" id="ap-panel-val">75%</span>
           </div>
+          <div class="ap-dim-row">
+            <span class="ap-dim-label" title="Photo visibility — dims the background image">PHOTO</span>
+            <input type="range" class="ap-slider" id="ap-photo-slider" min="0" max="90" value="60"
+                   oninput="setPhotoDim(this.value, false)" onchange="setPhotoDim(this.value, true)">
+            <span class="ap-dim-val" id="ap-photo-val">60%</span>
+          </div>
+          <button class="ap-btn ap-reset" id="ap-reset-btn" onclick="resetAppearance()">Reset to default</button>
           <div class="ap-hint" id="bg-hint">Default theme background</div>
           <input type="file" id="bg-file-input" accept="image/png,image/jpeg,image/webp" hidden onchange="uploadUserBackground(this)">
         </div>
@@ -7895,7 +7907,7 @@ async function refreshData() {
   applyUserBackground(!!(uiPrefs && uiPrefs.bgImage),
                       (uiPrefs && uiPrefs.bgV) || 0,
                       (uiPrefs && uiPrefs.bgPreset) || '');
-  setBgDim((uiPrefs && uiPrefs.bgDim != null) ? uiPrefs.bgDim : 60, false);
+  hydrateAppearance();
   // Restore a staged dispatch cart that survived refresh/restart — drop
   // entries whose unit is no longer In Stock.
   if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
@@ -14279,6 +14291,7 @@ function toggleTheme() {
     const txt = document.getElementById('theme-mode-text');
     if (txt) txt.textContent = willBeLight ? 'Day' : 'Dark';
     try { localStorage.setItem('ac_stock_theme', willBeLight ? 'light' : 'dark'); } catch(e){}
+    if (typeof hydrateAppearance === 'function') hydrateAppearance();
   };
   const reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -14340,16 +14353,66 @@ function applyUserBackground(on, v, preset) {
     b.classList.toggle('active', !on && b.dataset.bg === preset));
 }
 
-function setBgDim(v, persist) {
-  const pct = Math.max(0, Math.min(90, parseInt(v, 10) || 0));
-  document.body.style.setProperty('--veil-a', (pct / 100).toFixed(2));
-  const sl = document.getElementById('bg-dim-slider');
-  if (sl && parseInt(sl.value, 10) !== pct) sl.value = pct;
-  const lbl = document.getElementById('bg-dim-val');
-  if (lbl) lbl.textContent = pct + '%';
-  if (persist) {
-    apiPost('/api/ui-prefs', { prefs: { bgDim: pct } }).catch(() => {});
-  }
+/* Appearance sliders — saved per-theme in localStorage:
+   { dark: {panel,dim}, light: {panel,dim} } under 'ac_stock_appearance' */
+const AP_DEFAULTS = { panel: 75, dim: 60 };
+
+function _apThemeKey() {
+  return document.body.classList.contains('theme-light') ? 'light' : 'dark';
+}
+function _apStore() {
+  try { return JSON.parse(localStorage.getItem('ac_stock_appearance') || '{}'); }
+  catch(e) { return {}; }
+}
+
+function applyAppearance() {
+  const panel = Math.max(20, Math.min(100, DB.panelOpacity || AP_DEFAULTS.panel));
+  const dim = Math.max(0, Math.min(90, DB.photoDim != null ? DB.photoDim : AP_DEFAULTS.dim));
+  document.body.style.setProperty('--panel-opacity', (panel / 100).toFixed(2));
+  document.body.style.setProperty('--photo-dim', (dim / 100).toFixed(2));
+  const ps = document.getElementById('ap-panel-slider');
+  if (ps) ps.value = DB.panelOpacity;
+  const pv = document.getElementById('ap-panel-val');
+  if (pv) pv.textContent = DB.panelOpacity + '%';
+  const ds = document.getElementById('ap-photo-slider');
+  if (ds) ds.value = DB.photoDim;
+  const dv = document.getElementById('ap-photo-val');
+  if (dv) dv.textContent = DB.photoDim + '%';
+}
+
+function hydrateAppearance() {
+  const saved = _apStore()[_apThemeKey()] || {};
+  DB.panelOpacity = Math.max(20, Math.min(100,
+    saved.panel != null ? saved.panel : AP_DEFAULTS.panel));
+  DB.photoDim = Math.max(0, Math.min(90,
+    saved.dim != null ? saved.dim : AP_DEFAULTS.dim));
+  applyAppearance();
+}
+
+function _apPersist() {
+  const all = _apStore();
+  all[_apThemeKey()] = { panel: DB.panelOpacity, dim: DB.photoDim };
+  try { localStorage.setItem('ac_stock_appearance', JSON.stringify(all)); } catch(e){}
+}
+
+function setPanelOpacity(v, persist) {
+  DB.panelOpacity = Math.max(20, Math.min(100, parseInt(v, 10) || AP_DEFAULTS.panel));
+  applyAppearance();
+  if (persist) _apPersist();
+}
+
+function setPhotoDim(v, persist) {
+  DB.photoDim = Math.max(0, Math.min(90, parseInt(v, 10) || 0));
+  applyAppearance();
+  if (persist) _apPersist();
+}
+
+function resetAppearance() {
+  DB.panelOpacity = AP_DEFAULTS.panel;
+  DB.photoDim = AP_DEFAULTS.dim;
+  applyAppearance();
+  _apPersist();
+  showToast('Appearance reset to default', '&#9684;');
 }
 
 function setBgPreset(name) {
