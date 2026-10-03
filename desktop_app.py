@@ -512,6 +512,8 @@ class _NativeSplash:
         self._bits_addr = None   # address of the DIB pixel memory (for CometLayer)
         self._cm = None          # CometLayer, built after the first frame is shown
         self._cm_failed = False  # True -> fall back to the old stroke comet
+        self._fading = False     # WM_CLOSE starts a fade-out, not an instant cut
+        self._fade_a = 255       # whole-window alpha pushed via SourceConstantAlpha
 
     def start(self):
         try:
@@ -621,14 +623,19 @@ class _NativeSplash:
             self._render(hwnd)
             _u32.EndPaint(hwnd, ctypes.byref(ps))
             return 0
-        if msg == 0x0113:                    # WM_TIMER — animate
+        if msg == 0x0113:                    # WM_TIMER — animate / fade
             self._phase += 1
+            if self._fading:
+                self._fade_a -= 22             # ~12 frames ≈ 190ms fade-out
+                if self._fade_a <= 0:
+                    _u32.DestroyWindow(hwnd)
+                    return 0
             self._render(hwnd)
             return 0
         if msg == 0x0014:                    # WM_ERASEBKGND
             return 1
-        if msg == 0x0010:                    # WM_CLOSE
-            _u32.DestroyWindow(hwnd)
+        if msg == 0x0010:                    # WM_CLOSE — fade out, then destroy
+            self._fading = True
             return 0
         if msg == 0x0002:                    # WM_DESTROY
             self._deinit_gdi()
@@ -957,7 +964,7 @@ class _NativeSplash:
 
         size = wintypes.SIZE(W, H)
         src = wintypes.POINT(0, 0)
-        blend = _BLENDFUNCTION(0, 0, 255, 1)        # AC_SRC_ALPHA
+        blend = _BLENDFUNCTION(0, 0, max(0, self._fade_a), 1)  # AC_SRC_ALPHA
         _u32.UpdateLayeredWindow(hwnd, None, None, ctypes.byref(size),
                                  self._mem, ctypes.byref(src), 0,
                                  ctypes.byref(blend), 2)
