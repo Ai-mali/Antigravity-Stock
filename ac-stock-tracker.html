@@ -362,6 +362,17 @@ body.theme-light.has-user-bg, body.theme-light.bg-wallpaper {
   --border-light: rgba(15, 23, 42, 0.16);
 }
 
+/* Floating suggestion popovers must stay opaque even when panels go
+   translucent — a translucent list over form text is unreadable. */
+body.has-user-bg .rma-suggest, body.bg-wallpaper .rma-suggest,
+body.has-user-bg .datepicker-popover, body.bg-wallpaper .datepicker-popover {
+  background: #141b1f;
+}
+body.theme-light.has-user-bg .rma-suggest, body.theme-light.bg-wallpaper .rma-suggest,
+body.theme-light.has-user-bg .datepicker-popover, body.theme-light.bg-wallpaper .datepicker-popover {
+  background: #f8fafc;
+}
+
 /* Frosted backdrop blur on the big containers only — the serial cards
    keep translucent fills + soft shadow but skip their own blur filter:
    hundreds of backdrop-filters would make scrolling janky, and the photo
