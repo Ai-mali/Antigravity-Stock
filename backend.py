@@ -295,6 +295,11 @@ class StockInBatchRow(BaseModel):
     serials: list[str]
     brand: str = ""
     auto_ids: bool = False
+    # Scan-table index the frontend uses to match per-row results back to
+    # its rows. Undeclared fields are stripped at validation, so without
+    # this the store fell back to list positions and the UI could never
+    # reconcile committed rows (units were written, rows never cleared).
+    idx: int | None = None
 
 
 class StockInBatchBody(BaseModel):

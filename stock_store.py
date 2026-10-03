@@ -784,7 +784,9 @@ class StockStore:
             if not model or not serials:
                 continue
             brand = str(row.get("brand", "")).strip() or self.brand_for(model)
-            idx = row.get("idx", pos)
+            idx = row.get("idx")
+            if idx is None or not isinstance(idx, int):
+                idx = pos
             if not brand:
                 needs.append(model)
             else:
