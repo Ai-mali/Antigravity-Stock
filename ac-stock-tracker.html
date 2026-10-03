@@ -287,6 +287,7 @@ body.bg-wallpaper::before {
 }
 body.has-user-bg::before {
   background-image: var(--user-bg-url, none);
+  background-position: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%);
   filter: blur(6px);          /* soften photo detail behind the text */
 }
 body.bg-wallpaper::before {
@@ -507,6 +508,37 @@ body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8c
   width: 100%;
   margin-top: 10px;
 }
+
+/* ---- Photo reposition mode: UI fades, drag anywhere to move photo ---- */
+body.bg-adjust { cursor: grab; }
+body.bg-adjust.dragging { cursor: grabbing; }
+body.bg-adjust .app-container {
+  opacity: 0.22;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+#bg-adjust-done {
+  display: none;
+  pointer-events: auto;   /* app-container is pointer-events:none in adjust mode */
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 10px 28px;
+  border-radius: 99px;
+  border: 1px solid var(--border-light);
+  background: var(--green);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+#bg-adjust-done:hover { background: var(--green-hover); }
+body.bg-adjust #bg-adjust-done { display: block; }
 .ap-dim-val {
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
@@ -6020,6 +6052,8 @@ body.theme-light .autocomplete-dropdown {
             <button class="ap-btn" onclick="document.getElementById('bg-file-input').click()">Choose image&hellip;</button>
             <button class="ap-btn" id="bg-remove-btn" onclick="removeUserBackground()">Remove</button>
           </div>
+          <button class="ap-btn ap-reset" id="bg-adjust-btn" style="margin-top:6px;"
+                  onclick="startBgAdjust()" title="Drag the photo to reposition it">&#10021; Adjust photo position</button>
           <div class="ap-dim-row">
             <span class="ap-dim-label" title="Program transparency — how see-through the panels are">PANELS</span>
             <input type="range" class="ap-slider" id="ap-panel-slider" min="20" max="100" value="75"
@@ -6037,6 +6071,7 @@ body.theme-light .autocomplete-dropdown {
           <input type="file" id="bg-file-input" accept="image/png,image/jpeg,image/webp" hidden onchange="uploadUserBackground(this)">
         </div>
       </div>
+      <button id="bg-adjust-done" onclick="endBgAdjust()">Done</button>
 
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
@@ -7908,6 +7943,9 @@ async function refreshData() {
                       (uiPrefs && uiPrefs.bgV) || 0,
                       (uiPrefs && uiPrefs.bgPreset) || '');
   hydrateAppearance();
+  DB.bgPosX = (uiPrefs && uiPrefs.bgPosX != null) ? uiPrefs.bgPosX : 50;
+  DB.bgPosY = (uiPrefs && uiPrefs.bgPosY != null) ? uiPrefs.bgPosY : 50;
+  applyBgPos();
   // Restore a staged dispatch cart that survived refresh/restart — drop
   // entries whose unit is no longer In Stock.
   if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
@@ -14221,6 +14259,7 @@ document.addEventListener('keydown', e => {
     closePhotoViewerModal();
     closeReturnDetail();
     resolveAppConfirm(false);
+    endBgAdjust();
   }
 });
 /* Backdrop-click-to-close: only when BOTH mousedown and mouseup land
@@ -14414,6 +14453,57 @@ function resetAppearance() {
   _apPersist();
   showToast('Appearance reset to default', '&#9684;');
 }
+
+/* ---- Drag-to-reposition the background photo ---- */
+function applyBgPos() {
+  document.body.style.setProperty('--bg-pos-x', (DB.bgPosX != null ? DB.bgPosX : 50) + '%');
+  document.body.style.setProperty('--bg-pos-y', (DB.bgPosY != null ? DB.bgPosY : 50) + '%');
+}
+
+function startBgAdjust() {
+  if (!document.body.classList.contains('has-user-bg')) {
+    showToast('Set a custom background image first', '&#9888;');
+    return;
+  }
+  const pop = document.getElementById('appearance-popover');
+  if (pop) pop.classList.remove('open');
+  document.body.classList.add('bg-adjust');
+}
+
+function endBgAdjust() {
+  if (!document.body.classList.contains('bg-adjust')) return;
+  document.body.classList.remove('bg-adjust', 'dragging');
+  _bgDrag = null;
+  apiPost('/api/ui-prefs', {
+    prefs: { bgPosX: Math.round(DB.bgPosX), bgPosY: Math.round(DB.bgPosY) }
+  }).catch(() => {});
+  showToast('Photo position saved', '&#9684;');
+}
+
+let _bgDrag = null;
+document.addEventListener('pointerdown', e => {
+  if (!document.body.classList.contains('bg-adjust')) return;
+  if (e.target.id === 'bg-adjust-done') return;
+  _bgDrag = {
+    x: e.clientX, y: e.clientY,
+    px: DB.bgPosX != null ? DB.bgPosX : 50,
+    py: DB.bgPosY != null ? DB.bgPosY : 50
+  };
+  document.body.classList.add('dragging');
+});
+document.addEventListener('pointermove', e => {
+  if (!_bgDrag) return;
+  const dx = e.clientX - _bgDrag.x, dy = e.clientY - _bgDrag.y;
+  /* cover-size offset maps linearly to position% — a full-viewport drag
+     sweeps the whole image range; clamped at the edges. */
+  DB.bgPosX = Math.max(0, Math.min(100, _bgDrag.px - dx / window.innerWidth * 100));
+  DB.bgPosY = Math.max(0, Math.min(100, _bgDrag.py - dy / window.innerHeight * 100));
+  applyBgPos();
+});
+document.addEventListener('pointerup', () => {
+  _bgDrag = null;
+  document.body.classList.remove('dragging');
+});
 
 function setBgPreset(name) {
   apiPost('/api/ui-prefs', { prefs: { bgImage: false, bgPreset: name } })
