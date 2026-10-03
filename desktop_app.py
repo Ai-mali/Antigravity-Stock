@@ -11,6 +11,8 @@ import time
 import socket
 import threading
 import ctypes
+import math
+import colorsys
 from ctypes import wintypes
 
 APP_URL = 'http://127.0.0.1:8000/?app_mode=desktop'
@@ -309,36 +311,185 @@ _g32.FillRgn.restype = wintypes.BOOL
 _g32.FillRgn.argtypes = [wintypes.HDC, wintypes.HANDLE, wintypes.HBRUSH]
 
 
+# ---- GDI+ bindings: anti-aliased lines, ARGB alpha pens, premultiplied ----
+# 32bpp surfaces for per-pixel-alpha layered windows.
+_gd = ctypes.windll.gdiplus
+_vp = ctypes.c_void_p
+
+
+class _GDIPlusStartupInput(ctypes.Structure):
+    _fields_ = [("GdiplusVersion", wintypes.UINT),
+                ("DebugEventCallback", wintypes.LPVOID),
+                ("SuppressBackgroundThread", wintypes.BOOL),
+                ("SuppressExternalCodecs", wintypes.BOOL)]
+
+
+class _BITMAPINFOHEADER(ctypes.Structure):
+    _fields_ = [("biSize", wintypes.DWORD), ("biWidth", wintypes.LONG),
+                ("biHeight", wintypes.LONG), ("biPlanes", wintypes.WORD),
+                ("biBitCount", wintypes.WORD), ("biCompression", wintypes.DWORD),
+                ("biSizeImage", wintypes.DWORD),
+                ("biXPelsPerMeter", wintypes.LONG),
+                ("biYPelsPerMeter", wintypes.LONG),
+                ("biClrUsed", wintypes.DWORD),
+                ("biClrImportant", wintypes.DWORD)]
+
+
+class _BITMAPINFO(ctypes.Structure):
+    _fields_ = [("bmiHeader", _BITMAPINFOHEADER),
+                ("bmiColors", wintypes.DWORD * 1)]
+
+
+class _BLENDFUNCTION(ctypes.Structure):
+    _fields_ = [("BlendOp", wintypes.BYTE), ("BlendFlags", wintypes.BYTE),
+                ("SourceConstantAlpha", wintypes.BYTE),
+                ("AlphaFormat", wintypes.BYTE)]
+
+
+class _RECTF(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_float), ("y", ctypes.c_float),
+                ("w", ctypes.c_float), ("h", ctypes.c_float)]
+
+
+class _POINTF(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_float), ("y", ctypes.c_float)]
+
+
+_gd.GdiplusStartup.argtypes = [ctypes.POINTER(_vp),
+                               ctypes.POINTER(_GDIPlusStartupInput), _vp]
+_gd.GdiplusStartup.restype = ctypes.c_int
+_gd.GdiplusShutdown.argtypes = [_vp]
+_gd.GdipCreateBitmapFromScan0.argtypes = [ctypes.c_int, ctypes.c_int,
+                                        ctypes.c_int, ctypes.c_int, _vp,
+                                        ctypes.POINTER(_vp)]
+_gd.GdipDisposeImage.argtypes = [_vp]
+_gd.GdipGetImageGraphicsContext.argtypes = [_vp, ctypes.POINTER(_vp)]
+_gd.GdipDeleteGraphics.argtypes = [_vp]
+_gd.GdipSetSmoothingMode.argtypes = [_vp, ctypes.c_int]
+_gd.GdipSetTextRenderingHint.argtypes = [_vp, ctypes.c_int]
+_gd.GdipGraphicsClear.argtypes = [_vp, wintypes.DWORD]
+_gd.GdipCreatePen1.argtypes = [wintypes.DWORD, ctypes.c_float, ctypes.c_int,
+                               ctypes.POINTER(_vp)]
+_gd.GdipSetPenStartCap.argtypes = [_vp, ctypes.c_int]
+_gd.GdipSetPenEndCap.argtypes = [_vp, ctypes.c_int]
+_gd.GdipDeletePen.argtypes = [_vp]
+_gd.GdipDrawLine.argtypes = [_vp, _vp] + [ctypes.c_float] * 4
+_gd.GdipCreateSolidFill.argtypes = [wintypes.DWORD, ctypes.POINTER(_vp)]
+_gd.GdipDeleteBrush.argtypes = [_vp]
+_gd.GdipCreateLineBrush.argtypes = [ctypes.POINTER(_POINTF),
+                                    ctypes.POINTER(_POINTF), wintypes.DWORD,
+                                    wintypes.DWORD, ctypes.c_int,
+                                    ctypes.POINTER(_vp)]
+_gd.GdipFillPolygon.argtypes = [_vp, _vp, ctypes.POINTER(_POINTF),
+                              ctypes.c_int, ctypes.c_int]
+_gd.GdipDrawPolygon.argtypes = [_vp, _vp, ctypes.POINTER(_POINTF),
+                              ctypes.c_int]
+_gd.GdipFillEllipse.argtypes = [_vp, _vp] + [ctypes.c_float] * 4
+_gd.GdipCreateFontFamilyFromName.argtypes = [wintypes.LPCWSTR, _vp,
+                                             ctypes.POINTER(_vp)]
+_gd.GdipDeleteFontFamily.argtypes = [_vp]
+_gd.GdipCreateFont.argtypes = [_vp, ctypes.c_float, ctypes.c_int,
+                              ctypes.c_int, ctypes.POINTER(_vp)]
+_gd.GdipDeleteFont.argtypes = [_vp]
+_gd.GdipCreateStringFormat.argtypes = [ctypes.c_int, wintypes.WORD,
+                                       ctypes.POINTER(_vp)]
+_gd.GdipSetStringFormatAlign.argtypes = [_vp, ctypes.c_int]
+_gd.GdipDeleteStringFormat.argtypes = [_vp]
+_gd.GdipDrawString.argtypes = [_vp, ctypes.c_wchar_p, ctypes.c_int, _vp,
+                              ctypes.POINTER(_RECTF), _vp, _vp]
+_gd.GdipMeasureString.argtypes = [_vp, ctypes.c_wchar_p, ctypes.c_int, _vp,
+                                 ctypes.POINTER(_RECTF), _vp,
+                                 ctypes.POINTER(_RECTF),
+                                 ctypes.POINTER(ctypes.c_int),
+                                 ctypes.POINTER(ctypes.c_int)]
+
+_g32.CreateDIBSection.restype = wintypes.HBITMAP
+_g32.CreateDIBSection.argtypes = [wintypes.HDC, ctypes.POINTER(_BITMAPINFO),
+                                  wintypes.UINT, ctypes.POINTER(_vp),
+                                  wintypes.HANDLE, wintypes.DWORD]
+_u32.GetDC.restype = wintypes.HDC
+_u32.GetDC.argtypes = [wintypes.HWND]
+_u32.ReleaseDC.restype = ctypes.c_int
+_u32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+_u32.UpdateLayeredWindow.restype = wintypes.BOOL
+_u32.UpdateLayeredWindow.argtypes = [wintypes.HWND, wintypes.HDC,
+                                     ctypes.POINTER(wintypes.POINT),
+                                     ctypes.POINTER(wintypes.SIZE),
+                                     wintypes.HDC,
+                                     ctypes.POINTER(wintypes.POINT),
+                                     wintypes.DWORD,
+                                     ctypes.POINTER(_BLENDFUNCTION),
+                                     wintypes.DWORD]
+try:
+    _u32.GetDpiForSystem.restype = wintypes.UINT
+    _u32.GetDpiForSystem.argtypes = []
+except AttributeError:
+    pass
+
+
 class _NativeSplash:
-    """Instant Win32 splash shown while WebView2 warms up (see module note)."""
+    """Instant Win32/GDI+ splash shown while WebView2 warms up.
 
-    W, H = 460, 240
+    Layered window with per-pixel alpha (UpdateLayeredWindow) + GDI+
+    rendering on a 32bpp premultiplied DIB. A color-lagged "shooting
+    star" comet laps the rounded card border — the same dash-segment
+    engine as SPLASH_HTML, ported to GDI+ strokes.
+    """
 
-    # COLORREF is 0x00BBGGRR — near-black backdrop, dark-glass card,
-    # comet on the card edge (mirrors SPLASH_HTML)
-    _BG     = 0x000A0705   # #05070A
-    _CARD   = 0x00131210   # #101213 — mid of the card's dark gradient
-    _CARD_RGB = (0x10, 0x12, 0x13)   # card color as plain RGB for blends
-    _CARD_LINE = 0x00272625 # ~white 10% over the card — faint border
-    _ACCENT = 0x0081B910   # #10B981
-    _TEXT   = 0x00E1D5CB   # #CBD5E1
-    _SUB    = 0x00E1D5CB   # #CBD5E1
-    _STATUS = 0x00E1D5CB   # #CBD5E1
-    _TRACK  = 0x00262422   # #222426
-    _ACCENT_DIM = 0x005A2E15  # dim teal — halo on the dark card
-    _CARD_M  = 30          # card margin from window edge (px)
-    # comet palette (plain RGB) — the head cycles through these as it
-    # laps the border, the trail dots just blend the head toward white
-    _RUN_COLORS = ((0x10, 0xB9, 0x81),   # emerald
-                   (0x06, 0xB6, 0xD4),   # cyan
-                   (0x3B, 0x82, 0xF6),   # blue
-                   (0x8B, 0x5C, 0xF6))   # purple
+    # ===================== TUNABLES =====================
+    LAP_MS         = 3000     # one comet lap around the card border
+    COLOR_CYCLE_MS = 6000     # green -> cyan -> blue -> purple -> back
+    TAIL           = 0.24     # tail length, fraction of the perimeter
+    SEGMENTS       = 30       # tail smoothness (segments behind the head)
+    LAG_MS         = 55.0     # color lag inside the tail = gradient streak
+    HUE_START      = 155.0    # green
+    HUE_SPAN       = 120.0    # +120 deg -> purple (passes cyan, blue)
+    RING_W         = 2.4      # sharp comet width at the head (logical px)
+    GLOW_W         = 14.0     # widest glow pass at the head (logical px)
+    GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha)
+    CARD_R         = 18.0     # card corner radius (logical px)
+    MARGIN         = 50       # transparent margin around the card — glow bleed
+    WIN_W, WIN_H   = 560, 320 # logical window size incl. margins
+    TIMER_MS       = 16       # ~60fps
+    # ---- ARGB palette, 0xAARRGGBB (mirrors SPLASH_HTML) ----
+    _CARD_TOP   = 0xFF151617
+    _CARD_BOT   = 0xFF0B0C0D
+    _CARD_EDGE  = 0x1AFFFFFF  # faint base border — white ~10%
+    _ACCENT     = 0xFF10B981
+    _ACCENT_HI  = 0xFF06B6D4
+    _TEXT       = 0xFFCBD5E1
+    _TRACK      = 0xFF222426
+    _POLY_N     = 160         # rounded-rect polyline resolution
+    # ======================================================
 
     def __init__(self):
         self._hwnd = None
         self._phase = 0
         self._ready = threading.Event()
         self._wndproc_ref = None
+        self._sc = 1.0
+        self._t0 = None
+        self.W = self.WIN_W
+        self.H = self.WIN_H
+        self._m = float(self.MARGIN)
+        self._rad = self.CARD_R
+        self._cw = 0.0
+        self._ch = 0.0
+        self._perim = 1.0
+        self._card_poly = None
+        self._gdi_tok = _vp()
+        self._mem = None
+        self._hbmp = None
+        self._gpimg = None
+        self._gfx = None
+        self._objs = []          # (deleter, handle) freed on destroy
+        self._fmt_l = None
+        self._fmt_c = None
+        self._f_title = None
+        self._f_small = None
+        self._vre_w = 0.0
+        self._ac_w = 0.0
+        self._sub_w = 0.0
 
     def start(self):
         try:
@@ -356,6 +507,23 @@ class _NativeSplash:
     def _run(self):
         try:
             _u32.SetProcessDPIAware()
+            try:
+                self._sc = (_u32.GetDpiForSystem() or 96) / 96.0
+            except Exception:
+                self._sc = 1.0
+            sc = self._sc
+            self.W, self.H = round(self.WIN_W * sc), round(self.WIN_H * sc)
+            self._m = self.MARGIN * sc
+            self._rad = self.CARD_R * sc
+            self._cw = self.W - 2 * self._m
+            self._ch = self.H - 2 * self._m
+            self._perim = (2 * (self._cw - 2 * self._rad)
+                           + 2 * (self._ch - 2 * self._rad)
+                           + 2 * math.pi * self._rad)
+            pts = [self._point_at(self._perim * i / self._POLY_N)
+                   for i in range(self._POLY_N)]
+            self._card_poly = (_POINTF * self._POLY_N)(
+                *[_POINTF(*p) for p in pts])
             hinst = _k32.GetModuleHandleW(None)
             class_name = "ACStockTrackerSplash"
 
@@ -364,7 +532,6 @@ class _NativeSplash:
             wc.cbSize = ctypes.sizeof(_WNDCLASSEXW)
             wc.lpfnWndProc = self._wndproc_ref
             wc.hInstance = hinst
-            wc.hbrBackground = _g32.CreateSolidBrush(self._BG)
             wc.lpszClassName = class_name
             if not _u32.RegisterClassExW(ctypes.byref(wc)):
                 return
@@ -372,20 +539,20 @@ class _NativeSplash:
             x = (_u32.GetSystemMetrics(0) - self.W) // 2
             y = (_u32.GetSystemMetrics(1) - self.H) // 2
 
-            # WS_POPUP | WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+            # WS_EX_LAYERED|TOPMOST|TOOLWINDOW + WS_POPUP — the window's
+            # shape is defined by per-pixel alpha, no region needed.
             self._hwnd = _u32.CreateWindowExW(
-                0x00000008 | 0x00000080, class_name, "ACStockSplash",
+                0x00080000 | 0x00000008 | 0x00000080,
+                class_name, "ACStockSplash",
                 0x80000000, x, y, self.W, self.H, None, None, hinst, None)
             if not self._hwnd:
                 return
 
-            # rounded corners (region ownership passes to the window)
-            rgn = _g32.CreateRoundRectRgn(0, 0, self.W + 1, self.H + 1, 20, 20)
-            _u32.SetWindowRgn(self._hwnd, rgn, True)
-
-            _u32.SetTimer(self._hwnd, 1, 33, None)   # ~30fps shimmer
+            self._init_gdi(self._hwnd)
+            _u32.SetTimer(self._hwnd, 1, self.TIMER_MS, None)
             _u32.ShowWindow(self._hwnd, 5)           # SW_SHOW
             _u32.UpdateWindow(self._hwnd)
+            self._render(self._hwnd)                 # first frame
             self._ready.set()
 
             msg = _MSG()
@@ -398,196 +565,313 @@ class _NativeSplash:
             self._ready.set()
 
     def _wnd_proc(self, hwnd, msg, wparam, lparam):
-        if msg == 0x000F:                    # WM_PAINT
-            self._paint(hwnd)
+        if msg == 0x000F:                    # WM_PAINT — validate + re-push
+            ps = _PAINTSTRUCT()
+            _u32.BeginPaint(hwnd, ctypes.byref(ps))
+            self._render(hwnd)
+            _u32.EndPaint(hwnd, ctypes.byref(ps))
             return 0
-        if msg == 0x0113:                    # WM_TIMER
+        if msg == 0x0113:                    # WM_TIMER — animate
             self._phase += 1
-            _u32.InvalidateRect(hwnd, None, False)
+            self._render(hwnd)
             return 0
-        if msg == 0x0014:                    # WM_ERASEBKGND (we paint all)
+        if msg == 0x0014:                    # WM_ERASEBKGND
             return 1
         if msg == 0x0010:                    # WM_CLOSE
             _u32.DestroyWindow(hwnd)
             return 0
         if msg == 0x0002:                    # WM_DESTROY
+            self._deinit_gdi()
             _u32.PostQuitMessage(0)
             return 0
         return _u32.DefWindowProcW(hwnd, msg, wparam, lparam)
 
-    def _text_width(self, hdc, s):
-        sz = wintypes.SIZE()
-        _g32.GetTextExtentPoint32W(hdc, s, len(s), ctypes.byref(sz))
-        return sz.cx
+    # ---------------- GDI+ object management ----------------
 
-    @staticmethod
-    def _perim_pt(d, x0, y0, w, h):
-        """Point d px along a rect's border, clockwise from (x0,y0)."""
-        d %= 2 * w + 2 * h
-        if d < w:
-            return x0 + d, y0                # top edge, left→right
-        d -= w
-        if d < h:
-            return x0 + w, y0 + d            # right edge, top→bottom
-        d -= h
-        if d < w:
-            return x0 + w - d, y0 + h        # bottom edge, right→left
-        return x0, y0 + h - (d - w)          # left edge, bottom→top
+    def _mk_fmt(self, align):
+        f = _vp()
+        _gd.GdipCreateStringFormat(0, 0, ctypes.byref(f))
+        _gd.GdipSetStringFormatAlign(f, align)
+        self._objs.append((_gd.GdipDeleteStringFormat, f))
+        return f
 
-    @classmethod
-    def _runner_rgb(cls, frac):
-        """Comet head color at frac [0,1) of a lap — smooth hue cycling."""
-        seg = frac * len(cls._RUN_COLORS)
-        i = int(seg) % len(cls._RUN_COLORS)
-        t = seg - int(seg)
-        c0, c1 = cls._RUN_COLORS[i], cls._RUN_COLORS[(i + 1) % len(cls._RUN_COLORS)]
-        return tuple(round(c0[k] + (c1[k] - c0[k]) * t) for k in range(3))
+    def _mk_font(self, fam, size, style):
+        f = _vp()
+        _gd.GdipCreateFont(fam, size, style, 2, ctypes.byref(f))  # UnitPixel
+        self._objs.append((_gd.GdipDeleteFont, f))
+        return f
 
-    @staticmethod
-    def _blend(c, target, t):
-        return tuple(round(c[k] + (target[k] - c[k]) * t) for k in range(3))
+    def _mk_brush(self, argb):
+        b = _vp()
+        _gd.GdipCreateSolidFill(argb, ctypes.byref(b))
+        self._objs.append((_gd.GdipDeleteBrush, b))
+        return b
 
-    @staticmethod
-    def _ref(rgb):
-        return rgb[0] | rgb[1] << 8 | rgb[2] << 16   # COLORREF is 0x00BBGGRR
+    def _mk_pen(self, argb, w):
+        p = _vp()
+        _gd.GdipCreatePen1(argb, w, 0, ctypes.byref(p))
+        self._objs.append((_gd.GdipDeletePen, p))
+        return p
 
-    def _paint(self, hwnd):
-        ps = _PAINTSTRUCT()
-        hdc = _u32.BeginPaint(hwnd, ctypes.byref(ps))
-        if not hdc:
-            return
-        W, H = self.W, self.H
-        mem = _g32.CreateCompatibleDC(hdc)
-        bmp = _g32.CreateCompatibleBitmap(hdc, W, H)
-        old = _g32.SelectObject(mem, bmp)
-        fonts = []
+    def _measure(self, s, font):
+        if not (self._gfx and font):
+            return 0.0
+        r_in = _RECTF(0, 0, 10000, 10000)
+        r_out = _RECTF()
+        cp = ctypes.c_int()
+        ln = ctypes.c_int()
+        _gd.GdipMeasureString(self._gfx, s, -1, font, ctypes.byref(r_in),
+                              self._fmt_l, ctypes.byref(r_out),
+                              ctypes.byref(cp), ctypes.byref(ln))
+        return r_out.w
+
+    def _init_gdi(self, hwnd):
+        """32bpp premultiplied DIB + GDI+ graphics context + cached objects."""
         try:
-            full = wintypes.RECT(0, 0, W, H)
-            bg = _g32.CreateSolidBrush(self._BG)
-            _u32.FillRect(mem, ctypes.byref(full), bg)
-            _g32.DeleteObject(bg)
-            _g32.SetBkMode(mem, 1)  # TRANSPARENT
+            si = _GDIPlusStartupInput(1, None, False, False)
+            if _gd.GdiplusStartup(ctypes.byref(self._gdi_tok),
+                                  ctypes.byref(si), None):
+                return
+            hdc = _u32.GetDC(hwnd)
+            mem = _g32.CreateCompatibleDC(hdc)
+            _u32.ReleaseDC(hwnd, hdc)
+            if not mem:
+                return
+            bmi = _BITMAPINFO()
+            h = bmi.bmiHeader
+            h.biSize = ctypes.sizeof(_BITMAPINFOHEADER)
+            h.biWidth = self.W
+            h.biHeight = -self.H            # top-down
+            h.biPlanes = 1
+            h.biBitCount = 32
+            bits = _vp()
+            hbmp = _g32.CreateDIBSection(mem, ctypes.byref(bmi), 0,
+                                         ctypes.byref(bits), None, 0)
+            if not hbmp:
+                _g32.DeleteDC(mem)
+                return
+            _g32.SelectObject(mem, hbmp)    # stays selected for ULW
+            img = _vp()
+            gfx = _vp()
+            # GpBitmap over the DIB's own bits — zero-copy, premultiplied
+            # 32bpp PARGB so UpdateLayeredWindow composites correctly.
+            if (_gd.GdipCreateBitmapFromScan0(self.W, self.H, self.W * 4,
+                                              0xE200B, bits,
+                                              ctypes.byref(img))
+                    or _gd.GdipGetImageGraphicsContext(img, ctypes.byref(gfx))):
+                _g32.DeleteObject(hbmp)
+                _g32.DeleteDC(mem)
+                return
+            _gd.GdipSetSmoothingMode(gfx, 4)      # SmoothingModeAntiAlias
+            _gd.GdipSetTextRenderingHint(gfx, 4)  # TextRenderingHintAntiAlias
+            self._mem, self._hbmp, self._gpimg, self._gfx = mem, hbmp, img, gfx
 
-            # White rounded card inset — the comet runs ITS border.
-            m = self._CARD_M
-            try:
-                card = _g32.CreateRoundRectRgn(m, m, W - m, H - m, 40, 40)
-                cb = _g32.CreateSolidBrush(self._CARD)
-                _g32.FillRgn(mem, card, cb)
-                _g32.DeleteObject(cb)
-                edge = _g32.CreateSolidBrush(self._CARD_LINE)
-                _g32.FrameRgn(mem, card, edge, 1, 1)
-                _g32.DeleteObject(edge)
-                _g32.DeleteObject(card)
-            except Exception:
-                pass
+            self._fmt_l = self._mk_fmt(0)   # near / left
+            self._fmt_c = self._mk_fmt(1)   # center
+            fam = _vp()
+            _gd.GdipCreateFontFamilyFromName("Segoe UI", None,
+                                             ctypes.byref(fam))
+            self._objs.append((_gd.GdipDeleteFontFamily, fam))
+            self._f_title = self._mk_font(fam, 22.0 * self._sc, 1)
+            self._f_small = self._mk_font(fam, 11.5 * self._sc, 0)
 
-            # Title: "VRE AC STOCK" with AC STOCK in accent — two-tone via
-            # measured widths, same look as the HTML splash.
-            f_title = _g32.CreateFontW(-24, 0, 0, 0, 700, 0, 0, 0, 1,
-                                       0, 0, 0, 0, "Segoe UI")
-            f_small = _g32.CreateFontW(-11, 0, 0, 0, 400, 0, 0, 0, 1,
-                                       0, 0, 0, 0, "Segoe UI")
-            fonts += [f_title, f_small]
+            m = self._m
+            p1 = _POINTF(0.0, m)
+            p2 = _POINTF(0.0, m + self._ch)
+            self._br_card = _vp()
+            _gd.GdipCreateLineBrush(ctypes.byref(p1), ctypes.byref(p2),
+                                    self._CARD_TOP, self._CARD_BOT, 0,
+                                    ctypes.byref(self._br_card))
+            self._objs.append((_gd.GdipDeleteBrush, self._br_card))
+            self._br_text = self._mk_brush(self._TEXT)
+            self._br_acc = self._mk_brush(self._ACCENT)
+            self._br_acchi = self._mk_brush(self._ACCENT_HI)
+            self._br_track = self._mk_brush(self._TRACK)
+            self._pn_edge = self._mk_pen(self._CARD_EDGE, 1.0)
 
-            _g32.SelectObject(mem, f_title)
-            parts = [("VRE ", self._TEXT), ("AC STOCK", self._ACCENT)]
-            total = sum(self._text_width(mem, s) for s, _ in parts)
-            x0 = (W - total) // 2
-            # soft halo behind the accent word — 4 dim offset copies
-            acc_x = x0 + self._text_width(mem, parts[0][0])
-            _g32.SetTextColor(mem, self._ACCENT_DIM)
-            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-                r = wintypes.RECT(acc_x + dx, 66 + dy, W, 100)
-                _u32.DrawTextW(mem, parts[1][0], -1, ctypes.byref(r), 0x0020)
-            x = x0
-            for s, col in parts:
-                _g32.SetTextColor(mem, col)
-                r = wintypes.RECT(x, 66, W, 100)
-                _u32.DrawTextW(mem, s, -1, ctypes.byref(r), 0x0020)
-                x += self._text_width(mem, s)
+            self._vre_w = self._measure("VRE ", self._f_title)
+            self._ac_w = self._measure("AC STOCK", self._f_title)
+            self._sub_w = self._measure("AI Scan", self._f_small)
+        except Exception:
+            pass
 
-            _g32.SelectObject(mem, f_small)
-            # pulsing live dot + "AI Scan" (mirrors the HTML splash)
-            sub = "AI Scan"
-            sw = self._text_width(mem, sub)
-            sub_x = (W - (10 + 9 + sw)) // 2
-            cy = 113
-            s = self._phase % 20
-            rad = 3 + (s if s < 10 else 20 - s) // 5   # gentle 3-5px pulse
-            cx = sub_x + 5
-            halo = _g32.CreateSolidBrush(self._ACCENT_DIM)
-            old = _g32.SelectObject(mem, halo)
-            _g32.Ellipse(mem, cx - rad - 3, cy - rad - 3, cx + rad + 3, cy + rad + 3)
-            _g32.SelectObject(mem, old)
-            _g32.DeleteObject(halo)
-            dot = _g32.CreateSolidBrush(self._ACCENT)
-            old = _g32.SelectObject(mem, dot)
-            _g32.Ellipse(mem, cx - rad, cy - rad, cx + rad, cy + rad)
-            _g32.SelectObject(mem, old)
-            _g32.DeleteObject(dot)
-            _g32.SetTextColor(mem, self._SUB)
-            r = wintypes.RECT(sub_x + 19, 102, W, 122)
-            _u32.DrawTextW(mem, sub, -1, ctypes.byref(r), 0x0004 | 0x0020)
+    def _deinit_gdi(self):
+        try:
+            for fn, obj in self._objs:
+                try:
+                    fn(obj)
+                except Exception:
+                    pass
+            self._objs = []
+            if self._gfx:
+                _gd.GdipDeleteGraphics(self._gfx)
+                self._gfx = None
+            if self._gpimg:
+                _gd.GdipDisposeImage(self._gpimg)
+                self._gpimg = None
+            if self._hbmp:
+                _g32.DeleteObject(self._hbmp)
+                self._hbmp = None
+            if self._mem:
+                _g32.DeleteDC(self._mem)
+                self._mem = None
+            if self._gdi_tok:
+                _gd.GdiplusShutdown(self._gdi_tok)
+                self._gdi_tok = _vp()
+        except Exception:
+            pass
 
-            # Sweeping accent bar (the "spinner" equivalent)
-            tw, th = 150, 3
-            tx, ty = (W - tw) // 2, 158
-            track = wintypes.RECT(tx, ty, tx + tw, ty + th)
-            tb = _g32.CreateSolidBrush(self._TRACK)
-            _u32.FillRect(mem, ctypes.byref(track), tb)
-            _g32.DeleteObject(tb)
+    # ---------------- rounded-rect perimeter math ----------------
 
-            hw = 46
-            pos = (self._phase * 4) % (tw + hw) - hw
-            hx = max(tx, tx + pos)
-            hr = min(tx + pos + hw, tx + tw)
-            if hr > hx:
-                hl = wintypes.RECT(hx, ty, hr, ty + th)
-                hb = _g32.CreateSolidBrush(self._ACCENT)
-                _u32.FillRect(mem, ctypes.byref(hl), hb)
-                _g32.DeleteObject(hb)
+    @staticmethod
+    def _rr_point(s, x0, y0, w, h, r, perim):
+        """(x, y) at distance s along a rounded-rect border, clockwise,
+        starting where the top edge meets the top-left arc."""
+        sx, sy = w - 2 * r, h - 2 * r
+        arc = math.pi * r / 2
+        s %= perim
+        if s < sx:                                # top edge, left->right
+            return x0 + r + s, y0
+        s -= sx
+        if s < arc:                               # top-right arc (-90->0)
+            a = -math.pi / 2 + (math.pi / 2) * (s / arc)
+            return x0 + w - r + r * math.cos(a), y0 + r + r * math.sin(a)
+        s -= arc
+        if s < sy:                                # right edge, top->bottom
+            return x0 + w, y0 + r + s
+        s -= sy
+        if s < arc:                               # bottom-right arc (0->90)
+            a = (math.pi / 2) * (s / arc)
+            return x0 + w - r + r * math.cos(a), y0 + h - r + r * math.sin(a)
+        s -= arc
+        if s < sx:                                # bottom edge, right->left
+            return x0 + w - r - s, y0 + h
+        s -= sx
+        if s < arc:                               # bottom-left arc (90->180)
+            a = math.pi / 2 + (math.pi / 2) * (s / arc)
+            return x0 + r + r * math.cos(a), y0 + h - r + r * math.sin(a)
+        s -= arc
+        if s < sy:                                # left edge, bottom->top
+            return x0, y0 + h - r - s
+        s -= sy                                   # top-left arc (180->270)
+        a = math.pi + (math.pi / 2) * (s / arc)
+        return x0 + r + r * math.cos(a), y0 + r + r * math.sin(a)
 
-            _g32.SetTextColor(mem, self._STATUS)
-            r = wintypes.RECT(0, 176, W, 196)
-            _u32.DrawTextW(mem, "Starting services…", -1, ctypes.byref(r),
-                           0x0001 | 0x0004 | 0x0020)
+    def _point_at(self, s):
+        return self._rr_point(s, self._m, self._m, self._cw, self._ch,
+                              self._rad, self._perim)
 
-            # Shooting-star comet running the CARD border: hue-cycling
-            # head + a dense train of trail dots (every ~7px, shrinking)
-            # so it reads as a continuous tapering streak, not beads.
-            cw, ch = W - 2 * m, H - 2 * m
-            perim = 2 * cw + 2 * ch
-            head = (self._phase * 7) % perim
-            head_rgb = self._runner_rgb(head / perim)
-            halo_rgb = self._blend(head_rgb, self._CARD_RGB, 0.8)
-            x, y = self._perim_pt(head, m, m, cw, ch)
-            hb = _g32.CreateSolidBrush(self._ref(halo_rgb))
-            old2 = _g32.SelectObject(mem, hb)
-            _g32.Ellipse(mem, x - 8, y - 8, x + 8, y + 8)
-            _g32.SelectObject(mem, old2)
-            _g32.DeleteObject(hb)
-            for i in range(18):
-                k = i / 17                       # 0 = head … 1 = tail tip
-                back = i * 7
-                rad = max(1, round(4 * (1 - k) ** 1.4))
-                t = 0.15 + 0.8 * k ** 1.3        # fade into the card color
-                col = self._ref(self._blend(head_rgb, self._CARD_RGB, t))
-                x, y = self._perim_pt(head - back, m, m, cw, ch)
-                db = _g32.CreateSolidBrush(col)
-                old2 = _g32.SelectObject(mem, db)
-                _g32.Ellipse(mem, x - rad, y - rad, x + rad, y + rad)
-                _g32.SelectObject(mem, old2)
-                _g32.DeleteObject(db)
+    @staticmethod
+    def _rrect_poly(x0, y0, w, h, r, n=24):
+        r = max(0.5, min(r, w / 2, h / 2))
+        perim = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * math.pi * r
+        n = max(8, n)
+        return (_POINTF * n)(*[_POINTF(*_NativeSplash._rr_point(
+            perim * i / n, x0, y0, w, h, r, perim)) for i in range(n)]), n
 
-            _g32.BitBlt(hdc, 0, 0, W, H, mem, 0, 0, 0x00CC0020)  # SRCCOPY
-        finally:
-            _g32.SelectObject(mem, old)
-            for f in fonts:
-                _g32.DeleteObject(f)
-            _g32.DeleteObject(bmp)
-            _g32.DeleteDC(mem)
-            _u32.EndPaint(hwnd, ctypes.byref(ps))
+    # ---------------- frame rendering ----------------
+
+    def _comet(self, head, tail, seg, t_ms, w_head, a_mul):
+        """One comet pass: SEGMENTS short strokes, tail->head, tapered."""
+        gfx = self._gfx
+        n = self.SEGMENTS
+        for i in range(n):
+            k = i / (n - 1)
+            a = int(255 * (k ** 1.5) * a_mul)
+            if a < 2:
+                continue
+            hue = self.HUE_START + self.HUE_SPAN * (
+                0.5 - 0.5 * math.cos(2 * math.pi *
+                                     (t_ms - (n - 1 - i) * self.LAG_MS)
+                                     / self.COLOR_CYCLE_MS))
+            light = 0.55 + 0.30 * (k ** 4)
+            rr, gg, bb = colorsys.hls_to_rgb((hue % 360) / 360.0, light, 0.9)
+            argb = ((a << 24) | (int(rr * 255) << 16)
+                    | (int(gg * 255) << 8) | int(bb * 255))
+            pen = _vp()
+            if _gd.GdipCreatePen1(argb, w_head * (0.5 + 0.5 * k), 0,
+                                  ctypes.byref(pen)):
+                continue
+            _gd.GdipSetPenStartCap(pen, 2)          # LineCapRound
+            _gd.GdipSetPenEndCap(pen, 2)
+            s0 = head - tail + i * seg
+            x1, y1 = self._point_at(s0)
+            x2, y2 = self._point_at(s0 + seg * 0.92)
+            _gd.GdipDrawLine(gfx, pen, x1, y1, x2, y2)
+            _gd.GdipDeletePen(pen)
+
+    def _render(self, hwnd):
+        """Draw one frame into the premultiplied DIB, push via ULW."""
+        gfx = self._gfx
+        if not gfx or not self._card_poly:
+            return
+        if self._t0 is None:
+            self._t0 = time.monotonic()
+        t_ms = (time.monotonic() - self._t0) * 1000.0
+        sc = self._sc
+        W, H = self.W, self.H
+        _gd.GdipGraphicsClear(gfx, 0)               # transparent margin
+
+        # card: dark-glass gradient fill + faint base border
+        _gd.GdipFillPolygon(gfx, self._br_card, self._card_poly,
+                            self._POLY_N, 0)
+        _gd.GdipDrawPolygon(gfx, self._pn_edge, self._card_poly,
+                            self._POLY_N)
+
+        # comet: low-alpha wide passes behind, sharp pass on top
+        P = self._perim
+        head = (t_ms % self.LAP_MS) / self.LAP_MS * P
+        tail = self.TAIL * P
+        seg = tail / self.SEGMENTS
+        for ws, am in self.GLOW_PASSES:
+            self._comet(head, tail, seg, t_ms, self.GLOW_W * ws * sc, am)
+        self._comet(head, tail, seg, t_ms, self.RING_W * sc, 1.0)
+
+        # ---- card contents (unchanged layout) ----
+        m = self._m
+        title_y = m + 42.0 * sc
+        tx = (W - self._vre_w - self._ac_w) / 2
+        rf = _RECTF(tx, title_y, self._vre_w + 8.0, 34.0 * sc)
+        _gd.GdipDrawString(gfx, "VRE ", -1, self._f_title,
+                           ctypes.byref(rf), self._fmt_l, self._br_text)
+        rf = _RECTF(tx + self._vre_w, title_y, self._ac_w + 8.0, 34.0 * sc)
+        _gd.GdipDrawString(gfx, "AC STOCK", -1, self._f_title,
+                           ctypes.byref(rf), self._fmt_l, self._br_acc)
+
+        cy = m + 94.0 * sc                        # pulsing dot + AI Scan
+        sub_x = (W - (18.0 * sc + self._sub_w)) / 2
+        rad = (4.0 + math.sin(t_ms / 350.0) * 1.2) * sc
+        _gd.GdipFillEllipse(gfx, self._br_acc,
+                            sub_x + 7.0 * sc - rad, cy - rad,
+                            rad * 2, rad * 2)
+        rf = _RECTF(sub_x + 18.0 * sc, cy - 9.0 * sc,
+                    self._sub_w + 8.0, 20.0 * sc)
+        _gd.GdipDrawString(gfx, "AI Scan", -1, self._f_small,
+                           ctypes.byref(rf), self._fmt_l, self._br_text)
+
+        tw, th = 150.0 * sc, 5.0 * sc             # track + sliding pill
+        tx0, ty = (W - tw) / 2, m + 126.0 * sc
+        poly, n = self._rrect_poly(tx0, ty, tw, th, th / 2)
+        _gd.GdipFillPolygon(gfx, self._br_track, poly, n, 0)
+        pw = 46.0 * sc
+        pos = (t_ms % 2200.0) / 2200.0 * (tw + pw) - pw
+        hx = max(tx0, tx0 + pos)
+        hr = min(tx0 + pos + pw, tx0 + tw)
+        if hr > hx:
+            poly, n = self._rrect_poly(hx, ty, hr - hx, th, th / 2)
+            _gd.GdipFillPolygon(gfx, self._br_acchi, poly, n, 0)
+
+        rf = _RECTF(0.0, m + 150.0 * sc, float(W), 22.0 * sc)
+        _gd.GdipDrawString(gfx, "Starting services\u2026", -1,
+                           self._f_small, ctypes.byref(rf), self._fmt_c,
+                           self._br_text)
+
+        size = wintypes.SIZE(W, H)
+        src = wintypes.POINT(0, 0)
+        blend = _BLENDFUNCTION(0, 0, 255, 1)        # AC_SRC_ALPHA
+        _u32.UpdateLayeredWindow(hwnd, None, None, ctypes.byref(size),
+                                 self._mem, ctypes.byref(src), 0,
+                                 ctypes.byref(blend), 2)
 
 
 class DesktopApi:
