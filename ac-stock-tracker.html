@@ -235,6 +235,124 @@ body.theme-light .theme-toggle-thumb {
   letter-spacing: 0.02em;
 }
 
+/* ---- Accent color presets (recolor the --green* action family) ---- */
+body.accent-cyan {
+  --green: #0e7490; --green-hover: #155e75; --green-bright: #22d3ee;
+  --green-glow: rgba(34, 211, 238, 0.2);
+  --green-badge-bg: rgba(34, 211, 238, 0.12);
+  --green-badge-border: rgba(34, 211, 238, 0.28);
+}
+body.accent-blue {
+  --green: #1d4ed8; --green-hover: #1e40af; --green-bright: #60a5fa;
+  --green-glow: rgba(96, 165, 250, 0.2);
+  --green-badge-bg: rgba(96, 165, 250, 0.12);
+  --green-badge-border: rgba(96, 165, 250, 0.28);
+}
+body.accent-amber {
+  --green: #b45309; --green-hover: #92400e; --green-bright: #fbbf24;
+  --green-glow: rgba(251, 191, 36, 0.2);
+  --green-badge-bg: rgba(251, 191, 36, 0.12);
+  --green-badge-border: rgba(251, 191, 36, 0.3);
+}
+body.accent-violet {
+  --green: #6d28d9; --green-hover: #5b21b6; --green-bright: #a78bfa;
+  --green-glow: rgba(167, 139, 250, 0.2);
+  --green-badge-bg: rgba(167, 139, 250, 0.12);
+  --green-badge-border: rgba(167, 139, 250, 0.28);
+}
+body.accent-rose {
+  --green: #be123c; --green-hover: #9f1239; --green-bright: #fb7185;
+  --green-glow: rgba(251, 113, 133, 0.2);
+  --green-badge-bg: rgba(251, 113, 133, 0.12);
+  --green-badge-border: rgba(251, 113, 133, 0.28);
+}
+/* "Bright" variants readable on the light canvas */
+body.theme-light.accent-cyan   { --green-bright: #0e7490; }
+body.theme-light.accent-blue   { --green-bright: #1d4ed8; }
+body.theme-light.accent-amber  { --green-bright: #b45309; }
+body.theme-light.accent-violet { --green-bright: #6d28d9; }
+body.theme-light.accent-rose   { --green-bright: #be123c; }
+
+/* ---- Custom background image (dimmed layer behind the app) ---- */
+body.has-user-bg {
+  background-image:
+    linear-gradient(rgba(10, 14, 16, 0.84), rgba(10, 14, 16, 0.84)),
+    var(--user-bg-url, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+body.theme-light.has-user-bg {
+  background-image:
+    linear-gradient(rgba(232, 238, 243, 0.8), rgba(232, 238, 243, 0.8)),
+    var(--user-bg-url, none);
+}
+
+/* ---- Appearance popover (accent swatches + background controls) ---- */
+.appearance-wrap { position: relative; }
+.appearance-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 210px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  display: none;
+  z-index: 600;
+}
+.appearance-popover.open { display: block; }
+.ap-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  margin: 0 0 8px;
+}
+.ap-label + .ap-swatches { margin-bottom: 12px; }
+.ap-swatches { display: flex; gap: 8px; }
+.ap-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--sw);
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ap-swatch:hover { transform: scale(1.18); }
+.ap-swatch.active {
+  border-color: var(--surface);
+  box-shadow: 0 0 0 2px var(--sw), 0 0 8px var(--sw);
+}
+.ap-btns { display: flex; gap: 6px; }
+.ap-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.ap-btn:hover { background: var(--surface3); }
+.ap-hint {
+  font-size: 10px;
+  color: var(--text-sub);
+  margin-top: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Theme switching uses the View Transitions API: the browser snapshots the
    page, swaps the theme in ONE style recalc, and cross-fades the snapshots
    on the compositor — smooth at any DOM size, zero per-element animation. */
@@ -5714,6 +5832,30 @@ body.theme-light .autocomplete-dropdown {
         <span class="theme-mode-label" id="theme-mode-text">Dark</span>
       </button>
 
+      <!-- Appearance: accent color + custom background -->
+      <div class="appearance-wrap">
+        <button class="icon-square-btn" id="appearance-btn" onclick="toggleAppearancePanel(event)"
+                title="Appearance: accent color &amp; background">&#9684;</button>
+        <div class="appearance-popover" id="appearance-popover" onclick="event.stopPropagation()">
+          <div class="ap-label">Accent</div>
+          <div class="ap-swatches" id="ap-swatches">
+            <button class="ap-swatch" data-accent="emerald" style="--sw:#26d07c" title="Emerald (default)" onclick="setAccent('emerald')"></button>
+            <button class="ap-swatch" data-accent="cyan"    style="--sw:#22d3ee" title="Cyan"    onclick="setAccent('cyan')"></button>
+            <button class="ap-swatch" data-accent="blue"    style="--sw:#60a5fa" title="Blue"    onclick="setAccent('blue')"></button>
+            <button class="ap-swatch" data-accent="amber"   style="--sw:#fbbf24" title="Amber"   onclick="setAccent('amber')"></button>
+            <button class="ap-swatch" data-accent="violet"  style="--sw:#a78bfa" title="Violet"  onclick="setAccent('violet')"></button>
+            <button class="ap-swatch" data-accent="rose"    style="--sw:#fb7185" title="Rose"    onclick="setAccent('rose')"></button>
+          </div>
+          <div class="ap-label">Background</div>
+          <div class="ap-btns">
+            <button class="ap-btn" onclick="document.getElementById('bg-file-input').click()">Choose image&hellip;</button>
+            <button class="ap-btn" id="bg-remove-btn" onclick="removeUserBackground()">Remove</button>
+          </div>
+          <div class="ap-hint" id="bg-hint">Default theme background</div>
+          <input type="file" id="bg-file-input" accept="image/png,image/jpeg,image/webp" hidden onchange="uploadUserBackground(this)">
+        </div>
+      </div>
+
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
         &#9201;
@@ -7580,6 +7722,7 @@ async function refreshData() {
   DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
   DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
   DB.soRecentHidden = !!(uiPrefs && uiPrefs.soRecent);
+  applyUserBackground(!!(uiPrefs && uiPrefs.bgImage), (uiPrefs && uiPrefs.bgV) || 0);
   // Restore a staged dispatch cart that survived refresh/restart — drop
   // entries whose unit is no longer In Stock.
   if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
@@ -13977,6 +14120,72 @@ function toggleTheme() {
             willBeLight ? '&#9728;' : '&#9790;');
 }
 
+/* ---- Appearance: accent color presets + custom background image ---- */
+const ACCENT_NAMES = ['emerald', 'cyan', 'blue', 'amber', 'violet', 'rose'];
+
+function setAccent(name, persist = true) {
+  ACCENT_NAMES.forEach(n => document.body.classList.remove('accent-' + n));
+  if (name && name !== 'emerald') document.body.classList.add('accent-' + name);
+  document.querySelectorAll('.ap-swatch').forEach(s =>
+    s.classList.toggle('active', s.dataset.accent === (name || 'emerald')));
+  if (persist) {
+    try { localStorage.setItem('ac_stock_accent', name || 'emerald'); } catch(e){}
+  }
+}
+
+function toggleAppearancePanel(e) {
+  if (e) e.stopPropagation();
+  const p = document.getElementById('appearance-popover');
+  if (p) p.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const p = document.getElementById('appearance-popover');
+  if (p && p.classList.contains('open') && !p.contains(e.target)) {
+    p.classList.remove('open');
+  }
+});
+
+function applyUserBackground(on, v) {
+  document.body.classList.toggle('has-user-bg', !!on);
+  const hint = document.getElementById('bg-hint');
+  if (on) {
+    document.body.style.setProperty('--user-bg-url',
+      "url('/api/background?v=" + (v || 0) + "')");
+    if (hint) hint.textContent = 'Custom image active';
+  } else {
+    document.body.style.removeProperty('--user-bg-url');
+    if (hint) hint.textContent = 'Default theme background';
+  }
+}
+
+async function uploadUserBackground(input) {
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  if (f.size > 15 * 1024 * 1024) {
+    showToast('Image too large — max 15 MB', '&#9888;');
+    return;
+  }
+  const fd = new FormData();
+  fd.append('file', f);
+  try {
+    await api('/api/background', { method: 'POST', body: fd });
+    const v = Date.now();
+    apiPost('/api/ui-prefs', { prefs: { bgImage: true, bgV: v } }).catch(() => {});
+    applyUserBackground(true, v);
+    showToast('Background updated', '&#9684;');
+  } catch (ex) {
+    showToast('Background upload failed: ' + ex.message, '&#9888;');
+  }
+}
+
+async function removeUserBackground() {
+  try { await apiDel('/api/background'); } catch(e){}
+  apiPost('/api/ui-prefs', { prefs: { bgImage: false } }).catch(() => {});
+  applyUserBackground(false);
+  showToast('Background removed', '&#10005;');
+}
+
 /* Frameless Desktop App Shell Bridge (pywebview) */
 function isDesktopShell() {
   return window.pywebview && window.pywebview.api;
@@ -14260,6 +14469,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       const txt = document.getElementById('theme-mode-text');
       if (txt) txt.textContent = 'Day';
     }
+    setAccent(localStorage.getItem('ac_stock_accent') || 'emerald', false);
   } catch(e){}
 
   try {

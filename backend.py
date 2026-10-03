@@ -616,6 +616,78 @@ def save_ui_prefs(body: UiPrefsBody):
     return {"ok": True}
 
 
+# ------------------------------------------------------- user background image
+BG_ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".webp"}
+BG_MAX_BYTES = 15 * 1024 * 1024
+BG_BASENAME = "user_bg"
+
+
+def _find_bg():
+    for p in UI_PREFS_PATH.parent.glob(BG_BASENAME + ".*"):
+        if p.suffix.lower() in BG_ALLOWED_EXT:
+            return p
+    return None
+
+
+def _is_real_image(data: bytes) -> bool:
+    return (data.startswith(b"\x89PNG\r\n\x1a\n")
+            or data.startswith(b"\xff\xd8\xff")
+            or (data[:4] == b"RIFF" and data[8:12] == b"WEBP"))
+
+
+@app.get("/api/background")
+def get_background():
+    p = _find_bg()
+    if not p:
+        raise HTTPException(404, "No background image set")
+    media = {".png": "image/png", ".webp": "image/webp"}.get(
+        p.suffix.lower(), "image/jpeg")
+    return FileResponse(p, media_type=media)
+
+
+@app.post("/api/background")
+def upload_background(file: UploadFile):
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in BG_ALLOWED_EXT:
+        return JSONResponse({"ok": False,
+                             "error": "Use a PNG, JPG or WebP image"},
+                            status_code=400)
+    try:
+        data = file.file.read()
+    except Exception as ex:
+        return JSONResponse({"ok": False, "error": f"Upload read failed: {ex}"},
+                            status_code=400)
+    if not data or len(data) > BG_MAX_BYTES:
+        return JSONResponse({"ok": False,
+                             "error": "Image is empty or over 15 MB"},
+                            status_code=400)
+    if not _is_real_image(data):
+        return JSONResponse({"ok": False,
+                             "error": "File is not a valid PNG/JPG/WebP image"},
+                            status_code=400)
+    target = UI_PREFS_PATH.parent / (BG_BASENAME + ext)
+    tmp = UI_PREFS_PATH.parent / (BG_BASENAME + ".tmp")
+    tmp.write_bytes(data)
+    os.replace(tmp, target)
+    for old in UI_PREFS_PATH.parent.glob(BG_BASENAME + ".*"):
+        if old != target:
+            try:
+                old.unlink()
+            except OSError:
+                pass
+    return {"ok": True}
+
+
+@app.delete("/api/background")
+def delete_background():
+    for old in UI_PREFS_PATH.parent.glob(BG_BASENAME + ".*"):
+        try:
+            old.unlink()
+        except OSError:
+            pass
+    return {"ok": True}
+
+
 def _launch_window(desktop_mode: bool = False):
     url = "http://localhost:8000"
     if desktop_mode:
