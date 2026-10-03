@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 title VRE AC Stock - Wipe All Data
 cd /d "%~dp0"
 
@@ -13,8 +14,8 @@ echo     - backups\            (all backup copies)
 echo     - delivery_orders\    (all archived DO photos)
 echo     - ui_prefs.json       (saved UI state + staged cart)
 echo.
-echo   IMPORTANT: Close the app first. If the backend is running it
-echo   holds the workbook in memory and will re-save deleted data.
+echo   If the app is running it will be CLOSED automatically,
+echo   otherwise the in-memory data would re-save after the wipe.
 echo.
 set /p CONFIRM=Type YES to wipe everything:
 if /i not "%CONFIRM%"=="YES" (
@@ -25,15 +26,45 @@ if /i not "%CONFIRM%"=="YES" (
 )
 
 echo.
+set "APPKILLED=0"
+
+REM --- running desktop app? (it records its PID in .vre_app.pid) ---
+if exist ".vre_app.pid" (
+    set /p APPPID=<.vre_app.pid
+    if defined APPPID (
+        tasklist /FI "PID eq !APPPID!" 2>nul | findstr /I "python" >nul
+        if !errorlevel! equ 0 (
+            echo   App is running ^(PID !APPPID!^) - closing it...
+            taskkill /PID !APPPID! /F /T >nul 2>&1
+            set "APPKILLED=1"
+        )
+    )
+)
+
+REM --- fallback: standalone backend.py owns port 8000 ---
+for /f "tokens=5" %%P in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":8000 "') do (
+    echo   Backend is listening on port 8000 ^(PID %%P^) - closing it...
+    taskkill /PID %%P /F >nul 2>&1
+    set "APPKILLED=1"
+)
+
+if "!APPKILLED!"=="1" (
+    echo   App closed. Waiting for file handles to release...
+    timeout /t 2 /nobreak >nul
+) else (
+    echo   App is not running - safe to wipe.
+)
+
+echo.
 echo  Wiping...
 
-REM --- main workbook (this is the one that must not be locked) ---
+REM --- main workbook ---
 if exist "daikin_stock.xlsx" (
     del /f /q "daikin_stock.xlsx" 2>nul
     if exist "daikin_stock.xlsx" (
         echo.
-        echo  [FAILED] daikin_stock.xlsx is locked - the app is still running.
-        echo  Close it fully, then run this script again.
+        echo  [FAILED] daikin_stock.xlsx is still locked by another process.
+        echo  Close whatever has it open ^(Excel, the app^) and run again.
         pause
         exit /b 1
     )
