@@ -12,3 +12,13 @@ delivery_orders/
 .devin/config.local.json
 ui_prefs.json
 .vre_app.pid
+
+# Boot-diagnosis tooling & captures — dev only, never shipped
+boot_capture.py
+test_v2.py
+boot_debug*.log
+boot_frames*/
+bf_*/
+_*.png
+_*.log
+BOOT-BLACKSCREEN-DIAGNOSIS.md

@@ -9,12 +9,16 @@ import sys
 import os
 import time
 import socket
+import errno
 import threading
 import ctypes
 import math
 import colorsys
 import traceback
 from ctypes import wintypes
+
+import boot_debug_kit as bk
+bk.t("desktop_app imported")
 
 APP_URL = 'http://127.0.0.1:8000/?app_mode=desktop'
 BACKEND_PORT = 8000
@@ -1261,9 +1265,25 @@ class DesktopApi:
         return True
 
 
-def is_port_in_use(port: int) -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('127.0.0.1', port)) == 0
+def is_port_in_use(port, host="127.0.0.1"):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        s.bind((host, port))
+        return False                     # we could take it exclusively -> nobody holds it
+    except OSError as e:
+        if getattr(e, "winerror", None) == 10048 or e.errno == errno.EADDRINUSE:
+            return True                  # held by something -> existing stale-backend path runs
+    finally:
+        s.close()
+    # any other error (e.g. 10013, reserved range): bounded fallback, never an unbounded connect
+    c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    c.settimeout(0.3)
+    try:
+        return c.connect_ex((host, port)) == 0
+    finally:
+        c.close()
 
 
 def backend_healthy(timeout: float = 1.5) -> bool:
@@ -1329,22 +1349,39 @@ def cleanup_stale_backend():
     kill whoever owns it. A healthy backend with a real window is reused.
     """
     my_pid = os.getpid()
+    bk.t("cleanup: reading PID file")
     try:
         old_pid = int(open(PID_FILE, encoding='ascii').read().strip())
     except Exception:
         old_pid = None
+    bk.t("cleanup: PID file -> %s" % old_pid)
     if old_pid and old_pid != my_pid and _pid_alive(old_pid):
         if not _u32.FindWindowW(None, 'VRE AC Stock'):
+            bk.t("cleanup: pid %s alive, no window -> killing zombie" % old_pid)
             _kill_pid(old_pid)  # zombie: process alive, window gone
+    bk.t("cleanup: zombie check done")
 
-    if is_port_in_use(BACKEND_PORT) and not backend_healthy():
-        pid = _pid_listening_on(BACKEND_PORT)
-        if pid and pid != my_pid:
-            _kill_pid(pid)
-        for _ in range(50):  # wait for the socket to be released
-            if not is_port_in_use(BACKEND_PORT):
-                break
-            time.sleep(0.1)
+    _t = time.monotonic()
+    in_use = is_port_in_use(BACKEND_PORT)
+    bk.t("cleanup: is_port_in_use=%s (%.0fms)" % (in_use, (time.monotonic() - _t) * 1000))
+    if in_use:
+        _t = time.monotonic()
+        healthy = backend_healthy()
+        bk.t("cleanup: backend_healthy=%s (%.0fms)" % (healthy, (time.monotonic() - _t) * 1000))
+        if not healthy:
+            _t = time.monotonic()
+            pid = _pid_listening_on(BACKEND_PORT)
+            bk.t("cleanup: netstat owner -> pid %s (%.0fms)" % (pid, (time.monotonic() - _t) * 1000))
+            if pid and pid != my_pid:
+                _kill_pid(pid)
+                bk.t("cleanup: killed owner pid %s" % pid)
+            _t = time.monotonic()
+            for _ in range(50):  # wait for the socket to be released
+                if not is_port_in_use(BACKEND_PORT):
+                    break
+                time.sleep(0.1)
+            bk.t("cleanup: port released after %.0fms" % ((time.monotonic() - _t) * 1000))
+    bk.t("cleanup_stale_backend done")
 
 
 def run_server():
@@ -1370,6 +1407,7 @@ def main():
     # 1. Instant native splash — visible in <0.5s, covers the entire boot.
     splash = _NativeSplash()
     splash.start()
+    bk.t("native splash started")
 
     # 2. Reap a stale backend (zombie process or dead socket owner), record
     # our PID for the next launch, then boot the backend in parallel.
@@ -1380,13 +1418,20 @@ def main():
     except Exception:
         pass
 
-    if not is_port_in_use(BACKEND_PORT):
+    # One port probe — bind() is instant on this box; connect probes cost ~2s each.
+    port_free = not is_port_in_use(BACKEND_PORT)
+    bk.t("port probe -> free=%s" % port_free)
+    if port_free:
         t = threading.Thread(target=run_server, daemon=True)
         t.start()
+        bk.t("backend thread started")
     # Port already serving a healthy backend = instant relaunch, reuse it.
 
     # 3. webview import happens AFTER splash is up — overlaps backend boot.
+    # WebView2 flags first: keep Chromium rendering while cloaked/occluded.
+    bk.apply_webview2_flags()
     import webview
+    bk.t("webview imported")
 
     api = DesktopApi()
 
@@ -1407,74 +1452,23 @@ def main():
         background_color='#05070a'
     )
     api.set_window(window)
+    bk.t("window created")
 
-    def on_started(w):
-        # The native splash covers the whole boot — it stays topmost over the
-        # WebView window, so the HTML splash is only ever a fallback if the
-        # native one failed. Skip it: as soon as the backend answers, go
-        # straight to the app and keep the native splash until the app's
-        # first real frame has painted. One continuous splash, no black gap,
-        # no mid-boot transition.
-        # Show at 0% opacity: the WebView becomes "visible" so it composites
-        # normally (rAF fires, frames present) while staying unseen. This is
-        # the same mechanism pywebview uses for transparent windows.
-        form = None
-        try:
-            import webview.platforms.winforms as _wf
-            form = _wf.BrowserView.instances.get(getattr(w, 'uid', 'master'))
-            if form is not None:
-                form.Opacity = 0.0
-        except Exception:
-            form = None
-        try:
-            w.show()
-        except Exception:
-            pass
-        for _ in range(300):                     # up to 30s for slow machines
-            if backend_healthy():
-                break
-            time.sleep(0.1)
-        try:
-            w.load_url(APP_URL)
-        except Exception:
-            pass
-        ok = False
-        for _ in range(300):                     # ~30s cap for the app load
-            try:
-                ok = bool(w.evaluate_js(
-                    "location.href.indexOf('app_mode') >= 0 && "
-                    "document.readyState && document.readyState !== 'loading'"))
-                if ok:
-                    break
-            except Exception:
-                pass
-            time.sleep(0.1)
-        if ok:
-            try:
-                # two rAFs = the WebView has composited a real app frame
-                w.evaluate_js(
-                    "new Promise(function(res){requestAnimationFrame("
-                    "function(){requestAnimationFrame(function(){res(1)})})})")
-            except Exception:
-                pass
-        try:
-            if form is not None:
-                form.Opacity = 1.0               # reveal — already painted
-        except Exception:
-            pass
-        time.sleep(0.25)                         # settle — splash outlives the swap
-        splash.close()
-        # Jump the window in front of whatever launched it — one-shot raise,
-        # NOT always-on-top; it yields normally once the user clicks away.
-        api.bring_to_front()
-        api.enable_window_features()
-        api.bring_to_front()
+    # boot_debug_kit: hide the main window while the app loads (DWM cloak ->
+    # opacity-on-GUI-thread -> fail-open), confirm a real painted frame, then
+    # reveal atomically and let the native splash fade out. All milestones go
+    # to boot_debug.log when BOOT_DEBUG=1.
+    on_started = bk.make_on_started(
+        splash, APP_URL, backend_healthy,
+        bring_to_front=api.bring_to_front,
+        enable_window_features=api.enable_window_features)
 
     # Start the desktop window (blocking until closed). os._exit skips the
     # interpreter shutdown that can hang joining threads — the port and all
     # resources are released immediately, so an instant relaunch works.
     # private_mode=False: reuse a persistent WebView2 profile — the runtime's
     # caches survive between launches instead of cold-starting every time.
+    bk.t("webview.start() called")
     webview.start(on_started, window, debug=False, private_mode=False)
     os._exit(0)
 
