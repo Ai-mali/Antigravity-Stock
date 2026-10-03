@@ -373,6 +373,17 @@ body.theme-light.has-user-bg .datepicker-popover, body.theme-light.bg-wallpaper 
   background: #f8fafc;
 }
 
+/* Sticky table headers need solid fills too — with translucent
+   --surface2, rows scrolling underneath bleed through the header. */
+body.has-user-bg .table-scroll-10 thead th, body.bg-wallpaper .table-scroll-10 thead th,
+body.has-user-bg .stock-in-table-scroll thead th, body.bg-wallpaper .stock-in-table-scroll thead th {
+  background: #192227;
+}
+body.theme-light.has-user-bg .table-scroll-10 thead th, body.theme-light.bg-wallpaper .table-scroll-10 thead th,
+body.theme-light.has-user-bg .stock-in-table-scroll thead th, body.theme-light.bg-wallpaper .stock-in-table-scroll thead th {
+  background: #f1f5f8;
+}
+
 /* Frosted backdrop blur on the big containers only — the serial cards
    keep translucent fills + soft shadow but skip their own blur filter:
    hundreds of backdrop-filters would make scrolling janky, and the photo
