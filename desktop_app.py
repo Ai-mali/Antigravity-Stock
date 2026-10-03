@@ -25,14 +25,17 @@ PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 html,body{margin:0;height:100%;display:flex;align-items:center;
 justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;
-user-select:none;-webkit-user-select:none;
-background:
-radial-gradient(60% 90% at -8% 50%,rgba(167,243,208,.55),rgba(167,243,208,0) 70%),
-radial-gradient(60% 90% at 108% 20%,rgba(245,208,254,.50),rgba(245,208,254,0) 70%),
-radial-gradient(55% 80% at 105% 100%,rgba(186,230,253,.40),rgba(186,230,253,0) 70%),
-radial-gradient(50% 75% at -5% 100%,rgba(253,230,138,.30),rgba(253,230,138,0) 70%),
-#ffffff}
-.box{text-align:center}
+user-select:none;-webkit-user-select:none;background:#ffffff}
+/* small comet of color running around the border — slim 5px ring,
+   reads as "loading" without flooding the window */
+body::before{content:'';position:fixed;top:50%;left:50%;
+width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;
+background:conic-gradient(from 0deg,transparent 0 265deg,
+rgba(56,189,248,.45) 300deg,rgba(168,85,247,.65) 330deg,
+rgba(16,185,129,.9) 355deg,transparent 360deg);
+animation:orbit 3.4s linear infinite}
+body::after{content:'';position:fixed;inset:5px;border-radius:14px;background:#ffffff}
+.box{text-align:center;position:relative;z-index:1}
 .logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#2e3641}
 .logo span{color:#10b981;text-shadow:0 0 14px rgba(16,185,129,.40),0 0 36px rgba(16,185,129,.18)}
 .sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#64718b;display:flex;
@@ -44,6 +47,7 @@ border-top-color:#10b981;border-radius:50%;animation:spin .8s linear infinite;
 box-shadow:0 0 18px rgba(16,185,129,.12)}
 .status{font-size:12px;color:#94a3b8;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes orbit{to{transform:rotate(360deg)}}
 @keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 </style></head><body><div class="box">
 <div class="logo">VRE <span>AC STOCK</span></div>
@@ -193,18 +197,9 @@ _g32.CreateRoundRectRgn.argtypes = [ctypes.c_int] * 6
 _g32.Ellipse.restype = wintypes.BOOL
 _g32.Ellipse.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int,
                          ctypes.c_int, ctypes.c_int]
-_msimg32 = ctypes.windll.msimg32
-_msimg32.GradientFill.restype = wintypes.BOOL
-
-
-class _TRIVERTEX(ctypes.Structure):
-    _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG),
-                ("Red", wintypes.USHORT), ("Green", wintypes.USHORT),
-                ("Blue", wintypes.USHORT), ("Alpha", wintypes.USHORT)]
-
-
-class _GRADIENT_RECT(ctypes.Structure):
-    _fields_ = [("UpperLeft", wintypes.ULONG), ("LowerRight", wintypes.ULONG)]
+_g32.FrameRgn.restype = wintypes.BOOL
+_g32.FrameRgn.argtypes = [wintypes.HDC, wintypes.HANDLE, wintypes.HBRUSH,
+                          ctypes.c_int, ctypes.c_int]
 
 
 class _NativeSplash:
@@ -221,10 +216,7 @@ class _NativeSplash:
     _STATUS = 0x00B8A394   # #94A3B8
     _TRACK  = 0x00F0E8E2   # #E2E8F0
     _ACCENT_DIM = 0x00D0F3A7  # light mint — soft halo behind the accent
-    _GLOW_W = 130                            # edge-glow band width (px)
-    _WHITE16 = (0xFF << 8, 0xFF << 8, 0xFF << 8)
-    _GLOW_L  = (0xA7 << 8, 0xF3 << 8, 0xD0 << 8)   # mint #A7F3D0
-    _GLOW_R  = (0xF5 << 8, 0xD0 << 8, 0xFE << 8)   # pink-violet #F5D0FE
+    _RUNNER_MID = 0x00B7E76E  # #6EE7B7 — comet mid-trail
 
     def __init__(self):
         self._hwnd = None
@@ -312,6 +304,20 @@ class _NativeSplash:
         _g32.GetTextExtentPoint32W(hdc, s, len(s), ctypes.byref(sz))
         return sz.cx
 
+    @staticmethod
+    def _perim_pt(d, W, H):
+        """Point d px along the rounded-rect border, clockwise from (0,0)."""
+        d %= 2 * W + 2 * H
+        if d < W:
+            return d, 0                      # top edge, left→right
+        d -= W
+        if d < H:
+            return W, d                      # right edge, top→bottom
+        d -= H
+        if d < W:
+            return W - d, H                  # bottom edge, right→left
+        return 0, H - (d - W)                # left edge, bottom→top
+
     def _paint(self, hwnd):
         ps = _PAINTSTRUCT()
         hdc = _u32.BeginPaint(hwnd, ctypes.byref(ps))
@@ -329,18 +335,14 @@ class _NativeSplash:
             _g32.DeleteObject(bg)
             _g32.SetBkMode(mem, 1)  # TRANSPARENT
 
-            # Soft colored edge glows fading into the white center —
-            # mint on the left, pink-violet on the right.
-            def _edge_glow(x0, c0, c1):
-                verts = (_TRIVERTEX * 2)(
-                    _TRIVERTEX(x0, 0, c0[0], c0[1], c0[2], 0),
-                    _TRIVERTEX(x0 + self._GLOW_W, H, c1[0], c1[1], c1[2], 0))
-                rect = _GRADIENT_RECT(0, 1)
-                _msimg32.GradientFill(mem, verts, 2, ctypes.byref(rect),
-                                      1, 0)  # GRADIENT_FILL_RECT_H
+            # Slim pale ring + a small comet of color running around the
+            # border — same "loading" cue as the HTML splash.
             try:
-                _edge_glow(0, self._GLOW_L, self._WHITE16)
-                _edge_glow(W - self._GLOW_W, self._WHITE16, self._GLOW_R)
+                ring = _g32.CreateRoundRectRgn(5, 5, W - 5, H - 5, 24, 24)
+                rb = _g32.CreateSolidBrush(self._TRACK)
+                _g32.FrameRgn(mem, ring, rb, 2, 2)
+                _g32.DeleteObject(rb)
+                _g32.DeleteObject(ring)
             except Exception:
                 pass
 
@@ -414,6 +416,27 @@ class _NativeSplash:
             r = wintypes.RECT(0, 176, W, 196)
             _u32.DrawTextW(mem, "Starting services…", -1, ctypes.byref(r),
                            0x0001 | 0x0004 | 0x0020)
+
+            # Comet running the border: bright head + two fading trail
+            # dots, ~7px per 33ms tick ≈ a lap every ~6s.
+            perim = 2 * W + 2 * H
+            head = (self._phase * 7) % perim
+            for back, col, rad in ((0, self._ACCENT, 4),
+                                   (18, self._RUNNER_MID, 3),
+                                   (36, self._ACCENT_DIM, 2)):
+                x, y = self._perim_pt(head - back, W, H)
+                if back == 0:  # soft halo behind the head dot
+                    hb = _g32.CreateSolidBrush(self._ACCENT_DIM)
+                    old2 = _g32.SelectObject(mem, hb)
+                    _g32.Ellipse(mem, x - rad - 4, y - rad - 4,
+                                 x + rad + 4, y + rad + 4)
+                    _g32.SelectObject(mem, old2)
+                    _g32.DeleteObject(hb)
+                db = _g32.CreateSolidBrush(col)
+                old2 = _g32.SelectObject(mem, db)
+                _g32.Ellipse(mem, x - rad, y - rad, x + rad, y + rad)
+                _g32.SelectObject(mem, old2)
+                _g32.DeleteObject(db)
 
             _g32.BitBlt(hdc, 0, 0, W, H, mem, 0, 0, 0x00CC0020)  # SRCCOPY
         finally:
