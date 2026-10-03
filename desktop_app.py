@@ -23,20 +23,26 @@ PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 # Shown instantly while the backend (heavy imports + workbook parse) boots
 # in a background thread; replaced via load_url() once port 8000 is live.
 SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-html,body{margin:0;height:100%;background:#0f171c;display:flex;align-items:center;
+html,body{margin:0;height:100%;display:flex;align-items:center;
 justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;
-user-select:none;-webkit-user-select:none}
+user-select:none;-webkit-user-select:none;
+background:
+radial-gradient(60% 90% at -8% 50%,rgba(167,243,208,.55),rgba(167,243,208,0) 70%),
+radial-gradient(60% 90% at 108% 20%,rgba(245,208,254,.50),rgba(245,208,254,0) 70%),
+radial-gradient(55% 80% at 105% 100%,rgba(186,230,253,.40),rgba(186,230,253,0) 70%),
+radial-gradient(50% 75% at -5% 100%,rgba(253,230,138,.30),rgba(253,230,138,0) 70%),
+#ffffff}
 .box{text-align:center}
-.logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#e8f0f2}
-.logo span{color:#26d07c;text-shadow:0 0 14px rgba(38,208,124,.65),0 0 36px rgba(38,208,124,.28)}
-.sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#5f7683;display:flex;
+.logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#2e3641}
+.logo span{color:#10b981;text-shadow:0 0 14px rgba(16,185,129,.40),0 0 36px rgba(16,185,129,.18)}
+.sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#64718b;display:flex;
 align-items:center;justify-content:center;gap:8px}
-.live{width:7px;height:7px;border-radius:50%;background:#26d07c;
-box-shadow:0 0 10px #26d07c;animation:live 1.3s ease-in-out infinite}
-.spinner{margin:26px auto 14px;width:34px;height:34px;border:3px solid #1d2b33;
-border-top-color:#26d07c;border-radius:50%;animation:spin .8s linear infinite;
-box-shadow:0 0 18px rgba(38,208,124,.15)}
-.status{font-size:12px;color:#8aa0ab;letter-spacing:.5px}
+.live{width:7px;height:7px;border-radius:50%;background:#10b981;
+box-shadow:0 0 10px #10b981;animation:live 1.3s ease-in-out infinite}
+.spinner{margin:26px auto 14px;width:34px;height:34px;border:3px solid #e2e8f0;
+border-top-color:#10b981;border-radius:50%;animation:spin .8s linear infinite;
+box-shadow:0 0 18px rgba(16,185,129,.12)}
+.status{font-size:12px;color:#94a3b8;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 </style></head><body><div class="box">
@@ -187,6 +193,18 @@ _g32.CreateRoundRectRgn.argtypes = [ctypes.c_int] * 6
 _g32.Ellipse.restype = wintypes.BOOL
 _g32.Ellipse.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int,
                          ctypes.c_int, ctypes.c_int]
+_msimg32 = ctypes.windll.msimg32
+_msimg32.GradientFill.restype = wintypes.BOOL
+
+
+class _TRIVERTEX(ctypes.Structure):
+    _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG),
+                ("Red", wintypes.USHORT), ("Green", wintypes.USHORT),
+                ("Blue", wintypes.USHORT), ("Alpha", wintypes.USHORT)]
+
+
+class _GRADIENT_RECT(ctypes.Structure):
+    _fields_ = [("UpperLeft", wintypes.ULONG), ("LowerRight", wintypes.ULONG)]
 
 
 class _NativeSplash:
@@ -194,14 +212,19 @@ class _NativeSplash:
 
     W, H = 460, 240
 
-    # COLORREF is 0x00BBGGRR
-    _BG     = 0x001C170F   # #0F171C
-    _ACCENT = 0x007CD026   # #26D07C
-    _TEXT   = 0x00F2F0E8   # #E8F0F2
-    _SUB    = 0x0083765F   # #5F7683
-    _STATUS = 0x00ABA08A   # #8AA0AB
-    _TRACK  = 0x00332B1D   # #1D2B33
-    _ACCENT_DIM = 0x00365A10  # darkened accent for the halo pass
+    # COLORREF is 0x00BBGGRR — light theme: white center, soft colored
+    # glows at the edges (Chrome profile-picker look, mirrors SPLASH_HTML)
+    _BG     = 0x00FFFFFF   # #FFFFFF
+    _ACCENT = 0x0081B910   # #10B981
+    _TEXT   = 0x0041362E   # #2E3641
+    _SUB    = 0x008B7164   # #64718B
+    _STATUS = 0x00B8A394   # #94A3B8
+    _TRACK  = 0x00F0E8E2   # #E2E8F0
+    _ACCENT_DIM = 0x00D0F3A7  # light mint — soft halo behind the accent
+    _GLOW_W = 130                            # edge-glow band width (px)
+    _WHITE16 = (0xFF << 8, 0xFF << 8, 0xFF << 8)
+    _GLOW_L  = (0xA7 << 8, 0xF3 << 8, 0xD0 << 8)   # mint #A7F3D0
+    _GLOW_R  = (0xF5 << 8, 0xD0 << 8, 0xFE << 8)   # pink-violet #F5D0FE
 
     def __init__(self):
         self._hwnd = None
@@ -305,6 +328,21 @@ class _NativeSplash:
             _u32.FillRect(mem, ctypes.byref(full), bg)
             _g32.DeleteObject(bg)
             _g32.SetBkMode(mem, 1)  # TRANSPARENT
+
+            # Soft colored edge glows fading into the white center —
+            # mint on the left, pink-violet on the right.
+            def _edge_glow(x0, c0, c1):
+                verts = (_TRIVERTEX * 2)(
+                    _TRIVERTEX(x0, 0, c0[0], c0[1], c0[2], 0),
+                    _TRIVERTEX(x0 + self._GLOW_W, H, c1[0], c1[1], c1[2], 0))
+                rect = _GRADIENT_RECT(0, 1)
+                _msimg32.GradientFill(mem, verts, 2, ctypes.byref(rect),
+                                      1, 0)  # GRADIENT_FILL_RECT_H
+            try:
+                _edge_glow(0, self._GLOW_L, self._WHITE16)
+                _edge_glow(W - self._GLOW_W, self._WHITE16, self._GLOW_R)
+            except Exception:
+                pass
 
             # Title: "VRE AC STOCK" with AC STOCK in accent — two-tone via
             # measured widths, same look as the HTML splash.
@@ -818,7 +856,7 @@ def main():
         frameless=True,
         easy_drag=False,
         text_select=True,
-        background_color='#0f171c'
+        background_color='#ffffff'
     )
     api.set_window(window)
 
