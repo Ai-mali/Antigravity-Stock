@@ -10536,10 +10536,9 @@ function renderAvailable(searchTerm) {
         badgeText = `⚠️ Low Stock: ${count}`;
       }
 
-      // If searching, auto-expand unless user manually toggled it during this search
-      const isModelOpen = hasFilter 
-        ? (mData.searchOpen !== undefined ? mData.searchOpen : true)
-        : (mData.open === true);
+      // Accordions never auto-open — not even on search. Highlighted
+      // matches show where hits live; the user expands what they want.
+      const isModelOpen = mData.open === true;
 
       const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
       modelsHtml += `
@@ -10564,9 +10563,7 @@ function renderAvailable(searchTerm) {
     if (!brandUnits || !modelsHtml) return;
 
     // If searching, auto-expand matching brand unless user manually toggled it during this search
-    const isBrandOpen = hasFilter 
-      ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
-      : (bData.open === true);
+    const isBrandOpen = bData.open === true;
 
     const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
@@ -10830,29 +10827,15 @@ function toggleAvailSidebarMini() {
 
 function toggleBrandAcc(brand) {
   if (DB.inventory[brand]) {
-    const searchInput = document.getElementById('avail-search');
-    const q = (searchInput ? searchInput.value : '').trim();
-    if (q) {
-      const current = DB.inventory[brand].searchOpen !== undefined ? DB.inventory[brand].searchOpen : true;
-      DB.inventory[brand].searchOpen = !current;
-    } else {
-      DB.inventory[brand].open = !DB.inventory[brand].open;
-    }
+    DB.inventory[brand].open = !DB.inventory[brand].open;
     renderAvailable();
   }
 }
 
 function toggleModelAcc(brand, model) {
   if (DB.inventory[brand] && DB.inventory[brand].models[model]) {
-    const searchInput = document.getElementById('avail-search');
-    const q = (searchInput ? searchInput.value : '').trim();
     const mObj = DB.inventory[brand].models[model];
-    if (q) {
-      const current = mObj.searchOpen !== undefined ? mObj.searchOpen : true;
-      mObj.searchOpen = !current;
-    } else {
-      mObj.open = !mObj.open;
-    }
+    mObj.open = !mObj.open;
     renderAvailable();
   }
 }
@@ -11155,9 +11138,7 @@ function renderStockOut(searchTerm) {
         soBadgeText = `⚠️ Low: ${soCount}`;
       }
 
-      const isModelOpen = hasFilter 
-        ? (mData.soSearchOpen !== undefined ? mData.soSearchOpen : true)
-        : (mData.open === true);
+      const isModelOpen = mData.open === true;
 
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
@@ -11185,9 +11166,7 @@ function renderStockOut(searchTerm) {
 
     if (!brandUnits || !modelsHtml) return;
 
-    const isBrandOpen = hasFilter 
-      ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
-      : (bData.open === true);
+    const isBrandOpen = bData.open === true;
 
     const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
@@ -11231,29 +11210,15 @@ function renderStockOut(searchTerm) {
 
 function toggleSOBrandAcc(brand) {
   if (DB.inventory[brand]) {
-    const searchInput = document.getElementById('stockout-search');
-    const q = (searchInput ? searchInput.value : '').trim();
-    if (q) {
-      const current = DB.inventory[brand].soSearchOpen !== undefined ? DB.inventory[brand].soSearchOpen : true;
-      DB.inventory[brand].soSearchOpen = !current;
-    } else {
-      DB.inventory[brand].open = !DB.inventory[brand].open;
-    }
+    DB.inventory[brand].open = !DB.inventory[brand].open;
     renderStockOut();
   }
 }
 
 function toggleSOModelAcc(brand, model) {
   if (DB.inventory[brand] && DB.inventory[brand].models[model]) {
-    const searchInput = document.getElementById('stockout-search');
-    const q = (searchInput ? searchInput.value : '').trim();
     const mObj = DB.inventory[brand].models[model];
-    if (q) {
-      const current = mObj.soSearchOpen !== undefined ? mObj.soSearchOpen : true;
-      mObj.soSearchOpen = !current;
-    } else {
-      mObj.open = !mObj.open;
-    }
+    mObj.open = !mObj.open;
     renderStockOut();
   }
 }
