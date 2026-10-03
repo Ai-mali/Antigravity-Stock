@@ -25,79 +25,105 @@ PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 /* ================= TUNABLES — edit these ================= */
 :root{
-  --ring-speed:3s;              /* one lap of the bright spot          */
-  --hue-speed:8s;               /* how fast the color itself shifts    */
-  --ring-thickness:2px;         /* sharp ring width                    */
-  --glow-blur:16px;             /* neon glow blur radius               */
-  --glow-opacity:.7;            /* glow strength                       */
-  --card-radius:20px;           /* card corner roundness               */
-  --comet-head:#10b981;         /* brightest spot (emerald)            */
-  --comet-mid:#a855f7;          /* mid-tail (purple)                   */
-  --comet-tail:#38bdf8;         /* outer tail (cyan/blue)              */
-  --faint:rgba(148,163,184,.30);/* resting border tint (faint grey)    */
+  --glow-speed:3s;                /* one lap of the border arc          */
+  --text-beam-speed:2.8s;         /* logo running-light sweep           */
+  --border-thickness:2px;         /* sharp ring width                   */
+  --glow-blur:16px;               /* neon glow blur radius              */
+  --glow-opacity:.75;             /* glow strength                      */
+  --card-radius:20px;             /* card corner roundness              */
+  --c-green:#10B981;              /* border arc: green  */
+  --c-cyan:#06B6D4;               /* border arc: cyan   */
+  --c-blue:#3B82F6;               /* border arc: blue   */
+  --c-purple:#8B5CF6;             /* border arc: purple */
+  --c-white-hot:#ffffff;          /* beam hotspot       */
+  --border-base:rgba(226,232,240,.45); /* resting border tint            */
+  --card-bg:#ffffff;              /* card surface                       */
+  --page-bg:#0b0f19;              /* backdrop behind the card           */
+  --text-vre-base:#1e293b;        /* VRE letters                        */
+  --text-stock-base:#10B981;      /* AC STOCK letters                   */
+  --text-glow-spread:22px;        /* logo aura blur                     */
+  --text-glow-opacity:.85;        /* logo aura strength                 */
 }
 /* ========================================================= */
-@property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
+@property --angle{syntax:'<angle>';initial-value:0deg;inherits:false}
 html,body{margin:0;height:100%;display:flex;align-items:center;
-justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;
-user-select:none;-webkit-user-select:none;background:#f4f6f8}
-.card{position:relative;isolation:isolate;min-width:320px;padding:34px 52px;
-text-align:center;background:#ffffff;border-radius:var(--card-radius);
-box-shadow:0 10px 34px rgba(15,23,30,.08)}
-/* layer 1 — the sharp 2px gradient ring: conic on a masked pseudo so the
-   ring follows the rounded corners; faint grey everywhere except a comet
-   segment whose head is bright and tail fades off */
-.card::before{content:'';position:absolute;pointer-events:none;
-inset:calc(-1 * var(--ring-thickness));
-border-radius:calc(var(--card-radius) + var(--ring-thickness));
-padding:var(--ring-thickness);
-background:conic-gradient(from var(--a),var(--faint) 0deg,var(--faint) 230deg,
-rgba(34,211,238,.25) 260deg,var(--comet-tail) 300deg,
-var(--comet-mid) 332deg,var(--comet-head) 352deg,
-rgba(16,185,129,0) 360deg);
--webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+justify-content:center;font-family:'Inter','Segoe UI',system-ui,sans-serif;
+overflow:hidden;user-select:none;-webkit-user-select:none;
+background:radial-gradient(circle at 50% 50%,rgba(30,41,59,.8) 0%,var(--page-bg) 100%)}
+.splash-container{position:relative;padding:40px}
+.card-wrap{position:relative;width:460px;max-width:86vw;border-radius:var(--card-radius)}
+/* layer 2 — blurred neon twin; masked to the border band so the glow
+   emanates from the edge itself */
+.glow-outer{position:absolute;inset:calc(-1 * var(--border-thickness));
+border-radius:calc(var(--card-radius) + var(--border-thickness));
+padding:var(--border-thickness);
+background:conic-gradient(from var(--angle),var(--c-green) 0deg,
+var(--c-cyan) 35deg,var(--c-blue) 70deg,var(--c-purple) 100deg,
+transparent 140deg,transparent 330deg,var(--c-green) 360deg);
+-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
 -webkit-mask-composite:xor;mask-composite:exclude;
-filter:hue-rotate(0deg);
-animation:orbit var(--ring-speed) linear infinite,
-hueSpin var(--hue-speed) linear infinite}
-/* layer 2 — blurred twin pushed under the card's own white background
-   (isolation:z-index trick) so the neon glow only spills OUTSIDE the
-   edge and never washes over the logo, bar, or text */
-.card::after{content:'';position:absolute;pointer-events:none;z-index:-1;
-inset:calc(-1 * var(--ring-thickness));
-border-radius:calc(var(--card-radius) + var(--ring-thickness));
-padding:var(--ring-thickness);
-background:conic-gradient(from var(--a),var(--faint) 0deg,var(--faint) 230deg,
-rgba(34,211,238,.25) 260deg,var(--comet-tail) 300deg,
-var(--comet-mid) 332deg,var(--comet-head) 352deg,
-rgba(16,185,129,0) 360deg);
--webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+filter:blur(var(--glow-blur));opacity:var(--glow-opacity);
+animation:rot var(--glow-speed) linear infinite;pointer-events:none;z-index:1}
+/* layer 1 — sharp 2px gradient ring, faint grey except the traveling arc */
+.glow-sharp{position:absolute;inset:calc(-1 * var(--border-thickness));
+border-radius:calc(var(--card-radius) + var(--border-thickness));
+padding:var(--border-thickness);
+background:conic-gradient(from var(--angle),var(--c-green) 0deg,
+var(--c-cyan) 30deg,var(--c-blue) 60deg,var(--c-purple) 90deg,
+var(--border-base) 140deg,var(--border-base) 330deg,var(--c-green) 360deg);
+-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
 -webkit-mask-composite:xor;mask-composite:exclude;
-opacity:var(--glow-opacity);
-filter:blur(var(--glow-blur)) hue-rotate(0deg);
-animation:orbit var(--ring-speed) linear infinite,
-hueGlow var(--hue-speed) linear infinite}
-@keyframes orbit{to{--a:360deg}}
-@keyframes hueSpin{to{filter:hue-rotate(360deg)}}
-@keyframes hueGlow{to{filter:blur(var(--glow-blur)) hue-rotate(360deg)}}
-.logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#2e3641}
-.logo span{color:#10b981;text-shadow:0 0 14px rgba(16,185,129,.40),0 0 36px rgba(16,185,129,.18)}
-.sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#64718b;display:flex;
-align-items:center;justify-content:center;gap:8px}
-.live{width:7px;height:7px;border-radius:50%;background:#10b981;
-box-shadow:0 0 10px #10b981;animation:live 1.3s ease-in-out infinite}
-.spinner{margin:26px auto 14px;width:34px;height:34px;border:3px solid #e2e8f0;
-border-top-color:#10b981;border-radius:50%;animation:spin .8s linear infinite;
-box-shadow:0 0 18px rgba(16,185,129,.12)}
-.status{font-size:12px;color:#94a3b8;letter-spacing:.5px}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
-</style></head><body><div class="card">
-<div class="logo">VRE <span>AC STOCK</span></div>
-<div class="sub"><i class="live"></i>AI Scan</div>
-<div class="spinner"></div>
+animation:rot var(--glow-speed) linear infinite;pointer-events:none;z-index:2}
+/* card surface — pristine, above both glow layers */
+.card{position:relative;z-index:3;background:var(--card-bg);
+border-radius:var(--card-radius);box-shadow:0 20px 40px -15px rgba(0,0,0,.45);
+padding:44px 40px 36px;display:flex;flex-direction:column;align-items:center;
+text-align:center}
+@keyframes rot{from{--angle:0deg}to{--angle:360deg}}
+/* ---- logo running-light beam ---- */
+.title-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.title-aura{position:absolute;inset:-8px -18px;
+background:linear-gradient(90deg,transparent 0%,transparent 25%,
+rgba(16,185,129,.2) 38%,rgba(6,182,212,.6) 48%,rgba(255,255,255,.85) 52%,
+rgba(59,130,246,.65) 56%,rgba(139,92,246,.3) 68%,transparent 78%,transparent 100%);
+background-size:280% 100%;filter:blur(var(--text-glow-spread));
+opacity:var(--text-glow-opacity);pointer-events:none;z-index:1;
+mix-blend-mode:multiply;
+animation:beam var(--text-beam-speed) linear infinite}
+.title{position:relative;z-index:2;display:inline-flex;gap:.5rem;
+font-size:30px;font-weight:800;letter-spacing:.05em;
+background:linear-gradient(105deg,var(--text-vre-base) 0%,var(--text-vre-base) 18%,
+var(--text-stock-base) 28%,var(--c-green) 38%,var(--c-cyan) 44%,
+var(--c-white-hot) 50%,var(--c-cyan) 56%,var(--c-blue) 62%,var(--c-purple) 68%,
+var(--text-stock-base) 76%,var(--text-vre-base) 92%,var(--text-vre-base) 100%);
+background-size:320% 100%;-webkit-background-clip:text;background-clip:text;
+-webkit-text-fill-color:transparent;color:transparent;
+animation:beam var(--text-beam-speed) linear infinite;
+filter:drop-shadow(0 0 1px rgba(16,185,129,.15))}
+@keyframes beam{0%{background-position:100% 50%}100%{background-position:-100% 50%}}
+.sub{margin-top:10px;display:flex;align-items:center;justify-content:center;
+gap:6px;font-size:12px;font-weight:500;letter-spacing:.05em;color:#64748b}
+.sub svg{width:14px;height:14px;color:var(--c-green);animation:spinSlow 8s linear infinite}
+.track{width:100%;max-width:240px;height:5px;background:#f1f5f9;border-radius:9999px;
+margin-top:38px;position:relative;overflow:hidden}
+.fill{position:absolute;top:0;bottom:0;width:40%;border-radius:9999px;
+background:linear-gradient(90deg,var(--c-green),var(--c-cyan));
+animation:slide 2.2s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes slide{0%{left:-40%}50%{left:45%;width:50%}100%{left:100%;width:30%}}
+.status{margin-top:16px;font-size:12px;color:#94a3b8;letter-spacing:.05em}
+@keyframes spinSlow{to{transform:rotate(360deg)}}
+</style></head><body><div class="splash-container"><div class="card-wrap">
+<div class="glow-outer"></div><div class="glow-sharp"></div>
+<div class="card">
+<div class="title-wrap"><div class="title-aura"></div>
+<div class="title"><span>VRE</span><span>AC STOCK</span></div></div>
+<div class="sub"><svg fill="none" stroke="currentColor" stroke-linecap="round"
+stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24">
+<path d="m12 2 2.4 2.4 3.4-.6 1.2 3.2 3.1 1.5-.7 3.3 2.1 2.7-2.1 2.7.7 3.3-3.1 1.5-1.2 3.2-3.4-.6L12 22l-2.4-2.4-3.4.6-1.2-3.2-3.1-1.5.7-3.3-2.1-2.7 2.1-2.7-.7-3.3 3.1-1.5 1.2-3.2 3.4.6z"/>
+<circle cx="12" cy="12" r="3"/></svg><span>AI Scan</span></div>
+<div class="track"><div class="fill"></div></div>
 <div class="status">Starting services&hellip;</div>
-</div></body></html>"""
+</div></div></div></body></html>"""
 
 
 # ------------------------------------------------------------------ native splash
@@ -243,6 +269,8 @@ _g32.Ellipse.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int,
 _g32.FrameRgn.restype = wintypes.BOOL
 _g32.FrameRgn.argtypes = [wintypes.HDC, wintypes.HANDLE, wintypes.HBRUSH,
                           ctypes.c_int, ctypes.c_int]
+_g32.FillRgn.restype = wintypes.BOOL
+_g32.FillRgn.argtypes = [wintypes.HDC, wintypes.HANDLE, wintypes.HBRUSH]
 
 
 class _NativeSplash:
@@ -250,21 +278,24 @@ class _NativeSplash:
 
     W, H = 460, 240
 
-    # COLORREF is 0x00BBGGRR — light theme: white center, soft colored
-    # glows at the edges (Chrome profile-picker look, mirrors SPLASH_HTML)
-    _BG     = 0x00FFFFFF   # #FFFFFF
+    # COLORREF is 0x00BBGGRR — dark backdrop, white card, comet on the
+    # card edge (mirrors SPLASH_HTML)
+    _BG     = 0x00190F0B   # #0B0F19
+    _CARD   = 0x00FFFFFF   # #FFFFFF
+    _CARD_LINE = 0x00E1D5CB # #CBD5E1 — faint card border
     _ACCENT = 0x0081B910   # #10B981
-    _TEXT   = 0x0041362E   # #2E3641
-    _SUB    = 0x008B7164   # #64718B
+    _TEXT   = 0x003B291E   # #1E293B
+    _SUB    = 0x008B7464   # #64748B
     _STATUS = 0x00B8A394   # #94A3B8
-    _TRACK  = 0x00F0E8E2   # #E2E8F0
+    _TRACK  = 0x00F9F5F1   # #F1F5F9
     _ACCENT_DIM = 0x00D0F3A7  # light mint — soft halo behind the accent
+    _CARD_M  = 30          # card margin from window edge (px)
     # comet palette (plain RGB) — the head cycles through these as it
     # laps the border, the trail dots just blend the head toward white
     _RUN_COLORS = ((0x10, 0xB9, 0x81),   # emerald
-                   (0xA8, 0x55, 0xF7),   # violet
-                   (0x38, 0xBD, 0xF8),   # sky
-                   (0xF4, 0x72, 0xB6))   # pink
+                   (0x06, 0xB6, 0xD4),   # cyan
+                   (0x3B, 0x82, 0xF6),   # blue
+                   (0x8B, 0x5C, 0xF6))   # purple
 
     def __init__(self):
         self._hwnd = None
@@ -353,18 +384,18 @@ class _NativeSplash:
         return sz.cx
 
     @staticmethod
-    def _perim_pt(d, W, H):
-        """Point d px along the rounded-rect border, clockwise from (0,0)."""
-        d %= 2 * W + 2 * H
-        if d < W:
-            return d, 0                      # top edge, left→right
-        d -= W
-        if d < H:
-            return W, d                      # right edge, top→bottom
-        d -= H
-        if d < W:
-            return W - d, H                  # bottom edge, right→left
-        return 0, H - (d - W)                # left edge, bottom→top
+    def _perim_pt(d, x0, y0, w, h):
+        """Point d px along a rect's border, clockwise from (x0,y0)."""
+        d %= 2 * w + 2 * h
+        if d < w:
+            return x0 + d, y0                # top edge, left→right
+        d -= w
+        if d < h:
+            return x0 + w, y0 + d            # right edge, top→bottom
+        d -= h
+        if d < w:
+            return x0 + w - d, y0 + h        # bottom edge, right→left
+        return x0, y0 + h - (d - w)          # left edge, bottom→top
 
     @classmethod
     def _runner_rgb(cls, frac):
@@ -400,14 +431,17 @@ class _NativeSplash:
             _g32.DeleteObject(bg)
             _g32.SetBkMode(mem, 1)  # TRANSPARENT
 
-            # Slim pale ring + a small comet of color running around the
-            # border — same "loading" cue as the HTML splash.
+            # White rounded card inset — the comet runs ITS border.
+            m = self._CARD_M
             try:
-                ring = _g32.CreateRoundRectRgn(5, 5, W - 5, H - 5, 24, 24)
-                rb = _g32.CreateSolidBrush(self._TRACK)
-                _g32.FrameRgn(mem, ring, rb, 2, 2)
-                _g32.DeleteObject(rb)
-                _g32.DeleteObject(ring)
+                card = _g32.CreateRoundRectRgn(m, m, W - m, H - m, 40, 40)
+                cb = _g32.CreateSolidBrush(self._CARD)
+                _g32.FillRgn(mem, card, cb)
+                _g32.DeleteObject(cb)
+                edge = _g32.CreateSolidBrush(self._CARD_LINE)
+                _g32.FrameRgn(mem, card, edge, 1, 1)
+                _g32.DeleteObject(edge)
+                _g32.DeleteObject(card)
             except Exception:
                 pass
 
@@ -482,21 +516,20 @@ class _NativeSplash:
             _u32.DrawTextW(mem, "Starting services…", -1, ctypes.byref(r),
                            0x0001 | 0x0004 | 0x0020)
 
-            # Shooting-star comet running the border: hue-cycling head +
-            # two trail dots that fade the head's color toward white,
-            # ~7px per 33ms tick ≈ a lap every ~6s.
-            perim = 2 * W + 2 * H
+            # Shooting-star comet running the CARD border: hue-cycling
+            # head + closely-spaced trail dots blended toward white so it
+            # reads as a tapering streak, not discrete circles.
+            cw, ch = W - 2 * m, H - 2 * m
+            perim = 2 * cw + 2 * ch
             head = (self._phase * 7) % perim
             head_rgb = self._runner_rgb(head / perim)
             halo_rgb = self._blend(head_rgb, (255, 255, 255), 0.8)
-            # closely-spaced trail dots read as one continuous tapering
-            # streak instead of discrete circles
             trail_pts = tuple(
                 (back, self._ref(self._blend(head_rgb, (255, 255, 255), t)), rad)
                 for back, t, rad in ((14, 0.35, 3), (28, 0.55, 3),
                                      (42, 0.75, 2), (56, 0.88, 1)))
             for back, ref, rad in ((0, self._ref(head_rgb), 4),) + trail_pts:
-                x, y = self._perim_pt(head - back, W, H)
+                x, y = self._perim_pt(head - back, m, m, cw, ch)
                 if back == 0:  # soft halo behind the head dot
                     hb = _g32.CreateSolidBrush(self._ref(halo_rgb))
                     old2 = _g32.SelectObject(mem, hb)
@@ -951,7 +984,7 @@ def main():
         frameless=True,
         easy_drag=False,
         text_select=True,
-        background_color='#ffffff'
+        background_color='#0b0f19'
     )
     api.set_window(window)
 
