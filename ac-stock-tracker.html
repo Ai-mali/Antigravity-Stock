@@ -273,41 +273,97 @@ body.theme-light.accent-amber  { --green-bright: #b45309; }
 body.theme-light.accent-violet { --green-bright: #6d28d9; }
 body.theme-light.accent-rose   { --green-bright: #be123c; }
 
-/* ---- Custom background image (dimmed layer, inside + around the app) ---- */
-body.has-user-bg {
-  background-image:
-    linear-gradient(rgba(10, 14, 16, 0.84), rgba(10, 14, 16, 0.84)),
-    var(--user-bg-url, none);
+/* ---- Wallpaper mode: photo/preset on ::before, veil on ::after,
+   glass panels via translucent surface vars (layout untouched) ---- */
+body.has-user-bg::before,
+body.bg-wallpaper::before {
+  content: "";
+  position: fixed;
+  inset: -12px;               /* bleed so the blur has no edge seam */
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
+  z-index: -2;
+  pointer-events: none;
 }
-body.has-user-bg .app-container {
-  background-image:
-    linear-gradient(rgba(15, 20, 23, 0.58), rgba(15, 20, 23, 0.58)),
-    var(--user-bg-url, none);
-  background-size: cover;
-  background-position: center;
+body.has-user-bg::before {
+  background-image: var(--user-bg-url, none);
+  filter: blur(6px);          /* soften photo detail behind the text */
 }
-body.theme-light.has-user-bg {
-  background-image:
-    linear-gradient(rgba(232, 238, 243, 0.8), rgba(232, 238, 243, 0.8)),
-    var(--user-bg-url, none);
+body.bg-wallpaper::before {
+  background-image: var(--bg-wall);
 }
-body.theme-light.has-user-bg .app-container {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)),
-    var(--user-bg-url, none);
+body.has-user-bg::after,
+body.bg-wallpaper::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+/* Dark veil, heavier top-left so the header/sidebar text stays crisp */
+body.has-user-bg::after {
+  background: linear-gradient(155deg,
+    rgba(6, 10, 14, 0.85) 0%,
+    rgba(9, 14, 19, 0.8) 45%,
+    rgba(11, 16, 21, 0.78) 100%);
+}
+body.bg-wallpaper::after {     /* presets are already dark — lighter veil */
+  background: linear-gradient(155deg,
+    rgba(8, 12, 16, 0.5) 0%,
+    rgba(10, 15, 20, 0.42) 100%);
+}
+body.theme-light.has-user-bg::after {
+  background: linear-gradient(155deg,
+    rgba(236, 240, 245, 0.85) 0%,
+    rgba(240, 244, 248, 0.78) 45%,
+    rgba(234, 238, 243, 0.75) 100%);
+}
+body.theme-light.bg-wallpaper::after {
+  background: linear-gradient(155deg,
+    rgba(240, 244, 248, 0.32) 0%,
+    rgba(234, 239, 244, 0.28) 100%);
 }
 
-/* ---- Wallpaper presets (Telegram-style gallery; --bg-wall per preset) ---- */
-body.bg-wallpaper,
-body.bg-wallpaper .app-container {
-  background-image: var(--bg-wall);
-  background-size: cover;
-  background-position: center;
+/* Glass retheme — translucent surface vars reach every panel at once */
+body.has-user-bg, body.bg-wallpaper {
+  --bg-app: rgba(15, 23, 30, 0.55);
+  --header-bg: rgba(15, 23, 30, 0.62);
+  --surface: rgba(15, 23, 30, 0.66);
+  --surface2: rgba(19, 27, 34, 0.6);
+  --surface3: rgba(26, 36, 44, 0.55);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.14);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
 }
-body.bg-wallpaper { background-attachment: fixed; }
+body.theme-light.has-user-bg, body.theme-light.bg-wallpaper {
+  --bg-app: rgba(255, 255, 255, 0.5);
+  --header-bg: rgba(255, 255, 255, 0.6);
+  --surface: rgba(255, 255, 255, 0.66);
+  --surface2: rgba(250, 252, 254, 0.6);
+  --surface3: rgba(240, 245, 249, 0.55);
+  --border: rgba(15, 23, 42, 0.1);
+  --border-light: rgba(15, 23, 42, 0.16);
+}
+
+/* Frosted backdrop blur on the big containers only — the serial cards
+   keep translucent fills + soft shadow but skip their own blur filter:
+   hundreds of backdrop-filters would make scrolling janky, and the photo
+   beneath is already blurred so they still read as glass. */
+body.has-user-bg .app-container, body.bg-wallpaper .app-container,
+body.has-user-bg header, body.bg-wallpaper header,
+body.has-user-bg .tl-sidebar, body.bg-wallpaper .tl-sidebar,
+body.has-user-bg .card, body.bg-wallpaper .card,
+body.has-user-bg .brand-accordion, body.bg-wallpaper .brand-accordion,
+body.has-user-bg .modal-dialog, body.bg-wallpaper .modal-dialog,
+body.has-user-bg .appearance-popover, body.bg-wallpaper .appearance-popover {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+body.has-user-bg .avail-unit-card, body.bg-wallpaper .avail-unit-card,
+body.has-user-bg .so-serial-card, body.bg-wallpaper .so-serial-card {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
 body.bg-aurora { --bg-wall: linear-gradient(155deg, #0f2027 0%, #203a43 55%, #2c5364 100%); }
 body.bg-dusk   { --bg-wall: linear-gradient(155deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%); }
 body.bg-ember  { --bg-wall: linear-gradient(155deg, #241a12 0%, #3d2317 55%, #5a2d16 100%); }
