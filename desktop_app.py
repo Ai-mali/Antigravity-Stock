@@ -23,20 +23,63 @@ PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 # Shown instantly while the backend (heavy imports + workbook parse) boots
 # in a background thread; replaced via load_url() once port 8000 is live.
 SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+/* ================= TUNABLES — edit these ================= */
+:root{
+  --ring-speed:3s;              /* one lap of the bright spot          */
+  --hue-speed:8s;               /* how fast the color itself shifts    */
+  --ring-thickness:2px;         /* sharp ring width                    */
+  --glow-blur:16px;             /* neon glow blur radius               */
+  --glow-opacity:.7;            /* glow strength                       */
+  --card-radius:20px;           /* card corner roundness               */
+  --comet-head:#10b981;         /* brightest spot (emerald)            */
+  --comet-mid:#a855f7;          /* mid-tail (purple)                   */
+  --comet-tail:#38bdf8;         /* outer tail (cyan/blue)              */
+  --faint:rgba(148,163,184,.30);/* resting border tint (faint grey)    */
+}
+/* ========================================================= */
+@property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
 html,body{margin:0;height:100%;display:flex;align-items:center;
 justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;
-user-select:none;-webkit-user-select:none;background:#ffffff}
-/* small shooting-star running around the border — slim 5px ring.
-   Bright head tapers on BOTH ends so no hard cut at the wrap seam;
-   hue-rotate cycles the color as it travels. */
-body::before{content:'';position:fixed;top:50%;left:50%;
-width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;
-background:conic-gradient(from 0deg,transparent 0 235deg,
-rgba(56,189,248,.18) 275deg,rgba(168,85,247,.5) 318deg,
-rgba(16,185,129,.95) 345deg,rgba(16,185,129,0) 358deg);
-animation:orbit 3.4s linear infinite,hueShift 8.5s linear infinite}
-body::after{content:'';position:fixed;inset:5px;border-radius:14px;background:#ffffff}
-.box{text-align:center;position:relative;z-index:1}
+user-select:none;-webkit-user-select:none;background:#f4f6f8}
+.card{position:relative;isolation:isolate;min-width:320px;padding:34px 52px;
+text-align:center;background:#ffffff;border-radius:var(--card-radius);
+box-shadow:0 10px 34px rgba(15,23,30,.08)}
+/* layer 1 — the sharp 2px gradient ring: conic on a masked pseudo so the
+   ring follows the rounded corners; faint grey everywhere except a comet
+   segment whose head is bright and tail fades off */
+.card::before{content:'';position:absolute;pointer-events:none;
+inset:calc(-1 * var(--ring-thickness));
+border-radius:calc(var(--card-radius) + var(--ring-thickness));
+padding:var(--ring-thickness);
+background:conic-gradient(from var(--a),var(--faint) 0deg,var(--faint) 230deg,
+rgba(34,211,238,.25) 260deg,var(--comet-tail) 300deg,
+var(--comet-mid) 332deg,var(--comet-head) 352deg,
+rgba(16,185,129,0) 360deg);
+-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+-webkit-mask-composite:xor;mask-composite:exclude;
+filter:hue-rotate(0deg);
+animation:orbit var(--ring-speed) linear infinite,
+hueSpin var(--hue-speed) linear infinite}
+/* layer 2 — blurred twin pushed under the card's own white background
+   (isolation:z-index trick) so the neon glow only spills OUTSIDE the
+   edge and never washes over the logo, bar, or text */
+.card::after{content:'';position:absolute;pointer-events:none;z-index:-1;
+inset:calc(-1 * var(--ring-thickness));
+border-radius:calc(var(--card-radius) + var(--ring-thickness));
+padding:var(--ring-thickness);
+background:conic-gradient(from var(--a),var(--faint) 0deg,var(--faint) 230deg,
+rgba(34,211,238,.25) 260deg,var(--comet-tail) 300deg,
+var(--comet-mid) 332deg,var(--comet-head) 352deg,
+rgba(16,185,129,0) 360deg);
+-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+-webkit-mask-composite:xor;mask-composite:exclude;
+opacity:var(--glow-opacity);
+filter:blur(var(--glow-blur)) hue-rotate(0deg);
+animation:orbit var(--ring-speed) linear infinite,
+hueGlow var(--hue-speed) linear infinite}
+@keyframes orbit{to{--a:360deg}}
+@keyframes hueSpin{to{filter:hue-rotate(360deg)}}
+@keyframes hueGlow{to{filter:blur(var(--glow-blur)) hue-rotate(360deg)}}
 .logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#2e3641}
 .logo span{color:#10b981;text-shadow:0 0 14px rgba(16,185,129,.40),0 0 36px rgba(16,185,129,.18)}
 .sub{margin-top:8px;font-size:12px;letter-spacing:5px;color:#64718b;display:flex;
@@ -48,10 +91,8 @@ border-top-color:#10b981;border-radius:50%;animation:spin .8s linear infinite;
 box-shadow:0 0 18px rgba(16,185,129,.12)}
 .status{font-size:12px;color:#94a3b8;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes orbit{to{transform:rotate(360deg)}}
-@keyframes hueShift{to{filter:hue-rotate(360deg)}}
 @keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
-</style></head><body><div class="box">
+</style></head><body><div class="card">
 <div class="logo">VRE <span>AC STOCK</span></div>
 <div class="sub"><i class="live"></i>AI Scan</div>
 <div class="spinner"></div>
