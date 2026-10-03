@@ -2147,7 +2147,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 /* ============ Status Log — Stitch redesign ============ */
 .status-log-head {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; padding: 9px 12px;
+  gap: 6px; padding: 8px 10px;
   border-bottom: 1px solid var(--border); flex-wrap: wrap;
 }
 .sl-head-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -2178,12 +2178,12 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 .sl-live-dot { width: 4px; height: 4px; border-radius: 50%; background: #34d399; }
 .sl-seg {
   display: flex; align-items: center; gap: 2px;
-  background: rgba(9,14,17,0.7); padding: 3px; border-radius: 7px;
-  border: 1px solid var(--border);
+  background: rgba(9,14,17,0.7); padding: 2px; border-radius: 7px;
+  border: 1px solid var(--border); flex-shrink: 0;
 }
 .sl-seg-btn {
   border: 1px solid transparent; background: none; cursor: pointer;
-  padding: 3px 9px; border-radius: 5px;
+  padding: 2px 7px; border-radius: 5px; white-space: nowrap;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px; font-weight: 600; color: var(--text-sub);
   display: inline-flex; align-items: center; gap: 5px;
@@ -2223,6 +2223,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   background: rgba(15,27,30,0.9);
   font-size: 10.5px;
   transition: border-color .15s;
+  cursor: pointer;
 }
 .log-entry:hover { border-color: #33505f; }
 .log-entry.le-active { border-color: rgba(34,120,140,0.4); }
@@ -7053,6 +7054,32 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- LOG ENTRY DETAIL MODAL — click any Status Log row to inspect it -->
+<div class="modal-overlay" id="log-detail-modal">
+  <div class="modal-dialog" style="max-width: 480px; border-radius:16px;">
+    <div class="modal-header" style="align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <span id="ld-badge" class="le-badge leb-info">INFO</span>
+        <div style="min-width:0;">
+          <div class="modal-title" style="font-size:15px;">Log Entry</div>
+          <div id="ld-time" class="mono" style="font-size:11px; color:var(--text-sub);"></div>
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeLogDetail()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div id="ld-msg" style="font-size:12.5px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word; font-family:'Inter','Segoe UI',sans-serif;"></div>
+      <div id="ld-serial-wrap" style="display:none; margin-top:12px;">
+        <div style="font-size:10.5px; color:var(--text-sub); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;">Serials</div>
+        <div id="ld-serials" style="display:flex; flex-wrap:wrap; gap:5px; max-height:180px; overflow-y:auto;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeLogDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- 8. RECENT DELIVERY ORDER (DO) PHOTOS MODAL -->
 <div class="modal-overlay" id="do-photos-modal">
   <div class="modal-dialog" style="max-width: 860px; max-height: 88vh; display:flex; flex-direction:column;">
@@ -7644,6 +7671,9 @@ function logEntry(kind, opts = {}) {
   }
   inner += `</div><span class="le-time">${t}</span>`;
   el.innerHTML = inner;
+  el._logData = Object.assign({ kind, time: t }, opts);
+  el.title = 'Click to view full details';
+  el.addEventListener('click', () => openLogDetail(el));
   log.appendChild(el);
   if (kind === 'issue') {
     DB.logStats.issues++;
@@ -7657,8 +7687,29 @@ function logEntry(kind, opts = {}) {
     if (c) c.textContent = DB.logStats.commits;
   }
   if (_slFilter !== 'all' && kind !== _slFilter) el.style.display = 'none';
+  _slRefreshEmptyState();
   updateLogFooter();
   log.scrollTop = log.scrollHeight;
+}
+
+function _slRefreshEmptyState() {
+  const log = document.getElementById('status-log-console');
+  if (!log) return;
+  const anyVisible = !!log.querySelector('.log-entry:not([style*="display: none"])');
+  let empty = document.getElementById('sl-filter-empty');
+  if (!anyVisible) {
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = 'sl-filter-empty';
+      empty.style.cssText = 'padding:18px;text-align:center;color:var(--text-sub);font-size:10.5px;';
+      log.appendChild(empty);
+    }
+    empty.textContent = _slFilter === 'issue' ? 'No issues logged \u2014 all clear.'
+                      : _slFilter === 'commit' ? 'Nothing committed yet.'
+                      : 'Log is empty.';
+  } else if (empty) {
+    empty.remove();
+  }
 }
 
 function logLine(txt, cls = '') {
@@ -7677,6 +7728,7 @@ function setLogFilter(f) {
   document.querySelectorAll('#status-log-console .log-entry').forEach(el => {
     el.style.display = (f === 'all' || el.dataset.logKind === f) ? '' : 'none';
   });
+  _slRefreshEmptyState();
 }
 
 function clearStatusLog() {
@@ -7687,6 +7739,7 @@ function clearStatusLog() {
   if (c) c.textContent = '0';
   const cc = document.getElementById('sl-commit-count');
   if (cc) cc.textContent = '0';
+  _slRefreshEmptyState();
   updateLogFooter();
 }
 
@@ -7694,6 +7747,36 @@ function slPendingUnits() {
   return (DB.scans || []).reduce((n, r) =>
     n + ((r.serials && r.serials.length) ? r.serials.length
         : (parseInt((String(r.qty || '').match(/\d+/) || ['0'])[0], 10) || 0)), 0);
+}
+
+function openLogDetail(el) {
+  const d = el._logData || {};
+  const kind = d.kind || 'info';
+  const badge = document.getElementById('ld-badge');
+  badge.className = 'le-badge leb-' + kind;
+  badge.textContent = _slBadges[kind] || 'INFO';
+  document.getElementById('ld-time').textContent = d.time || '';
+  let msg = d.text || '';
+  if (kind === 'commit') {
+    msg = [d.brand, d.model].filter(Boolean).join(' \u00b7 ')
+        + (d.units != null ? `\n${d.units} unit${d.units === 1 ? '' : 's'} committed to stock.` : '');
+  } else if (kind === 'extract') {
+    msg = `Extract complete: ${d.models} model${d.models === 1 ? '' : 's'}, ${d.units} serial number${d.units === 1 ? '' : 's'} found.`;
+  }
+  document.getElementById('ld-msg').textContent = msg || '\u2014';
+  const sw = document.getElementById('ld-serial-wrap');
+  if (d.serials && d.serials.length) {
+    sw.style.display = '';
+    document.getElementById('ld-serials').innerHTML =
+      d.serials.map(s => `<span class="le-serial" style="cursor:default;">${escapeHtml(s)}</span>`).join('');
+  } else {
+    sw.style.display = 'none';
+  }
+  document.getElementById('log-detail-modal').classList.add('open');
+}
+function closeLogDetail() {
+  const m = document.getElementById('log-detail-modal');
+  if (m) m.classList.remove('open');
 }
 
 function updateLogFooter() {
@@ -13806,6 +13889,7 @@ document.addEventListener('keydown', e => {
     closeEditUnitModal();
     closeConfirmDeleteModal();
     resolveBulkDelete(false);
+    closeLogDetail();
     closeDoPhotosModal();
     closePhotoViewerModal();
     closeReturnDetail();
@@ -13834,6 +13918,7 @@ onBackdropPress(document.getElementById('activity-modal'), () => closeActivityMo
 onBackdropPress(document.getElementById('edit-unit-modal'), () => closeEditUnitModal());
 onBackdropPress(document.getElementById('confirm-delete-modal'), () => closeConfirmDeleteModal());
 onBackdropPress(document.getElementById('bulk-delete-modal'), () => resolveBulkDelete(false));
+onBackdropPress(document.getElementById('log-detail-modal'), () => closeLogDetail());
 onBackdropPress(document.getElementById('do-photos-modal'), () => closeDoPhotosModal());
 onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoViewerModal());
 onBackdropPress(document.getElementById('rma-detail-modal'), () => closeReturnDetail());
