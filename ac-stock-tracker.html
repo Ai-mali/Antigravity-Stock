@@ -2150,7 +2150,11 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   gap: 6px; padding: 8px 10px;
   border-bottom: 1px solid var(--border); flex-wrap: wrap;
 }
-.sl-head-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sl-head-left {
+  display: flex; flex-direction: column;
+  align-items: flex-start; gap: 3px; min-width: 0;
+}
+.sl-head-title { display: flex; align-items: center; gap: 8px; }
 .sl-head-right {
   display: flex; align-items: center; gap: 6px;
   margin-left: auto; /* stays pinned right, even if the header wraps */
@@ -5857,8 +5861,10 @@ body.theme-light .autocomplete-dropdown {
           <div class="card status-log-card">
             <div class="status-log-head">
               <div class="sl-head-left">
-                <span class="sl-ping"><span class="sl-ping-ring"></span><span class="sl-ping-core"></span></span>
-                <span class="card-title" style="letter-spacing:0.08em;">STATUS LOG</span>
+                <div class="sl-head-title">
+                  <span class="sl-ping"><span class="sl-ping-ring"></span><span class="sl-ping-core"></span></span>
+                  <span class="card-title" style="letter-spacing:0.08em;">STATUS LOG</span>
+                </div>
                 <span class="sl-live-pill"><span class="sl-live-dot"></span>Live Feed</span>
               </div>
               <div class="sl-head-right">
