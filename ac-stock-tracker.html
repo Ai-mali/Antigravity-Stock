@@ -149,11 +149,11 @@ body.theme-light .so-serial-card:hover .serial-val {
   text-shadow: none;
 }
 body.theme-light .so-serial-card.staged {
-  background: #ecfdf5;
-  border-color: #116852;
+  background: color-mix(in srgb, var(--brand-c, #116852) 10%, #ffffff);
+  border-color: var(--brand-c, #116852);
 }
 body.theme-light .so-serial-card.staged .serial-val {
-  color: #116852;
+  color: var(--brand-c, #116852);
 }
 body.theme-light .nav-tab-bar {
   background: #f1f5f9;
@@ -3554,9 +3554,9 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged {
-  background: rgba(17, 104, 82, 0.22);
-  border-color: var(--green-bright);
-  box-shadow: 0 0 14px rgba(38, 208, 124, 0.25);
+  background: color-mix(in srgb, var(--brand-c, #26d07c) 15%, transparent);
+  border-color: var(--brand-c, #116852);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--brand-c, #26d07c) 28%, transparent);
 }
 
 .so-card-top {
@@ -3581,8 +3581,8 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged .indicator-dot {
-  background: var(--green-bright);
-  box-shadow: 0 0 6px var(--green-bright);
+  background: var(--brand-c, var(--green-bright));
+  box-shadow: 0 0 6px var(--brand-c, var(--green-bright));
 }
 
 .so-card-bottom {
@@ -3595,7 +3595,7 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged .so-card-bottom {
-  color: var(--green-bright);
+  color: var(--brand-c, var(--green-bright));
 }
 
 /* Dispatch Staging Cart Card */
@@ -10537,7 +10537,7 @@ function renderAvailable(searchTerm) {
         const secondHand = !!unitData.secondHand;
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
-        const highlightClass = (isSerialMatch || isDateMatch || modelNameMatch) ? 'avail-unit-card-highlighted' : '';
+        const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
@@ -10564,7 +10564,7 @@ function renderAvailable(searchTerm) {
             <div class="meta-text">
               <span>IN: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
-                <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
+                <span class="avail-card-dot" style="${staged ? 'background:var(--brand-c);box-shadow:0 0 8px var(--brand-c);' : ''}"></span>
                 <span class="avail-card-tag">${staged ? 'In Cart &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
               </span>
             </div>
@@ -11189,7 +11189,7 @@ function renderStockOut(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch || modelNameMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}')">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}')">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
