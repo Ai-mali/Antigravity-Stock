@@ -10536,8 +10536,8 @@ function renderAvailable(searchTerm) {
         badgeText = `⚠️ Low Stock: ${count}`;
       }
 
-      // Accordions never auto-open — not even on search. Highlighted
-      // matches show where hits live; the user expands what they want.
+      // Model rows stay collapsed during search — the expanded brand
+      // reveals which models matched; the user opens the one they want.
       const isModelOpen = mData.open === true;
 
       const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
@@ -10562,8 +10562,11 @@ function renderAvailable(searchTerm) {
 
     if (!brandUnits || !modelsHtml) return;
 
-    // If searching, auto-expand matching brand unless user manually toggled it during this search
-    const isBrandOpen = bData.open === true;
+    // Search auto-opens a brand only when it renders (i.e. contains a
+    // hit); user can still collapse it mid-search via searchOpen.
+    const isBrandOpen = hasFilter
+      ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
+      : (bData.open === true);
 
     const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
@@ -10827,7 +10830,15 @@ function toggleAvailSidebarMini() {
 
 function toggleBrandAcc(brand) {
   if (DB.inventory[brand]) {
-    DB.inventory[brand].open = !DB.inventory[brand].open;
+    const searchInput = document.getElementById('avail-search');
+    const q = (searchInput ? searchInput.value : '').trim();
+    if (q) {
+      // mid-search: collapse a search-opened brand without touching .open
+      const cur = DB.inventory[brand].searchOpen !== undefined ? DB.inventory[brand].searchOpen : true;
+      DB.inventory[brand].searchOpen = !cur;
+    } else {
+      DB.inventory[brand].open = !DB.inventory[brand].open;
+    }
     renderAvailable();
   }
 }
@@ -11166,7 +11177,9 @@ function renderStockOut(searchTerm) {
 
     if (!brandUnits || !modelsHtml) return;
 
-    const isBrandOpen = bData.open === true;
+    const isBrandOpen = hasFilter
+      ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
+      : (bData.open === true);
 
     const brandModels = Object.keys(bData.models || {}).length;
     const brandSection = document.createElement('div');
@@ -11210,7 +11223,14 @@ function renderStockOut(searchTerm) {
 
 function toggleSOBrandAcc(brand) {
   if (DB.inventory[brand]) {
-    DB.inventory[brand].open = !DB.inventory[brand].open;
+    const searchInput = document.getElementById('stockout-search');
+    const q = (searchInput ? searchInput.value : '').trim();
+    if (q) {
+      const cur = DB.inventory[brand].soSearchOpen !== undefined ? DB.inventory[brand].soSearchOpen : true;
+      DB.inventory[brand].soSearchOpen = !cur;
+    } else {
+      DB.inventory[brand].open = !DB.inventory[brand].open;
+    }
     renderStockOut();
   }
 }
