@@ -2144,6 +2144,137 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   color: #e2b340;
 }
 
+/* ============ Status Log — Stitch redesign ============ */
+.status-log-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 9px 12px;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.sl-head-left { display: flex; align-items: center; gap: 8px; }
+.sl-head-right { display: flex; align-items: center; gap: 6px; }
+.sl-ping { position: relative; width: 8px; height: 8px; flex-shrink: 0; }
+.sl-ping-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: #34d399; opacity: 0.65;
+  animation: actPing 1.6s cubic-bezier(0,0,0.2,1) infinite;
+}
+.sl-ping-core {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: #10b981; box-shadow: 0 0 6px #10b981;
+}
+.sl-live-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 7px; border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #34d399; background: rgba(16,185,129,0.13);
+  border: 1px solid rgba(16,185,129,0.3);
+}
+.sl-live-dot { width: 4px; height: 4px; border-radius: 50%; background: #34d399; }
+.sl-seg {
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(9,14,17,0.7); padding: 3px; border-radius: 7px;
+  border: 1px solid var(--border);
+}
+.sl-seg-btn {
+  border: 1px solid transparent; background: none; cursor: pointer;
+  padding: 3px 9px; border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 600; color: var(--text-sub);
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: color .15s, background .15s;
+}
+.sl-seg-btn:hover { color: var(--text); }
+.sl-seg-btn.is-active {
+  background: rgba(16,185,129,0.16); color: #6ee7b7;
+  border-color: rgba(16,185,129,0.4);
+}
+.sl-seg-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  padding: 0 5px; border-radius: 4px;
+  color: #fbbf24; background: rgba(245,158,11,0.18);
+  border: 1px solid rgba(245,158,11,0.4);
+}
+.sl-clear-btn {
+  border: 1px solid transparent; background: none; cursor: pointer;
+  color: var(--text-sub); padding: 4px; border-radius: 6px;
+  display: inline-flex; align-items: center;
+  transition: color .15s, background .15s;
+}
+.sl-clear-btn:hover { color: #fda4af; background: rgba(244,63,94,0.1); }
+
+.status-log-console {
+  display: flex; flex-direction: column; gap: 7px;
+  background: #0c1317;
+}
+.log-entry {
+  border-radius: 8px; padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface2, #162329) 55%, transparent);
+  font-family: 'JetBrains Mono', monospace;
+  transition: border-color .15s;
+}
+.log-entry:hover { border-color: #33505f; }
+.log-entry.le-issue {
+  background: rgba(245,158,11,0.07);
+  border-color: rgba(245,158,11,0.32);
+}
+.log-entry.le-issue:hover { border-color: rgba(245,158,11,0.55); }
+.log-entry.le-commit:hover { border-color: rgba(16,185,129,0.5); }
+.le-row { display: flex; align-items: center; gap: 8px; }
+.le-badge {
+  padding: 2px 6px; border-radius: 4px;
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; flex-shrink: 0;
+}
+.leb-info    { color: #94a3b8; background: rgba(148,163,184,0.12); border: 1px solid rgba(148,163,184,0.3); }
+.leb-ok      { color: #34d399; background: rgba(16,185,129,0.13); border: 1px solid rgba(16,185,129,0.3); }
+.leb-extract { color: #38bdf8; background: rgba(56,189,248,0.12);  border: 1px solid rgba(56,189,248,0.3); }
+.leb-commit  { color: #34d399; background: rgba(16,185,129,0.13); border: 1px solid rgba(16,185,129,0.3); }
+.leb-issue   { color: #fbbf24; background: rgba(245,158,11,0.16); border: 1px solid rgba(245,158,11,0.4); }
+.leb-active  { color: #e2b340; background: rgba(226,179,64,0.13); border: 1px solid rgba(226,179,64,0.35); }
+.le-time { margin-left: auto; font-size: 9.5px; color: var(--text-sub); flex-shrink: 0; }
+.le-units {
+  font-size: 9.5px; font-weight: 600;
+  color: #6ee7b7; background: rgba(6,78,59,0.5);
+  border: 1px solid rgba(16,185,129,0.35);
+  padding: 1px 7px; border-radius: 4px; flex-shrink: 0;
+}
+.le-title { font-size: 11.5px; font-weight: 700; color: #f1f5f9; margin-top: 6px; }
+.le-text  { font-size: 10.5px; line-height: 1.55; color: #94a3b8; margin-top: 5px; word-break: break-word; }
+.le-issue .le-text { color: #fcd34d; opacity: 0.9; }
+.le-serials { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.le-serial {
+  font-size: 9.5px; padding: 2px 7px; border-radius: 4px;
+  color: #6ee7b7; background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(16,185,129,0.3);
+}
+.status-log-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(9,14,17,0.6);
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+}
+.slf-batch { color: var(--text-sub); }
+.slf-batch b { color: var(--text); font-weight: 600; }
+.slf-right { display: flex; align-items: center; gap: 8px; }
+.slf-pending { color: #fbbf24; font-weight: 600; }
+.slf-sep { color: var(--border); }
+.slf-synced { display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 600; }
+
+body.theme-light .status-log-console { background: #f1f5f9; }
+body.theme-light .log-entry { background: #ffffff; border-color: #e2e8f0; }
+body.theme-light .log-entry.le-issue { background: #fffbeb; border-color: #fcd34d; }
+body.theme-light .log-entry.le-issue .le-text { color: #92400e; }
+body.theme-light .le-title { color: #0f172a; }
+body.theme-light .le-text  { color: #475569; }
+body.theme-light .le-serial { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+body.theme-light .sl-seg { background: #f1f5f9; }
+body.theme-light .status-log-foot { background: #f8fafc; }
+
 /* Scan Results Card Header Inputs */
 .scan-meta-bar {
   display: flex;
@@ -5663,14 +5794,38 @@ body.theme-light .autocomplete-dropdown {
 
           <!-- Status Log card -->
           <div class="card status-log-card">
-            <div class="card-header" style="padding:10px 16px;">
-              <span class="card-title">Status Log</span>
-              <span style="font-size:11px; color:var(--text-sub);">Operational</span>
+            <div class="status-log-head">
+              <div class="sl-head-left">
+                <span class="sl-ping"><span class="sl-ping-ring"></span><span class="sl-ping-core"></span></span>
+                <span class="card-title" style="letter-spacing:0.08em;">STATUS LOG</span>
+                <span class="sl-live-pill"><span class="sl-live-dot"></span>Live Feed</span>
+              </div>
+              <div class="sl-head-right">
+                <div class="sl-seg">
+                  <button type="button" class="sl-seg-btn is-active" data-filter="all" onclick="setLogFilter('all')">All</button>
+                  <button type="button" class="sl-seg-btn" data-filter="issue" onclick="setLogFilter('issue')">Issues <span class="sl-seg-count" id="sl-issue-count">0</span></button>
+                  <button type="button" class="sl-seg-btn" data-filter="commit" onclick="setLogFilter('commit')">Committed</button>
+                </div>
+                <button type="button" class="sl-clear-btn" title="Clear log" onclick="clearStatusLog()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
-            <div class="status-log-body" style="padding:12px 16px;">
-              <div class="status-log-console" id="status-log-console">
-                <div>[15:51:13] App initialized. Scan Engine ready.</div>
-                <div>[15:51:14] Ready: Drag &amp; drop or load an aircon invoice photo to begin scanning.</div>
+            <div class="status-log-body" style="padding:10px 12px;">
+              <div class="status-log-console" id="status-log-console"></div>
+            </div>
+            <div class="status-log-foot">
+              <div class="slf-batch">Batch: <b id="sl-batch-text">0/0 processed</b></div>
+              <div class="slf-right">
+                <span class="slf-pending" id="sl-pending-text">0 pending</span>
+                <span class="slf-sep">&bull;</span>
+                <span class="slf-synced">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Synced to DB
+                </span>
               </div>
             </div>
           </div>
@@ -7385,14 +7540,81 @@ function renderAll() {
   renderScreenIfDirty(DB.activeTab || 'stock-in');
 }
 
-function logLine(txt, cls = '') {
+/* ---- Status Log engine (Stitch redesign) ---- */
+const _slBadges = { info: 'INFO', ok: 'OK', extract: 'EXTRACT', commit: 'COMMITTED', issue: 'NEEDS ATTENTION', active: 'SCANNING' };
+let _slFilter = 'all';
+DB.logStats = { issues: 0, processed: 0 };
+
+function logEntry(kind, opts = {}) {
   const log = document.getElementById('status-log-console');
   if (!log) return;
   const el = document.createElement('div');
-  if (cls) el.className = cls;
-  el.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
+  el.className = 'log-entry le-' + (kind === 'ok' ? 'commit' : kind);
+  el.dataset.logKind = kind === 'ok' ? 'commit' : kind;
+  const t = new Date().toLocaleTimeString();
+  let inner = `<div class="le-row"><span class="le-badge leb-${kind}">${_slBadges[kind] || 'INFO'}</span>`;
+  if (kind === 'commit' && opts.units != null) {
+    inner += `<span class="le-units">${opts.units} unit${opts.units === 1 ? '' : 's'}</span>`;
+  }
+  inner += `<span class="le-time">${t}</span></div>`;
+  if (opts.title) inner += `<div class="le-title">${escapeHtml(opts.title)}</div>`;
+  if (opts.text) inner += `<p class="le-text">${escapeHtml(opts.text)}</p>`;
+  if (opts.serials && opts.serials.length) {
+    inner += `<div class="le-serials">${opts.serials.map(s => `<span class="le-serial">${escapeHtml(s)}</span>`).join('')}</div>`;
+  }
+  el.innerHTML = inner;
   log.appendChild(el);
+  if (el.dataset.logKind === 'issue') {
+    DB.logStats.issues++;
+    const c = document.getElementById('sl-issue-count');
+    if (c) c.textContent = DB.logStats.issues;
+  }
+  if (el.dataset.logKind === 'commit') DB.logStats.processed += (opts.units || 0);
+  if (_slFilter !== 'all' && el.dataset.logKind !== _slFilter) el.style.display = 'none';
+  updateLogFooter();
   log.scrollTop = log.scrollHeight;
+}
+
+function logLine(txt, cls = '') {
+  // Legacy flat-text calls route through the card renderer; strip any
+  // embedded [HH:MM:SS] prefix so the card's own timestamp isn't doubled.
+  const kind = cls === 'log-line-ok' ? 'ok'
+             : cls === 'log-line-warn' ? 'issue'
+             : cls === 'log-line-active' ? 'active' : 'info';
+  logEntry(kind, { text: String(txt).replace(/^\[[\d: ]{7,12}\]\s*/, '') });
+}
+
+function setLogFilter(f) {
+  _slFilter = f;
+  document.querySelectorAll('.sl-seg-btn').forEach(b =>
+    b.classList.toggle('is-active', b.dataset.filter === f));
+  document.querySelectorAll('#status-log-console .log-entry').forEach(el => {
+    el.style.display = (f === 'all' || el.dataset.logKind === f) ? '' : 'none';
+  });
+}
+
+function clearStatusLog() {
+  const log = document.getElementById('status-log-console');
+  if (log) log.innerHTML = '';
+  DB.logStats = { issues: 0, processed: 0 };
+  const c = document.getElementById('sl-issue-count');
+  if (c) c.textContent = '0';
+  updateLogFooter();
+}
+
+function slPendingUnits() {
+  return (DB.scans || []).reduce((n, r) =>
+    n + ((r.serials && r.serials.length) ? r.serials.length
+        : (parseInt((String(r.qty || '').match(/\d+/) || ['0'])[0], 10) || 0)), 0);
+}
+
+function updateLogFooter() {
+  const pending = slPendingUnits();
+  const done = DB.logStats.processed;
+  const b = document.getElementById('sl-batch-text');
+  const p = document.getElementById('sl-pending-text');
+  if (b) b.textContent = `${done}/${done + pending} processed`;
+  if (p) p.textContent = `${pending} pending`;
 }
 
 /* =========================================================
@@ -8152,7 +8374,7 @@ async function commitSingleReadySerialFromModal() {
       }
 
       showToast(`Committed unit ${serial} (${row.model}) to ${picked}!`, '&#10003;');
-      logLine(`Committed to ${picked} : ${row.model} : ${serial}`, 'log-line-ok');
+      logEntry('commit', { units: 1, title: `${picked} \u00b7 ${row.model}`, serials: [serial] });
 
       if (isNonSerialRow(row)) {
         const curQ = parseInt((String(row.qty).match(/\d+/) || [])[0] || '1', 10) || 1;
@@ -8315,6 +8537,7 @@ function renderScanResultsTable() {
   if (sumL) sumL.textContent = 'Total: ' + DB.scans.length + ' models \u00b7 ' + totalSerials + ' serialized units';
 
   updateScanSelectionUI();
+  updateLogFooter();
 }
 
 function deleteScanRowDirect(idx) {
@@ -8557,14 +8780,7 @@ function processLoadedPhoto(file) {
     if (emptyState) emptyState.style.display = 'none';
     if (previewDisplay) previewDisplay.style.display = 'flex';
 
-    const log = document.getElementById('status-log-console');
-    if (log) {
-      const d = document.createElement('div');
-      d.className = 'log-line-ok';
-      d.textContent = `[${new Date().toLocaleTimeString()}] Photo loaded: ${file.name} (${sizeStr})`;
-      log.appendChild(d);
-      log.scrollTop = log.scrollHeight;
-    }
+    logEntry('ok', { text: `Photo loaded: ${file.name} (${sizeStr})` });
     showToast(`Loaded: ${file.name}`, '&#128247;');
   };
   reader.readAsDataURL(file);
@@ -8603,14 +8819,7 @@ function stopScanningProcess() {
   isScanningActive = false;
   scanAbortController = null;
 
-  const log = document.getElementById('status-log-console');
-  if (log) {
-    const el = document.createElement('div');
-    el.className = 'log-line-warn';
-    el.textContent = `[${new Date().toLocaleTimeString()}] Scanning stopped by user.`;
-    log.appendChild(el);
-    log.scrollTop = log.scrollHeight;
-  }
+  logEntry('issue', { text: 'Scanning stopped by user.' });
   showToast('Scanning stopped.', '&#9209;');
 }
 
@@ -8633,32 +8842,23 @@ function clearPreview(e) {
   if (emptyState) emptyState.style.display = 'flex';
   DB.photoFile = null;
 
-  const log = document.getElementById('status-log-console');
-  if (log) {
-    const d = document.createElement('div');
-    d.style.color = 'var(--text-sub)';
-    d.textContent = `[${new Date().toLocaleTimeString()}] Preview cleared. Ready for new photo.`;
-    log.appendChild(d);
-    log.scrollTop = log.scrollHeight;
-  }
+  logEntry('info', { text: 'Preview cleared. Ready for new photo.' });
   showToast('Preview cleared.');
 }
 
 async function triggerScanSimulation() {
   const laser = document.getElementById('scan-laser');
   const btn = document.getElementById('btn-scan');
-  const log = document.getElementById('status-log-console');
 
   const addLog = (txt, cls = '') => {
-    const el = document.createElement('div');
-    if (cls) el.className = cls;
-    el.textContent = txt;
-    log.appendChild(el);
-    log.scrollTop = log.scrollHeight;
+    const kind = cls === 'log-line-ok' ? 'ok'
+               : cls === 'log-line-warn' ? 'issue'
+               : cls === 'log-line-active' ? 'active' : 'info';
+    logEntry(kind, { text: txt });
   };
 
   if (!DB.photoFile) {
-    addLog(`[${new Date().toLocaleTimeString()}] Load a photo first.`, 'log-line-warn');
+    addLog('Load a photo first.', 'log-line-warn');
     showToast('Load a photo first.');
     return;
   }
@@ -8672,7 +8872,7 @@ async function triggerScanSimulation() {
   const modelName = (DB.config && DB.config.active)
     ? `${provLabel(DB.config.active.provider)} \u00b7 ${DB.config.active.model}`
     : 'AI Vision';
-  addLog(`[${new Date().toLocaleTimeString()}] Scan button clicked \u2014 sending image to ${modelName}, waiting for response...`, 'log-line-active');
+  addLog(`Sending image to ${modelName} \u2014 waiting for response...`, 'log-line-active');
 
   try {
     const fd = new FormData();
@@ -8685,7 +8885,7 @@ async function triggerScanSimulation() {
 
     if (!isScanningActive) return;
 
-    (res.log || []).forEach(l => addLog(`[${new Date().toLocaleTimeString()}] ${l}`, res.ok ? 'log-line-ok' : 'log-line-warn'));
+    (res.log || []).forEach(l => addLog(l, res.ok ? 'log-line-ok' : 'log-line-warn'));
     if (res.ok) {
       DB.scans = res.rows.map(r => ({
         no: r.no, model: r.model, serials: r.serials,
@@ -8694,6 +8894,10 @@ async function triggerScanSimulation() {
       }));
       markDuplicateScans();
       renderScanResultsTable();
+      const units = res.rows.reduce((n, r) =>
+        n + ((r.serials && r.serials.length) ? r.serials.length
+            : (parseInt((String(r.qty || '').match(/\d+/) || ['0'])[0], 10) || 0)), 0);
+      logEntry('extract', { text: `Scan complete: ${res.rows.length} model${res.rows.length === 1 ? '' : 's'}, ${units} unit${units === 1 ? '' : 's'}` });
       showToast(`Scan complete! ${res.rows.length} rows extracted.`);
     } else {
       showToast('Scan failed \u2014 see Status Log.');
@@ -8701,10 +8905,10 @@ async function triggerScanSimulation() {
     fetchDoPhotos();
   } catch (e) {
     if (e.name === 'AbortError' || scanAbortController?.signal?.aborted) {
-      addLog(`[${new Date().toLocaleTimeString()}] Scanning stopped by user.`, 'log-line-warn');
+      addLog('Scanning stopped by user.', 'log-line-warn');
       showToast('Scanning stopped.', '&#9209;');
     } else {
-      addLog(`[${new Date().toLocaleTimeString()}] Scan request failed: ${e.message}`, 'log-line-warn');
+      addLog(`Scan request failed: ${e.message}`, 'log-line-warn');
       showToast('Scan failed \u2014 is backend.py running?');
     }
   } finally {
@@ -8968,12 +9172,15 @@ function reportCommit(row, res, brand = '') {
   if (res.added.length) {
     showToast(`ADDED ${res.added.length} unit(s) of ${row.model}.`);
     const b = brand || (DB.modelBrands || {})[row.model] || '';
-    logLine(b ? `Committed to ${b} : ${row.model} : ${res.added.join(', ')}`
-              : `Committed ${row.model}: ${res.added.join(', ')}`, 'log-line-ok');
+    logEntry('commit', {
+      units: res.added.length,
+      title: b ? `${b} \u00b7 ${row.model}` : row.model,
+      serials: res.added
+    });
   }
   if (res.dupes.length) {
     showToast(`DUPLICATED SERIAL(S): ${res.dupes.join(', ')}`, '&#9888;');
-    logLine(`Skipped duplicates: ${res.dupes.join(', ')}`, 'log-line-warn');
+    logEntry('issue', { text: `Skipped duplicates: ${res.dupes.join(', ')}` });
   }
 }
 
@@ -13888,6 +14095,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   await refreshData();
   await loadConfig();
+  logEntry('info', { text: 'App initialized. Scan Engine ready.' });
+  logEntry('info', { text: 'Ready: Drag & drop or load an aircon invoice photo to begin scanning.' });
   initScanResultsDragSelect();
   initSideResizer('avail-side-resizer', 'avail-sidebar', 'availW', 'availSidebarMini', applyAvailSidebarMini);
   initSideResizer('so-side-resizer', 'so-sidebar', 'soW', 'soSidebarMini', applySOSidebarMini);
