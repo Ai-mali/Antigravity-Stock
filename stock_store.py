@@ -584,7 +584,7 @@ class StockStore:
             model = str(rec["Model"]).strip()
             brand = str(rec["Brand"]).strip() or "UNBRANDED"
             b = inv.setdefault(brand, {"color": self._brand_color(brand),
-                                       "open": True, "models": {}})
+                                       "models": {}})
             m = b["models"].setdefault(
                 model, {"dateIn": str(rec["Date In"]), "serials": [], "units": {}})
             s = str(rec["Serial"]).strip()
@@ -596,7 +596,7 @@ class StockStore:
         # keep zero-stock brands visible too
         for brand in self.brands:
             inv.setdefault(brand, {"color": self._brand_color(brand),
-                                   "open": True, "models": {}})
+                                   "models": {}})
         for b in inv.values():
             for i, m in enumerate(sorted(b["models"]), start=1):
                 b["models"][m]["idx"] = f"{i:02d}"
