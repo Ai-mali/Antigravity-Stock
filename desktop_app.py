@@ -37,9 +37,9 @@ SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
   --c-purple:#8B5CF6;             /* border arc: purple */
   --c-white-hot:#ffffff;          /* beam hotspot       */
   --border-base:rgba(226,232,240,.45); /* resting border tint            */
-  --card-bg:#ffffff;              /* card surface                       */
+  --card-bg:#151d30;              /* card surface (dark navy)           */
   --page-bg:#0b0f19;              /* backdrop behind the card           */
-  --text-vre-base:#1e293b;        /* VRE letters                        */
+  --text-vre-base:#e2e8f0;        /* VRE letters (light on dark card)   */
   --text-stock-base:#10B981;      /* AC STOCK letters                   */
   --text-glow-spread:22px;        /* logo aura blur                     */
   --text-glow-opacity:.85;        /* logo aura strength                 */
@@ -76,7 +76,7 @@ var(--border-base) 140deg,var(--border-base) 330deg,var(--c-green) 360deg);
 animation:rot var(--glow-speed) linear infinite;pointer-events:none;z-index:2}
 /* card surface — pristine, above both glow layers */
 .card{position:relative;z-index:3;background:var(--card-bg);
-border-radius:var(--card-radius);box-shadow:0 20px 40px -15px rgba(0,0,0,.45);
+border-radius:var(--card-radius);box-shadow:0 20px 40px -15px rgba(0,0,0,.6);
 padding:44px 40px 36px;display:flex;flex-direction:column;align-items:center;
 text-align:center}
 @keyframes rot{from{--angle:0deg}to{--angle:360deg}}
@@ -88,7 +88,7 @@ rgba(16,185,129,.2) 38%,rgba(6,182,212,.6) 48%,rgba(255,255,255,.85) 52%,
 rgba(59,130,246,.65) 56%,rgba(139,92,246,.3) 68%,transparent 78%,transparent 100%);
 background-size:280% 100%;filter:blur(var(--text-glow-spread));
 opacity:var(--text-glow-opacity);pointer-events:none;z-index:1;
-mix-blend-mode:multiply;
+mix-blend-mode:screen;
 animation:beam var(--text-beam-speed) linear infinite}
 .title{position:relative;z-index:2;display:inline-flex;gap:.5rem;
 font-size:30px;font-weight:800;letter-spacing:.05em;
@@ -104,7 +104,7 @@ filter:drop-shadow(0 0 1px rgba(16,185,129,.15))}
 .sub{margin-top:10px;display:flex;align-items:center;justify-content:center;
 gap:6px;font-size:12px;font-weight:500;letter-spacing:.05em;color:#64748b}
 .sub svg{width:14px;height:14px;color:var(--c-green);animation:spinSlow 8s linear infinite}
-.track{width:100%;max-width:240px;height:5px;background:#f1f5f9;border-radius:9999px;
+.track{width:100%;max-width:240px;height:5px;background:#1e293b;border-radius:9999px;
 margin-top:38px;position:relative;overflow:hidden}
 .fill{position:absolute;top:0;bottom:0;width:40%;border-radius:9999px;
 background:linear-gradient(90deg,var(--c-green),var(--c-cyan));
@@ -281,14 +281,15 @@ class _NativeSplash:
     # COLORREF is 0x00BBGGRR — dark backdrop, white card, comet on the
     # card edge (mirrors SPLASH_HTML)
     _BG     = 0x00190F0B   # #0B0F19
-    _CARD   = 0x00FFFFFF   # #FFFFFF
-    _CARD_LINE = 0x00E1D5CB # #CBD5E1 — faint card border
+    _CARD   = 0x00301D15   # #151D30 — dark navy card
+    _CARD_RGB = (0x15, 0x1D, 0x30)   # card color as plain RGB for blends
+    _CARD_LINE = 0x00554133 # #334155 — faint card border
     _ACCENT = 0x0081B910   # #10B981
-    _TEXT   = 0x003B291E   # #1E293B
+    _TEXT   = 0x00F0E8E2   # #E2E8F0
     _SUB    = 0x008B7464   # #64748B
     _STATUS = 0x00B8A394   # #94A3B8
-    _TRACK  = 0x00F9F5F1   # #F1F5F9
-    _ACCENT_DIM = 0x00D0F3A7  # light mint — soft halo behind the accent
+    _TRACK  = 0x003B291E   # #1E293B
+    _ACCENT_DIM = 0x005A2E15  # dim teal — halo on the dark card
     _CARD_M  = 30          # card margin from window edge (px)
     # comet palette (plain RGB) — the head cycles through these as it
     # laps the border, the trail dots just blend the head toward white
@@ -523,9 +524,9 @@ class _NativeSplash:
             perim = 2 * cw + 2 * ch
             head = (self._phase * 7) % perim
             head_rgb = self._runner_rgb(head / perim)
-            halo_rgb = self._blend(head_rgb, (255, 255, 255), 0.8)
+            halo_rgb = self._blend(head_rgb, self._CARD_RGB, 0.8)
             trail_pts = tuple(
-                (back, self._ref(self._blend(head_rgb, (255, 255, 255), t)), rad)
+                (back, self._ref(self._blend(head_rgb, self._CARD_RGB, t)), rad)
                 for back, t, rad in ((14, 0.35, 3), (28, 0.55, 3),
                                      (42, 0.75, 2), (56, 0.88, 1)))
             for back, ref, rad in ((0, self._ref(head_rgb), 4),) + trail_pts:
