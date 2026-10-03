@@ -149,11 +149,11 @@ body.theme-light .so-serial-card:hover .serial-val {
   text-shadow: none;
 }
 body.theme-light .so-serial-card.staged {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: #ecfdf5;
+  border-color: #116852;
 }
 body.theme-light .so-serial-card.staged .serial-val {
-  color: #64748b;
+  color: #116852;
 }
 body.theme-light .nav-tab-bar {
   background: #f1f5f9;
@@ -3554,18 +3554,9 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged {
-  background: rgba(148, 163, 184, 0.08);
-  border-color: rgba(148, 163, 184, 0.45);
-  box-shadow: none;
-}
-
-.so-serial-card.staged:hover {
-  box-shadow: none;
-  background: rgba(148, 163, 184, 0.14);
-}
-
-.so-serial-card.staged .serial-val {
-  color: var(--text-sub);
+  background: rgba(17, 104, 82, 0.22);
+  border-color: var(--green-bright);
+  box-shadow: 0 0 14px rgba(38, 208, 124, 0.25);
 }
 
 .so-card-top {
@@ -3590,8 +3581,8 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged .indicator-dot {
-  background: var(--text-sub);
-  box-shadow: none;
+  background: var(--green-bright);
+  box-shadow: 0 0 6px var(--green-bright);
 }
 
 .so-card-bottom {
@@ -3604,7 +3595,7 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged .so-card-bottom {
-  color: var(--text-sub);
+  color: var(--green-bright);
 }
 
 /* Dispatch Staging Cart Card */
@@ -10574,7 +10565,7 @@ function renderAvailable(searchTerm) {
               <span>IN: ${dateDisplay}</span>
               <span style="display:flex; align-items:center; gap:5px;">
                 <span class="avail-card-dot" style="${staged ? 'background:var(--green-bright);box-shadow:0 0 8px var(--green-bright);' : ''}"></span>
-                <span class="avail-card-tag">${staged ? 'In Cart &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
+                <span class="avail-card-tag">${staged ? 'Staged &#10003;' : 'In Stock'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
               </span>
             </div>
           </div>
@@ -11207,7 +11198,7 @@ function renderStockOut(searchTerm) {
             </div>
             <div class="so-card-bottom">
               <span>IN: ${dateDisplay}</span>
-              <span>${staged ? 'In Cart &#10003;' : 'Ready'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
+              <span>${staged ? 'Staged &#10003;' : 'Ready'}${secondHand ? `<b class="rma-2nd" title="View return history" onclick="event.stopPropagation(); viewReturnHistory('${escapeHtml(escapeJs(s))}')">2nd</b>` : ''}</span>
             </div>
           </div>
         `;
@@ -11339,7 +11330,7 @@ function toggleSerialInCart(serial, model, brand) {
     showToast('Removed ' + serial + ' from staging cart.');
   } else {
     DB.stagedCart.push({ serial, model, brand });
-    showToast('In cart ' + serial + ' &#8594; ' + model);
+    showToast('Staged ' + serial + ' &#8594; ' + model);
   }
   updateGlobalBadges();
   renderStockOut();
