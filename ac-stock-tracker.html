@@ -14330,7 +14330,8 @@ function toggleTheme() {
     const txt = document.getElementById('theme-mode-text');
     if (txt) txt.textContent = willBeLight ? 'Day' : 'Dark';
     try { localStorage.setItem('ac_stock_theme', willBeLight ? 'light' : 'dark'); } catch(e){}
-    if (typeof hydrateAppearance === 'function') hydrateAppearance();
+    /* Appearance sliders stay put on theme switch — only the Reset
+       button or a manual drag may change them. */
   };
   const reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -14392,13 +14393,11 @@ function applyUserBackground(on, v, preset) {
     b.classList.toggle('active', !on && b.dataset.bg === preset));
 }
 
-/* Appearance sliders — saved per-theme in localStorage:
-   { dark: {panel,dim}, light: {panel,dim} } under 'ac_stock_appearance' */
+/* Appearance sliders — one shared pair of values in localStorage
+   ('ac_stock_appearance': {panel,dim}). They never change on their own:
+   theme switches and restarts keep them; only a drag or Reset writes. */
 const AP_DEFAULTS = { panel: 75, dim: 60 };
 
-function _apThemeKey() {
-  return document.body.classList.contains('theme-light') ? 'light' : 'dark';
-}
 function _apStore() {
   try { return JSON.parse(localStorage.getItem('ac_stock_appearance') || '{}'); }
   catch(e) { return {}; }
@@ -14420,7 +14419,9 @@ function applyAppearance() {
 }
 
 function hydrateAppearance() {
-  const saved = _apStore()[_apThemeKey()] || {};
+  const s = _apStore();
+  const saved = (s.panel != null) ? s
+    : (s[document.body.classList.contains('theme-light') ? 'light' : 'dark'] || {});
   DB.panelOpacity = Math.max(20, Math.min(100,
     saved.panel != null ? saved.panel : AP_DEFAULTS.panel));
   DB.photoDim = Math.max(0, Math.min(90,
@@ -14429,9 +14430,10 @@ function hydrateAppearance() {
 }
 
 function _apPersist() {
-  const all = _apStore();
-  all[_apThemeKey()] = { panel: DB.panelOpacity, dim: DB.photoDim };
-  try { localStorage.setItem('ac_stock_appearance', JSON.stringify(all)); } catch(e){}
+  try {
+    localStorage.setItem('ac_stock_appearance',
+      JSON.stringify({ panel: DB.panelOpacity, dim: DB.photoDim }));
+  } catch(e){}
 }
 
 function setPanelOpacity(v, persist) {
