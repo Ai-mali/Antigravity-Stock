@@ -8147,12 +8147,6 @@ function clearStatusLog() {
   updateLogFooter();
 }
 
-function autoClearLogIfScansEmpty() {
-  // The batch the log was narrating is fully drained from Scan Results —
-  // reset it instead of leaving stale COMMITTED/OK lines until the trash icon.
-  if (!DB.scans.length) clearStatusLog();
-}
-
 function slPendingUnits() {
   return (DB.scans || []).reduce((n, r) =>
     n + ((r.serials && r.serials.length) ? r.serials.length
@@ -8981,7 +8975,6 @@ async function commitSingleReadySerialFromModal() {
 
       closeReadySerialModal();
       renderScanResultsTable();
-      autoClearLogIfScansEmpty();
       await refreshData();
     } else if (res.dupes && res.dupes.length > 0) {
       showToast(`Serial ${serial} was already in system!`, '&#9888;');
@@ -9137,7 +9130,6 @@ function deleteScanRowDirect(idx) {
   }
   selectedScanIndices = newSelected;
   renderScanResultsTable();
-  autoClearLogIfScansEmpty();
   showToast(`Removed ${model} from scan results.`, '&#128465;');
 }
 
@@ -9366,6 +9358,10 @@ function processLoadedPhoto(file) {
     if (emptyState) emptyState.style.display = 'none';
     if (previewDisplay) previewDisplay.style.display = 'flex';
 
+    // New photo = new batch: reset the log so this scan's story starts
+    // clean, while the previous batch's final COMMITTED lines stayed
+    // visible right up to this moment.
+    clearStatusLog();
     logEntry('ok', { text: `Photo loaded: ${file.name} (${sizeStr})` });
     showToast(`Loaded: ${file.name}`, '&#128247;');
   };
@@ -9729,7 +9725,6 @@ function deleteCurrentScanRow() {
   }
   selectedScanIndices = newSelected;
   renderScanResultsTable();
-  autoClearLogIfScansEmpty();
   closeEditScanModal();
   showToast(`Deleted ${itemLabel}`, '&#128465;');
 }
@@ -9742,6 +9737,8 @@ function addScanRowManual() {
   const no = (DB.scans.length + 1) * 10;
   const newRow = { no, model, serials, qty: serials.length + ' PC' + (serials.length > 1 ? 'S' : ''), flag: '', desc: '' };
   DB.scans.push(newRow);
+  // Manual entry starts a fresh batch too — same reset as loading a photo.
+  clearStatusLog();
   markDuplicateScans();
   renderScanResultsTable();
   showToast('Added manual row ' + model);
@@ -9844,7 +9841,6 @@ async function commitScanRow(idx, assignedBrand = null) {
     }
     selectedScanIndices = newSelected;
     renderScanResultsTable();
-    autoClearLogIfScansEmpty();
     await refreshData();
   } catch (e) {
     showToast('Commit failed: ' + e.message);
@@ -9862,7 +9858,6 @@ function deleteSelectedScans() {
   });
   selectedScanIndices.clear();
   renderScanResultsTable();
-  autoClearLogIfScansEmpty();
   showToast(`Removed ${count} row(s) from scan results.`);
 }
 
@@ -9962,7 +9957,6 @@ async function commitSelectedOrAllScans() {
   } finally {
     selectedScanIndices.clear();
     renderScanResultsTable();
-    autoClearLogIfScansEmpty();
     await refreshData();
     let msg = `Committed ${done} row(s)`;
     if (dupeCount) msg += `, kept ${dupeCount} duplicate row(s) blinking in scan list`;
