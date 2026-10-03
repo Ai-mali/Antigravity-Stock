@@ -12140,8 +12140,8 @@ function renderRmaSuggest(q) {
   const box = document.getElementById('rma-serial-suggest');
   if (!box) return;
   const ql = (q || '').trim().toLowerCase();
+  if (!ql) { hideRmaSuggest(); return; }
   const hits = DB.trackList.filter(r =>
-    !ql ||
     (r.serial || '').toLowerCase().includes(ql) ||
     (r.model || '').toLowerCase().includes(ql) ||
     (r.customer || '').toLowerCase().includes(ql)
