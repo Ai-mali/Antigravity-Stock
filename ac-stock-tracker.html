@@ -324,8 +324,12 @@ body.theme-light.bg-wallpaper::after {
     rgba(234, 239, 244, 0.28) 100%);
 }
 
-/* Glass retheme — translucent surface vars reach every panel at once */
+/* Glass retheme — translucent surface vars reach every panel at once.
+   body must lose its solid --bg-page: a block background paints ABOVE
+   negative z-index pseudo-elements, which would hide the photo/veil.
+   html keeps --bg-page as the ultimate fallback behind ::before. */
 body.has-user-bg, body.bg-wallpaper {
+  background-color: transparent;
   --bg-app: rgba(15, 23, 30, 0.55);
   --header-bg: rgba(15, 23, 30, 0.62);
   --surface: rgba(15, 23, 30, 0.66);
