@@ -383,6 +383,9 @@ _gd.GdipCreateLineBrush.argtypes = [ctypes.POINTER(_POINTF),
                                     ctypes.POINTER(_POINTF), wintypes.DWORD,
                                     wintypes.DWORD, ctypes.c_int,
                                     ctypes.POINTER(_vp)]
+_gd.GdipSetLinePresetBlend.argtypes = [_vp, ctypes.POINTER(ctypes.c_uint),
+                                       ctypes.POINTER(ctypes.c_float),
+                                       ctypes.c_int]
 _gd.GdipFillPolygon.argtypes = [_vp, _vp, ctypes.POINTER(_POINTF),
                               ctypes.c_int, ctypes.c_int]
 _gd.GdipDrawPolygon.argtypes = [_vp, _vp, ctypes.POINTER(_POINTF),
@@ -452,6 +455,7 @@ class _NativeSplash:
     GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha) - fallback only
     GLOW_SIGMA     = 6.5      # glow softness outside the card edge (logical px)
     GLOW_AMP       = 0.85     # glow strength 0..1
+    TITLE_SWEEP_MS = 4000     # title gradient sweep period (CSS shimmer 4s)
     CARD_R         = 18.0     # card corner radius (logical px)
     MARGIN         = 50       # transparent margin around the card — glow bleed
     WIN_W, WIN_H   = 560, 320 # logical window size incl. margins
@@ -873,12 +877,33 @@ class _NativeSplash:
         m = self._m
         title_y = m + 42.0 * sc
         tx = (W - self._vre_w - self._ac_w) / 2
+        # --- animated gradient title (same sweep as the HTML splash) ---
+        total_w = self._vre_w + self._ac_w
+        tile_w = 2.0 * total_w                      # CSS background-size: 200%
+        shift = (t_ms % self.TITLE_SWEEP_MS) / self.TITLE_SWEEP_MS * tile_w
+        p1 = _POINTF(tx - shift, 0.0)               # gradient moves LEFT over time
+        p2 = _POINTF(tx - shift + tile_w, 0.0)
+        tb = _vp()
+        if not _gd.GdipCreateLineBrush(ctypes.byref(p1), ctypes.byref(p2),
+                                       0xFF475569, 0xFF475569, 0,   # 0 = WrapModeTile
+                                       ctypes.byref(tb)):
+            cols = (ctypes.c_uint * 5)(0xFF475569, 0xFF10B981, 0xFF06B6D4,
+                                       0xFF3B82F6, 0xFF475569)
+            pos = (ctypes.c_float * 5)(0.0, 0.25, 0.5, 0.75, 1.0)
+            _gd.GdipSetLinePresetBlend(tb, cols, pos, 5)
+            brush_vre, brush_ac = tb, tb            # ONE brush for both words
+        else:
+            tb = None
+            brush_vre, brush_ac = self._br_text, self._br_acc   # old look as fallback
+
         rf = _RECTF(tx, title_y, self._vre_w + 8.0, 34.0 * sc)
         _gd.GdipDrawString(gfx, "VRE ", -1, self._f_title,
-                           ctypes.byref(rf), self._fmt_l, self._br_text)
+                           ctypes.byref(rf), self._fmt_l, brush_vre)
         rf = _RECTF(tx + self._vre_w, title_y, self._ac_w + 8.0, 34.0 * sc)
         _gd.GdipDrawString(gfx, "AC STOCK", -1, self._f_title,
-                           ctypes.byref(rf), self._fmt_l, self._br_acc)
+                           ctypes.byref(rf), self._fmt_l, brush_ac)
+        if tb:
+            _gd.GdipDeleteBrush(tb)                 # created every frame, so free it every frame
 
         cy = m + 94.0 * sc                        # pulsing dot + AI Scan
         sub_x = (W - (18.0 * sc + self._sub_w)) / 2
