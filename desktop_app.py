@@ -13,6 +13,7 @@ import threading
 import ctypes
 import math
 import colorsys
+import traceback
 from ctypes import wintypes
 
 APP_URL = 'http://127.0.0.1:8000/?app_mode=desktop'
@@ -37,7 +38,8 @@ overflow:hidden;user-select:none;-webkit-user-select:none}
 .glow-svg{z-index:0;filter:blur(9px);opacity:.95}
 .ring-svg{z-index:2}
 .card{position:relative;z-index:1;background:linear-gradient(180deg,#151617 0%,#0b0c0d 100%);
-border-radius:18px;padding:42px 40px 34px;display:flex;flex-direction:column;align-items:center;
+border-radius:18px;width:460px;height:220px;box-sizing:border-box;padding:0 40px;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
 text-align:center;box-shadow:0 24px 50px -18px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.04)}
 .brand{font-size:30px;font-weight:800;letter-spacing:.06em;
 background:linear-gradient(90deg,#475569 0%,#10B981 25%,#06B6D4 50%,#3B82F6 75%,#475569 100%);
@@ -365,6 +367,7 @@ _gd.GdipCreateBitmapFromScan0.argtypes = [ctypes.c_int, ctypes.c_int,
 _gd.GdipDisposeImage.argtypes = [_vp]
 _gd.GdipGetImageGraphicsContext.argtypes = [_vp, ctypes.POINTER(_vp)]
 _gd.GdipDeleteGraphics.argtypes = [_vp]
+_gd.GdipFlush.argtypes = [_vp, ctypes.c_int]
 _gd.GdipSetSmoothingMode.argtypes = [_vp, ctypes.c_int]
 _gd.GdipSetTextRenderingHint.argtypes = [_vp, ctypes.c_int]
 _gd.GdipGraphicsClear.argtypes = [_vp, wintypes.DWORD]
@@ -446,7 +449,9 @@ class _NativeSplash:
     HUE_SPAN       = 120.0    # +120 deg -> purple (passes cyan, blue)
     RING_W         = 2.4      # sharp comet width at the head (logical px)
     GLOW_W         = 14.0     # widest glow pass at the head (logical px)
-    GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha)
+    GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha) - fallback only
+    GLOW_SIGMA     = 6.5      # glow softness outside the card edge (logical px)
+    GLOW_AMP       = 0.85     # glow strength 0..1
     CARD_R         = 18.0     # card corner radius (logical px)
     MARGIN         = 50       # transparent margin around the card — glow bleed
     WIN_W, WIN_H   = 560, 320 # logical window size incl. margins
@@ -490,6 +495,9 @@ class _NativeSplash:
         self._vre_w = 0.0
         self._ac_w = 0.0
         self._sub_w = 0.0
+        self._bits_addr = None   # address of the DIB pixel memory (for CometLayer)
+        self._cm = None          # CometLayer, built after the first frame is shown
+        self._cm_failed = False  # True -> fall back to the old stroke comet
 
     def start(self):
         try:
@@ -554,6 +562,9 @@ class _NativeSplash:
             _u32.UpdateWindow(self._hwnd)
             self._render(self._hwnd)                 # first frame
             self._ready.set()
+            # numpy import + comet geometry happen off-thread, AFTER the splash
+            # is already visible, so startup speed is unchanged.
+            threading.Thread(target=self._load_comet, daemon=True).start()
 
             msg = _MSG()
             while _u32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
@@ -563,6 +574,30 @@ class _NativeSplash:
             pass
         finally:
             self._ready.set()
+
+    def _load_comet(self):
+        """Build the smooth numpy comet (see comet_layer.py). On any failure
+        we silently keep the old GDI+ stroke comet as a fallback."""
+        try:
+            import numpy as np
+            from comet_layer import CometLayer
+            if not self._bits_addr:
+                raise RuntimeError("no DIB memory")
+            W, H = self.W, self.H
+            buf = (ctypes.c_ubyte * (W * H * 4)).from_address(self._bits_addr)
+            arr = np.frombuffer(buf, dtype=np.uint8).reshape(H, W, 4)
+            cm = CometLayer(
+                arr, self._m, self._cw, self._ch, self._rad, scale=self._sc,
+                lap_ms=self.LAP_MS, cycle_ms=self.COLOR_CYCLE_MS,
+                tail=self.TAIL, lag_total_ms=(self.SEGMENTS - 1) * self.LAG_MS,
+                hue_start=self.HUE_START, hue_span=self.HUE_SPAN,
+                ring_w=self.RING_W, glow_sigma=self.GLOW_SIGMA,
+                glow_amp=self.GLOW_AMP)
+            if self._gfx:                      # window may already be closing
+                self._cm = cm
+        except Exception:
+            traceback.print_exc()
+            self._cm_failed = True
 
     def _wnd_proc(self, hwnd, msg, wparam, lparam):
         if msg == 0x000F:                    # WM_PAINT — validate + re-push
@@ -651,6 +686,7 @@ class _NativeSplash:
                 _g32.DeleteDC(mem)
                 return
             _g32.SelectObject(mem, hbmp)    # stays selected for ULW
+            self._bits_addr = bits.value    # raw BGRA pixels, used by CometLayer
             img = _vp()
             gfx = _vp()
             # GpBitmap over the DIB's own bits — zero-copy, premultiplied
@@ -696,6 +732,8 @@ class _NativeSplash:
             pass
 
     def _deinit_gdi(self):
+        self._cm = None
+        self._cm_failed = True
         try:
             for fn, obj in self._objs:
                 try:
@@ -819,13 +857,17 @@ class _NativeSplash:
                             self._POLY_N)
 
         # comet: low-alpha wide passes behind, sharp pass on top
-        P = self._perim
-        head = (t_ms % self.LAP_MS) / self.LAP_MS * P
-        tail = self.TAIL * P
-        seg = tail / self.SEGMENTS
-        for ws, am in self.GLOW_PASSES:
-            self._comet(head, tail, seg, t_ms, self.GLOW_W * ws * sc, am)
-        self._comet(head, tail, seg, t_ms, self.RING_W * sc, 1.0)
+        # The smooth comet is composited per-pixel by CometLayer after the card
+        # contents are drawn (see below). The old stroke comet is kept only as
+        # a fallback if numpy / comet_layer.py is unavailable.
+        if self._cm_failed:
+            P = self._perim
+            head = (t_ms % self.LAP_MS) / self.LAP_MS * P
+            tail = self.TAIL * P
+            seg = tail / self.SEGMENTS
+            for ws, am in self.GLOW_PASSES:
+                self._comet(head, tail, seg, t_ms, self.GLOW_W * ws * sc, am)
+            self._comet(head, tail, seg, t_ms, self.RING_W * sc, 1.0)
 
         # ---- card contents (unchanged layout) ----
         m = self._m
@@ -865,6 +907,15 @@ class _NativeSplash:
         _gd.GdipDrawString(gfx, "Starting services\u2026", -1,
                            self._f_small, ctypes.byref(rf), self._fmt_c,
                            self._br_text)
+
+        cm = self._cm
+        if cm is not None:
+            try:
+                _gd.GdipFlush(gfx, 1)          # GDI+ must finish writing the DIB first
+                cm.apply(t_ms)
+            except Exception:
+                self._cm = None
+                self._cm_failed = True
 
         size = wintypes.SIZE(W, H)
         src = wintypes.POINT(0, 0)
@@ -1311,7 +1362,26 @@ def main():
 
     def on_started(w):
         # The real window is already showing its identical HTML splash —
-        # hand off to it NOW so the two splashes never overlap on screen.
+        # hand off to it only AFTER it has actually painted, so there is
+        # never a black gap between the two splashes.
+        ok = False
+        for _ in range(60):                      # ~6s cap
+            try:
+                ok = bool(w.evaluate_js(
+                    "document.readyState && document.readyState !== 'loading'"))
+                if ok:
+                    break
+            except Exception:
+                pass
+            time.sleep(0.1)
+        if ok:
+            try:
+                # two rAFs = the WebView has composited a real frame
+                w.evaluate_js(
+                    "new Promise(function(res){requestAnimationFrame("
+                    "function(){requestAnimationFrame(function(){res(1)})})})")
+            except Exception:
+                pass
         splash.close()
         # Jump the window in front of whatever launched it — one-shot raise,
         # NOT always-on-top; it yields normally once the user clicks away.
