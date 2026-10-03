@@ -6063,6 +6063,11 @@ body.theme-light .autocomplete-dropdown {
             <button class="ap-preset" data-bg="ember"  title="Ember"  style="background:linear-gradient(155deg,#241a12,#3d2317,#5a2d16)" onclick="setBgPreset('ember')"></button>
             <button class="ap-preset" data-bg="forest" title="Forest" style="background:linear-gradient(155deg,#0d1f16,#14352a,#1d4a38)" onclick="setBgPreset('forest')"></button>
             <button class="ap-preset" data-bg="orchid" title="Orchid" style="background:linear-gradient(155deg,#1f1430,#2e1d4e,#43255f)" onclick="setBgPreset('orchid')"></button>
+            <label class="ap-preset" data-bg="custom" title="Custom color" style="position:relative; overflow:hidden; background:conic-gradient(#f87171,#fbbf24,#4ade80,#38bdf8,#a78bfa,#f87171); cursor:pointer;">
+              <input type="color" id="bg-color-picker" value="#43255f"
+                     oninput="setBgCustomColor(this.value, false)" onchange="setBgCustomColor(this.value, true)"
+                     style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+            </label>
           </div>
           <div class="ap-btns">
             <button class="ap-btn" onclick="document.getElementById('bg-file-input').click()">Choose image&hellip;</button>
@@ -7955,6 +7960,9 @@ async function refreshData() {
   DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
   DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
   DB.soRecentHidden = !!(uiPrefs && uiPrefs.soRecent);
+  DB.bgCustom = (uiPrefs && uiPrefs.bgCustom) || '';
+  const picker = document.getElementById('bg-color-picker');
+  if (picker && DB.bgCustom) picker.value = DB.bgCustom;
   applyUserBackground(!!(uiPrefs && uiPrefs.bgImage),
                       (uiPrefs && uiPrefs.bgV) || 0,
                       (uiPrefs && uiPrefs.bgPreset) || '');
@@ -14386,6 +14394,9 @@ function toggleTheme() {
     try { localStorage.setItem('ac_stock_theme', willBeLight ? 'light' : 'dark'); } catch(e){}
     /* Appearance sliders stay put on theme switch — only the Reset
        button or a manual drag may change them. */
+    /* Custom-color wallpaper needs its gradient recomputed for the
+       new theme (dark shades vs pale tints). */
+    if (DB._bg) applyUserBackground(DB._bg.on, DB._bg.v, DB._bg.preset);
   };
   const reduceMotion = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -14427,16 +14438,37 @@ document.addEventListener('click', e => {
 
 const BG_PRESETS = ['aurora', 'dusk', 'ember', 'forest', 'orchid'];
 
+/* Lighten/darken a hex color by fraction f (-1..1) → '#rrggbb' */
+function _shadeHex(hex, f) {
+  const n = parseInt(String(hex).replace('#', ''), 16) || 0;
+  const c = ch => Math.round(Math.max(0, Math.min(255, ch + 255 * f)));
+  return '#' + ((1 << 24) + (c(n >> 16) << 16) + (c((n >> 8) & 255) << 8) + c(n & 255))
+    .toString(16).slice(1);
+}
+
+function _customWall() {
+  const hex = DB.bgCustom || '#43255f';
+  const light = document.body.classList.contains('theme-light');
+  return light
+    ? `linear-gradient(155deg, ${_shadeHex(hex, 0.78)} 0%, ${_shadeHex(hex, 0.68)} 55%, ${_shadeHex(hex, 0.58)} 100%)`
+    : `linear-gradient(155deg, ${_shadeHex(hex, -0.55)} 0%, ${_shadeHex(hex, -0.32)} 55%, ${_shadeHex(hex, -0.12)} 100%)`;
+}
+
 function applyUserBackground(on, v, preset) {
   const hint = document.getElementById('bg-hint');
   document.body.classList.remove('has-user-bg', 'bg-wallpaper',
     ...BG_PRESETS.map(n => 'bg-' + n));
   document.body.style.removeProperty('--user-bg-url');
+  document.body.style.removeProperty('--bg-wall');
   if (on) {
     document.body.classList.add('has-user-bg');
     document.body.style.setProperty('--user-bg-url',
       "url('/api/background?v=" + (v || 0) + "')");
     if (hint) hint.textContent = 'Custom image active';
+  } else if (preset === 'custom') {
+    document.body.classList.add('bg-wallpaper');
+    document.body.style.setProperty('--bg-wall', _customWall());
+    if (hint) hint.textContent = 'Preset: Custom color';
   } else if (preset && BG_PRESETS.includes(preset)) {
     document.body.classList.add('bg-wallpaper', 'bg-' + preset);
     if (hint) hint.textContent = 'Preset: ' + preset[0].toUpperCase() + preset.slice(1);
@@ -14445,6 +14477,18 @@ function applyUserBackground(on, v, preset) {
   }
   document.querySelectorAll('.ap-preset').forEach(b =>
     b.classList.toggle('active', !on && b.dataset.bg === preset));
+  DB._bg = { on: !!on, v, preset: preset || '' };
+}
+
+function setBgCustomColor(hex, persist) {
+  DB.bgCustom = hex;
+  const picker = document.getElementById('bg-color-picker');
+  if (picker) picker.value = hex;
+  applyUserBackground(false, 0, 'custom');           // live preview while dragging
+  if (persist !== false) {
+    apiPost('/api/ui-prefs', { prefs: { bgImage: false, bgPreset: 'custom', bgCustom: hex } })
+      .catch(() => {});
+  }
 }
 
 /* Appearance sliders — one shared pair of values in localStorage
