@@ -2210,74 +2210,130 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 .sl-clear-btn:hover { color: #fda4af; background: rgba(244,63,94,0.1); }
 
 .status-log-console {
-  display: flex; flex-direction: column; gap: 7px;
-  background: #0c1317;
-}
-.log-entry {
-  border-radius: 8px; padding: 8px 10px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface2, #162329) 55%, transparent);
+  display: flex; flex-direction: column; gap: 6px;
+  background: #0b1315;
   font-family: 'JetBrains Mono', monospace;
+}
+/* Single-row terminal entry (Stitch v1) */
+.log-entry {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #1a2d33;
+  background: rgba(15,27,30,0.9);
+  font-size: 10.5px;
   transition: border-color .15s;
 }
 .log-entry:hover { border-color: #33505f; }
+.log-entry.le-active { border-color: rgba(34,120,140,0.4); }
+.log-entry.le-active:hover { border-color: rgba(34,211,238,0.5); }
 .log-entry.le-issue {
   background: rgba(245,158,11,0.07);
   border-color: rgba(245,158,11,0.32);
 }
 .log-entry.le-issue:hover { border-color: rgba(245,158,11,0.55); }
-.log-entry.le-commit:hover { border-color: rgba(16,185,129,0.5); }
-.le-row { display: flex; align-items: center; gap: 8px; }
+.log-entry.le-commit {
+  background: rgba(15,27,30,0.95);
+  border-left: 2px solid #10b981;
+}
+.log-entry.le-commit:hover { border-color: rgba(16,185,129,0.5); border-left-color: #10b981; }
+.le-left {
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0; flex: 1;
+}
 .le-badge {
   padding: 2px 6px; border-radius: 4px;
-  font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em;
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase; flex-shrink: 0;
 }
 .leb-info    { color: #94a3b8; background: rgba(148,163,184,0.12); border: 1px solid rgba(148,163,184,0.3); }
-.leb-ok      { color: #34d399; background: rgba(16,185,129,0.13); border: 1px solid rgba(16,185,129,0.3); }
+.leb-ok      { color: #34d399; background: rgba(6,78,59,0.5); border: 1px solid rgba(16,185,129,0.35); }
 .leb-extract { color: #38bdf8; background: rgba(56,189,248,0.12);  border: 1px solid rgba(56,189,248,0.3); }
-.leb-commit  { color: #34d399; background: rgba(16,185,129,0.13); border: 1px solid rgba(16,185,129,0.3); }
+.leb-commit  { color: #071310; background: #10b981; border: 1px solid #10b981; font-weight: 800; }
 .leb-issue   { color: #fbbf24; background: rgba(245,158,11,0.16); border: 1px solid rgba(245,158,11,0.4); }
-.leb-active  { color: #e2b340; background: rgba(226,179,64,0.13); border: 1px solid rgba(226,179,64,0.35); }
-.le-time { margin-left: auto; font-size: 9.5px; color: var(--text-sub); flex-shrink: 0; }
-.le-units {
-  font-size: 9.5px; font-weight: 600;
-  color: #6ee7b7; background: rgba(6,78,59,0.5);
+.le-ping { position: relative; width: 10px; height: 10px; flex-shrink: 0; }
+.le-ping-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: #22d3ee; opacity: 0.7;
+  animation: actPing 1.6s cubic-bezier(0,0,0.2,1) infinite;
+}
+.le-ping-dot {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: #06b6d4; box-shadow: 0 0 6px #06b6d4;
+}
+.le-label-cyan {
+  color: #67e8f9; font-weight: 700; font-size: 10.5px;
+  letter-spacing: -0.02em; flex-shrink: 0;
+}
+.le-sep { color: #475569; flex-shrink: 0; }
+.le-sep-em { color: #10b981; flex-shrink: 0; font-weight: 700; }
+.le-msg {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: #cbd5e1; font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.le-issue .le-msg { color: #fcd34d; }
+.le-time { font-size: 9.5px; color: var(--text-sub); flex-shrink: 0; }
+.le-chip {
+  font-size: 9.5px; font-weight: 600; padding: 1px 7px;
+  border-radius: 4px; flex-shrink: 0;
+  color: #6ee7b7; background: rgba(6,78,59,0.4);
   border: 1px solid rgba(16,185,129,0.35);
-  padding: 1px 7px; border-radius: 4px; flex-shrink: 0;
 }
-.le-title { font-size: 11.5px; font-weight: 700; color: #f1f5f9; margin-top: 6px; }
-.le-text  { font-size: 10.5px; line-height: 1.55; color: #94a3b8; margin-top: 5px; word-break: break-word; }
-.le-issue .le-text { color: #fcd34d; opacity: 0.9; }
-.le-serials { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.le-chip-neutral {
+  color: #e2e8f0; background: #14262b; border: 1px solid #233d45;
+}
 .le-serial {
-  font-size: 9.5px; padding: 2px 7px; border-radius: 4px;
-  color: #6ee7b7; background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(16,185,129,0.3);
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 1px 7px; border-radius: 4px; flex-shrink: 0;
+  color: #6ee7b7; background: #122327;
+  border: 1px solid rgba(16,185,129,0.4);
 }
+.le-comm-title {
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 11px; font-weight: 600; color: #cbd5e1;
+  min-width: 0; overflow: hidden;
+}
+.le-brand { color: #94a3b8; flex-shrink: 0; }
+.le-model { color: #f1f5f9; letter-spacing: 0.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status-log-foot {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; padding: 8px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 12px;
   border-top: 1px solid var(--border);
-  background: rgba(9,14,17,0.6);
+  background: #0c1618;
   font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
 }
+.slf-bar {
+  width: 100%; height: 6px; border-radius: 999px;
+  background: #142327; overflow: hidden;
+}
+.slf-bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #14b8a6, #34d399);
+  border-radius: 999px; transition: width .35s ease;
+}
+.slf-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .slf-batch { color: var(--text-sub); }
-.slf-batch b { color: var(--text); font-weight: 600; }
-.slf-right { display: flex; align-items: center; gap: 8px; }
+.slf-batch b { color: var(--text); font-weight: 700; }
+.slf-right { display: flex; align-items: center; gap: 12px; }
 .slf-pending { color: #fbbf24; font-weight: 600; }
 .slf-sep { color: var(--border); }
 .slf-synced { display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 600; }
 
 body.theme-light .status-log-console { background: #f1f5f9; }
 body.theme-light .log-entry { background: #ffffff; border-color: #e2e8f0; }
+body.theme-light .log-entry.le-commit { border-left-color: #059669; }
 body.theme-light .log-entry.le-issue { background: #fffbeb; border-color: #fcd34d; }
-body.theme-light .log-entry.le-issue .le-text { color: #92400e; }
-body.theme-light .le-title { color: #0f172a; }
-body.theme-light .le-text  { color: #475569; }
+body.theme-light .log-entry.le-issue .le-msg { color: #92400e; }
+body.theme-light .le-msg   { color: #334155; }
+body.theme-light .le-model { color: #0f172a; }
 body.theme-light .le-serial { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+body.theme-light .le-chip  { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+body.theme-light .le-chip-neutral { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
 body.theme-light .sl-seg { background: #f1f5f9; }
 body.theme-light .status-log-foot { background: #f8fafc; }
+body.theme-light .slf-bar { background: #e2e8f0; }
 
 /* Scan Results Card Header Inputs */
 .scan-meta-bar {
@@ -5808,7 +5864,7 @@ body.theme-light .autocomplete-dropdown {
                 <div class="sl-seg">
                   <button type="button" class="sl-seg-btn is-active" data-filter="all" onclick="setLogFilter('all')">All</button>
                   <button type="button" class="sl-seg-btn" data-filter="issue" onclick="setLogFilter('issue')">Issues <span class="sl-seg-count" id="sl-issue-count">0</span></button>
-                  <button type="button" class="sl-seg-btn" data-filter="commit" onclick="setLogFilter('commit')">Committed</button>
+                  <button type="button" class="sl-seg-btn" data-filter="commit" onclick="setLogFilter('commit')">Committed <span class="sl-seg-count" id="sl-commit-count" style="color:#34d399; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.4);">0</span></button>
                 </div>
                 <button type="button" class="sl-clear-btn" title="Clear log" onclick="clearStatusLog()">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -5822,14 +5878,16 @@ body.theme-light .autocomplete-dropdown {
               <div class="status-log-console" id="status-log-console"></div>
             </div>
             <div class="status-log-foot">
+              <div class="slf-bar"><div class="slf-bar-fill" id="sl-batch-bar"></div></div>
+              <div class="slf-row">
               <div class="slf-batch">Batch: <b id="sl-batch-text">0/0 processed</b></div>
               <div class="slf-right">
                 <span class="slf-pending" id="sl-pending-text">0 pending</span>
-                <span class="slf-sep">&bull;</span>
                 <span class="slf-synced">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   Synced to DB
                 </span>
+              </div>
               </div>
             </div>
           </div>
@@ -7545,36 +7603,60 @@ function renderAll() {
 }
 
 /* ---- Status Log engine (Stitch redesign) ---- */
-const _slBadges = { info: 'INFO', ok: 'OK', extract: 'EXTRACT', commit: 'COMMITTED', issue: 'NEEDS ATTENTION', active: 'SCANNING' };
+const _slBadges = { info: 'INFO', ok: 'OK', extract: 'OK', commit: 'COMMITTED', issue: 'NEEDS ATTENTION', active: 'PROCESS REQUEST' };
 let _slFilter = 'all';
-DB.logStats = { issues: 0, processed: 0 };
+DB.logStats = { issues: 0, commits: 0, processed: 0 };
 
 function logEntry(kind, opts = {}) {
   const log = document.getElementById('status-log-console');
   if (!log) return;
   const el = document.createElement('div');
-  el.className = 'log-entry le-' + (kind === 'ok' ? 'commit' : kind);
-  el.dataset.logKind = kind === 'ok' ? 'commit' : kind;
+  el.className = 'log-entry le-' + kind;
+  el.dataset.logKind = kind;
   const t = new Date().toLocaleTimeString();
-  let inner = `<div class="le-row"><span class="le-badge leb-${kind}">${_slBadges[kind] || 'INFO'}</span>`;
-  if (kind === 'commit' && opts.units != null) {
-    inner += `<span class="le-units">${opts.units} unit${opts.units === 1 ? '' : 's'}</span>`;
+  let inner = '<div class="le-left">';
+
+  if (kind === 'active') {
+    inner += `<span class="le-ping"><span class="le-ping-ring"></span><span class="le-ping-dot"></span></span>`
+           + `<span class="le-label-cyan">PROCESS REQUEST</span><span class="le-sep">&bull;</span>`
+           + `<span class="le-msg">${escapeHtml(opts.text || '')}</span>`;
+  } else if (kind === 'commit') {
+    inner += `<span class="le-badge leb-commit">COMMITTED</span>`
+           + `<span class="le-chip">${opts.units} unit${opts.units === 1 ? '' : 's'}</span>`;
+    if (opts.brand || opts.title) {
+      inner += `<span class="le-comm-title">`
+             + (opts.brand ? `<span class="le-brand">${escapeHtml(opts.brand)}</span><span class="le-sep-em">&bull;</span>` : '')
+             + `<span class="le-model">${escapeHtml(opts.model || opts.title || '')}</span></span>`;
+    }
+    const srs = opts.serials || [];
+    srs.slice(0, 2).forEach(s => { inner += `<span class="le-serial">${escapeHtml(s)}</span>`; });
+    if (srs.length > 2) inner += `<span class="le-chip le-chip-neutral" title="${escapeHtml(srs.join(', '))}">+${srs.length - 2}</span>`;
+  } else if (kind === 'extract') {
+    inner += `<span class="le-badge leb-ok">OK</span>`
+           + `<span class="le-msg" style="flex-shrink:0;">Extract complete:</span>`
+           + `<span class="le-chip">${opts.models} model${opts.models === 1 ? '' : 's'}</span>`
+           + `<span class="le-sep">&amp;</span>`
+           + `<span class="le-chip" style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${opts.units} serial number${opts.units === 1 ? '' : 's'} found</span>`;
+  } else {
+    inner += `<span class="le-badge leb-${kind}">${_slBadges[kind] || 'INFO'}</span>`
+           + `<span class="le-msg">${escapeHtml(opts.text || '')}</span>`;
+    if (opts.chip) inner += `<span class="le-chip le-chip-neutral">${escapeHtml(opts.chip)}</span>`;
   }
-  inner += `<span class="le-time">${t}</span></div>`;
-  if (opts.title) inner += `<div class="le-title">${escapeHtml(opts.title)}</div>`;
-  if (opts.text) inner += `<p class="le-text">${escapeHtml(opts.text)}</p>`;
-  if (opts.serials && opts.serials.length) {
-    inner += `<div class="le-serials">${opts.serials.map(s => `<span class="le-serial">${escapeHtml(s)}</span>`).join('')}</div>`;
-  }
+  inner += `</div><span class="le-time">${t}</span>`;
   el.innerHTML = inner;
   log.appendChild(el);
-  if (el.dataset.logKind === 'issue') {
+  if (kind === 'issue') {
     DB.logStats.issues++;
     const c = document.getElementById('sl-issue-count');
     if (c) c.textContent = DB.logStats.issues;
   }
-  if (el.dataset.logKind === 'commit') DB.logStats.processed += (opts.units || 0);
-  if (_slFilter !== 'all' && el.dataset.logKind !== _slFilter) el.style.display = 'none';
+  if (kind === 'commit') {
+    DB.logStats.commits++;
+    DB.logStats.processed += (opts.units || 0);
+    const c = document.getElementById('sl-commit-count');
+    if (c) c.textContent = DB.logStats.commits;
+  }
+  if (_slFilter !== 'all' && kind !== _slFilter) el.style.display = 'none';
   updateLogFooter();
   log.scrollTop = log.scrollHeight;
 }
@@ -7600,9 +7682,11 @@ function setLogFilter(f) {
 function clearStatusLog() {
   const log = document.getElementById('status-log-console');
   if (log) log.innerHTML = '';
-  DB.logStats = { issues: 0, processed: 0 };
+  DB.logStats = { issues: 0, commits: 0, processed: 0 };
   const c = document.getElementById('sl-issue-count');
   if (c) c.textContent = '0';
+  const cc = document.getElementById('sl-commit-count');
+  if (cc) cc.textContent = '0';
   updateLogFooter();
 }
 
@@ -7615,10 +7699,13 @@ function slPendingUnits() {
 function updateLogFooter() {
   const pending = slPendingUnits();
   const done = DB.logStats.processed;
+  const total = done + pending;
   const b = document.getElementById('sl-batch-text');
   const p = document.getElementById('sl-pending-text');
-  if (b) b.textContent = `${done}/${done + pending} processed`;
+  const bar = document.getElementById('sl-batch-bar');
+  if (b) b.textContent = `${done}/${total} processed`;
   if (p) p.textContent = `${pending} pending`;
+  if (bar) bar.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
 }
 
 /* =========================================================
@@ -8378,7 +8465,7 @@ async function commitSingleReadySerialFromModal() {
       }
 
       showToast(`Committed unit ${serial} (${row.model}) to ${picked}!`, '&#10003;');
-      logEntry('commit', { units: 1, title: `${picked} \u00b7 ${row.model}`, serials: [serial] });
+      logEntry('commit', { units: 1, brand: picked, model: row.model, serials: [serial] });
 
       if (isNonSerialRow(row)) {
         const curQ = parseInt((String(row.qty).match(/\d+/) || [])[0] || '1', 10) || 1;
@@ -8901,7 +8988,7 @@ async function triggerScanSimulation() {
       const units = res.rows.reduce((n, r) =>
         n + ((r.serials && r.serials.length) ? r.serials.length
             : (parseInt((String(r.qty || '').match(/\d+/) || ['0'])[0], 10) || 0)), 0);
-      logEntry('extract', { text: `Scan complete: ${res.rows.length} model${res.rows.length === 1 ? '' : 's'}, ${units} unit${units === 1 ? '' : 's'}` });
+      logEntry('extract', { models: res.rows.length, units });
       showToast(`Scan complete! ${res.rows.length} rows extracted.`);
     } else {
       showToast('Scan failed \u2014 see Status Log.');
@@ -9178,7 +9265,8 @@ function reportCommit(row, res, brand = '') {
     const b = brand || (DB.modelBrands || {})[row.model] || '';
     logEntry('commit', {
       units: res.added.length,
-      title: b ? `${b} \u00b7 ${row.model}` : row.model,
+      brand: b,
+      model: row.model,
       serials: res.added
     });
   }
