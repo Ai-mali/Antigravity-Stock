@@ -7985,6 +7985,19 @@ async function refreshData() {
   DB.bgPosX = (uiPrefs && uiPrefs.bgPosX != null) ? uiPrefs.bgPosX : 50;
   DB.bgPosY = (uiPrefs && uiPrefs.bgPosY != null) ? uiPrefs.bgPosY : 50;
   applyBgPos();
+  // Server-persisted theme wins over the localStorage guess — applied once
+  // on first load so a toggle whose ui_prefs POST is still in flight can't
+  // be reverted by a stale read. localStorage stays as browser-mode fallback.
+  if (!DB._themeLoaded) {
+    DB._themeLoaded = true;
+    if (uiPrefs && (uiPrefs.theme === 'light' || uiPrefs.theme === 'dark')) {
+      const light = uiPrefs.theme === 'light';
+      document.body.classList.toggle('theme-light', light);
+      const tt = document.getElementById('theme-mode-text');
+      if (tt) tt.textContent = light ? 'Day' : 'Dark';
+      try { localStorage.setItem('ac_stock_theme', uiPrefs.theme); } catch(e){}
+    }
+  }
   // Restore a staged dispatch cart that survived refresh/restart — drop
   // entries whose unit is no longer In Stock.
   if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
@@ -14415,6 +14428,9 @@ function toggleTheme() {
     const txt = document.getElementById('theme-mode-text');
     if (txt) txt.textContent = willBeLight ? 'Day' : 'Dark';
     try { localStorage.setItem('ac_stock_theme', willBeLight ? 'light' : 'dark'); } catch(e){}
+    // Also persist server-side — WebView2 localStorage doesn't reliably
+    // survive desktop-app restarts, ui_prefs.json always does.
+    apiPost('/api/ui-prefs', { prefs: { theme: willBeLight ? 'light' : 'dark' } }).catch(() => {});
     /* Appearance sliders stay put on theme switch — only the Reset
        button or a manual drag may change them. */
     /* Custom-color wallpaper needs its gradient recomputed for the
