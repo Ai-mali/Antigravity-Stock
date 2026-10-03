@@ -1383,10 +1383,12 @@ def main():
 
     api = DesktopApi()
 
-    # Window appears right away on the splash screen (no serial port-wait).
+    # No initial html: the WebView starts on its dark background_color and the
+    # topmost native splash covers it. Rendering SPLASH_HTML here too would
+    # show a second, misaligned card ghosting around the native one while the
+    # window positions itself. on_started navigates straight to the app.
     window = webview.create_window(
         title='VRE AC Stock',
-        html=SPLASH_HTML,
         js_api=api,
         width=1320,
         height=840,
@@ -1399,13 +1401,25 @@ def main():
     api.set_window(window)
 
     def on_started(w):
-        # The real window is already showing its identical HTML splash —
-        # hand off to it only AFTER it has actually painted, so there is
-        # never a black gap between the two splashes.
+        # The native splash covers the whole boot — it stays topmost over the
+        # WebView window, so the HTML splash is only ever a fallback if the
+        # native one failed. Skip it: as soon as the backend answers, go
+        # straight to the app and keep the native splash until the app's
+        # first real frame has painted. One continuous splash, no black gap,
+        # no mid-boot transition.
+        for _ in range(300):                     # up to 30s for slow machines
+            if backend_healthy():
+                break
+            time.sleep(0.1)
+        try:
+            w.load_url(APP_URL)
+        except Exception:
+            pass
         ok = False
-        for _ in range(60):                      # ~6s cap
+        for _ in range(300):                     # ~30s cap for the app paint
             try:
                 ok = bool(w.evaluate_js(
+                    "location.href.indexOf('app_mode') >= 0 && "
                     "document.readyState && document.readyState !== 'loading'"))
                 if ok:
                     break
@@ -1414,7 +1428,7 @@ def main():
             time.sleep(0.1)
         if ok:
             try:
-                # two rAFs = the WebView has composited a real frame
+                # two rAFs = the WebView has composited a real app frame
                 w.evaluate_js(
                     "new Promise(function(res){requestAnimationFrame("
                     "function(){requestAnimationFrame(function(){res(1)})})})")
@@ -1424,26 +1438,15 @@ def main():
         # Jump the window in front of whatever launched it — one-shot raise,
         # NOT always-on-top; it yields normally once the user clicks away.
         api.bring_to_front()
-        # Runs on a pywebview worker thread: wait for the backend, then swap
-        # the splash for the real app.
-        for _ in range(300):  # up to 30s for slow machines
-            if backend_healthy():
-                break
-            time.sleep(0.1)
-        try:
-            w.load_url(APP_URL)
-        except Exception:
-            pass
-        time.sleep(0.4)
         api.enable_window_features()
-        # The backend wait can take seconds — re-assert foreground once the
-        # real UI is actually displayed, in case focus drifted meanwhile.
         api.bring_to_front()
 
     # Start the desktop window (blocking until closed). os._exit skips the
     # interpreter shutdown that can hang joining threads — the port and all
     # resources are released immediately, so an instant relaunch works.
-    webview.start(on_started, window, debug=False)
+    # private_mode=False: reuse a persistent WebView2 profile — the runtime's
+    # caches survive between launches instead of cold-starting every time.
+    webview.start(on_started, window, debug=False, private_mode=False)
     os._exit(0)
 
 
