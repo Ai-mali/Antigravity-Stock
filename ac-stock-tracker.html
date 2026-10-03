@@ -14294,6 +14294,8 @@ function submitManualStockIn() {
     DB.scans.push(newRow);
   }
 
+  // Manual entry starts a fresh batch too — same reset as loading a photo.
+  clearStatusLog();
   markDuplicateScans();
   renderScanResultsTable();
   closeManualStockInModal();
