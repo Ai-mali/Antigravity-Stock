@@ -303,20 +303,20 @@ body.bg-wallpaper::after {
 /* Dark veil, heavier top-left so the header/sidebar text stays crisp */
 body.has-user-bg::after {
   background: linear-gradient(155deg,
-    rgba(6, 10, 14, 0.85) 0%,
-    rgba(9, 14, 19, 0.8) 45%,
-    rgba(11, 16, 21, 0.78) 100%);
+    rgba(6, 10, 14, 0.68) 0%,
+    rgba(9, 14, 19, 0.6) 45%,
+    rgba(11, 16, 21, 0.55) 100%);
 }
 body.bg-wallpaper::after {     /* presets are already dark — lighter veil */
   background: linear-gradient(155deg,
-    rgba(8, 12, 16, 0.5) 0%,
-    rgba(10, 15, 20, 0.42) 100%);
+    rgba(8, 12, 16, 0.4) 0%,
+    rgba(10, 15, 20, 0.35) 100%);
 }
 body.theme-light.has-user-bg::after {
   background: linear-gradient(155deg,
-    rgba(236, 240, 245, 0.85) 0%,
-    rgba(240, 244, 248, 0.78) 45%,
-    rgba(234, 238, 243, 0.75) 100%);
+    rgba(236, 240, 245, 0.6) 0%,
+    rgba(240, 244, 248, 0.55) 45%,
+    rgba(234, 238, 243, 0.52) 100%);
 }
 body.theme-light.bg-wallpaper::after {
   background: linear-gradient(155deg,
@@ -330,22 +330,22 @@ body.theme-light.bg-wallpaper::after {
    html keeps --bg-page as the ultimate fallback behind ::before. */
 body.has-user-bg, body.bg-wallpaper {
   background-color: transparent;
-  --bg-app: rgba(15, 23, 30, 0.55);
-  --header-bg: rgba(15, 23, 30, 0.62);
-  --surface: rgba(15, 23, 30, 0.66);
-  --surface2: rgba(19, 27, 34, 0.6);
-  --surface3: rgba(26, 36, 44, 0.55);
+  --bg-app: rgba(15, 23, 30, 0.38);
+  --header-bg: rgba(15, 23, 30, 0.55);
+  --surface: rgba(15, 23, 30, 0.5);
+  --surface2: rgba(19, 27, 34, 0.45);
+  --surface3: rgba(26, 36, 44, 0.4);
   --border: rgba(255, 255, 255, 0.08);
   --border-light: rgba(255, 255, 255, 0.14);
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
 }
 body.theme-light.has-user-bg, body.theme-light.bg-wallpaper {
-  --bg-app: rgba(255, 255, 255, 0.5);
-  --header-bg: rgba(255, 255, 255, 0.6);
-  --surface: rgba(255, 255, 255, 0.66);
-  --surface2: rgba(250, 252, 254, 0.6);
-  --surface3: rgba(240, 245, 249, 0.55);
+  --bg-app: rgba(255, 255, 255, 0.45);
+  --header-bg: rgba(255, 255, 255, 0.55);
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface2: rgba(250, 252, 254, 0.5);
+  --surface3: rgba(240, 245, 249, 0.45);
   --border: rgba(15, 23, 42, 0.1);
   --border-light: rgba(15, 23, 42, 0.16);
 }
