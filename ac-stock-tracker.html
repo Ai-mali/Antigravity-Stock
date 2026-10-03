@@ -2239,7 +2239,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 .log-entry.le-commit:hover { border-color: rgba(16,185,129,0.5); border-left-color: #10b981; }
 .le-left {
   display: flex; align-items: center; gap: 8px;
-  min-width: 0; flex: 1;
+  min-width: 0; flex: 1; overflow: hidden;
 }
 .le-badge {
   padding: 2px 6px; border-radius: 4px;
@@ -7636,7 +7636,7 @@ function logEntry(kind, opts = {}) {
            + `<span class="le-msg" style="flex-shrink:0;">Extract complete:</span>`
            + `<span class="le-chip">${opts.models} model${opts.models === 1 ? '' : 's'}</span>`
            + `<span class="le-sep">&amp;</span>`
-           + `<span class="le-chip" style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${opts.units} serial number${opts.units === 1 ? '' : 's'} found</span>`;
+           + `<span class="le-chip" style="flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${opts.units} serial number${opts.units === 1 ? '' : 's'} found</span>`;
   } else {
     inner += `<span class="le-badge leb-${kind}">${_slBadges[kind] || 'INFO'}</span>`
            + `<span class="le-msg">${escapeHtml(opts.text || '')}</span>`;
