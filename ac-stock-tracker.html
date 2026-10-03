@@ -8147,6 +8147,12 @@ function clearStatusLog() {
   updateLogFooter();
 }
 
+function autoClearLogIfScansEmpty() {
+  // The batch the log was narrating is fully drained from Scan Results —
+  // reset it instead of leaving stale COMMITTED/OK lines until the trash icon.
+  if (!DB.scans.length) clearStatusLog();
+}
+
 function slPendingUnits() {
   return (DB.scans || []).reduce((n, r) =>
     n + ((r.serials && r.serials.length) ? r.serials.length
@@ -8975,6 +8981,7 @@ async function commitSingleReadySerialFromModal() {
 
       closeReadySerialModal();
       renderScanResultsTable();
+      autoClearLogIfScansEmpty();
       await refreshData();
     } else if (res.dupes && res.dupes.length > 0) {
       showToast(`Serial ${serial} was already in system!`, '&#9888;');
@@ -9130,6 +9137,7 @@ function deleteScanRowDirect(idx) {
   }
   selectedScanIndices = newSelected;
   renderScanResultsTable();
+  autoClearLogIfScansEmpty();
   showToast(`Removed ${model} from scan results.`, '&#128465;');
 }
 
@@ -9721,6 +9729,7 @@ function deleteCurrentScanRow() {
   }
   selectedScanIndices = newSelected;
   renderScanResultsTable();
+  autoClearLogIfScansEmpty();
   closeEditScanModal();
   showToast(`Deleted ${itemLabel}`, '&#128465;');
 }
@@ -9835,6 +9844,7 @@ async function commitScanRow(idx, assignedBrand = null) {
     }
     selectedScanIndices = newSelected;
     renderScanResultsTable();
+    autoClearLogIfScansEmpty();
     await refreshData();
   } catch (e) {
     showToast('Commit failed: ' + e.message);
@@ -9852,6 +9862,7 @@ function deleteSelectedScans() {
   });
   selectedScanIndices.clear();
   renderScanResultsTable();
+  autoClearLogIfScansEmpty();
   showToast(`Removed ${count} row(s) from scan results.`);
 }
 
@@ -9951,6 +9962,7 @@ async function commitSelectedOrAllScans() {
   } finally {
     selectedScanIndices.clear();
     renderScanResultsTable();
+    autoClearLogIfScansEmpty();
     await refreshData();
     let msg = `Committed ${done} row(s)`;
     if (dupeCount) msg += `, kept ${dupeCount} duplicate row(s) blinking in scan list`;
