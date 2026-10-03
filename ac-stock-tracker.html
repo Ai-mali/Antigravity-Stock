@@ -303,25 +303,25 @@ body.bg-wallpaper::after {
 /* Dark veil, heavier top-left so the header/sidebar text stays crisp */
 body.has-user-bg::after {
   background: linear-gradient(155deg,
-    rgba(6, 10, 14, 0.68) 0%,
-    rgba(9, 14, 19, 0.6) 45%,
-    rgba(11, 16, 21, 0.55) 100%);
+    rgba(6, 10, 14, calc(var(--veil-a, 0.6) + 0.08)) 0%,
+    rgba(9, 14, 19, calc(var(--veil-a, 0.6) + 0.03)) 45%,
+    rgba(11, 16, 21, var(--veil-a, 0.6)) 100%);
 }
 body.bg-wallpaper::after {     /* presets are already dark — lighter veil */
   background: linear-gradient(155deg,
-    rgba(8, 12, 16, 0.4) 0%,
-    rgba(10, 15, 20, 0.35) 100%);
+    rgba(8, 12, 16, calc(var(--veil-a, 0.6) * 0.65)) 0%,
+    rgba(10, 15, 20, calc(var(--veil-a, 0.6) * 0.55)) 100%);
 }
 body.theme-light.has-user-bg::after {
   background: linear-gradient(155deg,
-    rgba(236, 240, 245, 0.6) 0%,
-    rgba(240, 244, 248, 0.55) 45%,
-    rgba(234, 238, 243, 0.52) 100%);
+    rgba(236, 240, 245, calc(var(--veil-a, 0.6) + 0.08)) 0%,
+    rgba(240, 244, 248, calc(var(--veil-a, 0.6) + 0.03)) 45%,
+    rgba(234, 238, 243, var(--veil-a, 0.6)) 100%);
 }
 body.theme-light.bg-wallpaper::after {
   background: linear-gradient(155deg,
-    rgba(240, 244, 248, 0.32) 0%,
-    rgba(234, 239, 244, 0.28) 100%);
+    rgba(240, 244, 248, calc(var(--veil-a, 0.6) * 0.55)) 0%,
+    rgba(234, 239, 244, calc(var(--veil-a, 0.6) * 0.45)) 100%);
 }
 
 /* Glass retheme — translucent surface vars reach every panel at once.
@@ -467,6 +467,47 @@ body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8c
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ap-dim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap-dim-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-sub);
+}
+#bg-dim-slider {
+  flex: 1;
+  height: 14px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+#bg-dim-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface3);
+}
+#bg-dim-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green-bright);
+  margin-top: -4px;
+  box-shadow: 0 0 6px var(--green-glow);
+}
+.ap-dim-val {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  width: 34px;
+  text-align: right;
 }
 
 /* Theme switching uses the View Transitions API: the browser snapshots the
@@ -5974,6 +6015,12 @@ body.theme-light .autocomplete-dropdown {
             <button class="ap-btn" onclick="document.getElementById('bg-file-input').click()">Choose image&hellip;</button>
             <button class="ap-btn" id="bg-remove-btn" onclick="removeUserBackground()">Remove</button>
           </div>
+          <div class="ap-dim-row">
+            <span class="ap-dim-label">DIM</span>
+            <input type="range" id="bg-dim-slider" min="0" max="90" value="60"
+                   oninput="setBgDim(this.value, false)" onchange="setBgDim(this.value, true)">
+            <span class="ap-dim-val" id="bg-dim-val">60%</span>
+          </div>
           <div class="ap-hint" id="bg-hint">Default theme background</div>
           <input type="file" id="bg-file-input" accept="image/png,image/jpeg,image/webp" hidden onchange="uploadUserBackground(this)">
         </div>
@@ -7848,6 +7895,7 @@ async function refreshData() {
   applyUserBackground(!!(uiPrefs && uiPrefs.bgImage),
                       (uiPrefs && uiPrefs.bgV) || 0,
                       (uiPrefs && uiPrefs.bgPreset) || '');
+  setBgDim((uiPrefs && uiPrefs.bgDim != null) ? uiPrefs.bgDim : 60, false);
   // Restore a staged dispatch cart that survived refresh/restart — drop
   // entries whose unit is no longer In Stock.
   if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
@@ -14290,6 +14338,18 @@ function applyUserBackground(on, v, preset) {
   }
   document.querySelectorAll('.ap-preset').forEach(b =>
     b.classList.toggle('active', !on && b.dataset.bg === preset));
+}
+
+function setBgDim(v, persist) {
+  const pct = Math.max(0, Math.min(90, parseInt(v, 10) || 0));
+  document.body.style.setProperty('--veil-a', (pct / 100).toFixed(2));
+  const sl = document.getElementById('bg-dim-slider');
+  if (sl && parseInt(sl.value, 10) !== pct) sl.value = pct;
+  const lbl = document.getElementById('bg-dim-val');
+  if (lbl) lbl.textContent = pct + '%';
+  if (persist) {
+    apiPost('/api/ui-prefs', { prefs: { bgDim: pct } }).catch(() => {});
+  }
 }
 
 function setBgPreset(name) {
