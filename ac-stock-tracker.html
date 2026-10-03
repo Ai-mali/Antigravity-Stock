@@ -330,6 +330,16 @@ body.theme-light.bg-wallpaper::after {
    html keeps --bg-page as the ultimate fallback behind ::before. */
 body.has-user-bg, body.bg-wallpaper {
   background-color: transparent;
+}
+/* The desktop shell paints an opaque --frame-bg ring on body with
+   !important — wallpaper mode must override it or the photo stays hidden
+   behind the frame color. Specificity of two classes beats the single
+   .is-desktop-shell rule once both are !important. */
+body.is-desktop-shell.has-user-bg,
+body.is-desktop-shell.bg-wallpaper {
+  background: transparent !important;
+}
+body.has-user-bg, body.bg-wallpaper {
   --bg-app: rgba(15, 23, 30, 0.38);
   --header-bg: rgba(15, 23, 30, 0.55);
   --surface: rgba(15, 23, 30, 0.5);
