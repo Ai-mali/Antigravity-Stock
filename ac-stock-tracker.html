@@ -365,12 +365,22 @@ body.theme-light.has-user-bg, body.theme-light.bg-wallpaper {
 /* Floating suggestion popovers must stay opaque even when panels go
    translucent — a translucent list over form text is unreadable. */
 body.has-user-bg .rma-suggest, body.bg-wallpaper .rma-suggest,
-body.has-user-bg .datepicker-popover, body.bg-wallpaper .datepicker-popover {
+body.has-user-bg .datepicker-popover, body.bg-wallpaper .datepicker-popover,
+body.has-user-bg .appearance-popover, body.bg-wallpaper .appearance-popover {
   background: #141b1f;
 }
 body.theme-light.has-user-bg .rma-suggest, body.theme-light.bg-wallpaper .rma-suggest,
-body.theme-light.has-user-bg .datepicker-popover, body.theme-light.bg-wallpaper .datepicker-popover {
+body.theme-light.has-user-bg .datepicker-popover, body.theme-light.bg-wallpaper .datepicker-popover,
+body.theme-light.has-user-bg .appearance-popover, body.theme-light.bg-wallpaper .appearance-popover {
   background: #f8fafc;
+}
+body.has-user-bg .autocomplete-dropdown, body.bg-wallpaper .autocomplete-dropdown,
+body.has-user-bg .tl-colmenu, body.bg-wallpaper .tl-colmenu {
+  background: #192227;
+}
+body.theme-light.has-user-bg .autocomplete-dropdown, body.theme-light.bg-wallpaper .autocomplete-dropdown,
+body.theme-light.has-user-bg .tl-colmenu, body.theme-light.bg-wallpaper .tl-colmenu {
+  background: #f1f5f8;
 }
 
 /* Sticky table headers need solid fills too — with translucent
