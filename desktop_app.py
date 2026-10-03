@@ -1383,10 +1383,10 @@ def main():
 
     api = DesktopApi()
 
-    # No initial html: the WebView starts on its dark background_color and the
-    # topmost native splash covers it. Rendering SPLASH_HTML here too would
-    # show a second, misaligned card ghosting around the native one while the
-    # window positions itself. on_started navigates straight to the app.
+    # hidden=True + no initial html: the window initializes and loads the app
+    # completely invisible — no dark rectangle, no half-painted splash card
+    # ever flashes on screen. The topmost native splash covers the whole boot;
+    # on_started reveals the window only once the app has composited a frame.
     window = webview.create_window(
         title='VRE AC Stock',
         js_api=api,
@@ -1396,6 +1396,7 @@ def main():
         frameless=True,
         easy_drag=False,
         text_select=True,
+        hidden=True,
         background_color='#05070a'
     )
     api.set_window(window)
@@ -1407,6 +1408,21 @@ def main():
         # straight to the app and keep the native splash until the app's
         # first real frame has painted. One continuous splash, no black gap,
         # no mid-boot transition.
+        # Show at 0% opacity: the WebView becomes "visible" so it composites
+        # normally (rAF fires, frames present) while staying unseen. This is
+        # the same mechanism pywebview uses for transparent windows.
+        form = None
+        try:
+            import webview.platforms.winforms as _wf
+            form = _wf.BrowserView.instances.get(getattr(w, 'uid', 'master'))
+            if form is not None:
+                form.Opacity = 0.0
+        except Exception:
+            form = None
+        try:
+            w.show()
+        except Exception:
+            pass
         for _ in range(300):                     # up to 30s for slow machines
             if backend_healthy():
                 break
@@ -1416,7 +1432,7 @@ def main():
         except Exception:
             pass
         ok = False
-        for _ in range(300):                     # ~30s cap for the app paint
+        for _ in range(300):                     # ~30s cap for the app load
             try:
                 ok = bool(w.evaluate_js(
                     "location.href.indexOf('app_mode') >= 0 && "
@@ -1434,6 +1450,12 @@ def main():
                     "function(){requestAnimationFrame(function(){res(1)})})})")
             except Exception:
                 pass
+        try:
+            if form is not None:
+                form.Opacity = 1.0               # reveal — already painted
+        except Exception:
+            pass
+        time.sleep(0.25)                         # settle — splash outlives the swap
         splash.close()
         # Jump the window in front of whatever launched it — one-shot raise,
         # NOT always-on-top; it yields normally once the user clicks away.
