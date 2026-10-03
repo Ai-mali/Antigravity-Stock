@@ -26,14 +26,15 @@ SPLASH_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 html,body{margin:0;height:100%;display:flex;align-items:center;
 justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;
 user-select:none;-webkit-user-select:none;background:#ffffff}
-/* small comet of color running around the border — slim 5px ring,
-   reads as "loading" without flooding the window */
+/* small shooting-star running around the border — slim 5px ring.
+   Bright head tapers on BOTH ends so no hard cut at the wrap seam;
+   hue-rotate cycles the color as it travels. */
 body::before{content:'';position:fixed;top:50%;left:50%;
 width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;
-background:conic-gradient(from 0deg,transparent 0 265deg,
-rgba(56,189,248,.45) 300deg,rgba(168,85,247,.65) 330deg,
-rgba(16,185,129,.9) 355deg,transparent 360deg);
-animation:orbit 3.4s linear infinite}
+background:conic-gradient(from 0deg,transparent 0 235deg,
+rgba(56,189,248,.18) 275deg,rgba(168,85,247,.5) 318deg,
+rgba(16,185,129,.95) 345deg,rgba(16,185,129,0) 358deg);
+animation:orbit 3.4s linear infinite,hueShift 8.5s linear infinite}
 body::after{content:'';position:fixed;inset:5px;border-radius:14px;background:#ffffff}
 .box{text-align:center;position:relative;z-index:1}
 .logo{font-size:26px;font-weight:700;letter-spacing:2px;color:#2e3641}
@@ -48,6 +49,7 @@ box-shadow:0 0 18px rgba(16,185,129,.12)}
 .status{font-size:12px;color:#94a3b8;letter-spacing:.5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes orbit{to{transform:rotate(360deg)}}
+@keyframes hueShift{to{filter:hue-rotate(360deg)}}
 @keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 </style></head><body><div class="box">
 <div class="logo">VRE <span>AC STOCK</span></div>
@@ -216,7 +218,12 @@ class _NativeSplash:
     _STATUS = 0x00B8A394   # #94A3B8
     _TRACK  = 0x00F0E8E2   # #E2E8F0
     _ACCENT_DIM = 0x00D0F3A7  # light mint — soft halo behind the accent
-    _RUNNER_MID = 0x00B7E76E  # #6EE7B7 — comet mid-trail
+    # comet palette (plain RGB) — the head cycles through these as it
+    # laps the border, the trail dots just blend the head toward white
+    _RUN_COLORS = ((0x10, 0xB9, 0x81),   # emerald
+                   (0xA8, 0x55, 0xF7),   # violet
+                   (0x38, 0xBD, 0xF8),   # sky
+                   (0xF4, 0x72, 0xB6))   # pink
 
     def __init__(self):
         self._hwnd = None
@@ -318,6 +325,23 @@ class _NativeSplash:
             return W - d, H                  # bottom edge, right→left
         return 0, H - (d - W)                # left edge, bottom→top
 
+    @classmethod
+    def _runner_rgb(cls, frac):
+        """Comet head color at frac [0,1) of a lap — smooth hue cycling."""
+        seg = frac * len(cls._RUN_COLORS)
+        i = int(seg) % len(cls._RUN_COLORS)
+        t = seg - int(seg)
+        c0, c1 = cls._RUN_COLORS[i], cls._RUN_COLORS[(i + 1) % len(cls._RUN_COLORS)]
+        return tuple(round(c0[k] + (c1[k] - c0[k]) * t) for k in range(3))
+
+    @staticmethod
+    def _blend(c, target, t):
+        return tuple(round(c[k] + (target[k] - c[k]) * t) for k in range(3))
+
+    @staticmethod
+    def _ref(rgb):
+        return rgb[0] | rgb[1] << 8 | rgb[2] << 16   # COLORREF is 0x00BBGGRR
+
     def _paint(self, hwnd):
         ps = _PAINTSTRUCT()
         hdc = _u32.BeginPaint(hwnd, ctypes.byref(ps))
@@ -417,22 +441,29 @@ class _NativeSplash:
             _u32.DrawTextW(mem, "Starting services…", -1, ctypes.byref(r),
                            0x0001 | 0x0004 | 0x0020)
 
-            # Comet running the border: bright head + two fading trail
-            # dots, ~7px per 33ms tick ≈ a lap every ~6s.
+            # Shooting-star comet running the border: hue-cycling head +
+            # two trail dots that fade the head's color toward white,
+            # ~7px per 33ms tick ≈ a lap every ~6s.
             perim = 2 * W + 2 * H
             head = (self._phase * 7) % perim
-            for back, col, rad in ((0, self._ACCENT, 4),
-                                   (18, self._RUNNER_MID, 3),
-                                   (36, self._ACCENT_DIM, 2)):
+            head_rgb = self._runner_rgb(head / perim)
+            halo_rgb = self._blend(head_rgb, (255, 255, 255), 0.8)
+            # closely-spaced trail dots read as one continuous tapering
+            # streak instead of discrete circles
+            trail_pts = tuple(
+                (back, self._ref(self._blend(head_rgb, (255, 255, 255), t)), rad)
+                for back, t, rad in ((14, 0.35, 3), (28, 0.55, 3),
+                                     (42, 0.75, 2), (56, 0.88, 1)))
+            for back, ref, rad in ((0, self._ref(head_rgb), 4),) + trail_pts:
                 x, y = self._perim_pt(head - back, W, H)
                 if back == 0:  # soft halo behind the head dot
-                    hb = _g32.CreateSolidBrush(self._ACCENT_DIM)
+                    hb = _g32.CreateSolidBrush(self._ref(halo_rgb))
                     old2 = _g32.SelectObject(mem, hb)
                     _g32.Ellipse(mem, x - rad - 4, y - rad - 4,
                                  x + rad + 4, y + rad + 4)
                     _g32.SelectObject(mem, old2)
                     _g32.DeleteObject(hb)
-                db = _g32.CreateSolidBrush(col)
+                db = _g32.CreateSolidBrush(ref)
                 old2 = _g32.SelectObject(mem, db)
                 _g32.Ellipse(mem, x - rad, y - rad, x + rad, y + rad)
                 _g32.SelectObject(mem, old2)
