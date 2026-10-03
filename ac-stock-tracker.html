@@ -273,7 +273,7 @@ body.theme-light.accent-amber  { --green-bright: #b45309; }
 body.theme-light.accent-violet { --green-bright: #6d28d9; }
 body.theme-light.accent-rose   { --green-bright: #be123c; }
 
-/* ---- Custom background image (dimmed layer behind the app) ---- */
+/* ---- Custom background image (dimmed layer, inside + around the app) ---- */
 body.has-user-bg {
   background-image:
     linear-gradient(rgba(10, 14, 16, 0.84), rgba(10, 14, 16, 0.84)),
@@ -282,11 +282,42 @@ body.has-user-bg {
   background-position: center;
   background-attachment: fixed;
 }
+body.has-user-bg .app-container {
+  background-image:
+    linear-gradient(rgba(15, 20, 23, 0.88), rgba(15, 20, 23, 0.88)),
+    var(--user-bg-url, none);
+  background-size: cover;
+  background-position: center;
+}
 body.theme-light.has-user-bg {
   background-image:
     linear-gradient(rgba(232, 238, 243, 0.8), rgba(232, 238, 243, 0.8)),
     var(--user-bg-url, none);
 }
+body.theme-light.has-user-bg .app-container {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.86)),
+    var(--user-bg-url, none);
+}
+
+/* ---- Wallpaper presets (Telegram-style gallery; --bg-wall per preset) ---- */
+body.bg-wallpaper,
+body.bg-wallpaper .app-container {
+  background-image: var(--bg-wall);
+  background-size: cover;
+  background-position: center;
+}
+body.bg-wallpaper { background-attachment: fixed; }
+body.bg-aurora { --bg-wall: linear-gradient(155deg, #0f2027 0%, #203a43 55%, #2c5364 100%); }
+body.bg-dusk   { --bg-wall: linear-gradient(155deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%); }
+body.bg-ember  { --bg-wall: linear-gradient(155deg, #241a12 0%, #3d2317 55%, #5a2d16 100%); }
+body.bg-forest { --bg-wall: linear-gradient(155deg, #0d1f16 0%, #14352a 55%, #1d4a38 100%); }
+body.bg-orchid { --bg-wall: linear-gradient(155deg, #1f1430 0%, #2e1d4e 55%, #43255f 100%); }
+body.theme-light.bg-aurora { --bg-wall: linear-gradient(155deg, #dfe9f0 0%, #cddfeb 55%, #bcd3e2 100%); }
+body.theme-light.bg-dusk   { --bg-wall: linear-gradient(155deg, #e2e4f0 0%, #d0d5e8 55%, #c3cbe0 100%); }
+body.theme-light.bg-ember  { --bg-wall: linear-gradient(155deg, #f0e2d6 0%, #e8d3c2 55%, #dcc0a8 100%); }
+body.theme-light.bg-forest { --bg-wall: linear-gradient(155deg, #d8e8dd 0%, #c8ddcd 55%, #b5d2bd 100%); }
+body.theme-light.bg-orchid { --bg-wall: linear-gradient(155deg, #e6dff0 0%, #d8cde8 55%, #c9bce0 100%); }
 
 /* ---- Appearance popover (accent swatches + background controls) ---- */
 .appearance-wrap { position: relative; }
@@ -328,6 +359,21 @@ body.theme-light.has-user-bg {
 .ap-swatch.active {
   border-color: var(--surface);
   box-shadow: 0 0 0 2px var(--sw), 0 0 8px var(--sw);
+}
+.ap-presets { display: flex; gap: 6px; margin-bottom: 10px; }
+.ap-preset {
+  flex: 1;
+  height: 34px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ap-preset:hover { transform: translateY(-1px); border-color: var(--border-light); }
+.ap-preset.active {
+  border-color: var(--green-bright);
+  box-shadow: 0 0 6px var(--green-glow);
 }
 .ap-btns { display: flex; gap: 6px; }
 .ap-btn {
@@ -5847,6 +5893,13 @@ body.theme-light .autocomplete-dropdown {
             <button class="ap-swatch" data-accent="rose"    style="--sw:#fb7185" title="Rose"    onclick="setAccent('rose')"></button>
           </div>
           <div class="ap-label">Background</div>
+          <div class="ap-presets" id="ap-presets">
+            <button class="ap-preset" data-bg="aurora" title="Aurora" style="background:linear-gradient(155deg,#0f2027,#203a43,#2c5364)" onclick="setBgPreset('aurora')"></button>
+            <button class="ap-preset" data-bg="dusk"   title="Dusk"   style="background:linear-gradient(155deg,#1a1a2e,#16213e,#0f3460)" onclick="setBgPreset('dusk')"></button>
+            <button class="ap-preset" data-bg="ember"  title="Ember"  style="background:linear-gradient(155deg,#241a12,#3d2317,#5a2d16)" onclick="setBgPreset('ember')"></button>
+            <button class="ap-preset" data-bg="forest" title="Forest" style="background:linear-gradient(155deg,#0d1f16,#14352a,#1d4a38)" onclick="setBgPreset('forest')"></button>
+            <button class="ap-preset" data-bg="orchid" title="Orchid" style="background:linear-gradient(155deg,#1f1430,#2e1d4e,#43255f)" onclick="setBgPreset('orchid')"></button>
+          </div>
           <div class="ap-btns">
             <button class="ap-btn" onclick="document.getElementById('bg-file-input').click()">Choose image&hellip;</button>
             <button class="ap-btn" id="bg-remove-btn" onclick="removeUserBackground()">Remove</button>
@@ -7722,7 +7775,9 @@ async function refreshData() {
   DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
   DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
   DB.soRecentHidden = !!(uiPrefs && uiPrefs.soRecent);
-  applyUserBackground(!!(uiPrefs && uiPrefs.bgImage), (uiPrefs && uiPrefs.bgV) || 0);
+  applyUserBackground(!!(uiPrefs && uiPrefs.bgImage),
+                      (uiPrefs && uiPrefs.bgV) || 0,
+                      (uiPrefs && uiPrefs.bgPreset) || '');
   // Restore a staged dispatch cart that survived refresh/restart — drop
   // entries whose unit is no longer In Stock.
   if (uiPrefs && Array.isArray(uiPrefs.stagedCart) && uiPrefs.stagedCart.length) {
@@ -14145,17 +14200,32 @@ document.addEventListener('click', e => {
   }
 });
 
-function applyUserBackground(on, v) {
-  document.body.classList.toggle('has-user-bg', !!on);
+const BG_PRESETS = ['aurora', 'dusk', 'ember', 'forest', 'orchid'];
+
+function applyUserBackground(on, v, preset) {
   const hint = document.getElementById('bg-hint');
+  document.body.classList.remove('has-user-bg', 'bg-wallpaper',
+    ...BG_PRESETS.map(n => 'bg-' + n));
+  document.body.style.removeProperty('--user-bg-url');
   if (on) {
+    document.body.classList.add('has-user-bg');
     document.body.style.setProperty('--user-bg-url',
       "url('/api/background?v=" + (v || 0) + "')");
     if (hint) hint.textContent = 'Custom image active';
+  } else if (preset && BG_PRESETS.includes(preset)) {
+    document.body.classList.add('bg-wallpaper', 'bg-' + preset);
+    if (hint) hint.textContent = 'Preset: ' + preset[0].toUpperCase() + preset.slice(1);
   } else {
-    document.body.style.removeProperty('--user-bg-url');
     if (hint) hint.textContent = 'Default theme background';
   }
+  document.querySelectorAll('.ap-preset').forEach(b =>
+    b.classList.toggle('active', !on && b.dataset.bg === preset));
+}
+
+function setBgPreset(name) {
+  apiPost('/api/ui-prefs', { prefs: { bgImage: false, bgPreset: name } })
+    .catch(() => {});
+  applyUserBackground(false, 0, name);
 }
 
 async function uploadUserBackground(input) {
@@ -14171,8 +14241,9 @@ async function uploadUserBackground(input) {
   try {
     await api('/api/background', { method: 'POST', body: fd });
     const v = Date.now();
-    apiPost('/api/ui-prefs', { prefs: { bgImage: true, bgV: v } }).catch(() => {});
-    applyUserBackground(true, v);
+    apiPost('/api/ui-prefs', { prefs: { bgImage: true, bgV: v, bgPreset: '' } })
+      .catch(() => {});
+    applyUserBackground(true, v, '');
     showToast('Background updated', '&#9684;');
   } catch (ex) {
     showToast('Background upload failed: ' + ex.message, '&#9888;');
@@ -14181,8 +14252,8 @@ async function uploadUserBackground(input) {
 
 async function removeUserBackground() {
   try { await apiDel('/api/background'); } catch(e){}
-  apiPost('/api/ui-prefs', { prefs: { bgImage: false } }).catch(() => {});
-  applyUserBackground(false);
+  apiPost('/api/ui-prefs', { prefs: { bgImage: false, bgPreset: '' } }).catch(() => {});
+  applyUserBackground(false, 0, '');
   showToast('Background removed', '&#10005;');
 }
 
