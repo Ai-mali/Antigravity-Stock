@@ -10471,17 +10471,22 @@ function renderAvailable(searchTerm) {
 
       let matchedSerials = serials;
       const modelNameMatch = !!(q && !brandMatch && mKey.toLowerCase().includes(q));
+      const modelDateMatch = dq ? dateMatchesQ(mData.dateIn, dq) : false;
       if (q && !brandMatch) {
         matchedSerials = matchedSerials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
       }
-      if (dq) {
-        const modelDateMatch = dateMatchesQ(mData.dateIn, dq);
-        if (!modelDateMatch) {
-          matchedSerials = matchedSerials.filter(s =>
-            dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
-        }
+      if (dq && !modelDateMatch) {
+        matchedSerials = matchedSerials.filter(s =>
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
       }
       if ((q && !brandMatch || dq) && matchedSerials.length === 0) continue;
+
+      // Auto-open only on a direct hit — model name, its Date In, or a
+      // serial inside it. A brand-name-only match leaves the row collapsed.
+      const modelHit = modelNameMatch || modelDateMatch ||
+        matchedSerials.some(s =>
+          (q && s.toLowerCase().includes(q)) ||
+          (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)));
 
       const cardsHtml = matchedSerials.map(s => {
         const staged = isSerialInCart(s);
@@ -10536,9 +10541,11 @@ function renderAvailable(searchTerm) {
         badgeText = `⚠️ Low Stock: ${count}`;
       }
 
-      // Model rows stay collapsed during search — the expanded brand
-      // reveals which models matched; the user opens the one they want.
-      const isModelOpen = mData.open === true;
+      // Model rows auto-open during search only when the model itself is
+      // a hit; otherwise they stay collapsed inside the opened brand.
+      const isModelOpen = hasFilter
+        ? (mData.searchOpen !== undefined ? mData.searchOpen : modelHit)
+        : (mData.open === true);
 
       const modelDisplay = modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey);
       modelsHtml += `
@@ -10844,11 +10851,25 @@ function toggleBrandAcc(brand) {
 }
 
 function toggleModelAcc(brand, model) {
-  if (DB.inventory[brand] && DB.inventory[brand].models[model]) {
-    const mObj = DB.inventory[brand].models[model];
+  const mObj = DB.inventory[brand] && DB.inventory[brand].models[model];
+  if (!mObj) return;
+  const q = ((document.getElementById('avail-search') || {}).value || '').trim().toLowerCase();
+  const dq = DB.availDateFilter || '';
+  if (q || dq) {
+    // Mirror the renderer's hit logic so the click collapses an
+    // auto-opened model instead of writing a hidden .open flag.
+    const brandMatch = !!(q && brand.toLowerCase().includes(q));
+    const modelHit = (q && !brandMatch && model.toLowerCase().includes(q)) ||
+      (dq && dateMatchesQ(mObj.dateIn, dq)) ||
+      (mObj.serials || []).some(s =>
+        (q && s.toLowerCase().includes(q)) ||
+        (dq && dateMatchesQ(mObj.units && mObj.units[s] && mObj.units[s].dateIn, dq)));
+    const cur = mObj.searchOpen !== undefined ? mObj.searchOpen : modelHit;
+    mObj.searchOpen = !cur;
+  } else {
     mObj.open = !mObj.open;
-    renderAvailable();
   }
+  renderAvailable();
 }
 
 /* =========================================================
@@ -11101,17 +11122,20 @@ function renderStockOut(searchTerm) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
       const modelNameMatch = !!(q && !brandMatch && mKey.toLowerCase().includes(q));
+      const modelDateMatch = dq ? dateMatchesQ(mData.dateIn, dq) : false;
       if (q && !brandMatch) {
         serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
       }
-      if (dq) {
-        const modelDateMatch = dateMatchesQ(mData.dateIn, dq);
-        if (!modelDateMatch) {
-          serials = serials.filter(s =>
-            dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
-        }
+      if (dq && !modelDateMatch) {
+        serials = serials.filter(s =>
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
       }
       if ((q && !brandMatch || dq) && serials.length === 0) continue;
+
+      const modelHit = modelNameMatch || modelDateMatch ||
+        serials.some(s =>
+          (q && s.toLowerCase().includes(q)) ||
+          (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)));
 
       const chipsHtml = serials.map(s => {
         const staged = isSerialInCart(s);
@@ -11149,7 +11173,9 @@ function renderStockOut(searchTerm) {
         soBadgeText = `⚠️ Low: ${soCount}`;
       }
 
-      const isModelOpen = mData.open === true;
+      const isModelOpen = hasFilter
+        ? (mData.soSearchOpen !== undefined ? mData.soSearchOpen : modelHit)
+        : (mData.open === true);
 
       modelsHtml += `
         <div class="model-accordion ${isModelOpen ? 'is-open' : 'is-closed'}">
@@ -11236,11 +11262,23 @@ function toggleSOBrandAcc(brand) {
 }
 
 function toggleSOModelAcc(brand, model) {
-  if (DB.inventory[brand] && DB.inventory[brand].models[model]) {
-    const mObj = DB.inventory[brand].models[model];
+  const mObj = DB.inventory[brand] && DB.inventory[brand].models[model];
+  if (!mObj) return;
+  const q = ((document.getElementById('stockout-search') || {}).value || '').trim().toLowerCase();
+  const dq = DB.soDateFilter || '';
+  if (q || dq) {
+    const brandMatch = !!(q && brand.toLowerCase().includes(q));
+    const modelHit = (q && !brandMatch && model.toLowerCase().includes(q)) ||
+      (dq && dateMatchesQ(mObj.dateIn, dq)) ||
+      (mObj.serials || []).some(s =>
+        (q && s.toLowerCase().includes(q)) ||
+        (dq && dateMatchesQ(mObj.units && mObj.units[s] && mObj.units[s].dateIn, dq)));
+    const cur = mObj.soSearchOpen !== undefined ? mObj.soSearchOpen : modelHit;
+    mObj.soSearchOpen = !cur;
+  } else {
     mObj.open = !mObj.open;
-    renderStockOut();
   }
+  renderStockOut();
 }
 
 function toggleSerialInCart(serial, model, brand) {
