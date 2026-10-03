@@ -2150,8 +2150,12 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   gap: 8px; padding: 9px 12px;
   border-bottom: 1px solid var(--border); flex-wrap: wrap;
 }
-.sl-head-left { display: flex; align-items: center; gap: 8px; }
-.sl-head-right { display: flex; align-items: center; gap: 6px; }
+.sl-head-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sl-head-right {
+  display: flex; align-items: center; gap: 6px;
+  margin-left: auto; /* stays pinned right, even if the header wraps */
+  flex-shrink: 0;
+}
 .sl-ping { position: relative; width: 8px; height: 8px; flex-shrink: 0; }
 .sl-ping-ring {
   position: absolute; inset: 0; border-radius: 50%;
