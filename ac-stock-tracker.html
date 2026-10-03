@@ -394,6 +394,27 @@ body.theme-light.has-user-bg .stock-in-table-scroll thead th, body.theme-light.b
   background: #f1f5f8;
 }
 
+/* Everything that pins while content scrolls beneath it must be solid:
+   app header, view headers, filter bars, brand/model accordion headers. */
+body.has-user-bg header, body.bg-wallpaper header,
+body.has-user-bg .search-filter-bar, body.bg-wallpaper .search-filter-bar,
+body.has-user-bg .view-header, body.bg-wallpaper .view-header {
+  background: #0f1417;
+}
+body.theme-light.has-user-bg header, body.theme-light.bg-wallpaper header,
+body.theme-light.has-user-bg .search-filter-bar, body.theme-light.bg-wallpaper .search-filter-bar,
+body.theme-light.has-user-bg .view-header, body.theme-light.bg-wallpaper .view-header {
+  background: #ffffff;
+}
+body.has-user-bg .brand-accordion-header, body.bg-wallpaper .brand-accordion-header,
+body.has-user-bg .model-accordion-header, body.bg-wallpaper .model-accordion-header {
+  background: #192227;
+}
+body.theme-light.has-user-bg .brand-accordion-header, body.theme-light.bg-wallpaper .brand-accordion-header,
+body.theme-light.has-user-bg .model-accordion-header, body.theme-light.bg-wallpaper .model-accordion-header {
+  background: #f1f5f8;
+}
+
 /* Frosted backdrop blur on the big containers only — the serial cards
    keep translucent fills + soft shadow but skip their own blur filter:
    hundreds of backdrop-filters would make scrolling janky, and the photo
