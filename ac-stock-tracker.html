@@ -4297,7 +4297,12 @@ tr.tl-group-row[aria-expanded="true"] .tl-chev { transform: rotate(90deg); color
 /* expanded detail sub-table */
 tr.tl-detail-row > td { padding: 0; background: var(--surface2); }
 .tl-detail-inner { padding: 2px 16px 14px 44px; }
-.tl-detail-inner table { width: 100%; border-collapse: collapse; }
+.tl-detail-inner table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+/* Fixed column widths keep every expanded group's columns aligned. */
+.tl-detail-inner th:nth-child(1), .tl-detail-inner td:nth-child(1) { width: 34px; }
+.tl-detail-inner th:nth-child(3), .tl-detail-inner td:nth-child(3) { width: 110px; }
+.tl-detail-inner th:nth-child(4), .tl-detail-inner td:nth-child(4) { width: 130px; }
+.tl-detail-inner th:nth-child(5), .tl-detail-inner td:nth-child(5) { width: 80px; }
 .tl-detail-inner th {
   text-align: left; font-weight: 600; font-size: 10px; letter-spacing: .05em;
   text-transform: uppercase; color: var(--text-muted);
