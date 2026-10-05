@@ -11885,7 +11885,7 @@ function renderTrackTable(list, modelColors) {
       <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
       <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
       <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
-      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${grpCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
+      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn tl-undo-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${grpCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -12593,14 +12593,14 @@ function resolveAppConfirm(ok) {
   if (_appConfirmResolve) { _appConfirmResolve(!!ok); _appConfirmResolve = null; }
 }
 
-/* Hovering a Sell Record row highlights its whole dispatch batch —
-   except over copyable cells (model/serial/customer) so click-to-copy
-   stays visually calm. */
+/* Hovering the Undo Dispatch button highlights the whole batch it will
+   revert — a preview of scope. Rows alone no longer highlight. */
 let _batchHoverKey = null;
 document.addEventListener('mouseover', e => {
   if (!e.target.closest) return;
-  const tr = e.target.closest('#track-table-tbody tr[data-batch]');
-  const key = (tr && !e.target.closest('.tl-copy')) ? tr.dataset.batch : null;
+  const btn = e.target.closest('#track-table-tbody .tl-undo-btn');
+  const tr = btn ? btn.closest('tr[data-batch]') : null;
+  const key = tr ? tr.dataset.batch : null;
   if (key === _batchHoverKey) return;
   _batchHoverKey = key;
   document.querySelectorAll('#track-table-tbody tr[data-batch]')
