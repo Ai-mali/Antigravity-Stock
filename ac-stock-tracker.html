@@ -408,6 +408,12 @@ body.theme-light.has-user-bg #view-available .view-header, body.theme-light.bg-w
 body.theme-light.has-user-bg #view-stock-out .view-header, body.theme-light.bg-wallpaper #view-stock-out .view-header {
   background: #ffffff;
 }
+/* Round the sticky bars so they read as pills over the wallpaper */
+body.has-user-bg #view-available .view-header, body.bg-wallpaper #view-available .view-header,
+body.has-user-bg #view-stock-out .view-header, body.bg-wallpaper #view-stock-out .view-header,
+body.has-user-bg .search-filter-bar, body.bg-wallpaper .search-filter-bar {
+  border-radius: 12px;
+}
 body.has-user-bg .brand-accordion-header, body.bg-wallpaper .brand-accordion-header,
 body.has-user-bg .model-accordion-header, body.bg-wallpaper .model-accordion-header {
   background: #192227;
