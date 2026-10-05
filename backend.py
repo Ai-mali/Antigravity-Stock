@@ -361,6 +361,23 @@ def revert_sale(body: RevertSaleBody):
     return {"ok": True, "serials": done}
 
 
+class RescheduleBody(BaseModel):
+    batch: str = ""
+    customer: str = ""
+    date_out: str = ""
+    new_date: str = Field(min_length=1)
+
+
+@app.post("/api/sales/reschedule")
+def reschedule_sale(body: RescheduleBody):
+    _fresh()
+    done, err = store.reschedule_sale(body.batch, body.customer, body.date_out, body.new_date)
+    if err:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True, "serials": done}
+
+
 class StockOutBody(BaseModel):
     serials: list[str] = Field(min_length=1)
     customer: str

@@ -4309,6 +4309,24 @@ tr.tl-detail-row > td { padding: 0; background: var(--surface2); }
 .tl-unit-serial { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text); }
 .tl-unit-actions { white-space: nowrap; opacity: .45; transition: opacity .15s; }
 tr:hover > td .tl-unit-actions { opacity: 1; }
+
+/* BOOKED filter toggle + booking affordances */
+.tl-booked-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.tl-booked-dot { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+.tl-booked-count {
+  min-width: 18px; text-align: center; padding: 1px 5px; border-radius: 999px;
+  background: var(--surface3); color: var(--text-sub); font-size: 10.5px; font-variant-numeric: tabular-nums;
+}
+.tl-booked-toggle.on {
+  border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,.1);
+}
+.tl-booked-toggle.on .tl-booked-count { background: #f59e0b; color: #111; }
+.tl-resched-btn {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  padding: 3px 5px; border-radius: 6px; display: inline-flex; align-items: center;
+  opacity: .45; transition: all .12s; vertical-align: middle; margin-right: 4px;
+}
+tr.tl-group-row:hover .tl-resched-btn, .tl-resched-btn:hover { opacity: 1; color: #f59e0b; background: var(--surface3); }
 body.theme-light tr.tl-detail-row > td { background: #eef3f7; }
 body.theme-light tr.tl-group-row:hover td,
 body.theme-light .tl-detail-inner tr:hover td { background: rgba(15,23,42,.035); }
@@ -6881,6 +6899,9 @@ body.theme-light .autocomplete-dropdown {
             <span class="tl-showing-badge" id="track-showing-badge">Showing 0 of 0</span>
           </div>
           <div class="tl-card-tools">
+            <button type="button" class="btn btn-ghost btn-sm tl-booked-toggle" id="track-booked-btn" onclick="toggleTrackBookedFilter()" title="Show only bookings (future dispatch dates)">
+              <i class="tl-booked-dot"></i>BOOKED <span class="tl-booked-count" id="track-booked-count">0</span>
+            </button>
             <div class="tl-colmenu-wrap">
               <button type="button" class="btn btn-ghost btn-sm" id="track-colmenu-btn" onclick="toggleTrackColMenu(event)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
@@ -8003,6 +8024,46 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- Reschedule Booking modal -->
+<div class="modal-overlay" id="reschedule-modal">
+  <div class="modal-dialog rma-detail-dialog" style="max-width:420px;">
+    <div class="undo-topbar" style="background:#f59e0b;"></div>
+    <div class="modal-header" style="align-items:flex-start;">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <div class="undo-icon-pill" style="color:#f59e0b;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+        <div>
+          <h3 class="modal-title" style="font-size:18px;">Reschedule Booking</h3>
+          <div class="modal-subtitle" id="reschedule-info">—</div>
+        </div>
+      </div>
+      <button class="btn-circle" onclick="closeReschedule()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
+      <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">New Delivery Date</label>
+      <div class="custom-datepicker" id="reschedule-date-picker" style="width:100%;">
+        <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('reschedule-date-picker', event)" style="width:100%; justify-content:space-between; padding:8px 12px; font-size:12.5px;">
+          <span style="display:flex; align-items:center; gap:7px;">
+            <span class="dp-icon-cal">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </span>
+            <span class="dp-date-text" id="reschedule-date-picker-display">—</span>
+            <span class="dp-badge-relative" id="reschedule-date-picker-relative"></span>
+          </span>
+          <span class="dp-icon-chevron">&#9662;</span>
+        </button>
+        <div class="datepicker-popover" id="reschedule-date-picker-popover"></div>
+      </div>
+      <p style="margin:10px 0 0; font-size:11px; color:var(--text-sub);">The whole booking moves together — warranty dates follow the new delivery date.</p>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" onclick="closeReschedule()">Cancel</button>
+      <button class="btn btn-primary" onclick="doReschedule()" style="background:#f59e0b; border-color:#f59e0b; color:#111;">Save New Date</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -8035,6 +8096,7 @@ const DB = {
   trackPageSize: 25,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
   trackOpenGroups: new Set(), // expanded fulfillment groups (group keys)
+  trackBookedOnly: false, // BOOKED pill: show only future-dated dispatches
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
 
@@ -11608,7 +11670,10 @@ async function processCartCheckout() {
       showToast(`Dispatched ${res.sold.length} of ${sent.length} — skipped: ${skippedItems.map(i => i.serial).join(', ')} (no longer in stock)`, '&#9888;');
       DB.stagedCart = skippedItems;
     } else {
-      showToast(`Successfully dispatched ${res.sold.length} serials to ${cust}!`);
+      const booked = parseDateAny(dateOut) > (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
+      showToast(booked
+        ? `Booked ${res.sold.length} serial(s) for ${cust} — delivery ${dateOut}`
+        : `Successfully dispatched ${res.sold.length} serials to ${cust}!`);
       DB.stagedCart = [];
     }
     persistStagedCart();
@@ -11744,9 +11809,22 @@ function trackCustomerColor(name) {
   return TRACK_CUST_COLORS[h % TRACK_CUST_COLORS.length];
 }
 
+/* A "booking" is a sold unit whose dispatch date is in the future —
+   same record, same stock deduction; only the label differs. */
+function isTrackBooked(r) {
+  const t = parseDateAny(r && r.dateOut);
+  if (!t) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return t.getTime() > today.getTime();
+}
+
 function getFilteredTrackList() {
   const q = (DB.trackSearch || '').trim().toLowerCase();
   let list = DB.trackList;
+  if (DB.trackBookedOnly) {
+    list = list.filter(isTrackBooked);
+  }
   if (DB.trackFilter !== 'ALL') {
     list = list.filter(r => r.customer === DB.trackFilter);
   }
@@ -11946,6 +12024,7 @@ function renderTrackTable(list, modelColors) {
 
   const sorted = getSortedTrackList(list);
   const groups = buildTrackGroups(sorted);
+  DB._trackGroups = groups;   // reschedule modal looks groups up by index
 
   // Dispatch batch (or legacy customer+date) still drives the undo-button
   // hover preview and its tooltip unit count.
@@ -11976,7 +12055,8 @@ function renderTrackTable(list, modelColors) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
   }
 
-  pageGroups.forEach(g => {
+  pageGroups.forEach((g, gi) => {
+    const booked = isTrackBooked(g.items[0]);   // all units share Date Out
     const modelHit = q && (g.model.toLowerCase().includes(ql) ||
       g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
     const custHit = q && g.customer.toLowerCase().includes(ql);
@@ -12000,8 +12080,8 @@ function renderTrackTable(list, modelColors) {
       <td data-tlcol="customer"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(g.customer))}')">${custHit ? markMatchedText(g.customer, q) : escapeHtml(g.customer || '—')}</span></td>
       <td data-tlcol="dateOut" class="mono">${outHit ? markMatchedText(g.dateOut, dOut) : escapeHtml(g.dateOut)}</td>
       <td data-tlcol="warranty">${warrCell}</td>
-      <td data-tlcol="status"><span class="tl-dot-stat d-info">Dispatched</span></td>
-      <td style="text-align:right;"><span class="tl-qty-pill">${g.items.length}</span></td>
+      <td data-tlcol="status">${booked ? '<span class="tl-dot-stat d-warn">Booked</span>' : '<span class="tl-dot-stat d-info">Dispatched</span>'}</td>
+      <td style="text-align:right;">${booked ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></button>` : ''}<span class="tl-qty-pill">${g.items.length}</span></td>
     `;
     tbody.appendChild(gtr);
 
@@ -12062,7 +12142,61 @@ function renderTrackTable(list, modelColors) {
     });
   }
 
+  const bb = document.getElementById('track-booked-btn');
+  if (bb) {
+    bb.classList.toggle('on', !!DB.trackBookedOnly);
+    const bc = document.getElementById('track-booked-count');
+    if (bc) bc.textContent = DB.trackList.filter(isTrackBooked).length;
+  }
+
   renderTrackPagination(groups.length, pages);
+}
+
+function toggleTrackBookedFilter() {
+  DB.trackBookedOnly = !DB.trackBookedOnly;
+  renderTrackList(DB.trackSearch);
+}
+
+let _rescheduleCtx = null;
+
+function openRescheduleModal(gi) {
+  const g = (DB._trackGroups || [])[gi];
+  if (!g || !g.items.length) return;
+  _rescheduleCtx = {
+    batch: g.items[0].batch || '',
+    customer: g.customer || '',
+    date_out: g.dateOut || ''
+  };
+  const d = parseDateAny(g.dateOut);
+  initDatePicker('reschedule-date-picker', d ? formatDateISO(d) : formatDateISO(new Date()));
+  const info = document.getElementById('reschedule-info');
+  if (info) info.textContent = `${g.model} · ${g.customer || '—'} · ${g.items.length} unit(s) · currently ${g.dateOut}`;
+  document.getElementById('reschedule-modal').classList.add('open');
+}
+
+function closeReschedule() {
+  document.getElementById('reschedule-modal').classList.remove('open');
+  _rescheduleCtx = null;
+}
+
+async function doReschedule() {
+  if (!_rescheduleCtx) return;
+  const st = DatePickerState['reschedule-date-picker'];
+  if (!st || !st.selectedDate) { showToast('Pick a new delivery date.'); return; }
+  const newDate = formatDateISO(st.selectedDate);
+  try {
+    const res = await apiPost('/api/sales/reschedule', {
+      batch: _rescheduleCtx.batch,
+      customer: _rescheduleCtx.customer,
+      date_out: _rescheduleCtx.date_out,
+      new_date: newDate
+    });
+    closeReschedule();
+    showToast(`Booking rescheduled to ${newDate} — ${(res.serials || []).length} unit(s) updated.`);
+    await refreshData();
+  } catch (e) {
+    showToast('Reschedule failed: ' + e.message);
+  }
 }
 
 function renderTrackPagination(total, pages) {
@@ -14665,6 +14799,7 @@ onBackdropPress(document.getElementById('do-photos-modal'), () => closeDoPhotosM
 onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoViewerModal());
 onBackdropPress(document.getElementById('rma-detail-modal'), () => closeReturnDetail());
 onBackdropPress(document.getElementById('undo-dispatch-modal'), () => closeUndoDispatch());
+onBackdropPress(document.getElementById('reschedule-modal'), () => closeReschedule());
 
 /* Drag-resize the Activity & Backups dialog from its corner grip */
 (function() {

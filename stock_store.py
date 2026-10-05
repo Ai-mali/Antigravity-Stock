@@ -918,6 +918,47 @@ class StockStore:
         self.save(backup=True)
         return done, ""
 
+    def reschedule_sale(self, batch: str = "", customer: str = "",
+                        date_out: str = "", new_date: str = "") -> tuple[list[str], str]:
+        """Move a booked (future-dated) dispatch to a new delivery date.
+        Matches the whole Batch like revert_sale does — a booking is one
+        checkout, so its delivery date moves as a unit. Past-dated sales
+        are history and cannot be edited. Returns (serials, error)."""
+        today = datetime.date.today().isoformat()
+        new_date = (new_date or "").strip()
+        if not new_date:
+            return [], "No new date given"
+        if new_date < today:
+            return [], "New delivery date cannot be in the past"
+        batch = (batch or "").strip()
+        cust = (customer or "").strip().lower()
+        dout = (date_out or "").strip()
+        if not batch and not (cust and dout):
+            return [], "Nothing identifies this dispatch"
+        targets = [r for r in self.records
+                   if str(r["Status"]).strip() == SOLD
+                   and ((batch and str(r.get("Batch") or "").strip() == batch)
+                        or (not batch and not str(r.get("Batch") or "").strip()
+                            and str(r.get("Customer") or "").strip().lower() == cust
+                            and str(r.get("Date Out") or "").strip() == dout))]
+        if not targets:
+            return [], "No sold units found for this dispatch"
+        old_dates = {str(r.get("Date Out") or "").strip() for r in targets}
+        if any(d <= today for d in old_dates):
+            return [], "Only booked (future-dated) dispatches can be rescheduled"
+        done = []
+        for rec in targets:
+            row = rec["_row"]
+            rec["Date Out"] = new_date
+            self.recs.cell(row=row, column=7, value=new_date)
+            done.append(str(rec["Serial"]))
+        self.log_activity("Booking Rescheduled",
+                          model=", ".join(sorted({str(r['Model']) for r in targets})),
+                          count=len(done),
+                          details=f"Customer: {targets[0].get('Customer', '')} | Batch: {batch or 'legacy'} | {', '.join(sorted(old_dates))} → {new_date} | {len(done)} units")
+        self.save(backup=True)
+        return done, ""
+
     def create_return(self, serial: str, reason: str, condition: str,
                       notes: str, action: str, date: str):
         """Return a sold unit: action 'restock' puts it back In Stock,
