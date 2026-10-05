@@ -4270,50 +4270,84 @@ body.theme-light .tl-status-badge {
 tr.tl-group-row { cursor: pointer; }
 tr.tl-group-row:hover td { background: rgba(255,255,255,.028); }
 tr.tl-group-row:focus { outline: 1px solid var(--border-light); outline-offset: -1px; }
-.tl-chev {
-  display: inline-block; width: 14px; margin-right: 6px;
-  color: var(--text-muted); font-size: 10px;
-  transition: transform .15s ease;
+tr.tl-group-row[aria-expanded="true"] td { background: rgba(255,255,255,.03); }
+
+/* boxed chevron */
+.tl-chev-box {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-right: 9px;
+  border: 1px solid var(--border-light); border-radius: 6px;
+  color: var(--text-muted); font-size: 9px; vertical-align: middle;
+  transition: all .15s ease;
 }
-tr.tl-group-row[aria-expanded="true"] .tl-chev { transform: rotate(90deg); color: var(--text); }
-.tl-group-model { font-weight: 700; letter-spacing: .01em; }
+tr.tl-group-row[aria-expanded="true"] .tl-chev-box { color: var(--text); border-color: var(--text-muted); }
+.tl-chev-box i { font-style: normal; transition: transform .15s ease; display: inline-block; }
+tr.tl-group-row[aria-expanded="true"] .tl-chev-box i { transform: rotate(90deg); }
+
+.tl-group-model { font-weight: 700; letter-spacing: .01em; vertical-align: middle; }
+
+/* customer: small colored square + name */
+.tl-cust-sq {
+  display: inline-block; width: 9px; height: 9px; border-radius: 3px;
+  margin-right: 8px; vertical-align: -1px;
+}
+
+/* soft pill badges: dot + label on a translucent tint */
+.tl-pill-soft {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  background: color-mix(in srgb, var(--pc) 14%, transparent); color: var(--pc);
+  white-space: nowrap;
+}
+.tl-pill-soft::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--pc); flex-shrink: 0; }
+.tl-pill-soft.p-ok   { --pc: #34d399; }
+.tl-pill-soft.p-info { --pc: #60a5fa; }
+.tl-pill-soft.p-warn { --pc: #fbbf24; }
+.tl-pill-soft.p-bad  { --pc: #f87171; }
+.tl-pill-soft.p-none { --pc: var(--text-muted); background: var(--surface3); }
+
+/* qty badge */
 .tl-qty-pill {
-  display: inline-block; min-width: 28px; text-align: center;
-  padding: 2px 8px; border-radius: 999px;
-  background: var(--surface3); color: var(--text);
-  font-size: 11.5px; font-variant-numeric: tabular-nums;
+  display: inline-block; min-width: 54px; text-align: center;
+  padding: 3px 10px; border-radius: 7px; border: 1px solid rgba(251,191,36,.35);
+  background: rgba(251,191,36,.08); color: #fbbf24;
+  font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
 }
 
-/* quiet status: colored dot + plain text (Active=green, Dispatched=blue,
-   expiring=amber, expired=red, none=faint) */
-.tl-dot-stat { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); }
-.tl-dot-stat::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dc, var(--text-muted)); flex-shrink: 0; }
-.tl-dot-stat.d-ok   { --dc: var(--green-bright); }
-.tl-dot-stat.d-info { --dc: #58a6ff; }
-.tl-dot-stat.d-warn { --dc: #f59e0b; }
-.tl-dot-stat.d-bad  { --dc: #f87171; }
-.tl-dot-stat.d-none { color: var(--text-muted); }
+/* dispatched date with calendar icon */
+.tl-date-cell { display: inline-flex; align-items: center; gap: 7px; }
+.tl-date-cell svg { color: var(--text-muted); flex-shrink: 0; }
 
-/* expanded detail sub-table */
-tr.tl-detail-row > td { padding: 0; background: var(--surface2); }
-.tl-detail-inner { padding: 2px 16px 14px 44px; }
+/* expanded detail card */
+tr.tl-detail-row > td { padding: 0 14px 14px; background: transparent; }
+.tl-detail-inner {
+  padding: 0; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface2); overflow: hidden;
+}
 .tl-detail-inner table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 /* Fixed column widths keep every expanded group's columns aligned. */
-.tl-detail-inner th:nth-child(1), .tl-detail-inner td:nth-child(1) { width: 34px; }
+.tl-detail-inner th:nth-child(1), .tl-detail-inner td:nth-child(1) { width: 38px; }
 .tl-detail-inner th:nth-child(3), .tl-detail-inner td:nth-child(3) { width: 110px; }
 .tl-detail-inner th:nth-child(4), .tl-detail-inner td:nth-child(4) { width: 130px; }
-.tl-detail-inner th:nth-child(5), .tl-detail-inner td:nth-child(5) { width: 80px; }
+.tl-detail-inner th:nth-child(5), .tl-detail-inner td:nth-child(5) { width: 90px; }
 .tl-detail-inner th {
   text-align: left; font-weight: 600; font-size: 10px; letter-spacing: .05em;
   text-transform: uppercase; color: var(--text-muted);
-  padding: 8px 12px 6px; border-bottom: 1px solid var(--border);
+  padding: 9px 14px; border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
 }
-.tl-detail-inner td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
-.tl-detail-inner tr:last-child td { border-bottom: none; }
-.tl-detail-inner tr:hover td { background: rgba(255,255,255,.028); }
-.tl-unit-serial { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text); }
+.tl-detail-inner td { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.tl-detail-inner tbody tr:last-child td { border-bottom: none; }
+.tl-detail-inner tbody tr:hover td { background: rgba(255,255,255,.03); }
+.tl-unit-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; margin-right: 8px; vertical-align: 1px; }
+.tl-unit-serial { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text); font-weight: 600; }
 .tl-unit-actions { white-space: nowrap; opacity: .45; transition: opacity .15s; }
 tr:hover > td .tl-unit-actions { opacity: 1; }
+body.theme-light tr.tl-group-row:hover td,
+body.theme-light tr.tl-group-row[aria-expanded="true"] td { background: rgba(15,23,42,.035); }
+body.theme-light .tl-detail-inner { background: #f1f5f8; }
+body.theme-light .tl-detail-inner th { background: rgba(15,23,42,.02); }
+body.theme-light .tl-detail-inner tbody tr:hover td { background: rgba(15,23,42,.035); }
 
 /* BOOKED filter toggle + booking affordances */
 .tl-booked-toggle { display: inline-flex; align-items: center; gap: 6px; }
@@ -6940,6 +6974,7 @@ body.theme-light .autocomplete-dropdown {
                 <th data-tlcol="warranty">Warranty</th>
                 <th data-tlcol="status">Status</th>
                 <th style="text-align:right;">Qty</th>
+                <th data-tlcol="actions" style="text-align:right;">Actions</th>
               </tr>
             </thead>
             <tbody id="track-table-tbody"></tbody>
@@ -11989,7 +12024,7 @@ function trackWarrantyBadge(r) {
   return '<span class="tl-warranty-badge w-none">\u2014</span>';
 }
 
-/* Quiet warranty display: plain text + colored dot via tl-dot-stat. */
+/* Quiet warranty display: text label + colored soft pill. */
 function tlWarrantyText(w) {
   w = w || { status: 'none', expiry: '', daysRemaining: null };
   if (w.status === 'active')   return `Active (${w.daysRemaining}d)`;
@@ -11999,10 +12034,24 @@ function tlWarrantyText(w) {
 }
 function tlWarrantyDot(r) {
   const w = r.warranty || { status: 'none', expiry: '', daysRemaining: null };
-  const cls = w.status === 'active' ? 'd-ok' : w.status === 'expiring' ? 'd-warn'
-            : w.status === 'expired' ? 'd-bad' : 'd-none';
+  const cls = w.status === 'active' ? 'p-ok' : w.status === 'expiring' ? 'p-warn'
+            : w.status === 'expired' ? 'p-bad' : 'p-none';
   const title = w.expiry ? ` title="Warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(w.expiry)}"` : '';
-  return `<span class="tl-dot-stat ${cls}"${title}>${escapeHtml(tlWarrantyText(w))}</span>`;
+  return `<span class="tl-pill-soft ${cls}"${title}>${escapeHtml(tlWarrantyText(w))}</span>`;
+}
+
+/* Fulfillment status: future date = Booked, today = Dispatched,
+   past = Delivered. Same Sold record — label follows Date Out. */
+function tlStatusInfo(r) {
+  const t = parseDateAny(r && r.dateOut);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (t && t.getTime() > today.getTime()) return { label: 'Booked',     cls: 'p-warn' };
+  if (t && t.getTime() < today.getTime()) return { label: 'Delivered',  cls: 'p-ok'   };
+  return { label: 'Dispatched', cls: 'p-info' };
+}
+function tlStatusPill(r) {
+  const s = tlStatusInfo(r);
+  return `<span class="tl-pill-soft ${s.cls}">${s.label}</span>`;
 }
 
 /* Natural order: "#1, #2 ... #13", not "#1, #10, #11, #2". */
@@ -12083,7 +12132,7 @@ function renderTrackTable(list, modelColors) {
 
   tbody.innerHTML = '';
   if (!pageGroups.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
   }
 
   pageGroups.forEach((g, gi) => {
@@ -12104,15 +12153,21 @@ function renderTrackTable(list, modelColors) {
     const warrTexts = [...new Set(g.items.map(r => tlWarrantyText(r.warranty)))];
     const warrCell = warrTexts.length === 1
       ? tlWarrantyDot(g.items[0])
-      : '<span class="tl-dot-stat d-warn">Mixed</span>';
+      : '<span class="tl-pill-soft p-warn">Mixed</span>';
+
+    const calSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+    const reschedBtn = booked
+      ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})">${calSvg}</button>`
+      : '';
 
     gtr.innerHTML = `
-      <td data-tlcol="model"><span class="tl-chev">&#9654;</span><span class="tl-group-model tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></td>
-      <td data-tlcol="customer"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(g.customer))}')">${custHit ? markMatchedText(g.customer, q) : escapeHtml(g.customer || '—')}</span></td>
-      <td data-tlcol="dateOut" class="mono">${outHit ? markMatchedText(g.dateOut, dOut) : escapeHtml(g.dateOut)}</td>
+      <td data-tlcol="model"><span class="tl-chev-box"><i>&#9654;</i></span><span class="tl-group-model tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></td>
+      <td data-tlcol="customer"><span class="tl-cust-sq" style="background:${trackCustomerColor(g.customer)}"></span><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(g.customer))}')">${custHit ? markMatchedText(g.customer, q) : escapeHtml(g.customer || '—')}</span></td>
+      <td data-tlcol="dateOut" class="mono"><span class="tl-date-cell">${calSvg}${outHit ? markMatchedText(g.dateOut, dOut) : escapeHtml(g.dateOut)}</span></td>
       <td data-tlcol="warranty">${warrCell}</td>
-      <td data-tlcol="status">${booked ? '<span class="tl-dot-stat d-warn">Booked</span>' : '<span class="tl-dot-stat d-info">Dispatched</span>'}</td>
-      <td style="text-align:right;">${booked ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></button>` : ''}<span class="tl-qty-pill">${g.items.length}</span></td>
+      <td data-tlcol="status">${tlStatusPill(g.items[0])}</td>
+      <td style="text-align:right;"><span class="tl-qty-pill">${g.items.length} unit${g.items.length === 1 ? '' : 's'}</span></td>
+      <td data-tlcol="actions" style="text-align:right;">${reschedBtn}</td>
     `;
     tbody.appendChild(gtr);
 
@@ -12121,7 +12176,7 @@ function renderTrackTable(list, modelColors) {
     const dtr = document.createElement('tr');
     dtr.className = 'tl-detail-row';
     const dtd = document.createElement('td');
-    dtd.colSpan = 6;
+    dtd.colSpan = 7;
     const unitRows = g.items.map((r, i) => {
       const jsSerial = escapeHtml(escapeJs(r.serial));
       const serialHit = q && (r.serial || '').toLowerCase().includes(ql);
@@ -12130,7 +12185,7 @@ function renderTrackTable(list, modelColors) {
       const bKey = batchKey(r);
       return `<tr data-batch="${escapeHtml(bKey)}">
         <td class="mono" style="color:var(--text-muted); width:34px;">${i + 1}</td>
-        <td data-tlcol="serial"><span class="tl-unit-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
+        <td data-tlcol="serial"><i class="tl-unit-dot"></i><span class="tl-unit-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
         <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${inHit ? markMatchedText(r.dateIn, dIn) : escapeHtml(r.dateIn)}</td>
         <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${tlWarrantyDot(r)}</span>` : tlWarrantyDot(r)}</td>
         <td data-tlcol="actions" style="text-align:right;"><span class="tl-unit-actions"><button type="button" class="tl-eye-btn tl-undo-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${batchCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></span></td>
@@ -12180,7 +12235,7 @@ function renderTrackTable(list, modelColors) {
     if (bc) bc.textContent = DB.trackList.filter(isTrackBooked).length;
   }
 
-  renderTrackPagination(groups.length, pages);
+  renderTrackPagination(groups.length, pages, sorted.length);
 }
 
 function toggleTrackBookedFilter() {
@@ -12242,13 +12297,14 @@ async function doReschedule() {
   }
 }
 
-function renderTrackPagination(total, pages) {
+function renderTrackPagination(total, pages, units) {
   const el = document.getElementById('track-pagination');
   if (!el) return;
   const page = DB.trackPage;
   const size = DB.trackPageSize;
   const start = total ? page * size + 1 : 0;
   const end = Math.min((page + 1) * size, total);
+  const unitsTxt = typeof units === 'number' ? ` (${units} unit${units === 1 ? '' : 's'} total)` : '';
 
   const nums = [];
   if (pages <= 7) {
@@ -12270,7 +12326,7 @@ function renderTrackPagination(total, pages) {
         ${[10, 25, 50, 100].map(n => `<option value="${n}"${n === size ? ' selected' : ''}>${n}</option>`).join('')}
       </select>
       <span style="opacity:.5;">|</span>
-      <span>${start}-${end} of ${total} records</span>
+      <span>Showing ${start} to ${end} of ${total} groups${unitsTxt}</span>
     </div>
     <div class="tl-page-btns">
       <button type="button" class="tl-page-btn" ${page === 0 ? 'disabled' : ''} onclick="setTrackPage(0)" title="First page">&laquo;</button>
