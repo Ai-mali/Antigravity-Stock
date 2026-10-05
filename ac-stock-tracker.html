@@ -408,11 +408,17 @@ body.theme-light.has-user-bg #view-available .view-header, body.theme-light.bg-w
 body.theme-light.has-user-bg #view-stock-out .view-header, body.theme-light.bg-wallpaper #view-stock-out .view-header {
   background: #ffffff;
 }
-/* Round the sticky bars so they read as pills over the wallpaper */
+/* Round the sticky bars so they read as pills over the wallpaper;
+   pad them so text isn't flush against the rounded edge. */
 body.has-user-bg #view-available .view-header, body.bg-wallpaper #view-available .view-header,
 body.has-user-bg #view-stock-out .view-header, body.bg-wallpaper #view-stock-out .view-header,
 body.has-user-bg .search-filter-bar, body.bg-wallpaper .search-filter-bar {
   border-radius: 12px;
+}
+body.has-user-bg #view-available .view-header, body.bg-wallpaper #view-available .view-header,
+body.has-user-bg #view-stock-out .view-header, body.bg-wallpaper #view-stock-out .view-header {
+  padding: 10px 16px;
+  align-items: center;
 }
 body.has-user-bg .brand-accordion-header, body.bg-wallpaper .brand-accordion-header,
 body.has-user-bg .model-accordion-header, body.bg-wallpaper .model-accordion-header {
@@ -6531,9 +6537,12 @@ body.theme-light .autocomplete-dropdown {
         <!-- Middle: header + search + model accordions -->
         <div class="stockout-left-col">
           <div class="view-header" style="align-items:center;">
-            <div class="view-title" style="display:flex; align-items:center; gap:8px;">
-              Stock Out &amp; Dispatch
-              <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
+            <div>
+              <div class="view-title" style="display:flex; align-items:center; gap:8px;">
+                Stock Out &amp; Dispatch
+                <span class="arrival-badge" id="so-arrival-badge" style="display:none;"><span class="ab-dot"></span>Arrival Date Active</span>
+              </div>
+              <div class="view-subtitle">Stage units into the dispatch cart and check out to a customer.</div>
             </div>
             <div class="hdr-search-side">
               <!-- Grouped search: Date In chip + serial/model input -->
