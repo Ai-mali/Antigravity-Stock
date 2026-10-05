@@ -6494,6 +6494,10 @@ body.theme-light .autocomplete-dropdown {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
               </button>
+              <button class="btn btn-ghost btn-sm" onclick="exportAvailCsv()" title="Export the filtered list to CSV">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+              </button>
             </div>
           </div>
 
@@ -12150,6 +12154,45 @@ function selectTrackCustomer(name) {
 function selectTrackWarranty(key) {
   DB.trackWarrantyFilter = key;
   renderTrackList();
+}
+
+function exportAvailCsv() {
+  // Export the same filtered view shown on screen — search text,
+  // Date In, brand pill, and low-stock filter all apply.
+  const inp = document.getElementById('avail-search');
+  const q = (inp ? inp.value : '').trim().toLowerCase();
+  const dq = DB.availDateFilter || '';
+  const brands = DB.availFilter === 'ALL' ? Object.keys(DB.inventory)
+                                          : [DB.availFilter].filter(b => DB.inventory[b]);
+  let csv = 'BRAND,MODEL,SERIAL NUM/DESC,DATE IN,CONDITION\n';
+  let rows = 0;
+  brands.forEach(brandKey => {
+    const bData = DB.inventory[brandKey];
+    const brandMatch = q && brandKey.toLowerCase().includes(q);
+    for (const mKey of Object.keys(bData.models).sort()) {
+      const mData = bData.models[mKey];
+      let serials = mData.serials || [];
+      if (DB.lowStockFilter && serials.length > 3) continue;
+      const modelNameMatch = !!(q && !brandMatch && mKey.toLowerCase().includes(q));
+      const modelDateMatch = dq ? dateMatchesQ(mData.dateIn, dq) : false;
+      if (q && !brandMatch) {
+        serials = serials.filter(s => s.toLowerCase().includes(q) || modelNameMatch);
+      }
+      if (dq && !modelDateMatch) {
+        serials = serials.filter(s =>
+          dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq));
+      }
+      if ((q && !brandMatch || dq) && serials.length === 0) continue;
+      serials.forEach(s => {
+        const u = (mData.units && mData.units[s]) || {};
+        csv += [brandKey, mKey, s, u.dateIn || mData.dateIn || '',
+                u.secondHand ? '2nd Hand' : 'New'].map(csvCell).join(',') + '\n';
+        rows++;
+      });
+    }
+  });
+  if (!rows) { showToast('Nothing to export'); return; }
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'available_stock_export.csv');
 }
 
 function exportTrackCsv() {
