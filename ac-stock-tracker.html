@@ -4321,6 +4321,12 @@ tr:hover > td .tl-unit-actions { opacity: 1; }
   border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,.1);
 }
 .tl-booked-toggle.on .tl-booked-count { background: #f59e0b; color: #111; }
+
+/* Reschedule modal: the date picker popover must overflow the dialog,
+   so unclip it and round the topbar corners manually instead. */
+#reschedule-modal .modal-dialog { overflow: visible; }
+#reschedule-modal .undo-topbar { border-radius: 13px 13px 0 0; }
+#reschedule-modal .datepicker-popover { z-index: 110; }
 .tl-resched-btn {
   background: none; border: none; color: var(--text-muted); cursor: pointer;
   padding: 3px 5px; border-radius: 6px; display: inline-flex; align-items: center;
