@@ -393,6 +393,13 @@ body.theme-light.has-user-bg .table-scroll-10 thead th, body.theme-light.bg-wall
 body.theme-light.has-user-bg .stock-in-table-scroll thead th, body.theme-light.bg-wallpaper .stock-in-table-scroll thead th {
   background: #f1f5f8;
 }
+/* Grouped-log detail panel uses --surface2 as well — keep it solid. */
+body.has-user-bg tr.tl-detail-row > td, body.bg-wallpaper tr.tl-detail-row > td {
+  background: #192227;
+}
+body.theme-light.has-user-bg tr.tl-detail-row > td, body.theme-light.bg-wallpaper tr.tl-detail-row > td {
+  background: #eef3f7;
+}
 
 /* Everything that pins while content scrolls beneath it must be solid:
    app header, view headers, filter bars, brand/model accordion headers. */
@@ -4259,6 +4266,53 @@ body.theme-light .tl-status-badge {
   background: var(--surface3);
 }
 
+/* ---- Fulfillment log: grouped expandable rows ---- */
+tr.tl-group-row { cursor: pointer; }
+tr.tl-group-row:hover td { background: rgba(255,255,255,.028); }
+tr.tl-group-row:focus { outline: 1px solid var(--border-light); outline-offset: -1px; }
+.tl-chev {
+  display: inline-block; width: 14px; margin-right: 6px;
+  color: var(--text-muted); font-size: 10px;
+  transition: transform .15s ease;
+}
+tr.tl-group-row[aria-expanded="true"] .tl-chev { transform: rotate(90deg); color: var(--text); }
+.tl-group-model { font-weight: 700; letter-spacing: .01em; }
+.tl-qty-pill {
+  display: inline-block; min-width: 28px; text-align: center;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--surface3); color: var(--text);
+  font-size: 11.5px; font-variant-numeric: tabular-nums;
+}
+
+/* quiet status: colored dot + plain text (Active=green, Dispatched=blue,
+   expiring=amber, expired=red, none=faint) */
+.tl-dot-stat { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); }
+.tl-dot-stat::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dc, var(--text-muted)); flex-shrink: 0; }
+.tl-dot-stat.d-ok   { --dc: var(--green-bright); }
+.tl-dot-stat.d-info { --dc: #58a6ff; }
+.tl-dot-stat.d-warn { --dc: #f59e0b; }
+.tl-dot-stat.d-bad  { --dc: #f87171; }
+.tl-dot-stat.d-none { color: var(--text-muted); }
+
+/* expanded detail sub-table */
+tr.tl-detail-row > td { padding: 0; background: var(--surface2); }
+.tl-detail-inner { padding: 2px 16px 14px 44px; }
+.tl-detail-inner table { width: 100%; border-collapse: collapse; }
+.tl-detail-inner th {
+  text-align: left; font-weight: 600; font-size: 10px; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-muted);
+  padding: 8px 12px 6px; border-bottom: 1px solid var(--border);
+}
+.tl-detail-inner td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.tl-detail-inner tr:last-child td { border-bottom: none; }
+.tl-detail-inner tr:hover td { background: rgba(255,255,255,.028); }
+.tl-unit-serial { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text); }
+.tl-unit-actions { white-space: nowrap; opacity: .45; transition: opacity .15s; }
+tr:hover > td .tl-unit-actions { opacity: 1; }
+body.theme-light tr.tl-detail-row > td { background: #eef3f7; }
+body.theme-light tr.tl-group-row:hover td,
+body.theme-light .tl-detail-inner tr:hover td { background: rgba(15,23,42,.035); }
+
 /* Filter Columns dropdown */
 .tl-colmenu-wrap {
   position: relative;
@@ -6834,6 +6888,10 @@ body.theme-light .autocomplete-dropdown {
               </button>
               <div class="tl-colmenu" id="track-col-menu" style="display:none;"></div>
             </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="track-expand-btn" onclick="toggleAllTrackGroups()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              Expand all
+            </button>
             <button type="button" class="btn btn-ghost btn-sm" id="track-sort-btn" onclick="toggleTrackSort()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
               Sort: Dispatched At (Desc)
@@ -6844,15 +6902,12 @@ body.theme-light .autocomplete-dropdown {
           <table class="data-table" id="track-table">
             <thead>
               <tr>
-                <th class="tl-no-col">No.</th>
                 <th data-tlcol="model">Model &amp; Description</th>
-                <th data-tlcol="serial">Serial Num/Desc</th>
-                <th data-tlcol="dateIn">Date In</th>
-                <th data-tlcol="dateOut">Dispatched At</th>
                 <th data-tlcol="customer">Customer Destination</th>
+                <th data-tlcol="dateOut">Dispatched</th>
                 <th data-tlcol="warranty">Warranty</th>
                 <th data-tlcol="status">Status</th>
-                <th data-tlcol="actions" style="text-align:right;">Actions</th>
+                <th style="text-align:right;">Qty</th>
               </tr>
             </thead>
             <tbody id="track-table-tbody"></tbody>
@@ -7979,6 +8034,7 @@ const DB = {
   trackPage: 0,           // Fulfillment Records Log pagination
   trackPageSize: 25,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
+  trackOpenGroups: new Set(), // expanded fulfillment groups (group keys)
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
 
@@ -11824,6 +11880,61 @@ function trackWarrantyBadge(r) {
   return '<span class="tl-warranty-badge w-none">\u2014</span>';
 }
 
+/* Quiet warranty display: plain text + colored dot via tl-dot-stat. */
+function tlWarrantyText(w) {
+  w = w || { status: 'none', expiry: '', daysRemaining: null };
+  if (w.status === 'active')   return `Active (${w.daysRemaining}d)`;
+  if (w.status === 'expiring') return `Expiring (${w.daysRemaining}d)`;
+  if (w.status === 'expired')  return 'Expired';
+  return '\u2014';
+}
+function tlWarrantyDot(r) {
+  const w = r.warranty || { status: 'none', expiry: '', daysRemaining: null };
+  const cls = w.status === 'active' ? 'd-ok' : w.status === 'expiring' ? 'd-warn'
+            : w.status === 'expired' ? 'd-bad' : 'd-none';
+  const title = w.expiry ? ` title="Warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(w.expiry)}"` : '';
+  return `<span class="tl-dot-stat ${cls}"${title}>${escapeHtml(tlWarrantyText(w))}</span>`;
+}
+
+/* Natural order: "#1, #2 ... #13", not "#1, #10, #11, #2". */
+function naturalCompareSerials(a, b) {
+  return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+/* Group sold units by model + destination + dispatched date + status.
+   Input list is already display-sorted; group order follows it. */
+function buildTrackGroups(list) {
+  const groups = new Map();
+  list.forEach(r => {
+    const key = [r.model || '', r.customer || '', r.dateOut || '', 'Dispatched'].join('|');
+    let g = groups.get(key);
+    if (!g) {
+      g = { key, model: r.model || '', customer: r.customer || '', dateOut: r.dateOut || '', items: [] };
+      groups.set(key, g);
+    }
+    g.items.push(r);
+  });
+  const arr = [...groups.values()];
+  arr.forEach(g => g.items.sort((a, b) => naturalCompareSerials(a.serial, b.serial)));
+  return arr;
+}
+
+function toggleTrackGroup(key) {
+  if (!DB.trackOpenGroups.has(key)) DB.trackOpenGroups.add(key);
+  else DB.trackOpenGroups.delete(key);
+  renderTrackList(DB.trackSearch, true);
+}
+
+function toggleAllTrackGroups() {
+  const groups = buildTrackGroups(getSortedTrackList(getFilteredTrackList()));
+  const allOpen = groups.length > 0 && groups.every(g => DB.trackOpenGroups.has(g.key));
+  groups.forEach(g => {
+    if (allOpen) DB.trackOpenGroups.delete(g.key);
+    else DB.trackOpenGroups.add(g.key);
+  });
+  renderTrackList(DB.trackSearch, true);
+}
+
 function renderTrackTable(list, modelColors) {
   const tbody = document.getElementById('track-table-tbody');
   const table = document.getElementById('track-table');
@@ -11834,24 +11945,23 @@ function renderTrackTable(list, modelColors) {
   }
 
   const sorted = getSortedTrackList(list);
-  // Dispatch groups: batch id, or legacy customer+date — drives the
-  // alternating tint, the hover-preview, and the undo unit count.
-  const grpKey = r => r.batch || ('LEG:' + (r.customer || '') + '|' + (r.dateOut || ''));
-  const grpParity = new Map();
-  const grpCount = new Map();
+  const groups = buildTrackGroups(sorted);
+
+  // Dispatch batch (or legacy customer+date) still drives the undo-button
+  // hover preview and its tooltip unit count.
+  const batchKey = r => r.batch || ('LEG:' + (r.customer || '') + '|' + (r.dateOut || ''));
+  const batchCount = new Map();
   sorted.forEach(r => {
-    const k = grpKey(r);
-    if (!grpParity.has(k)) grpParity.set(k, grpParity.size % 2);
-    grpCount.set(k, (grpCount.get(k) || 0) + 1);
+    const k = batchKey(r);
+    batchCount.set(k, (batchCount.get(k) || 0) + 1);
   });
+
   const size = DB.trackPageSize;
-  const pages = Math.max(1, Math.ceil(sorted.length / size));
+  const pages = Math.max(1, Math.ceil(groups.length / size));
   if (DB.trackPage >= pages) DB.trackPage = pages - 1;
   if (DB.trackPage < 0) DB.trackPage = 0;
-  const pageRows = sorted.slice(DB.trackPage * size, DB.trackPage * size + size);
+  const pageGroups = groups.slice(DB.trackPage * size, DB.trackPage * size + size);
 
-  const boltSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>';
-  const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>';
   const eyeSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
   const undoSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
 
@@ -11859,45 +11969,100 @@ function renderTrackTable(list, modelColors) {
   const ql = q.toLowerCase();
   const dIn = DB.trackDateIn || '';
   const dOut = DB.trackDateOut || '';
+  const open = DB.trackOpenGroups;
 
   tbody.innerHTML = '';
-  if (!pageRows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
+  if (!pageGroups.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
   }
-  pageRows.forEach((r, idx) => {
-    const tr = document.createElement('tr');
-    const mc = modelColors[r.model] || 'var(--green-bright)';
-    const jsSerial = escapeHtml(escapeJs(r.serial));
 
-    const modelHit = q && ((r.model || '').toLowerCase().includes(ql) || resolveItemBrand(r).toLowerCase().includes(ql));
-    const serialHit = q && (r.serial || '').toLowerCase().includes(ql);
-    const custHit = q && (r.customer || '').toLowerCase().includes(ql);
-    const warrHit = q && r.warranty && (r.warranty.status || '').toLowerCase().includes(ql);
-    const inHit = dIn && dateMatchesQ(r.dateIn, dIn);
-    const outHit = dOut && dateMatchesQ(r.dateOut, dOut);
-    if (modelHit || serialHit || custHit || warrHit || inHit || outHit) tr.className = 'tl-row-hit';
-    const bKey = grpKey(r);
-    tr.dataset.batch = bKey;
-    if (grpParity.get(bKey)) tr.classList.add('tl-batch-alt');
+  pageGroups.forEach(g => {
+    const modelHit = q && (g.model.toLowerCase().includes(ql) ||
+      g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
+    const custHit = q && g.customer.toLowerCase().includes(ql);
+    const outHit = dOut && dateMatchesQ(g.dateOut, dOut);
+    const isOpen = open.has(g.key) || !!q;   // searching auto-expands matches
 
-    tr.innerHTML = `
-      <td class="tl-no-col">${DB.trackPage * size + idx + 1}</td>
-      <td data-tlcol="model"><div class="tl-model-cell"><span class="tl-model-icon" style="color:${mc}">${boltSvg}</span><span class="tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(r.model))}')">${modelHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></div></td>
-      <td data-tlcol="serial" class="mono" style="color:var(--green-bright); font-weight:700;"><span class="tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
-      <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${inHit ? markMatchedText(r.dateIn, dIn) : escapeHtml(r.dateIn)}</td>
-      <td data-tlcol="dateOut" class="mono">${outHit ? markMatchedText(r.dateOut, dOut) : escapeHtml(r.dateOut)}</td>
-      <td data-tlcol="customer"><span class="tl-cust-pill"><i class="tl-wdot" style="background:${trackCustomerColor(r.customer)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${custHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
-      <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${trackWarrantyBadge(r)}</span>` : trackWarrantyBadge(r)}</td>
-      <td data-tlcol="status"><span class="tl-status-badge">${checkSvg}Dispatched</span></td>
-      <td data-tlcol="actions" style="text-align:right; white-space:nowrap;"><button type="button" class="tl-eye-btn tl-undo-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${grpCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></td>
+    const gtr = document.createElement('tr');
+    gtr.className = 'tl-group-row' + ((modelHit || custHit || outHit) ? ' tl-row-hit' : '');
+    gtr.dataset.gkey = g.key;
+    gtr.tabIndex = 0;
+    gtr.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+    // Warranty column: the shared value, or "Mixed" when units differ.
+    const warrTexts = [...new Set(g.items.map(r => tlWarrantyText(r.warranty)))];
+    const warrCell = warrTexts.length === 1
+      ? tlWarrantyDot(g.items[0])
+      : '<span class="tl-dot-stat d-warn">Mixed</span>';
+
+    gtr.innerHTML = `
+      <td data-tlcol="model"><span class="tl-chev">&#9654;</span><span class="tl-group-model tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></td>
+      <td data-tlcol="customer"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(g.customer))}')">${custHit ? markMatchedText(g.customer, q) : escapeHtml(g.customer || '—')}</span></td>
+      <td data-tlcol="dateOut" class="mono">${outHit ? markMatchedText(g.dateOut, dOut) : escapeHtml(g.dateOut)}</td>
+      <td data-tlcol="warranty">${warrCell}</td>
+      <td data-tlcol="status"><span class="tl-dot-stat d-info">Dispatched</span></td>
+      <td style="text-align:right;"><span class="tl-qty-pill">${g.items.length}</span></td>
     `;
-    tbody.appendChild(tr);
+    tbody.appendChild(gtr);
+
+    if (!isOpen) return;
+
+    const dtr = document.createElement('tr');
+    dtr.className = 'tl-detail-row';
+    const dtd = document.createElement('td');
+    dtd.colSpan = 6;
+    const unitRows = g.items.map((r, i) => {
+      const jsSerial = escapeHtml(escapeJs(r.serial));
+      const serialHit = q && (r.serial || '').toLowerCase().includes(ql);
+      const warrHit = q && r.warranty && (r.warranty.status || '').toLowerCase().includes(ql);
+      const inHit = dIn && dateMatchesQ(r.dateIn, dIn);
+      const bKey = batchKey(r);
+      return `<tr data-batch="${escapeHtml(bKey)}">
+        <td class="mono" style="color:var(--text-muted); width:34px;">${i + 1}</td>
+        <td data-tlcol="serial"><span class="tl-unit-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
+        <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${inHit ? markMatchedText(r.dateIn, dIn) : escapeHtml(r.dateIn)}</td>
+        <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${tlWarrantyDot(r)}</span>` : tlWarrantyDot(r)}</td>
+        <td data-tlcol="actions" style="text-align:right;"><span class="tl-unit-actions"><button type="button" class="tl-eye-btn tl-undo-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${batchCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></span></td>
+      </tr>`;
+    }).join('');
+    dtd.innerHTML = `<div class="tl-detail-inner"><table>
+      <thead><tr><th style="width:34px;">#</th><th data-tlcol="serial">Serial / Description</th><th data-tlcol="dateIn">Date In</th><th data-tlcol="warranty">Warranty</th><th data-tlcol="actions" style="text-align:right;">Actions</th></tr></thead>
+      <tbody>${unitRows}</tbody></table></div>`;
+    dtr.appendChild(dtd);
+    tbody.appendChild(dtr);
   });
 
-  const sb = document.getElementById('track-showing-badge');
-  if (sb) sb.textContent = `Showing ${pageRows.length} of ${list.length}`;
+  // Group toggle: click or Enter/Space on a focused row. Clicks on
+  // copyable text or buttons inside the row don't toggle.
+  if (!tbody._tlDelegated) {
+    tbody._tlDelegated = true;
+    tbody.addEventListener('click', e => {
+      const gtr = e.target.closest('tr.tl-group-row');
+      if (!gtr) return;
+      if (e.target.closest('.tl-copy, button, a, input, select')) return;
+      toggleTrackGroup(gtr.dataset.gkey);
+    });
+    tbody.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const gtr = e.target;
+      if (!gtr.matches || !gtr.matches('tr.tl-group-row')) return;
+      e.preventDefault();
+      toggleTrackGroup(gtr.dataset.gkey);
+    });
+  }
 
-  renderTrackPagination(sorted.length, pages);
+  const sb = document.getElementById('track-showing-badge');
+  if (sb) sb.textContent = `${groups.length} groups · ${sorted.length} units`;
+
+  const eb = document.getElementById('track-expand-btn');
+  if (eb) {
+    const allOpen = groups.length > 0 && groups.every(g => open.has(g.key));
+    eb.childNodes.forEach(n => {
+      if (n.nodeType === 3 && n.textContent.trim()) n.textContent = allOpen ? ' Collapse all' : ' Expand all';
+    });
+  }
+
+  renderTrackPagination(groups.length, pages);
 }
 
 function renderTrackPagination(total, pages) {
