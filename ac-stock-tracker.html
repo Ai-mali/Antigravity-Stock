@@ -12164,7 +12164,7 @@ function exportAvailCsv() {
   const dq = DB.availDateFilter || '';
   const brands = DB.availFilter === 'ALL' ? Object.keys(DB.inventory)
                                           : [DB.availFilter].filter(b => DB.inventory[b]);
-  let csv = 'BRAND,MODEL,SERIAL NUM/DESC,DATE IN,CONDITION\n';
+  let csv = 'NO,BRAND,MODEL,SERIAL NUM/DESC,DATE IN,CONDITION\n';
   let rows = 0;
   brands.forEach(brandKey => {
     const bData = DB.inventory[brandKey];
@@ -12185,7 +12185,7 @@ function exportAvailCsv() {
       if ((q && !brandMatch || dq) && serials.length === 0) continue;
       serials.forEach(s => {
         const u = (mData.units && mData.units[s]) || {};
-        csv += [brandKey, mKey, s, u.dateIn || mData.dateIn || '',
+        csv += [rows + 1, brandKey, mKey, s, u.dateIn || mData.dateIn || '',
                 u.secondHand ? '2nd Hand' : 'New'].map(csvCell).join(',') + '\n';
         rows++;
       });
@@ -12199,10 +12199,10 @@ function exportTrackCsv() {
   // Export the same filtered + sorted view shown on screen
   const list = getSortedTrackList(getFilteredTrackList());
   if (!list.length) { showToast('Nothing to export'); return; }
-  let csv = 'MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
-  list.forEach(r => {
+  let csv = 'NO,MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
+  list.forEach((r, i) => {
     const w = r.warranty || { status: '', expiry: '' };
-    csv += [r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(csvCell).join(',') + '\n';
+    csv += [i + 1, r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(csvCell).join(',') + '\n';
   });
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'sell_record_export.csv');
 }
@@ -12593,8 +12593,8 @@ function exportReturnDetail() {
   const w = r.warranty || {};
   const wTxt = w.status && w.status !== 'none'
     ? `${w.status} (expires ${w.expiry}, ${w.daysRemaining}d left)` : 'none';
-  const csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
-    + [r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
+  const csv = 'NO,SERIAL/DESC,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
+    + [1, r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
         .map(csvCell).join(',') + '\n';
   const fname = `return_${String(r.serial || 'record').replace(/[^\w-]+/g, '_')}.csv`;
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), fname);
@@ -12774,9 +12774,9 @@ function exportReturnsCsv() {
   // Newest returns first (dates may be MM/DD/YYYY or ISO — parse them)
   const dval = s => { const d = parseDateAny(s); return d ? d.getTime() : 0; };
   const list = [...DB.returns].sort((a, b) => dval(b.date) - dval(a.date));
-  let csv = 'SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
-  list.forEach(r => {
-    csv += [r.serial, r.model, r.customer, r.dateOut || '', r.date, r.reason, r.notes, r.action].map(csvCell).join(',') + '\n';
+  let csv = 'NO,SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
+  list.forEach((r, i) => {
+    csv += [i + 1, r.serial, r.model, r.customer, r.dateOut || '', r.date, r.reason, r.notes, r.action].map(csvCell).join(',') + '\n';
   });
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'returns_registry_export.csv');
 }
@@ -13443,8 +13443,8 @@ function renderActivityTable() {
 function exportActivityCsv() {
   const list = getFilteredActivities();
   if (!list.length) { showToast('Nothing to export'); return; }
-  const csv = 'TIMESTAMP,ACTION,MODEL,UNITS,DETAILS,STATUS\n'
-    + list.map(a => [a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(csvCell).join(',')).join('\n') + '\n';
+  const csv = 'NO,TIMESTAMP,ACTION,MODEL,UNITS,DETAILS,STATUS\n'
+    + list.map((a, i) => [i + 1, a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(csvCell).join(',')).join('\n') + '\n';
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'activity_audit.csv');
 }
 
