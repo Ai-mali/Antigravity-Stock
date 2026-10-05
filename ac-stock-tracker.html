@@ -8041,12 +8041,32 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div>
           <h3 class="modal-title" style="font-size:18px;">Reschedule Booking</h3>
-          <div class="modal-subtitle" id="reschedule-info">—</div>
+          <div class="modal-subtitle">Move the whole booking to a new delivery date</div>
         </div>
       </div>
       <button class="btn-circle" onclick="closeReschedule()" title="Close">&#10005;</button>
     </div>
     <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
+      <div class="undo-summary" style="grid-template-columns:1.15fr 1fr .95fr; margin-bottom:14px;">
+        <div class="undo-sum-cell">
+          <span class="rma-detail-label">Model</span>
+          <div id="rs-model" style="font-size:14px; font-weight:800; margin-top:5px; letter-spacing:.01em;">—</div>
+        </div>
+        <div class="undo-sum-cell">
+          <span class="rma-detail-label">Customer</span>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:7px;">
+            <div class="undo-avatar" id="rs-avatar">?</div>
+            <div id="rs-customer" style="font-size:13px; font-weight:700; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
+          </div>
+        </div>
+        <div class="undo-sum-cell">
+          <span class="rma-detail-label">Qty · Delivers</span>
+          <div style="display:flex; align-items:baseline; gap:6px; margin-top:6px;">
+            <span class="mono" id="rs-qty" style="font-size:19px; font-weight:800; color:#f59e0b;">0</span>
+            <span class="mono" id="rs-date" style="font-size:11px; color:var(--text-sub); font-weight:600;">—</span>
+          </div>
+        </div>
+      </div>
       <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">New Delivery Date</label>
       <div class="custom-datepicker" id="reschedule-date-picker" style="width:100%;">
         <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('reschedule-date-picker', event)" style="width:100%; justify-content:space-between; padding:8px 12px; font-size:12.5px;">
@@ -12175,8 +12195,20 @@ function openRescheduleModal(gi) {
   };
   const d = parseDateAny(g.dateOut);
   initDatePicker('reschedule-date-picker', d ? formatDateISO(d) : formatDateISO(new Date()));
-  const info = document.getElementById('reschedule-info');
-  if (info) info.textContent = `${g.model} · ${g.customer || '—'} · ${g.items.length} unit(s) · currently ${g.dateOut}`;
+  const cust = g.customer || '—';
+  const cc = trackCustomerColor(g.customer);
+  const av = document.getElementById('rs-avatar');
+  if (av) {
+    av.textContent = cust.split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+    av.style.background = cc + '29';   // customer color at ~16% alpha
+    av.style.borderColor = cc;
+    av.style.color = cc;
+  }
+  document.getElementById('rs-model').textContent = g.model;
+  document.getElementById('rs-customer').textContent = cust;
+  document.getElementById('rs-qty').textContent = g.items.length;
+  const rd = document.getElementById('rs-date');
+  if (rd) rd.textContent = d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : (g.dateOut || '—');
   document.getElementById('reschedule-modal').classList.add('open');
 }
 
