@@ -728,17 +728,24 @@ class StockStore:
         generated, so a real serial like 'SN #5001' can't be silently
         renamed."""
         seen, dupes, new_serials = set(), [], []
+        active = None  # lazy: serials of units not yet sold (incl. quarantined)
         for raw_s in serials:
             s = str(raw_s).strip()
             if auto_ids and " #" in s:
                 # Auto-increment synthetic non-serial part IDs until unique
+                # among CURRENT stock — '#N' is a position label, so sold
+                # numbers are free to reuse once they're dispatched.
+                if active is None:
+                    active = {str(r["Serial"]).strip().lower()
+                              for r in self.records
+                              if str(r["Status"]).strip() != SOLD}
                 prefix, num_str = s.rsplit(" #", 1)
                 try:
                     num = int(num_str)
                 except ValueError:
                     num = 1
                 cand = f"{prefix} #{num}"
-                while cand.lower() in seen or cand.lower() in self._serial_set:
+                while cand.lower() in seen or cand.lower() in active:
                     num += 1
                     cand = f"{prefix} #{num}"
                 new_serials.append(cand)
@@ -751,6 +758,27 @@ class StockStore:
                 new_serials.append(s)
             seen.add(s.lower())
         return dupes, new_serials
+
+    def _compact_synthetic_ids(self, model: str):
+        """Renumber the model's in-stock '… #N' synthetic serials to 1..N.
+        Non-serial parts are counted by position — after units leave
+        (dispatch, delete) or come back (undo, restock), the labels should
+        read #1, #2, … with no gaps. Call before save() in the caller."""
+        canon = str(model).strip().upper()
+        rows = [r for r in self.records
+                if str(r["Status"]).strip() == IN_STOCK
+                and str(r["Model"]).strip().upper() == canon
+                and " #" in str(r["Serial"])]
+        # Record order = insertion order, so renumbering in place also
+        # keeps the UI chips reading #1, #2, #3 … left to right.
+        for i, rec in enumerate(rows, 1):
+            s = str(rec["Serial"]).strip()
+            new_s = f"{s.rsplit(' #', 1)[0]} #{i}"
+            if s == new_s:
+                continue
+            rec["Serial"] = new_s
+            self.recs.cell(row=rec["_row"], column=3, value=new_s)
+            self._serial_set.add(new_s.lower())
 
     def _write_rows(self, model, brand, serials, date_in, save=True):
         self._model_canon.setdefault(model.strip().upper(), model.strip())
@@ -842,6 +870,8 @@ class StockStore:
             self.recs.cell(row=row, column=8, value=batch)
             done.append(str(rec["Serial"]))
         if done:
+            for m in models_sold:
+                self._compact_synthetic_ids(m)
             model_summary = ", ".join(sorted(models_sold))
             self.log_activity("Stock Out", model=model_summary, count=len(done),
                               details=f"Customer: {customer} | Batch: {batch} | {len(done)} units sold | Serials: {', '.join(done)}")
@@ -880,6 +910,8 @@ class StockStore:
             done.append(str(rec["Serial"]))
             models.add(str(rec["Model"]))
             self._ensure_brand(rec.get("Brand", ""))
+        for m in models:
+            self._compact_synthetic_ids(m)
         self.log_activity("Sale Reverted", model=", ".join(sorted(models)),
                           count=len(done),
                           details=f"Customer: {customer} | Batch: {batch or 'legacy'} | {len(done)} units restored to stock | Serials: {', '.join(done)}")
@@ -919,6 +951,7 @@ class StockStore:
             self.recs.cell(row=row, column=6, value="")
             self.recs.cell(row=row, column=7, value="")
             self._ensure_brand(rec.get("Brand", ""))
+            self._compact_synthetic_ids(str(rec["Model"]))
         else:
             rec["Status"] = QUARANTINED
             self.recs.cell(row=row, column=5, value=QUARANTINED)
@@ -967,6 +1000,7 @@ class StockStore:
         rec["Batch"] = ""
         self.recs.cell(row=row, column=8, value="")
         self._ensure_brand(rec.get("Brand", ""))
+        self._compact_synthetic_ids(str(rec["Model"]))
         # Resolve the latest open quarantine in the returns registry
         ret = next((r for r in reversed(self.returns)
                     if str(r["Serial"]).strip().lower() == key
@@ -1069,6 +1103,7 @@ class StockStore:
             if r.get("_row", 0) > row:
                 r["_row"] -= 1
 
+        self._compact_synthetic_ids(str(rec.get("Model", "")))
         self.log_activity("Unit Deleted", model=str(rec.get("Model", "")), count=1,
                           details=f"Deleted Serial: {rec.get('Serial', '')} | Model: {rec.get('Model', '')} | Brand: {rec.get('Brand', '')}")
         self.save(backup=True)
@@ -1099,6 +1134,8 @@ class StockStore:
             r["_row"] = i
         models = sorted({str(r.get("Model", "")) for r in targets})
         deleted = [str(r["Serial"]) for r in targets]
+        for m in models:
+            self._compact_synthetic_ids(m)
         self.log_activity("Units Deleted", model=", ".join(models[:6]),
                           count=len(deleted),
                           details=f"{len(deleted)} units deleted | Serials: {', '.join(deleted)}")
