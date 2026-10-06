@@ -246,5 +246,92 @@ check('same day, new time',
 check('earlier day wording',
   rsChangeLine(orig, { date: '2026-10-06', time: '07:00' }, '2026-10-05').msg.includes('1 day earlier'));
 
-console.log(`\n${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+/* ================= Sell Record export: sale keys, filenames, job split ================= */
+eval(extractFn('getSortedTrackList'));
+eval(extractFn('tlSaleKey'));
+eval(extractFn('tlSaleStamp'));
+eval(extractFn('tlFileSafe'));
+eval('async ' + extractFn('exportTrackSales'));
+
+check('sale key: batch passthrough',
+  tlSaleKey(rec('M', 'S', 'C', PAST, null, null, 'SALE-20261009-150723-ab12')) === 'SALE-20261009-150723-ab12');
+check('sale key: legacy fallback customer|date',
+  tlSaleKey({ model: 'M', serial: 'S', customer: 'Neath', dateOut: '2026-10-09' }) === 'LEG:Neath|2026-10-09');
+
+const stampRec = rec('M', 'S', 'Neath', '2026-10-09 15:07', null, null, 'SALE-20261009-150723-ab12');
+check('sale stamp: customer-date-time',
+  tlSaleStamp(stampRec) === 'Neath-Oct 9, 2026 15_07');
+check('sale stamp: legacy row has no time',
+  tlSaleStamp({ customer: 'Neath', dateOut: '2026-10-09' }) === 'Neath-Oct 9, 2026');
+check('filesafe: strips invalid chars, keeps - , _',
+  tlFileSafe('Ne/ath: <Oct> 9, 2026 15_07?*') === 'Neath Oct 9, 2026 15_07');
+check('filesafe: empty -> sell_record', tlFileSafe('<>') === 'sell_record');
+
+/* Stubs so the real exportTrackSales can run headless. */
+let __fetchJobs = [], __saves = [], __toasts = [];
+var DB = { trackSelBatches: new Set(), trackList: [], trackSortDir: 'desc' };
+function getFilteredTrackList() { return DB.__filtered || []; }
+async function fetch(url, opts) {
+  __fetchJobs.push({ url, body: JSON.parse(opts.body) });
+  return { ok: true, blob: async () => ({ fake: true }) };
+}
+async function saveBlobWithPicker(blob, filename) { __saves.push(filename); return true; }
+function showToast(msg) { __toasts.push(msg); }
+function updateTrackSelBadge() {}
+function renderTrackList() {}
+function syncTrackSearchInputs() {}
+
+const bA = 'SALE-20261009-150723-aa11';
+const bB = 'SALE-20261009-161500-bb22';
+DB.trackList = [
+  rec('MODELA', 'A-1', 'Neath', '2026-10-09 15:07', null, null, bA),
+  rec('MODELB', 'B-1', 'Neath', '2026-10-09 15:07', null, null, bA),   // same checkout, 2nd model
+  rec('MODELC', 'C-1', 'GCNP',  '2026-10-09 16:15', null, null, bB),
+];
+
+(async () => {
+  /* one ticked multi-model sale -> one job containing both models */
+  DB.trackSelBatches = new Set([bA]);
+  __fetchJobs = []; __saves = [];
+  await exportTrackSales();
+  check('one ticked sale -> one workbook job', __fetchJobs.length === 1);
+  check('ticked job keeps all models of the checkout',
+    __fetchJobs.length === 1 && __fetchJobs[0].body.rows.length === 2
+    && new Set(__fetchJobs[0].body.rows.map(r => r.model)).size === 2);
+  check('ticked save filename follows stamp',
+    __saves.length === 1 && __saves[0] === 'Neath-Oct 9, 2026 15_07.xlsx');
+
+  /* two ticked sales -> two jobs, two files */
+  DB.trackSelBatches = new Set([bA, bB]);
+  __fetchJobs = []; __saves = [];
+  await exportTrackSales();
+  check('two ticked sales -> two workbook jobs', __fetchJobs.length === 2 && __saves.length === 2);
+  check('second sale file uses its own stamp',
+    __saves.includes('GCNP-Oct 9, 2026 16_15.xlsx'));
+
+  /* no selection -> single merged job from the filtered view */
+  DB.trackSelBatches = new Set();
+  DB.__filtered = DB.trackList;
+  __fetchJobs = []; __saves = []; __toasts = [];
+  await exportTrackSales();
+  check('no selection -> one merged job', __fetchJobs.length === 1 && __saves.length === 1);
+  check('merged job has all filtered rows', __fetchJobs[0].body.rows.length === 3);
+  check('merged filename is dated export name', /^VRE-Sell Record-\d{2}-\d{2}-\d{2}\.xlsx$/.test(__saves[0]));
+
+  /* empty filtered view -> toast, no export */
+  DB.__filtered = [];
+  __fetchJobs = []; __saves = []; __toasts = [];
+  await exportTrackSales();
+  check('empty view -> nothing exported', __fetchJobs.length === 0 && __toasts.includes('Nothing to export'));
+
+  /* stale ticked key -> toast, no export */
+  DB.trackSelBatches = new Set(['SALE-NOPE']);
+  __fetchJobs = []; __toasts = [];
+  await exportTrackSales();
+  check('stale tick -> nothing exported',
+    __fetchJobs.length === 0 && __toasts.includes('No ticked sales found in the records'));
+  DB.trackSelBatches = new Set();
+
+  console.log(`\n${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+})();

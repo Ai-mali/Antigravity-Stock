@@ -344,6 +344,69 @@ def export_available_workbook():
         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
 
+class SalesExportBody(BaseModel):
+    title: str = "Sell Records"
+    filename: str = "sell_records_export"
+    rows: list[dict] = []
+
+
+@app.post("/api/export/sales")
+def export_sales_workbook(body: SalesExportBody):
+    """Sell-record workbook. The frontend sends one job per ticked sale
+    (filename '<Customer>-<Mon D, YYYY> <HH_MM>') or a single merged job
+    when nothing is ticked."""
+    import io, re
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sell Record"
+    ws.sheet_view.zoomScale = 85
+
+    title_fill = PatternFill("solid", fgColor="00B0F0")
+    thin = Side(style="thin", color="9E9E9E")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    headers = ["NO.", "Model", "Serial Num/Desc", "Date In", "Dispatched At",
+               "Customer Destination", "Warranty Status", "Warranty Expiry", "Status"]
+    ws.merge_cells("A1:I1")
+    t = ws["A1"]
+    t.value = str(body.title or "Sell Records")[:80]
+    t.font = Font(bold=True, size=14)
+    t.fill = title_fill
+    t.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 24
+
+    for c, h in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=c, value=h)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = border
+    ws.auto_filter.ref = "A2:I2"
+    ws.freeze_panes = "A3"
+
+    for i, row in enumerate(body.rows, 1):
+        vals = [i,
+                row.get("model", ""), row.get("serial", ""),
+                row.get("dateIn", ""), row.get("dateOut", ""),
+                row.get("customer", ""), row.get("wstatus", ""),
+                row.get("wexpiry", ""), row.get("status", "Dispatched")]
+        for c, v in enumerate(vals, 1):
+            ws.cell(row=i + 2, column=c, value=v).border = border
+
+    for col, w in zip("ABCDEFGHI", (7, 24, 22, 14, 18, 24, 16, 16, 12)):
+        ws.column_dimensions[col].width = w
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    fname = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", body.filename).strip() or "sell_records_export"
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{fname}.xlsx"'})
+
+
 # ------------------------------------------------------------------ stock
 class StockInBody(BaseModel):
     model: str = Field(min_length=1)

@@ -7124,17 +7124,13 @@ body.theme-light .autocomplete-dropdown {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
             <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="printTrackLabels()" title="Print serial labels">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12-3h12v5H6z"></path></svg>
-            Print Labels
-          </button>
           <span class="tl-sel-pill" id="track-sel-pill" style="display:none;" title="These sales are ticked for export">
             <span id="track-sel-count">0 selected</span>
             <button type="button" class="tl-sel-clear" onclick="clearTrackSel()" title="Clear selection" aria-label="Clear sale selection">&times;</button>
           </span>
-          <button class="btn btn-ghost btn-sm" id="track-export-btn" onclick="exportTrackCsv()" title="Export the ticked sales — or the whole filtered list when nothing is ticked">
+          <button class="btn btn-ghost btn-sm" id="track-export-btn" onclick="exportTrackSales()" title="Export the ticked sales — or the whole filtered list when nothing is ticked">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            <span id="track-export-label">Export CSV</span>
+            <span id="track-export-label">Export Excel</span>
           </button>
         </div>
       </div>
@@ -8386,7 +8382,7 @@ body.theme-light .autocomplete-dropdown {
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
-<!-- Print-only serial label sheet (populated by printTrackLabels) -->
+<!-- Print-only label sheet (populated by the Return/RMA tag printers) -->
 <div id="tl-print-sheet"></div>
 
 <script>
@@ -13061,26 +13057,6 @@ function viewReturnHistory(serial) {
   }, 150);
 }
 
-/* ---- Print serial labels for the current filtered view ---- */
-function printTrackLabels() {
-  const rows = getFilteredTrackList();
-  if (!rows.length) {
-    showToast('No records to print.');
-    return;
-  }
-  const sheet = document.getElementById('tl-print-sheet');
-  if (!sheet) return;
-  sheet.innerHTML = rows.map(r => `
-    <div class="tl-print-label">
-      <div class="pl-serial">${escapeHtml(r.serial)}</div>
-      <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.customer)} &middot; ${escapeHtml(r.dateOut)}</div>
-    </div>`).join('');
-  showToast(`Printing ${rows.length} label${rows.length === 1 ? '' : 's'}\u2026`);
-  setTimeout(() => window.print(), 60);
-}
-
-
-
 /* ---- Track List sidebar: customers list + warranty list (tabbed) ---- */
 function trackCustomerInitials(name) {
   const parts = String(name || '?').trim().split(/\s+/);
@@ -13226,27 +13202,69 @@ function updateTrackSelBadge() {
   const lbl = document.getElementById('track-export-label');
   if (pill) pill.style.display = n ? 'inline-flex' : 'none';
   if (cnt) cnt.textContent = `${n} selected`;
-  if (lbl) lbl.textContent = n ? `Export ${n} sale${n === 1 ? '' : 's'}` : 'Export CSV';
+  if (lbl) lbl.textContent = n ? `Export ${n} sale${n === 1 ? '' : 's'}` : 'Export Excel';
 }
 
-function exportTrackCsv() {
+/* Per-sale filename stamp: '<Customer>-<Mon D, YYYY> <HH_MM>' —
+   dispatch date + the checkout time packed in the batch id. */
+function tlSaleStamp(r) {
+  const d = parseDateAny(r.dateOut);
+  const dateStr = d ? `${TL_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : String(r.dateOut || 'nodate');
+  const m = (r.batch || '').match(/SALE-\d{8}-(\d{2})(\d{2})(\d{2})-/);
+  return `${r.customer || 'Sale'}-${dateStr}${m ? ` ${m[1]}_${m[2]}` : ''}`;
+}
+function tlFileSafe(s) {
+  return String(s || '').replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, ' ').trim() || 'sell_record';
+}
+
+/* One Excel file per ticked sale; one merged file when nothing is ticked. */
+async function exportTrackSales() {
   const sel = DB.trackSelBatches;
-  // With a ticked selection, export those whole sales (all their units,
-  // regardless of the on-screen filters). Otherwise the filtered view.
-  const list = sel.size
-    ? getSortedTrackList(DB.trackList.filter(r => sel.has(tlSaleKey(r))))
-    : getSortedTrackList(getFilteredTrackList());
-  if (!list.length) {
-    showToast(sel.size ? 'No ticked sales found in the records' : 'Nothing to export');
-    return;
-  }
-  let csv = 'NO,MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
-  list.forEach((r, i) => {
-    const w = r.warranty || { status: '', expiry: '' };
-    csv += [i + 1, r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(csvCell).join(',') + '\n';
+  const rowOf = r => ({
+    model: r.model, serial: r.serial, dateIn: r.dateIn, dateOut: r.dateOut,
+    customer: r.customer,
+    wstatus: (r.warranty || {}).status || '',
+    wexpiry: (r.warranty || {}).expiry || '',
+    status: 'Dispatched',
   });
-  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }),
-    sel.size ? 'sell_record_selected.csv' : 'sell_record_export.csv');
+  const jobs = [];
+  if (sel.size) {
+    const byBatch = new Map();
+    DB.trackList.forEach(r => {
+      const k = tlSaleKey(r);
+      if (sel.has(k)) (byBatch.get(k) || byBatch.set(k, []).get(k)).push(r);
+    });
+    for (const recs of byBatch.values()) {
+      const sorted = getSortedTrackList(recs);
+      const stamp = tlSaleStamp(sorted[0]);
+      jobs.push({ title: `SALE-${stamp}`, filename: stamp, rows: sorted.map(rowOf) });
+    }
+    if (!jobs.length) { showToast('No ticked sales found in the records'); return; }
+  } else {
+    const list = getSortedTrackList(getFilteredTrackList());
+    if (!list.length) { showToast('Nothing to export'); return; }
+    const n = new Date(), p = v => String(v).padStart(2, '0');
+    jobs.push({ title: 'Sell Records', rows: list.map(rowOf),
+      filename: `VRE-Sell Record-${p(n.getDate())}-${p(n.getMonth() + 1)}-${String(n.getFullYear()).slice(2)}` });
+  }
+  const seen = {};
+  for (const job of jobs) {
+    const base = tlFileSafe(job.filename);
+    const n = (seen[base] = (seen[base] || 0) + 1);
+    const fname = n > 1 ? `${base}_${n}` : base;
+    try {
+      const res = await fetch('/api/export/sales', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(job),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      await saveBlobWithPicker(await res.blob(), fname + '.xlsx');
+    } catch (e) {
+      showToast('Export failed: ' + e.message);
+      return;
+    }
+  }
+  if (jobs.length > 1) showToast(`${jobs.length} sale files generated.`);
 }
 
 /* =========================================================
