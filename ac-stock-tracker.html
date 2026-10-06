@@ -12307,9 +12307,12 @@ function renderTrackTable(list, modelColors) {
   /* One checkout that spans several models renders as adjacent groups inside
      a bordered batch block with a small header — one box per sale. */
   const linkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>';
-  const shortBatch = b => {
-    const m = (b || '').match(/SALE-\d{8}-\d{6}-(\w+)/);
-    return m ? `SALE-\u2026${m[1]}` : 'Linked sale';
+  /* Batch label: SALE-<customer>-<dispatch date>-<checkout time>, parsed
+     out of the batch id (SALE-YYYYMMDD-HHMMSS-xxxx). */
+  const batchLabel = (b, customer, dateOut) => {
+    const m = (b || '').match(/SALE-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-(\w+)/);
+    if (!m) return 'Linked sale';
+    return `SALE-${customer || '\u2014'}-${tlFmtDate(dateOut)}-${m[4]}:${m[5]}`;
   };
   const blocks = [];
   pageGroups.forEach(g => {
@@ -12338,7 +12341,7 @@ function renderTrackTable(list, modelColors) {
   grid.innerHTML = pageGroups.length ? headHTML + blocks.map(blk => {
     if (blk.groups.length === 1) return groupHTML(blk.groups[0]);
     const units = blk.groups.reduce((n, g) => n + g.items.length, 0);
-    return `<div class="tl-batch-block"><div class="tl-batch-head">${linkSvg}<span class="tl-batch-id">${escapeHtml(shortBatch(blk.batch))}</span><span class="tl-batch-meta">${units} units \u00b7 ${blk.groups.length} models \u2014 one checkout</span></div>${blk.groups.map(groupHTML).join('')}</div>`;
+    return `<div class="tl-batch-block"><div class="tl-batch-head">${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${units} units \u00b7 ${blk.groups.length} models \u2014 one checkout</span></div>${blk.groups.map(groupHTML).join('')}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
 
   /* Clicking anywhere on a parent row toggles it — except copyable text and
