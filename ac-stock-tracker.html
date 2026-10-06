@@ -6263,23 +6263,6 @@ body.theme-light .badge-blue {
   color: #2563eb;
 }
 
-/* Low Stock Alert Banner */
-.low-stock-banner {
-  background: rgba(217, 119, 6, 0.1);
-  border: 1px solid rgba(217, 119, 6, 0.28);
-  border-radius: 8px;
-  padding: 10px 16px;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-body.theme-light .low-stock-banner {
-  background: rgba(217, 119, 6, 0.08);
-  border-color: rgba(217, 119, 6, 0.25);
-}
-
 /* Autocomplete Dropdown */
 .autocomplete-wrap {
   position: relative;
@@ -11025,25 +11008,6 @@ function renderAvailable(searchTerm) {
   if (secBtn) {
     secBtn.classList.toggle('on', DB.avail2ndFilter);
     document.getElementById('avail-2nd-count').textContent = secondHandCount;
-  }
-
-  if (lowStockModels.length > 0 && !q) {
-    const banner = document.createElement('div');
-    banner.className = 'low-stock-banner';
-    banner.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:18px;">⚠️</span>
-        <div>
-          <div style="font-weight:700; color:#f59e0b; font-size:12.5px;">
-            Low Stock Notice &middot; ${lowStockModels.length} Model${lowStockModels.length > 1 ? 's' : ''} have &le; 3 units remaining
-          </div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-            ${DB.lowStockFilter ? 'Showing low-stock models only — toggle the LOW STOCK pill to see all.' : 'Consider reordering or restocking soon to prevent order delays.'}
-          </div>
-        </div>
-      </div>
-    `;
-    container.appendChild(banner);
   }
 
   let totalRenderedBrands = 0;
