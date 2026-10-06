@@ -3682,6 +3682,26 @@ body.theme-light .unit-action-btn {
   color: var(--brand-c, var(--green-bright));
 }
 
+/* "N SELECTED" pill on a model header when some of its serials are
+   staged in the dispatch cart */
+.so-sel-pill {
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  border-radius: 99px;
+  background: rgba(38, 208, 124, 0.14);
+  color: var(--green-bright);
+  border: 1px solid rgba(38, 208, 124, 0.4);
+  white-space: nowrap;
+}
+body.theme-light .so-sel-pill {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
 /* Dispatch Staging Cart Card */
 .cart-card-item {
   display: flex;
@@ -11523,6 +11543,7 @@ function renderStockOut(searchTerm) {
         `;
       }).join('');
 
+      const selCount = serials.filter(isSerialInCart).length;
       const soCount = serials.length;
       let soBadgeClass = 'badge-green';
       let soBadgeText = `${soCount} In Stock`;
@@ -11544,6 +11565,7 @@ function renderStockOut(searchTerm) {
             <div style="display:flex; align-items:center;">
               <span class="model-index-pill">${mData.idx || '01'}</span>
               <span class="tl-copy" style="font-weight:700; font-size:12.5px;" onclick="event.stopPropagation(); copySerial('${escapeHtml(escapeJs(mKey))}')" title="Click to copy model">${modelNameMatch ? markMatchedText(mKey, q) : escapeHtml(mKey)}</span>
+              ${selCount ? `<span class="so-sel-pill">${selCount} SELECTED</span>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${soBadgeClass}">${soBadgeText}</span>
