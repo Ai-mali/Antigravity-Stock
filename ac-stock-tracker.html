@@ -4520,29 +4520,38 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
 .rs-field-label { margin-bottom: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 .rs-trigger { width: 100%; height: 40px; justify-content: flex-start; padding: 0 12px; font-size: 12.5px; }
 .rs-trigger .dp-icon-chevron { margin-left: auto; }
-/* Time field: styled 24h display over an invisible native time input,
-   so the value always reads "07:00" regardless of OS locale. */
-.rs-time-wrap {
-  position: relative; height: 40px; display: flex; align-items: center;
+/* Time field: styled 24h display with a custom hour/minute popover —
+   the native time wheel is 12h by locale and can't be forced to 24h. */
+.rs-time-wrap { position: relative; }
+.rs-time-btn {
+  width: 100%; height: 40px; display: flex; align-items: center;
   justify-content: space-between; gap: 6px; padding: 0 12px;
   background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 7px; transition: all .15s;
+  border-radius: 7px; transition: all .15s; cursor: pointer; font-family: inherit;
 }
-.rs-time-wrap:hover { border-color: #f59e0b; }
-.rs-time-wrap:focus-within { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .2); }
+.rs-time-btn:hover { border-color: #f59e0b; }
+.rs-time-wrap:focus-within .rs-time-btn { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .2); }
 .rs-time-text {
   font-size: 12.5px; font-weight: 600; color: var(--text);
   font-family: 'JetBrains Mono', monospace; letter-spacing: .02em;
-  pointer-events: none;
 }
-.rs-time-icon { color: var(--text-sub); flex: none; pointer-events: none; }
-.rs-ghost {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0;
+.rs-time-icon { color: var(--text-sub); flex: none; }
+.rs-time-pop {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 120;
+  display: none; gap: 6px; padding: 8px;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 10px; box-shadow: 0 16px 36px rgba(0, 0, 0, .5);
+  backdrop-filter: blur(12px);
 }
-.rs-ghost::-webkit-calendar-picker-indicator {
-  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+.rs-time-wrap.open .rs-time-pop { display: flex; }
+.rs-time-col { max-height: 172px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; min-width: 52px; }
+.rs-time-opt {
+  padding: 5px 10px; border: none; border-radius: 6px; background: transparent;
+  color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  font-weight: 600; cursor: pointer; text-align: center; transition: all .1s;
 }
+.rs-time-opt:hover { background: rgba(245, 158, 11, .14); color: #f59e0b; }
+.rs-time-opt.sel { background: #f59e0b; color: #111; }
 .rs-pill {
   display: inline-flex; align-items: center; padding: 1.5px 7px;
   border-radius: 999px; font-size: 9.5px; font-weight: 700;
@@ -8310,11 +8319,14 @@ body.theme-light .autocomplete-dropdown {
           </div>
         </div>
         <div class="rs-field-time">
-          <label class="form-label rs-field-label" for="rs-time">Time</label>
-          <div class="rs-time-wrap">
-            <span class="rs-time-text" id="rs-time-text">07:00</span>
-            <svg class="rs-time-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <input type="time" class="rs-ghost" id="rs-time" step="900" value="07:00" oninput="renderReschedule()" onclick="try{this.showPicker()}catch(e){}">
+          <label class="form-label rs-field-label" for="rs-time-btn">Time</label>
+          <div class="rs-time-wrap" id="rs-time-wrap">
+            <button type="button" class="rs-time-btn" id="rs-time-btn" onclick="rsToggleTimePop(event)">
+              <span class="rs-time-text" id="rs-time-text">07:00</span>
+              <svg class="rs-time-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </button>
+            <input type="hidden" id="rs-time" value="07:00">
+            <div class="rs-time-pop" id="rs-time-pop"></div>
           </div>
         </div>
       </div>
@@ -12786,9 +12798,59 @@ function rsQuickPick(offset) {
   renderReschedule();
 }
 
+/* Custom 24h time popover: hour 00-23 + quarter-hour minutes
+   (an odd stored minute is inserted so it stays selectable). */
+function rsToggleTimePop(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  const wrap = document.getElementById('rs-time-wrap');
+  const pop = document.getElementById('rs-time-pop');
+  if (!wrap || !pop) return;
+  if (wrap.classList.contains('open')) { wrap.classList.remove('open'); return; }
+
+  const cur = (document.getElementById('rs-time') || {}).value || '07:00';
+  const [ch, cm] = cur.split(':').map(Number);
+  const mins = [0, 15, 30, 45];
+  if (!isNaN(cm) && !mins.includes(cm)) { mins.push(cm); mins.sort((a, b) => a - b); }
+
+  let hHtml = '', mHtml = '';
+  for (let h = 0; h < 24; h++) {
+    hHtml += `<button type="button" class="rs-time-opt${h === ch ? ' sel' : ''}" onclick="rsPickTime(${h}, 'h')">${String(h).padStart(2, '0')}</button>`;
+  }
+  for (const m of mins) {
+    mHtml += `<button type="button" class="rs-time-opt${m === cm ? ' sel' : ''}" onclick="rsPickTime(${m}, 'm')">${String(m).padStart(2, '0')}</button>`;
+  }
+  pop.innerHTML = `<div class="rs-time-col" id="rs-time-hours">${hHtml}</div><div class="rs-time-col" id="rs-time-mins">${mHtml}</div>`;
+
+  wrap.classList.add('open');
+  // Scroll the selected hour/minute into view.
+  ['rs-time-hours', 'rs-time-mins'].forEach(id => {
+    const sel = document.getElementById(id).querySelector('.sel');
+    if (sel) sel.scrollIntoView({ block: 'center' });
+  });
+}
+
+function rsPickTime(v, part) {
+  const input = document.getElementById('rs-time');
+  if (!input) return;
+  const cur = input.value || '07:00';
+  const [h, m] = cur.split(':');
+  input.value = part === 'h'
+    ? `${String(v).padStart(2, '0')}:${m}`
+    : `${h}:${String(v).padStart(2, '0')}`;
+  // Popover stays open so the other column can be picked; just move the marks.
+  const [nh, nm] = input.value.split(':').map(Number);
+  const hrs = document.getElementById('rs-time-hours');
+  const mns = document.getElementById('rs-time-mins');
+  if (hrs) [...hrs.children].forEach(b => b.classList.toggle('sel', parseInt(b.textContent, 10) === nh));
+  if (mns) [...mns.children].forEach(b => b.classList.toggle('sel', parseInt(b.textContent, 10) === nm));
+  renderReschedule();
+}
+
 function closeReschedule() {
   const dp = document.getElementById('reschedule-date-picker');
   if (dp) dp.classList.remove('open');
+  const tw = document.getElementById('rs-time-wrap');
+  if (tw) tw.classList.remove('open');
   document.getElementById('reschedule-modal').classList.remove('open');
   const opener = _rescheduleCtx && _rescheduleCtx.opener;
   _rescheduleCtx = null;
@@ -15189,10 +15251,11 @@ function changeDatePickerMonth(id, delta) {
 // e.target detached — closest() would then wrongly report "outside".
 document.addEventListener('click', (e) => {
   const path = e.composedPath ? e.composedPath() : [];
-  const inside = (e.target.closest && e.target.closest('.custom-datepicker'))
-    || path.some(n => n.classList && n.classList.contains('custom-datepicker'));
+  const inside = (e.target.closest && e.target.closest('.custom-datepicker, .rs-time-wrap'))
+    || path.some(n => n.classList && (n.classList.contains('custom-datepicker') || n.classList.contains('rs-time-wrap')));
   if (!inside) {
     document.querySelectorAll('.custom-datepicker.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.rs-time-wrap.open').forEach(p => p.classList.remove('open'));
   }
 });
 
@@ -15392,8 +15455,8 @@ document.addEventListener('keydown', e => {
     }
   }
   if (e.key === 'Escape') {
-    // An open date picker eats the first Esc; whatever sits under it gets the next one.
-    const openPickers = document.querySelectorAll('.custom-datepicker.open');
+    // An open date/time picker eats the first Esc; whatever sits under it gets the next one.
+    const openPickers = document.querySelectorAll('.custom-datepicker.open, .rs-time-wrap.open');
     if (openPickers.length) {
       openPickers.forEach(p => p.classList.remove('open'));
       return;
