@@ -1,6 +1,18 @@
 📌 PINNED STABLE STOP POINT
 
-Commit Hash: 
+Commit Hash:
+
+07d27a8
+Git Tag: stable-20261006
+Commit Description: Fulfillment Records Log rebuilt on a shared CSS grid — grouped expandable rows where Destination/Date-in/Dispatched/Warranty move from the parent row onto each unit row on expand (fade/slide, reduced-motion safe); chevron keyboard control; per-model color accents + customer color squares; Booked (amber) / Dispatched (blue) status pills with booking reschedule; BOOKED filter chip; Filter Columns checklist; N groups · M units; natural serial sort; Date-in range rule; Mixed warranty; revert/view reuse existing handlers.
+Date: 2026-10-06 +0700
+Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + tag stable-20261006.
+Verified at this Stop Point: 21/21 grouping tests pass (test_fulfillment_groups.js); screenshots verified all-collapsed, expanded-with-unit-values-moved, Filter Columns open.
+
+----------------------------------------------------------------------------------------
+PREVIOUS PINNED STABLE STOP POINT
+
+Commit Hash:
 
 01af28c
 Commit Description: Clipboard-paste photo scan + Stitch-style Undo Dispatch & Activity/Backups modals (resizable) + before/after snapshot pairs + audit log survives restore + CSV newest-first + serials in log + text selection + sheet protection + Data Folder button + README-RECOVERY + QA test assets
