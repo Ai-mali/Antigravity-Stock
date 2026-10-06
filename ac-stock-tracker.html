@@ -13230,7 +13230,7 @@ async function exportTrackSales() {
   const rowOf = r => ({
     model: r.model, serial: r.serial, dateIn: r.dateIn, dateOut: r.dateOut,
     customer: r.customer,
-    wstatus: (r.warranty || {}).status || '',
+    wstatus: tlWarrantyLabel(r.warranty),
     wexpiry: (r.warranty || {}).expiry || '',
     status: 'Dispatched',
   });

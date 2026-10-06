@@ -341,6 +341,22 @@ class StockStore:
                 except Exception:
                     pass
 
+    def _write_ready_exports(self):
+        """After a snapshot, also drop ready-to-read Excel exports
+        (Available Stock + Sell Record) into backups/ready_exports/ —
+        newest 10 of each kept. So a crash never leaves the workbook
+        unreadable in a hurry: the sidecars open straight in Excel."""
+        try:
+            import excel_exports
+            excel_exports.write_ready_exports(self, keep=10)
+        except Exception as e:
+            try:
+                self.log_activity("Export Failed",
+                                  details=f"ready-exports: {e}",
+                                  status="FAIL")
+            except Exception:
+                pass
+
     @staticmethod
     def _as_date(v):
         """Cell/record value -> date for sorting (handles str + datetime)."""
@@ -442,6 +458,7 @@ class StockStore:
                     os.replace(tmp, self.path)
                 except Exception:
                     pass
+            self._write_ready_exports()
 
     def log_activity(self, action: str, model: str = "", count: int = 0,
                      details: str = "", status: str = "OK"):
@@ -494,6 +511,7 @@ class StockStore:
             shutil.copy2(self.path, dest)
         self.log_activity("Manual Backup", details=f"Created backup {dest.name}")
         self.save(backup=False)
+        self._write_ready_exports()
         st = dest.stat()
         return {
             "filename": dest.name,
@@ -554,6 +572,7 @@ class StockStore:
                                   details=f"after-snapshot: {e}",
                                   status="FAIL")
                 self.save(backup=False)
+            self._write_ready_exports()
             return True, ""
         except Exception as ex:
             return False, str(ex)

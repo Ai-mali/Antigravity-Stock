@@ -263,83 +263,14 @@ def download_backup(filename: str = ""):
 @app.get("/api/export/available")
 def export_available_workbook():
     """Per-model summary workbook in the user's manual 'Available Stock'
-    layout: NO | Model | Brand | TOTAL | Booking | Balance.
-    TOTAL = physical units (in stock + booked for future dispatch);
-    Balance = TOTAL - Booking = what can still be dispatched today."""
-    import io
-    from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-    from stock_store import IN_STOCK, SOLD, parse_datetime_safe
+    layout — same builder as the automatic backups/ready_exports copies."""
+    import excel_exports
 
     _fresh()
-    stock, booked = {}, {}
     now = datetime.datetime.now()
-    for rec in store.records:
-        status = str(rec.get("Status") or "").strip()
-        key = (str(rec.get("Brand") or "").strip() or "UNBRANDED",
-               str(rec.get("Model") or "").strip())
-        if status == IN_STOCK:
-            stock[key] = stock.get(key, 0) + 1
-        elif status == SOLD:
-            dt = parse_datetime_safe(str(rec.get("Date Out") or ""))
-            if dt and dt > now:
-                booked[key] = booked.get(key, 0) + 1
-
-    keys = sorted(set(stock) | set(booked),
-                  key=lambda k: (k[0].upper(), k[1].upper()))
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Available"
-    ws.sheet_view.zoomScale = 85
-
-    title_fill = PatternFill("solid", fgColor="00B0F0")
-    thin = Side(style="thin", color="9E9E9E")
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-    ws.merge_cells("A1:F1")
-    t = ws["A1"]
-    t.value = "Available Stock"
-    t.font = Font(bold=True, size=14)
-    t.fill = title_fill
-    t.alignment = Alignment(horizontal="center", vertical="center")
-    ws.row_dimensions[1].height = 24
-
-    headers = ["NO.", "Model", "Brand", "TOTAL", "Booking", "Balance"]
-    for c, h in enumerate(headers, 1):
-        cell = ws.cell(row=2, column=c, value=h)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
-        cell.border = border
-    ws.auto_filter.ref = "A2:F2"
-    ws.freeze_panes = "A3"
-
-    num_fmt = "0.00"
-    for i, (brand, model) in enumerate(keys, 1):
-        r = i + 2
-        total = stock.get((brand, model), 0) + booked.get((brand, model), 0)
-        bking = booked.get((brand, model), 0)
-        balance = total - bking
-        vals = [i, model, brand, total, bking]
-        for c, v in enumerate(vals, 1):
-            cell = ws.cell(row=r, column=c, value=v)
-            cell.border = border
-        for c in (4, 5):
-            ws.cell(row=r, column=c).number_format = num_fmt
-        bal = ws.cell(row=r, column=6, value=f"=D{r}-E{r}")
-        bal.number_format = num_fmt
-        bal.border = border
-        if balance <= 0:
-            bal.font = Font(color="FF0000")
-
-    for col, w in zip("ABCDEF", (10.3, 29.0, 11.9, 13.4, 13.9, 13.6)):
-        ws.column_dimensions[col].width = w
-
-    buf = io.BytesIO()
-    wb.save(buf)
     fname = "VRE-Air Conditioner Stock-" + now.strftime("%d-%m-%y") + ".xlsx"
     return Response(
-        content=buf.getvalue(),
+        content=excel_exports.build_available_workbook(store.records, now),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
@@ -355,54 +286,13 @@ def export_sales_workbook(body: SalesExportBody):
     """Sell-record workbook. The frontend sends one job per ticked sale
     (filename '<Customer>-<Mon D, YYYY> <HH_MM>') or a single merged job
     when nothing is ticked."""
-    import io, re
-    from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    import re
+    import excel_exports
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Sell Record"
-    ws.sheet_view.zoomScale = 85
-
-    title_fill = PatternFill("solid", fgColor="00B0F0")
-    thin = Side(style="thin", color="9E9E9E")
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-    headers = ["NO.", "Model", "Serial Num/Desc", "Date In", "Dispatched At",
-               "Customer Destination", "Warranty Status", "Warranty Expiry", "Status"]
-    ws.merge_cells("A1:I1")
-    t = ws["A1"]
-    t.value = str(body.title or "Sell Records")[:80]
-    t.font = Font(bold=True, size=14)
-    t.fill = title_fill
-    t.alignment = Alignment(horizontal="center", vertical="center")
-    ws.row_dimensions[1].height = 24
-
-    for c, h in enumerate(headers, 1):
-        cell = ws.cell(row=2, column=c, value=h)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
-        cell.border = border
-    ws.auto_filter.ref = "A2:I2"
-    ws.freeze_panes = "A3"
-
-    for i, row in enumerate(body.rows, 1):
-        vals = [i,
-                row.get("model", ""), row.get("serial", ""),
-                row.get("dateIn", ""), row.get("dateOut", ""),
-                row.get("customer", ""), row.get("wstatus", ""),
-                row.get("wexpiry", ""), row.get("status", "Dispatched")]
-        for c, v in enumerate(vals, 1):
-            ws.cell(row=i + 2, column=c, value=v).border = border
-
-    for col, w in zip("ABCDEFGHI", (7, 24, 22, 14, 18, 24, 16, 16, 12)):
-        ws.column_dimensions[col].width = w
-
-    buf = io.BytesIO()
-    wb.save(buf)
+    data = excel_exports.build_sell_workbook(body.rows, body.title)
     fname = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", body.filename).strip() or "sell_records_export"
     return Response(
-        content=buf.getvalue(),
+        content=data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{fname}.xlsx"'})
 
