@@ -5895,8 +5895,13 @@ body.light .act-code { background: var(--surface3); }
 .act-detail .act-tail { color: var(--text-muted); }
 .act-detail .act-tail.amber { color: rgba(251,191,36,0.85); font-weight: 600; }
 .act-table { table-layout: fixed; }
-.act-table td { vertical-align: middle; }
+.act-table td { vertical-align: middle; overflow-wrap: anywhere; }
 .act-table td .act-detail, .act-table td .act-code { overflow-wrap: anywhere; }
+.act-model-list {
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.act-pill { max-width: 100%; overflow: hidden; }
 .act-row:hover td { background: rgba(148,163,184,0.05); }
 .bk-latest {
   display: inline-block; padding: 1px 7px; border-radius: 5px;
@@ -7634,7 +7639,7 @@ body.theme-light .autocomplete-dropdown {
             <thead>
               <tr>
                 <th style="width:165px;">Timestamp</th>
-                <th style="width:140px;">Action</th>
+                <th style="width:172px;">Action</th>
                 <th style="width:110px;">Model</th>
                 <th style="width:70px; text-align:center;">Units</th>
                 <th>Transaction Details</th>
@@ -14494,7 +14499,7 @@ function renderActivityTable() {
     return `<tr class="act-row">
       <td class="mono" style="font-size:11px; color:var(--text-sub); white-space:nowrap;">${tsHtml}</td>
       <td>${actPill(a.Action)}</td>
-      <td class="mono" style="font-weight:700; font-size:12px; white-space:nowrap;">${escapeHtml(a.Model || '—')}</td>
+      <td class="mono" style="font-weight:700; font-size:12px;" title="${escapeHtml(a.Model || '')}"><span class="act-model-list">${escapeHtml(a.Model || '—')}</span></td>
       <td style="text-align:center;">${a['Serials Count'] ? `<span class="act-units">${a['Serials Count']}</span>` : '<span style="opacity:.35;">—</span>'}</td>
       <td><div class="act-detail">${actDetailsHtml(a.Details)}</div></td>
       <td style="text-align:right;"><span class="act-ok${ok ? '' : ' act-ok-bad'}"><span class="act-ok-dot"></span>${escapeHtml(a.Status || 'OK')}</span></td>
