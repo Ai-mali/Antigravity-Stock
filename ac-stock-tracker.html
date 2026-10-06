@@ -8569,8 +8569,11 @@ function countTotalUnits() {
   return cnt;
 }
 
-function isSerialInCart(s) {
-  return DB.stagedCart.some(i => i.serial === s);
+function isSerialInCart(s, model) {
+  /* Synthetic serials (e.g. "DAIKIN REFNET JOINT #2") repeat across
+     models — match serial + model so one card's pick doesn't light
+     up same-named units under other models. */
+  return DB.stagedCart.some(i => i.serial === s && (!model || i.model === model));
 }
 
 function updateGlobalBadges() {
@@ -10870,7 +10873,7 @@ function renderAvailable(searchTerm) {
           (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)));
 
       const cardsHtml = matchedSerials.map(s => {
-        const staged = isSerialInCart(s);
+        const staged = isSerialInCart(s, mKey);
         const unitData = (mData.units && mData.units[s]) || {};
         const unitDateIn = unitData.dateIn || mData.dateIn || '';
         const secondHand = !!unitData.secondHand;
@@ -11519,7 +11522,7 @@ function renderStockOut(searchTerm) {
           (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)));
 
       const chipsHtml = serials.map(s => {
-        const staged = isSerialInCart(s);
+        const staged = isSerialInCart(s, mKey);
         const unitData = (mData.units && mData.units[s]) || {};
         const unitDateIn = unitData.dateIn || mData.dateIn || '';
         const secondHand = !!unitData.secondHand;
@@ -11543,7 +11546,7 @@ function renderStockOut(searchTerm) {
         `;
       }).join('');
 
-      const selCount = serials.filter(isSerialInCart).length;
+      const selCount = serials.filter(s => isSerialInCart(s, mKey)).length;
       const soCount = serials.length;
       let soBadgeClass = 'badge-green';
       let soBadgeText = `${soCount} In Stock`;
@@ -11665,7 +11668,7 @@ function toggleSOModelAcc(brand, model) {
 }
 
 function toggleSerialInCart(serial, model, brand) {
-  const existingIdx = DB.stagedCart.findIndex(x => x.serial === serial);
+  const existingIdx = DB.stagedCart.findIndex(x => x.serial === serial && x.model === model);
   if (existingIdx !== -1) {
     DB.stagedCart.splice(existingIdx, 1);
     showToast('Removed ' + serial + ' from staging cart.');
@@ -11828,10 +11831,16 @@ async function processCartCheckout() {
   try {
     const res = await apiPost('/api/stock-out', {
       serials: sent,
+      /* serial+model pairs: synthetic serials repeat across models,
+         so the backend scopes each unit to its own model. */
+      items: DB.stagedCart.map(i => ({ serial: i.serial, model: i.model })),
       customer: cust, date_out: dateOut
     });
-    const soldSet = new Set((res.sold || []).map(s => String(s).toUpperCase()));
-    const skippedItems = DB.stagedCart.filter(i => !soldSet.has(String(i.serial).toUpperCase()));
+    const soldPairs = new Set((res.sold_units || []).map(u => `${u.model}|${u.serial}`));
+    const soldSerials = new Set((res.sold || []).map(s => String(s).toUpperCase()));
+    const skippedItems = res.sold_units
+      ? DB.stagedCart.filter(i => !soldPairs.has(`${i.model}|${i.serial}`))
+      : DB.stagedCart.filter(i => !soldSerials.has(String(i.serial).toUpperCase()));
     if (skippedItems.length) {
       // Keep skipped units staged — they were not dispatched (sold or
       // quarantined elsewhere) and the user needs to see that.

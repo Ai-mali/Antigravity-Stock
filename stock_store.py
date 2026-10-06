@@ -859,18 +859,32 @@ class StockStore:
             self.save(backup=True)
         return {"needs_brands": [], "results": results}
 
-    def stock_out(self, serials: list[str], customer: str, date_out: str):
+    def stock_out(self, serials: list[str], customer: str, date_out: str,
+                  items: list[dict] | None = None) -> tuple[list[str], list[dict]]:
         """Mark units Sold with one Customer + Date Out for the whole cart.
         Every checkout stamps the same Batch id on all its units so a
-        mistaken dispatch can be reverted as one transaction."""
+        mistaken dispatch can be reverted as one transaction.
+        `items` (optional [{serial, model}]) scopes the match per model —
+        synthetic serials like "DAIKIN REFNET JOINT #2" repeat across
+        models, so serial-only matching would sell them all. Returns
+        (sold serials, sold {serial, model} units)."""
         batch = ("SALE-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
                  + "-" + uuid.uuid4().hex[:5].upper())
         wanted = {s.strip().lower() for s in serials if s.strip()}
+        pairs = {(str(i.get("serial") or "").strip().lower(),
+                  str(i.get("model") or "").strip())
+                 for i in (items or []) if isinstance(i, dict)}
         done = []
+        done_units = []
         models_sold = set()
         for rec in self.records:
-            if (str(rec["Serial"]).strip().lower() not in wanted
-                    or str(rec["Status"]).strip() != IN_STOCK):
+            if str(rec["Status"]).strip() != IN_STOCK:
+                continue
+            s_low = str(rec["Serial"]).strip().lower()
+            if pairs:
+                if (s_low, str(rec["Model"]).strip()) not in pairs:
+                    continue
+            elif s_low not in wanted:
                 continue
             rec["Status"] = SOLD
             rec["Customer"] = customer
@@ -883,6 +897,8 @@ class StockStore:
             self.recs.cell(row=row, column=7, value=date_out)
             self.recs.cell(row=row, column=8, value=batch)
             done.append(str(rec["Serial"]))
+            done_units.append({"serial": str(rec["Serial"]),
+                               "model": str(rec["Model"])})
         if done:
             for m in models_sold:
                 self._compact_synthetic_ids(m)
@@ -890,7 +906,7 @@ class StockStore:
             self.log_activity("Stock Out", model=model_summary, count=len(done),
                               details=f"Customer: {customer} | Batch: {batch} | {len(done)} units sold | Serials: {', '.join(done)}")
             self.save(backup=True)
-        return done
+        return done, done_units
 
     def revert_sale(self, batch: str = "", customer: str = "",
                     date_out: str = "") -> tuple[list[str], str]:

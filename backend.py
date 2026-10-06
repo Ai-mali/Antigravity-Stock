@@ -380,6 +380,7 @@ def reschedule_sale(body: RescheduleBody):
 
 class StockOutBody(BaseModel):
     serials: list[str] = Field(min_length=1)
+    items: list[dict] = []          # [{serial, model}] — model-scoped match
     customer: str
     date_out: str
 
@@ -387,9 +388,10 @@ class StockOutBody(BaseModel):
 @app.post("/api/stock-out")
 def stock_out(body: StockOutBody):
     _fresh()
-    done = store.stock_out(body.serials, body.customer, body.date_out)
+    done, units = store.stock_out(body.serials, body.customer, body.date_out,
+                                  items=body.items)
     _saved()
-    return {"sold": done}
+    return {"sold": done, "sold_units": units}
 
 
 class ReturnBody(BaseModel):
