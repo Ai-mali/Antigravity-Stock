@@ -7758,6 +7758,35 @@ body.theme-light .autocomplete-dropdown {
   </div>
 </div>
 
+<!-- 7a-ii. RENAME BRAND / CUSTOMER MODAL -->
+<div class="modal-overlay" id="rename-modal">
+  <div class="modal-dialog" style="max-width: 420px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="rename-title">Rename</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:2px;" id="rename-sub"></div>
+      </div>
+      <button class="btn-circle" onclick="closeRenameModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:12px;">
+        <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;" id="rename-old-label">Current</div>
+        <div id="rename-old-name" class="mono" style="font-size:15px; font-weight:800; color:var(--text); margin-top:2px;">&#8212;</div>
+      </div>
+      <label class="form-label" for="rename-input" id="rename-new-label">New name *</label>
+      <input type="text" class="form-input" id="rename-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveRenameModal();}">
+      <div id="rename-hint" style="font-size:10.5px; color:var(--text-sub); margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <div style="font-size:10.5px; color:var(--text-sub);">Automatic backup created before save.</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" onclick="closeRenameModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveRenameModal()">&#10003; Rename</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 7b. CONFIRM DELETE UNIT MODAL -->
 <div class="modal-overlay" id="confirm-delete-modal">
   <div class="modal-dialog" style="max-width: 420px; border: 1px solid rgba(239, 68, 68, 0.28); box-shadow: 0 16px 40px rgba(0,0,0,0.65);">
@@ -11295,9 +11324,12 @@ function renderAvailBrandSidebar() {
       : empty
         ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
         : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
+    const dblAttr = (key === 'ALL' || key === 'UNBRANDED') ? ''
+      : ` ondblclick="event.stopPropagation(); openRenameModal('brand','${escapeJs(key)}')"`;
+    const dblHint = dblAttr ? ' · double-click to rename' : '';
     return `
     <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}${nameHit ? ' search-hit' : ''}" style="align-items:flex-start;"
-            onclick="selectAvailBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
+            onclick="selectAvailBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
@@ -11527,9 +11559,12 @@ function renderSOBrandSidebar() {
       : empty
         ? `<span class="brand-del on" title="Delete empty brand" onclick="event.stopPropagation(); confirmDeleteBrand('${escapeJs(key)}')">&#128465;</span>`
         : `<span class="brand-del off" title="Brand has units — empty it first" onclick="event.stopPropagation(); showToast('${escapeJs(key)} still has ${o.units} unit(s) in stock — empty it before deleting.')">&#128465;</span>`;
+    const dblAttr = (key === 'ALL' || key === 'UNBRANDED') ? ''
+      : ` ondblclick="event.stopPropagation(); openRenameModal('brand','${escapeJs(key)}')"`;
+    const dblHint = dblAttr ? ' · double-click to rename' : '';
     return `
     <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}${nameHit ? ' search-hit' : ''}" style="align-items:flex-start;"
-            onclick="selectSOBrand('${escapeJs(key)}')" title="${escapeHtml(o.name)} — show models">
+            onclick="selectSOBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
       <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
@@ -12037,7 +12072,7 @@ async function processCartCheckout() {
     showToast('Staging cart is empty.');
     return;
   }
-  const cust = document.getElementById('cart-customer').value.trim();
+  const cust = document.getElementById('cart-customer').value.trim().toUpperCase();
   if (!cust) {
     const inp = document.getElementById('cart-customer');
     if (inp) { inp.classList.add('input-required'); inp.focus(); }
@@ -14301,13 +14336,24 @@ function renderRecentCustomerChips() {
     const chip = document.createElement('span');
     chip.className = 'quick-chip';
     chip.textContent = c.name;
-    chip.title = `${c.count || 1} units previously dispatched`;
+    chip.title = `${c.count || 1} units previously dispatched · double-click to rename`;
     chip.onclick = () => selectCustomer(c.name);
+    chip.ondblclick = e => { e.stopPropagation(); openRenameModal('customer', c.name); };
     wrap.appendChild(chip);
   });
 }
 
 function handleCustomerInput(val) {
+  // Customer names are locked to CAPITAL letters — same rule the
+  // rename endpoint enforces, applied live so the field always shows
+  // what will be stored.
+  const inp = document.getElementById('cart-customer');
+  if (inp && inp.value !== inp.value.toUpperCase()) {
+    const s = inp.selectionStart, e = inp.selectionEnd;
+    inp.value = inp.value.toUpperCase();
+    try { inp.setSelectionRange(s, e); } catch (_) {}
+    val = inp.value;
+  }
   checkCustomerInputStatus();
   customerSelectedIdx = -1;
   const dropdown = document.getElementById('cart-customer-dropdown');
@@ -14384,10 +14430,67 @@ function updateDropdownActiveItem(items) {
 
 function selectCustomer(name) {
   const input = document.getElementById('cart-customer');
-  if (input) input.value = name;
+  if (input) input.value = String(name).toUpperCase();
   const dropdown = document.getElementById('cart-customer-dropdown');
   if (dropdown) dropdown.style.display = 'none';
   checkCustomerInputStatus();
+}
+
+/* ---- Rename brand / customer: opened by double-clicking a brand row
+   in either sidebar, or a recent-customer chip under the checkout
+   card. One shared modal; _renameCtx remembers which kind is open. */
+let _renameCtx = null;
+
+function openRenameModal(kind, old) {
+  const modal = document.getElementById('rename-modal');
+  if (!modal) return;
+  _renameCtx = { kind, old: String(old || '').trim() };
+  if (!_renameCtx.old) { _renameCtx = null; return; }
+  const isCust = kind === 'customer';
+  document.getElementById('rename-title').textContent = isCust ? 'Rename Customer' : 'Rename Brand';
+  document.getElementById('rename-sub').textContent = isCust
+    ? 'Updates every sale and return record for this customer.'
+    : 'Updates the brand on every unit, model mapping and sale record.';
+  document.getElementById('rename-old-label').textContent = isCust ? 'Current Customer' : 'Current Brand';
+  document.getElementById('rename-old-name').textContent = _renameCtx.old;
+  const inp = document.getElementById('rename-input');
+  inp.value = _renameCtx.old;
+  inp.placeholder = isCust ? 'e.g. GCNP' : 'e.g. DAIKIN';
+  inp.style.textTransform = isCust ? 'uppercase' : '';
+  document.getElementById('rename-hint').textContent = isCust
+    ? 'Saved in CAPITAL letters. Using an existing customer name merges their history.'
+    : 'A name already used by another brand will be refused — pick a unique one.';
+  modal.classList.add('open');
+  setTimeout(() => { inp.focus(); inp.select(); }, 100);
+}
+
+function closeRenameModal() {
+  const modal = document.getElementById('rename-modal');
+  if (modal) modal.classList.remove('open');
+  _renameCtx = null;
+}
+
+async function saveRenameModal() {
+  if (!_renameCtx) return;
+  const { kind, old } = _renameCtx;
+  let newName = (document.getElementById('rename-input').value || '').trim();
+  if (kind === 'customer') newName = newName.toUpperCase();
+  if (!newName) { showToast('New name cannot be empty.'); return; }
+  if (newName === old) { closeRenameModal(); return; }
+  try {
+    await apiPost(kind === 'customer' ? '/api/customers/rename' : '/api/brands/rename',
+                  { old, new: newName });
+    closeRenameModal();
+    // A renamed brand leaves any stale sidebar filter pointing nowhere
+    if (kind === 'brand') {
+      if (DB.availFilter === old) DB.availFilter = 'ALL';
+      if (DB.soFilter === old) DB.soFilter = 'ALL';
+    }
+    await refreshData();
+    showToast(`${kind === 'customer' ? 'Customer' : 'Brand'} renamed: ${old} → ${newName}`, '&#10003;');
+  } catch (e) {
+    showToast('Rename failed: ' + e.message, '&#9888;');
+  }
 }
 
 // Close autocomplete dropdown on click outside
@@ -15608,6 +15711,7 @@ document.addEventListener('keydown', e => {
     closePhotoViewerModal();
     closeReturnDetail();
     closeReschedule();
+    closeRenameModal();
     resolveAppConfirm(false);
     endBgAdjust();
   }
@@ -15640,6 +15744,7 @@ onBackdropPress(document.getElementById('photo-viewer-modal'), () => closePhotoV
 onBackdropPress(document.getElementById('rma-detail-modal'), () => closeReturnDetail());
 onBackdropPress(document.getElementById('undo-dispatch-modal'), () => closeUndoDispatch());
 onBackdropPress(document.getElementById('reschedule-modal'), () => closeReschedule());
+onBackdropPress(document.getElementById('rename-modal'), () => closeRenameModal());
 
 /* Drag-resize the Activity & Backups dialog from its corner grip */
 (function() {

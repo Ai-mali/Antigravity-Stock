@@ -1295,3 +1295,79 @@ class StockStore:
         if brand and brand not in self.brands:
             self.brands.append(brand)
             self.brands_sheet.append([brand])
+
+    def rename_brand(self, old: str, new: str) -> tuple[bool, str]:
+        """Rename a brand in the Brands sheet, every ModelBrands mapping,
+        and the Brand column of every MasterRecord row (in-stock, sold
+        and quarantined alike). Case-only fixes are allowed; renaming
+        onto a DIFFERENT existing brand is refused — that would silently
+        merge two brands."""
+        old, new = old.strip(), new.strip()
+        if not old or not new:
+            return False, "Brand names cannot be blank"
+        actual = next((b for b in self.brands
+                       if b.strip().lower() == old.lower()), None)
+        if actual is None:
+            return False, "Brand not found: " + old
+        if new == actual:
+            return True, ""   # identical spelling — nothing to do
+        clash = next((b for b in self.brands
+                      if b.strip().lower() == new.lower() and b != actual), None)
+        if clash:
+            return False, f"'{clash}' already exists — pick a different name"
+        old_l = actual.lower()
+        self.brands[self.brands.index(actual)] = new
+        for i in range(2, self.brands_sheet.max_row + 1):
+            if str(self.brands_sheet.cell(row=i, column=1).value
+                   or "").strip().lower() == old_l:
+                self.brands_sheet.cell(row=i, column=1, value=new)
+        for key, b in list(self.model_to_brand.items()):
+            if str(b).strip().lower() == old_l:
+                self.model_to_brand[key] = new
+        for i in range(2, self.map_sheet.max_row + 1):
+            if str(self.map_sheet.cell(row=i, column=2).value
+                   or "").strip().lower() == old_l:
+                self.map_sheet.cell(row=i, column=2, value=new)
+        n = 0
+        for rec in self.records:
+            if str(rec.get("Brand", "")).strip().lower() == old_l:
+                rec["Brand"] = new
+                self.recs.cell(row=rec["_row"], column=1, value=new)
+                n += 1
+        self.log_activity("Brand Renamed", model=new, count=n,
+                          details=f"{actual} -> {new} | {n} record(s) updated")
+        self.save(backup=True)
+        return True, ""
+
+    def rename_customer(self, old: str, new: str) -> tuple[bool, str]:
+        """Rename (or merge) a customer across the Customer column of
+        every MasterRecord sale row and every Returns row. Matching is
+        case-insensitive, so 'neath' -> 'NEATH' also consolidates casing
+        variants; the new name is stored uppercase like the locked
+        checkout input."""
+        old = old.strip()
+        new = " ".join(new.strip().split()).upper()
+        if not old or not new:
+            return False, "Customer names cannot be blank"
+        if new == old:
+            return True, ""
+        old_l = old.lower()
+        n_rec = 0
+        for rec in self.records:
+            if str(rec.get("Customer", "")).strip().lower() == old_l:
+                rec["Customer"] = new
+                self.recs.cell(row=rec["_row"], column=6, value=new)
+                n_rec += 1
+        n_ret = 0
+        for ret in self.returns:
+            if str(ret.get("Customer", "")).strip().lower() == old_l:
+                ret["Customer"] = new
+                self.ret_sheet.cell(row=ret["_row"], column=3, value=new)
+                n_ret += 1
+        if not n_rec and not n_ret:
+            return False, "Customer not found: " + old
+        self.log_activity("Customer Renamed", model=new, count=n_rec,
+                          details=f"{old} -> {new} | {n_rec} sale record(s), "
+                                  f"{n_ret} return(s) updated")
+        self.save(backup=True)
+        return True, ""

@@ -382,6 +382,31 @@ def delete_brand(body: DeleteBrandBody):
     return {"ok": True, "brands": store.brands}
 
 
+class RenameBody(BaseModel):
+    old: str = Field(min_length=1)
+    new: str = Field(min_length=1)
+
+
+@app.post("/api/brands/rename")
+def rename_brand(body: RenameBody):
+    _fresh()
+    ok, err = store.rename_brand(body.old, body.new)
+    if not ok:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True, "brands": store.brands}
+
+
+@app.post("/api/customers/rename")
+def rename_customer(body: RenameBody):
+    _fresh()
+    ok, err = store.rename_customer(body.old, body.new)
+    if not ok:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    _saved()
+    return {"ok": True, "customers": store.customer_history()}
+
+
 class RevertSaleBody(BaseModel):
     batch: str = ""
     customer: str = ""
