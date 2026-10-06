@@ -12159,13 +12159,6 @@ function renderTrackTable(list, modelColors) {
   const groups = buildTrackGroups(sorted, DB.trackSortDir);
   DB._trackGroups = groups;   // reschedule modal looks groups up by index
 
-  /* The first group starts expanded (once — after that the user's
-     open/collapse choices are remembered). */
-  if (!DB._trackAutoOpened && groups.length) {
-    DB.trackOpenGroups.add(groups[0].key);
-    DB._trackAutoOpened = true;
-  }
-
   // Dispatch batch (or legacy customer+date) still drives the undo-button
   // hover preview and its tooltip unit count.
   const batchKey = r => r.batch || ('LEG:' + (r.customer || '') + '|' + (r.dateOut || ''));
