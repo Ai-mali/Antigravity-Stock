@@ -53,10 +53,11 @@ def build_available_workbook(records, now=None) -> bytes:
     ws.row_dimensions[1].height = 24
 
     headers = ["NO.", "Model", "Brand", "TOTAL", "Booking", "Balance"]
+    center = Alignment(horizontal="center", vertical="center")
     for c, h in enumerate(headers, 1):
         cell = ws.cell(row=2, column=c, value=h)
         cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
+        cell.alignment = center
         cell.border = _BORDER
     ws.auto_filter.ref = "A2:F2"
     ws.freeze_panes = "A3"
@@ -71,11 +72,13 @@ def build_available_workbook(records, now=None) -> bytes:
         for c, v in enumerate(vals, 1):
             cell = ws.cell(row=r, column=c, value=v)
             cell.border = _BORDER
+            cell.alignment = center
         for c in (4, 5):
             ws.cell(row=r, column=c).number_format = num_fmt
         bal = ws.cell(row=r, column=6, value=f"=D{r}-E{r}")
         bal.number_format = num_fmt
         bal.border = _BORDER
+        bal.alignment = center
         if balance <= 0:
             bal.font = Font(color="FF0000")
 
@@ -137,10 +140,11 @@ def build_sell_workbook(rows: list[dict], title: str = "Sell Records") -> bytes:
     t.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 24
 
+    center = Alignment(horizontal="center", vertical="center")
     for c, h in enumerate(headers, 1):
         cell = ws.cell(row=2, column=c, value=h)
         cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
+        cell.alignment = center
         cell.border = _BORDER
     ws.auto_filter.ref = "A2:I2"
     ws.freeze_panes = "A3"
@@ -152,7 +156,9 @@ def build_sell_workbook(rows: list[dict], title: str = "Sell Records") -> bytes:
                 row.get("customer", ""), row.get("wstatus", ""),
                 row.get("wexpiry", ""), row.get("status", "Dispatched")]
         for c, v in enumerate(vals, 1):
-            ws.cell(row=i + 2, column=c, value=v).border = _BORDER
+            cell = ws.cell(row=i + 2, column=c, value=v)
+            cell.border = _BORDER
+            cell.alignment = center
 
     for col, w in zip("ABCDEFGHI", (7, 24, 22, 14, 18, 24, 16, 16, 12)):
         ws.column_dimensions[col].width = w
