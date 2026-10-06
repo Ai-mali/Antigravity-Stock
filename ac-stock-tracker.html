@@ -4483,6 +4483,8 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
   border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,.1);
 }
 .tl-booked-toggle.on .tl-booked-count { background: #f59e0b; color: #111; }
+.avail-2nd-toggle.on { border-color: #a78bfa; color: #a78bfa; background: rgba(139,92,246,.1); }
+.avail-2nd-toggle.on .tl-booked-count { background: #a78bfa; color: #fff; }
 
 /* Reschedule modal: the date picker popover must overflow the dialog,
    so unclip it and round the topbar corners manually instead. */
@@ -6812,6 +6814,12 @@ body.theme-light .autocomplete-dropdown {
               <div class="view-subtitle">Overview of all verified inventory serials by equipment model.</div>
             </div>
             <div class="hdr-search-side">
+              <button type="button" class="btn btn-ghost btn-sm tl-booked-toggle" id="avail-low-btn" onclick="toggleLowStockFilter()" title="Show only models with &le; 3 units remaining">
+                <i class="tl-booked-dot"></i>LOW STOCK <span class="tl-booked-count" id="avail-low-count">0</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm tl-booked-toggle avail-2nd-toggle" id="avail-2nd-btn" onclick="toggleAvail2ndFilter()" title="Show only second-hand (previously returned) units">
+                <i class="tl-booked-dot" style="background:#a78bfa;"></i>2ND <span class="tl-booked-count" id="avail-2nd-count">0</span>
+              </button>
               <!-- Grouped search: Date In chip + serial/model input -->
               <div class="search-group" id="avail-search-group">
                 <span class="sg-lead-icon">&#128269;</span>
@@ -8433,6 +8441,7 @@ const DB = {
   rmaPageSize: 25,
   rmaSelectedSerial: '',    // dispatch unit picked in the inspection form
   lowStockFilter: false,      // toggles showing only models with <= 3 units
+  avail2ndFilter: false,      // toggles showing only second-hand (returned) units
   scans: [],        // filled by POST /api/scan or the manual + button
   modelBrands: {},  // model -> brand map (manual entry / ready-serial autofill)
   inventory: {},    // GET /api/inventory  (brand -> models -> serials)
@@ -10690,6 +10699,10 @@ function toggleLowStockFilter() {
   DB.lowStockFilter = !DB.lowStockFilter;
   renderAvailable();
 }
+function toggleAvail2ndFilter() {
+  DB.avail2ndFilter = !DB.avail2ndFilter;
+  renderAvailable();
+}
 
 /* CSV cell: quote + double-quote escape, and prefix a ' on values that
    Excel would otherwise evaluate as formulas (=, +, -, @). */
@@ -10988,16 +11001,30 @@ function renderAvailable(searchTerm) {
 
   const brands = DB.availFilter === 'ALL' ? Object.keys(DB.inventory) : [DB.availFilter].filter(b => DB.inventory[b]);
 
-  // Check low-stock models across entire inventory
-  let lowStockModels = [];
+  // Check low-stock models + second-hand units across entire inventory
+  let lowStockModels = [], secondHandCount = 0;
   for (const bKey in DB.inventory) {
     const bData = DB.inventory[bKey];
     for (const mKey in bData.models) {
-      const sCount = (bData.models[mKey].serials || []).length;
+      const mData = bData.models[mKey];
+      const sCount = (mData.serials || []).length;
       if (sCount <= 3) {
         lowStockModels.push({ brand: bKey, model: mKey, count: sCount });
       }
+      for (const s of (mData.serials || [])) {
+        if (mData.units && mData.units[s] && mData.units[s].secondHand) secondHandCount++;
+      }
     }
+  }
+  const lowBtn = document.getElementById('avail-low-btn');
+  if (lowBtn) {
+    lowBtn.classList.toggle('on', DB.lowStockFilter);
+    document.getElementById('avail-low-count').textContent = lowStockModels.length;
+  }
+  const secBtn = document.getElementById('avail-2nd-btn');
+  if (secBtn) {
+    secBtn.classList.toggle('on', DB.avail2ndFilter);
+    document.getElementById('avail-2nd-count').textContent = secondHandCount;
   }
 
   if (lowStockModels.length > 0 && !q) {
@@ -11011,13 +11038,10 @@ function renderAvailable(searchTerm) {
             Low Stock Notice &middot; ${lowStockModels.length} Model${lowStockModels.length > 1 ? 's' : ''} have &le; 3 units remaining
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-            Consider reordering or restocking soon to prevent order delays.
+            ${DB.lowStockFilter ? 'Showing low-stock models only — toggle the LOW STOCK pill to see all.' : 'Consider reordering or restocking soon to prevent order delays.'}
           </div>
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="toggleLowStockFilter()" style="white-space:nowrap;">
-        ${DB.lowStockFilter ? '&#10005; Show All Inventory' : '⚡ View Low Stock Only'}
-      </button>
     `;
     container.appendChild(banner);
   }
@@ -11037,6 +11061,10 @@ function renderAvailable(searchTerm) {
       const mData = bData.models[mKey];
       let serials = mData.serials || [];
       if (DB.lowStockFilter && serials.length > 3) continue;
+      if (DB.avail2ndFilter) {
+        serials = serials.filter(s => mData.units && mData.units[s] && mData.units[s].secondHand);
+        if (!serials.length) continue;
+      }
 
       let matchedSerials = serials;
       const modelNameMatch = !!(q && !brandMatch && mKey.toLowerCase().includes(q));
