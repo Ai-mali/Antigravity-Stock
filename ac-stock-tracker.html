@@ -1977,6 +1977,13 @@ body.theme-light #scan-results-tbody tr.scan-row-selected .scan-serial-badge {
   box-shadow: none;
 }
 
+/* Day mode: the neon-cyan selected model text is unreadable on the
+   light mint row — use the same deep cyan as the serial badges. */
+body.theme-light #scan-results-tbody tr.scan-row-selected .scan-model-text,
+body.theme-light #scan-results-tbody tr.scan-row-selected td:nth-child(2) {
+  color: #0e7490 !important;
+}
+
 /* Traffic Light: Good / Ready Row (Green) */
 #scan-results-tbody tr.scan-row-ready td:first-child {
   border-left: 3.5px solid var(--green-bright) !important;
