@@ -35,10 +35,12 @@ eval(extractConst('TL_MONTHS').replace('const ', 'var '));
 eval(extractConst('TL_COLS').replace('const ', 'var '));
 eval(extractFn('escapeHtml'));
 eval(extractFn('parseDateAny'));
+eval(extractFn('parseDateTimeAny'));
 eval(extractFn('isTrackBooked'));
 eval(extractFn('naturalCompareSerials'));
 eval(extractFn('buildTrackGroups'));
 eval(extractFn('tlFmtDate'));
+eval(extractFn('tlFmtDateTime'));
 eval(extractFn('tlDateInLabel'));
 eval(extractFn('tlWarrantyLabel'));
 eval(extractFn('tlWarrantyCls'));
@@ -156,6 +158,35 @@ check('moves columns render on parent when closed',
   MOVES.every(k => !tlCellMovesToUnits(k, false)));
 check('model/qty/status never move',
   ['model', 'qty', 'status'].every(k => !tlCellMovesToUnits(k, true) && !tlCellMovesToUnits(k, false)));
+
+/* ---- booking time: Booked until the planned date+time passes ---- */
+const pad2 = n => String(n).padStart(2, '0');
+const isoD = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const isoDT = d => `${isoD(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const laterToday = isoDT(new Date(Date.now() + 2 * 3600e3));
+const earlierToday = isoDT(new Date(Date.now() - 2 * 3600e3));
+const tomorrow = isoD(new Date(Date.now() + 24 * 3600e3));
+
+check('future datetime -> Booked', isTrackBooked(rec('M', 's', 'c', laterToday)));
+check('past datetime same day -> Dispatched', !isTrackBooked(rec('M', 's', 'c', earlierToday)));
+check('date-only future (legacy) -> Booked', isTrackBooked(rec('M', 's', 'c', tomorrow)));
+check('date-only today -> Dispatched', !isTrackBooked(rec('M', 's', 'c', isoD(new Date()))));
+
+/* ---- same-day bookings order by their planned delivery time ---- */
+const timed = [
+  rec('AAA', 'a', 'c', `${tomorrow} 09:00`),
+  rec('BBB', 'b', 'c', `${tomorrow} 07:00`),
+];
+const tDesc = buildTrackGroups(timed, 'desc');
+check('timed bookings: later planned time first in desc',
+  tDesc[0].model === 'AAA' && tDesc[0].status === 'Booked');
+check('timed bookings: earlier planned time first in asc',
+  buildTrackGroups(timed, 'asc')[0].model === 'BBB');
+
+/* ---- dispatched cells show 'Oct 8, 2026 · 07:00' when a time is stored ---- */
+check('datetime formats with time', tlFmtDateTime('2026-10-08 07:00') === 'Oct 8, 2026 \u00b7 07:00');
+check('datetime formats T-separator', tlFmtDateTime('2026-10-08T07:00') === 'Oct 8, 2026 \u00b7 07:00');
+check('date-only stays date-only', tlFmtDateTime('2026-10-08') === 'Oct 8, 2026');
 
 /* ---- empty input ---- */
 check('empty list -> no groups', buildTrackGroups([], 'desc').length === 0);

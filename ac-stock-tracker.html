@@ -6814,6 +6814,10 @@ body.theme-light .autocomplete-dropdown {
                     </button>
                     <div class="datepicker-popover" id="dispatch-date-out-popover"></div>
                   </div>
+                  <div id="cart-time-row" style="display:none; margin-top:8px;">
+                    <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Delivery Time</label>
+                    <input type="time" class="form-input" id="cart-time-out" value="07:00" style="padding:6px 10px; font-size:12px;">
+                  </div>
                 </div>
                 <div>
                   <button class="btn btn-primary" style="justify-content:center; padding:8px 12px; font-size:12.5px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
@@ -8141,19 +8145,27 @@ body.theme-light .autocomplete-dropdown {
           </div>
         </div>
       </div>
-      <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">New Delivery Date</label>
-      <div class="custom-datepicker" id="reschedule-date-picker" style="width:100%;">
-        <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('reschedule-date-picker', event)" style="width:100%; justify-content:space-between; padding:8px 12px; font-size:12.5px;">
-          <span style="display:flex; align-items:center; gap:7px;">
-            <span class="dp-icon-cal">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            </span>
-            <span class="dp-date-text" id="reschedule-date-picker-display">—</span>
-            <span class="dp-badge-relative" id="reschedule-date-picker-relative"></span>
-          </span>
-          <span class="dp-icon-chevron">&#9662;</span>
-        </button>
-        <div class="datepicker-popover" id="reschedule-date-picker-popover"></div>
+      <div style="display:flex; gap:10px; align-items:flex-end;">
+        <div style="flex:1; min-width:0;">
+          <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">New Delivery Date</label>
+          <div class="custom-datepicker" id="reschedule-date-picker" style="width:100%;">
+            <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('reschedule-date-picker', event)" style="width:100%; justify-content:space-between; padding:8px 12px; font-size:12.5px;">
+              <span style="display:flex; align-items:center; gap:7px;">
+                <span class="dp-icon-cal">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <span class="dp-date-text" id="reschedule-date-picker-display">—</span>
+                <span class="dp-badge-relative" id="reschedule-date-picker-relative"></span>
+              </span>
+              <span class="dp-icon-chevron">&#9662;</span>
+            </button>
+            <div class="datepicker-popover" id="reschedule-date-picker-popover"></div>
+          </div>
+        </div>
+        <div style="width:104px; flex:none;">
+          <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">Time</label>
+          <input type="time" class="form-input" id="rs-time" value="07:00" style="padding:8px 10px; font-size:12.5px;">
+        </div>
       </div>
       <p style="margin:10px 0 0; font-size:11px; color:var(--text-sub);">The whole booking moves together — warranty dates follow the new delivery date.</p>
     </div>
@@ -10499,6 +10511,14 @@ function parseDateAny(str) {
   return isNaN(t) ? null : t;
 }
 
+/* 'YYYY-MM-DD HH:MM' (or 'T' separator) -> Date keeping the time;
+   date-only and legacy strings fall back to parseDateAny (midnight). */
+function parseDateTimeAny(str) {
+  const m = String(str || '').trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  return parseDateAny(str);
+}
+
 /* Matches a workbook date string against the search query in common formats:
    raw text, 2026-09-18, 09/18/2026, 18/09/2026, "sep 18", "sep 18, 2026". */
 function dateMatchesQ(dateStr, q) {
@@ -11746,6 +11766,20 @@ function clearDispatchCart() {
   persistStagedCart();
 }
 
+/* Delivery time only matters for bookings (future Date Out); same-day
+   checkouts stay date-only, so the time row hides unless the picked
+   date is after today. */
+function cartTimeVisible() {
+  const el = document.getElementById('cart-date-out');
+  const d = el && parseDateAny(el.value);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return !!(d && d.getTime() > today.getTime());
+}
+function syncCartTimeVisibility() {
+  const row = document.getElementById('cart-time-row');
+  if (row) row.style.display = cartTimeVisible() ? '' : 'none';
+}
+
 async function processCartCheckout() {
   if (DB._checkoutBusy) return;   // in-flight guard: no double dispatch
   if (DB.stagedCart.length === 0) {
@@ -11754,8 +11788,13 @@ async function processCartCheckout() {
   }
   DB._checkoutBusy = true;
   const cust = document.getElementById('cart-customer').value.trim() || 'Customer';
-  const dateOut = document.getElementById('cart-date-out').value
+  const isoOut = document.getElementById('cart-date-out').value
     || formatDateISO(new Date());
+  /* Bookings (future date) carry a delivery time — default 07:00. */
+  const tEl = document.getElementById('cart-time-out');
+  const dateOut = (cartTimeVisible() && tEl && /^\d{2}:\d{2}$/.test(tEl.value))
+    ? `${isoOut} ${tEl.value}`
+    : isoOut;
   const sent = DB.stagedCart.map(i => i.serial);
   try {
     const res = await apiPost('/api/stock-out', {
@@ -11770,9 +11809,9 @@ async function processCartCheckout() {
       showToast(`Dispatched ${res.sold.length} of ${sent.length} — skipped: ${skippedItems.map(i => i.serial).join(', ')} (no longer in stock)`, '&#9888;');
       DB.stagedCart = skippedItems;
     } else {
-      const booked = parseDateAny(dateOut) > (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
+      const booked = isTrackBooked({ dateOut });
       showToast(booked
-        ? `Booked ${res.sold.length} serial(s) for ${cust} — delivery ${dateOut}`
+        ? `Booked ${res.sold.length} serial(s) for ${cust} — delivery ${tlFmtDateTime(dateOut)}`
         : `Successfully dispatched ${res.sold.length} serials to ${cust}!`);
       DB.stagedCart = [];
     }
@@ -11909,14 +11948,12 @@ function trackCustomerColor(name) {
   return TRACK_CUST_COLORS[h % TRACK_CUST_COLORS.length];
 }
 
-/* A "booking" is a sold unit whose dispatch date is in the future —
-   same record, same stock deduction; only the label differs. */
+/* A "booking" is a sold unit whose planned dispatch date/time is still
+   ahead — same record, same stock deduction; only the label differs.
+   Date-only values count as midnight, so they flip on their day. */
 function isTrackBooked(r) {
-  const t = parseDateAny(r && r.dateOut);
-  if (!t) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return t.getTime() > today.getTime();
+  const t = parseDateTimeAny(r && r.dateOut);
+  return !!t && t.getTime() > Date.now();
 }
 
 function getFilteredTrackList() {
@@ -11951,8 +11988,8 @@ function getFilteredTrackList() {
 
 function getSortedTrackList(list) {
   return [...list].sort((a, b) => {
-    const ta = (parseDateAny(a.dateOut) || new Date(0)).getTime();
-    const tb = (parseDateAny(b.dateOut) || new Date(0)).getTime();
+    const ta = (parseDateTimeAny(a.dateOut) || new Date(0)).getTime();
+    const tb = (parseDateTimeAny(b.dateOut) || new Date(0)).getTime();
     const cmp = (ta - tb)
       || String(a.serial || '').localeCompare(String(b.serial || ''));
     return DB.trackSortDir === 'asc' ? cmp : -cmp;
@@ -12079,6 +12116,12 @@ function tlFmtDate(s) {
   return (y && m && d) ? `${TL_MONTHS[m - 1]} ${d}, ${y}` : String(s || '\u2014');
 }
 
+/* 'YYYY-MM-DD HH:MM' -> 'Oct 7, 2026 · 07:00'; date-only -> 'Oct 7, 2026'. */
+function tlFmtDateTime(s) {
+  const m = String(s || '').slice(0, 16).match(/^\d{4}-\d{1,2}-\d{1,2}[ T](\d{1,2}):(\d{2})/);
+  return tlFmtDate(s) + (m ? ` \u00b7 ${m[1]}:${m[2]}` : '');
+}
+
 /* Date in compares by calendar day only: one day -> 'Oct 5, 2026',
    different days -> a range 'Oct 5, 2026 – Oct 7, 2026'. Never 'Various'. */
 function tlDateInLabel(items) {
@@ -12148,7 +12191,7 @@ function buildTrackGroups(list, sortDir) {
   const dir = sortDir === 'asc' ? 1 : -1;
   arr.sort((a, b) =>
     ((b.status === 'Booked') - (a.status === 'Booked')) ||
-    dir * ((parseDateAny(a.dateOut) || new Date(0)) - (parseDateAny(b.dateOut) || new Date(0))) ||
+    dir * ((parseDateTimeAny(a.dateOut) || new Date(0)) - (parseDateTimeAny(b.dateOut) || new Date(0))) ||
     dir * (a.batchTime - b.batchTime) ||
     naturalCompareSerials(a.model, b.model));
   return arr;
@@ -12254,7 +12297,7 @@ function renderTrackTable(list, modelColors) {
       case 'customer': return destHTML(g.customer, '');
       case 'dateIn':
         return dateInRangeHTML(g.items, '', dIn && g.items.some(r => dateMatchesQ(r.dateIn, dIn)));
-      case 'dateOut':  return dateHTML(tlFmtDate(g.dateOut), '', dOut && dateMatchesQ(g.dateOut, dOut));
+      case 'dateOut':  return dateHTML(tlFmtDateTime(g.dateOut), '', dOut && dateMatchesQ(g.dateOut, dOut));
       case 'warranty': return warrHTML(g.items, '');
       case 'qty':      return `<div class="tl-center"><span class="tl-qty"><strong style="color:${mc};">${g.items.length}</strong> ${g.items.length === 1 ? 'pc' : 'pcs'}</span></div>`;
       case 'status': {
@@ -12273,7 +12316,7 @@ function renderTrackTable(list, modelColors) {
     switch (key) {
       case 'customer': return destHTML(r.customer, attr);
       case 'dateIn':   return dateHTML(tlFmtDate(r.dateIn), attr, dIn && dateMatchesQ(r.dateIn, dIn));
-      case 'dateOut':  return dateHTML(tlFmtDate(r.dateOut), attr, dOut && dateMatchesQ(r.dateOut, dOut));
+      case 'dateOut':  return dateHTML(tlFmtDateTime(r.dateOut), attr, dOut && dateMatchesQ(r.dateOut, dOut));
       case 'warranty': return warrHTML([r], attr);
       case 'qty':      return `<div class="tl-u-qty" ${attr}>1 pc</div>`;
     }
@@ -12408,7 +12451,14 @@ function openRescheduleModal(gi) {
   document.getElementById('rs-customer').textContent = cust;
   document.getElementById('rs-qty').textContent = g.items.length;
   const rd = document.getElementById('rs-date');
-  if (rd) rd.textContent = d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : (g.dateOut || '—');
+  const dtm = String(g.dateOut || '').match(/[ T](\d{1,2}:\d{2})/);
+  if (rd) rd.textContent = d
+    ? `${TL_MONTHS[d.getMonth()]} ${d.getDate()}${dtm ? ' \u00b7 ' + dtm[1] : ''}`
+    : (g.dateOut || '—');
+  /* Prefill the planned time from the booking; default 07:00. */
+  const tm = String(g.dateOut || '').match(/[ T](\d{1,2}):(\d{2})/);
+  const rsTime = document.getElementById('rs-time');
+  if (rsTime) rsTime.value = tm ? `${tm[1].padStart(2, '0')}:${tm[2]}` : '07:00';
   document.getElementById('reschedule-modal').classList.add('open');
 }
 
@@ -12421,7 +12471,9 @@ async function doReschedule() {
   if (!_rescheduleCtx) return;
   const st = DatePickerState['reschedule-date-picker'];
   if (!st || !st.selectedDate) { showToast('Pick a new delivery date.'); return; }
-  const newDate = formatDateISO(st.selectedDate);
+  const tmEl = document.getElementById('rs-time');
+  const tm = tmEl && /^\d{2}:\d{2}$/.test(tmEl.value) ? tmEl.value : '07:00';
+  const newDate = `${formatDateISO(st.selectedDate)} ${tm}`;
   try {
     const res = await apiPost('/api/sales/reschedule', {
       batch: _rescheduleCtx.batch,
@@ -12430,7 +12482,7 @@ async function doReschedule() {
       new_date: newDate
     });
     closeReschedule();
-    showToast(`Booking rescheduled to ${newDate} — ${(res.serials || []).length} unit(s) updated.`);
+    showToast(`Booking rescheduled to ${tlFmtDateTime(newDate)} — ${(res.serials || []).length} unit(s) updated.`);
     await refreshData();
   } catch (e) {
     showToast('Reschedule failed: ' + e.message);
@@ -13205,7 +13257,7 @@ function confirmRevertSale(idx) {
 
   const batchLabel = r.batch
     ? r.batch.replace(/^SALE-/, 'DSP-')
-    : `DSP-${(r.dateOut || '????').replace(/-/g, '')}-LEGACY`;
+    : `DSP-${(r.dateOut || '????').replace(/[-: ]/g, '')}-LEGACY`;
   document.getElementById('undo-batch-id').textContent = batchLabel;
   document.getElementById('undo-avatar').textContent = (r.customer || '?').trim().charAt(0).toUpperCase() || '?';
   document.getElementById('undo-customer').textContent = r.customer || '—';
@@ -14636,6 +14688,7 @@ function updateDatePickerDisplay(id) {
       rel.style.display = relText ? 'inline-block' : 'none';
     }
     if (input) input.value = isoText;
+    syncCartTimeVisibility();
   } else {
     // Generic filter pickers: placeholder until picked, then a batch chip
     const container = document.getElementById(id);

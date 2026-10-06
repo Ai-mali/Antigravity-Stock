@@ -75,6 +75,20 @@ def parse_date_safe(d_str: str) -> datetime.date | None:
     return None
 
 
+def parse_datetime_safe(s: str) -> datetime.datetime | None:
+    """Parse 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM' (T separator also works);
+    date-only values count as midnight. None when unparseable."""
+    m = re.match(r"^\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?",
+                 s or "")
+    if not m:
+        return None
+    try:
+        return datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
+                                 int(m[4] or 0), int(m[5] or 0))
+    except ValueError:
+        return None
+
+
 def _add_months(d: datetime.date, months: int) -> datetime.date:
     try:
         year = d.year + (d.month + months - 1) // 12
@@ -924,12 +938,13 @@ class StockStore:
         Matches the whole Batch like revert_sale does — a booking is one
         checkout, so its delivery date moves as a unit. Past-dated sales
         are history and cannot be edited. Returns (serials, error)."""
-        today = datetime.date.today().isoformat()
+        now = datetime.datetime.now()
         new_date = (new_date or "").strip()
         if not new_date:
             return [], "No new date given"
-        if new_date < today:
-            return [], "New delivery date cannot be in the past"
+        new_dt = parse_datetime_safe(new_date)
+        if new_dt is None or new_dt <= now:
+            return [], "New delivery date/time cannot be in the past"
         batch = (batch or "").strip()
         cust = (customer or "").strip().lower()
         dout = (date_out or "").strip()
@@ -944,7 +959,7 @@ class StockStore:
         if not targets:
             return [], "No sold units found for this dispatch"
         old_dates = {str(r.get("Date Out") or "").strip() for r in targets}
-        if any(d <= today for d in old_dates):
+        if any((parse_datetime_safe(d) or now) <= now for d in old_dates):
             return [], "Only booked (future-dated) dispatches can be rescheduled"
         done = []
         for rec in targets:
