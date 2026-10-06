@@ -4327,6 +4327,36 @@ body.theme-light .tl-status-badge {
 /* Hovering anywhere in a batch block gently tints all its sibling rows. */
 .tl-batch-block:hover .tl-g-row { background: rgba(96,165,250,.05); }
 .tl-batch-block .tl-children { margin-bottom: 12px; }
+
+/* Sale selection for scoped export — one checkbox per sale. */
+.tl-selbox {
+  width: 15px; height: 15px; border-radius: 5px; flex: none; padding: 0;
+  border: 1.5px solid var(--border-light); background: transparent;
+  color: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all .12s;
+}
+.tl-selbox:hover { border-color: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,.35); }
+.tl-selbox.on { background: #3b82f6; border-color: #3b82f6; }
+.tl-model-cell .tl-selbox { margin-right: -2px; }
+.tl-batch-block.tl-batch-sel {
+  border-color: rgba(59,130,246,.55);
+  box-shadow: 0 0 0 1px rgba(59,130,246,.25), 0 0 18px rgba(59,130,246,.08);
+}
+.tl-batch-block.tl-batch-sel .tl-batch-head { color: #93c5fd; }
+.tl-g-row.tl-sel { background: rgba(59,130,246,.10); }
+.tl-g-row.tl-sel:hover { background: rgba(59,130,246,.14); }
+.tl-sel-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 5px 3px 10px; border-radius: 999px;
+  background: rgba(59,130,246,.13); border: 1px solid rgba(59,130,246,.4);
+  color: #60a5fa; font-size: 11px; font-weight: 600;
+}
+.tl-sel-clear {
+  border: none; background: transparent; color: inherit; cursor: pointer;
+  font-size: 13px; line-height: 1; padding: 0 3px; border-radius: 50%;
+}
+.tl-sel-clear:hover { background: rgba(59,130,246,.3); }
 .tl-g-row {
   min-height: 62px; padding: 0 24px 0 20px; cursor: pointer;
   transition: background .15s;
@@ -7098,9 +7128,13 @@ body.theme-light .autocomplete-dropdown {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12-3h12v5H6z"></path></svg>
             Print Labels
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="exportTrackCsv()">
+          <span class="tl-sel-pill" id="track-sel-pill" style="display:none;" title="These sales are ticked for export">
+            <span id="track-sel-count">0 selected</span>
+            <button type="button" class="tl-sel-clear" onclick="clearTrackSel()" title="Clear selection" aria-label="Clear sale selection">&times;</button>
+          </span>
+          <button class="btn btn-ghost btn-sm" id="track-export-btn" onclick="exportTrackCsv()" title="Export the ticked sales — or the whole filtered list when nothing is ticked">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export CSV
+            <span id="track-export-label">Export CSV</span>
           </button>
         </div>
       </div>
@@ -8381,6 +8415,7 @@ const DB = {
   trackPageSize: 25,
   trackSortDir: 'desc',   // dispatched-at sort: 'desc' | 'asc'
   trackOpenGroups: new Set(), // expanded fulfillment groups (group keys)
+  trackSelBatches: new Set(), // sale batch keys ticked for scoped export
   trackBookedOnly: false, // BOOKED pill: show only future-dated dispatches
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
@@ -12495,14 +12530,14 @@ function renderTrackTable(list, modelColors) {
 
   /* Parent-row cells: while the group is open, the `moves` columns render
      empty placeholders — the grid track stays so nothing shifts. */
-  const parentCell = (key, g, gi, isOpen, st) => {
+  const parentCell = (key, g, gi, isOpen, st, selbox) => {
     const mc = modelColors[g.model] || '#8995a9';   // per-model accent color
     if (tlCellMovesToUnits(key, isOpen)) return '<div aria-hidden="true"></div>';
     switch (key) {
       case 'model': {
         const modelHit = q && (g.model.toLowerCase().includes(ql) ||
           g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
-        return `<div class="tl-model-cell"><button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="color:${mc}; background:color-mix(in srgb, ${mc} 15%, transparent); border:1px solid color-mix(in srgb, ${mc} 34%, transparent);">${pkgSvg}</span><span class="tl-model-name tl-copy" style="color:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></div>`;
+        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="color:${mc}; background:color-mix(in srgb, ${mc} 15%, transparent); border:1px solid color-mix(in srgb, ${mc} 34%, transparent);">${pkgSvg}</span><span class="tl-model-name tl-copy" style="color:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></div>`;
       }
       case 'customer': return destHTML(g.customer, '');
       case 'dateIn':
@@ -12575,7 +12610,10 @@ function renderTrackTable(list, modelColors) {
   });
 
   let gi = 0;   // running group index (panel ids + reschedule lookups)
-  const groupHTML = g => {
+  const selCheckSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  const selboxHTML = (bkey, on, label) =>
+    `<button type="button" class="tl-selbox${on ? ' on' : ''}" role="checkbox" aria-checked="${on}" title="${on ? 'Remove from export selection' : 'Select this sale for export'}" aria-label="Select sale ${escapeHtml(label)}" onclick="event.stopPropagation(); tlToggleSaleSelect('${escapeHtml(escapeJs(bkey))}')">${on ? selCheckSvg : ''}</button>`;
+  const groupHTML = (g, selbox, selOn) => {
     const st = tlStatusInfo(g.items[0]);   // all units share Date Out
     const modelHit = q && (g.model.toLowerCase().includes(ql) ||
       g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
@@ -12584,18 +12622,23 @@ function renderTrackTable(list, modelColors) {
     const isOpen = DB.trackOpenGroups.has(g.key) || !!q;   // searching auto-expands
     const mc = modelColors[g.model] || '#8995a9';
     gi++;
-    const cells = L.vis.map(c => parentCell(c.key, g, gi - 1, isOpen, st)).join('');
+    const cells = L.vis.map(c => parentCell(c.key, g, gi - 1, isOpen, st, selbox || '')).join('');
     const children = `<div class="tl-children" id="tl-panel-${gi - 1}" style="border-left:3px solid ${mc};"${isOpen ? '' : ' hidden'}>${isOpen
       ? childHeadHTML + g.items.map((r, n) => unitRowHTML(g, r, n, st)).join('')
       : ''}</div>`;
-    return `<div class="tl-group"><div class="tl-g tl-g-row${(modelHit || custHit || outHit) ? ' tl-row-hit' : ''}" data-key="${escapeHtml(g.key)}" style="box-shadow:inset 3px 0 0 ${mc};">${cells}</div>${children}</div>`;
+    return `<div class="tl-group"><div class="tl-g tl-g-row${selOn ? ' tl-sel' : ''}${(modelHit || custHit || outHit) ? ' tl-row-hit' : ''}" data-key="${escapeHtml(g.key)}" style="box-shadow:inset 3px 0 0 ${mc};">${cells}</div>${children}</div>`;
   };
 
   grid.innerHTML = pageGroups.length ? headHTML + blocks.map(blk => {
-    if (blk.groups.length === 1) return groupHTML(blk.groups[0]);
+    const selOn = DB.trackSelBatches.has(blk.batch);
+    if (blk.groups.length === 1) {
+      const g0 = blk.groups[0];
+      return groupHTML(g0, selboxHTML(blk.batch, selOn, g0.model), selOn);
+    }
     const units = blk.groups.reduce((n, g) => n + g.items.length, 0);
-    return `<div class="tl-batch-block"><div class="tl-batch-head">${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${units} units \u00b7 ${blk.groups.length} models \u2014 one checkout</span></div>${blk.groups.map(groupHTML).join('')}</div>`;
+    return `<div class="tl-batch-block${selOn ? ' tl-batch-sel' : ''}"><div class="tl-batch-head">${selboxHTML(blk.batch, selOn, batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${units} units \u00b7 ${blk.groups.length} models \u2014 one checkout</span></div>${blk.groups.map(g => groupHTML(g)).join('')}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
+  updateTrackSelBadge();
 
   /* Clicking anywhere on a parent row toggles it — except copyable text and
      the reschedule button, which keep their own behavior. The chevron is the
@@ -12605,7 +12648,7 @@ function renderTrackTable(list, modelColors) {
     grid.addEventListener('click', e => {
       const row = e.target.closest('.tl-g-row');
       if (!row || !grid.contains(row)) return;
-      if (e.target.closest('.tl-copy, .tl-resched-btn, a, input, select')) return;
+      if (e.target.closest('.tl-copy, .tl-resched-btn, .tl-selbox, a, input, select')) return;
       toggleTrackGroup(row.dataset.key);
     });
   }
@@ -13162,16 +13205,48 @@ function exportAvailCsv() {
   downloadServerFile('/api/export/available', fname);
 }
 
+/* Tick a whole sale for scoped export. Batch key = r.batch, or the
+   legacy fallback LEG:<customer>|<dateOut> used by buildTrackGroups. */
+function tlSaleKey(r) {
+  return r.batch || ('LEG:' + (r.customer || '') + '|' + (r.dateOut || ''));
+}
+function tlToggleSaleSelect(key) {
+  if (DB.trackSelBatches.has(key)) DB.trackSelBatches.delete(key);
+  else DB.trackSelBatches.add(key);
+  renderTrackList(DB.trackSearch);
+}
+function clearTrackSel() {
+  DB.trackSelBatches.clear();
+  renderTrackList(DB.trackSearch);
+}
+function updateTrackSelBadge() {
+  const n = DB.trackSelBatches.size;
+  const pill = document.getElementById('track-sel-pill');
+  const cnt = document.getElementById('track-sel-count');
+  const lbl = document.getElementById('track-export-label');
+  if (pill) pill.style.display = n ? 'inline-flex' : 'none';
+  if (cnt) cnt.textContent = `${n} selected`;
+  if (lbl) lbl.textContent = n ? `Export ${n} sale${n === 1 ? '' : 's'}` : 'Export CSV';
+}
+
 function exportTrackCsv() {
-  // Export the same filtered + sorted view shown on screen
-  const list = getSortedTrackList(getFilteredTrackList());
-  if (!list.length) { showToast('Nothing to export'); return; }
+  const sel = DB.trackSelBatches;
+  // With a ticked selection, export those whole sales (all their units,
+  // regardless of the on-screen filters). Otherwise the filtered view.
+  const list = sel.size
+    ? getSortedTrackList(DB.trackList.filter(r => sel.has(tlSaleKey(r))))
+    : getSortedTrackList(getFilteredTrackList());
+  if (!list.length) {
+    showToast(sel.size ? 'No ticked sales found in the records' : 'Nothing to export');
+    return;
+  }
   let csv = 'NO,MODEL,SERIAL NUM/DESC,DATE IN,DISPATCHED AT,CUSTOMER DESTINATION,WARRANTY STATUS,WARRANTY EXPIRY,STATUS\n';
   list.forEach((r, i) => {
     const w = r.warranty || { status: '', expiry: '' };
     csv += [i + 1, r.model, r.serial, r.dateIn, r.dateOut, r.customer, w.status, w.expiry, 'Dispatched'].map(csvCell).join(',') + '\n';
   });
-  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'sell_record_export.csv');
+  saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }),
+    sel.size ? 'sell_record_selected.csv' : 'sell_record_export.csv');
 }
 
 /* =========================================================
