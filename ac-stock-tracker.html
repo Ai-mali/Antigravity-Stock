@@ -11531,7 +11531,7 @@ function renderStockOut(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}')">
+          <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', this)">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="so-card-top">
@@ -11667,8 +11667,9 @@ function toggleSOModelAcc(brand, model) {
   renderStockOut();
 }
 
-function toggleSerialInCart(serial, model, brand) {
+function toggleSerialInCart(serial, model, brand, cardEl) {
   const existingIdx = DB.stagedCart.findIndex(x => x.serial === serial && x.model === model);
+  const staged = existingIdx === -1;
   if (existingIdx !== -1) {
     DB.stagedCart.splice(existingIdx, 1);
     showToast('Removed ' + serial + ' from staging cart.');
@@ -11677,7 +11678,32 @@ function toggleSerialInCart(serial, model, brand) {
     showToast('Staged ' + serial + ' &#8594; ' + model);
   }
   updateGlobalBadges();
-  renderStockOut();
+  renderCartSidebar();
+  /* Flip just the clicked card + its model's SELECTED pill — a full
+     renderStockOut() rebuilds the grid and dumps the scroll position. */
+  if (cardEl && cardEl.classList) {
+    cardEl.classList.toggle('staged', staged);
+    const tag = cardEl.querySelector('.so-card-bottom span:last-child');
+    if (tag && tag.childNodes[0]) tag.childNodes[0].textContent = staged ? 'In Cart \u2713' : 'Ready';
+    const acc = cardEl.closest('.model-accordion');
+    if (acc) {
+      const n = acc.querySelectorAll('.so-serial-card.staged').length;
+      let pill = acc.querySelector('.so-sel-pill');
+      if (n) {
+        if (!pill) {
+          pill = document.createElement('span');
+          pill.className = 'so-sel-pill';
+          (acc.querySelector('.model-accordion-header > div') ||
+           acc.querySelector('.model-accordion-header')).appendChild(pill);
+        }
+        pill.textContent = `${n} SELECTED`;
+      } else if (pill) {
+        pill.remove();
+      }
+    }
+  } else {
+    renderStockOut();
+  }
   if (DB.activeTab === 'available') renderAvailable();
   persistStagedCart();
 }
