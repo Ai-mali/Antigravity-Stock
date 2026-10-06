@@ -4457,8 +4457,10 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
 /* Reschedule modal: the date picker popover must overflow the dialog,
    so unclip it and round the topbar corners manually instead. */
 #reschedule-modal .modal-dialog { overflow: visible; max-width: 540px; }
-#reschedule-modal .undo-topbar { border-radius: 13px 13px 0 0; }
 #reschedule-modal .datepicker-popover { z-index: 110; }
+/* The accent bar can't round its own corners to match the dialog's arc —
+   a clipped wrapper cuts it to the exact curve (popover still overflows). */
+.rs-topclip { border-radius: 13px 13px 0 0; overflow: hidden; }
 .rs-topbar { background: linear-gradient(90deg, #fbbf24, #f59e0b, #f97316) !important; height: 5px; }
 .rs-icon { position: relative; }
 .rs-icon-dot {
@@ -4516,8 +4518,31 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
 .rs-field-date { flex: 1; min-width: 0; }
 .rs-field-time { width: 108px; flex: none; }
 .rs-field-label { margin-bottom: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-.rs-trigger { width: 100%; justify-content: flex-start; padding: 8px 12px; font-size: 12.5px; }
+.rs-trigger { width: 100%; height: 40px; justify-content: flex-start; padding: 0 12px; font-size: 12.5px; }
 .rs-trigger .dp-icon-chevron { margin-left: auto; }
+/* Time field: styled 24h display over an invisible native time input,
+   so the value always reads "07:00" regardless of OS locale. */
+.rs-time-wrap {
+  position: relative; height: 40px; display: flex; align-items: center;
+  justify-content: space-between; gap: 6px; padding: 0 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 7px; transition: all .15s;
+}
+.rs-time-wrap:hover { border-color: #f59e0b; }
+.rs-time-wrap:focus-within { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .2); }
+.rs-time-text {
+  font-size: 12.5px; font-weight: 600; color: var(--text);
+  font-family: 'JetBrains Mono', monospace; letter-spacing: .02em;
+  pointer-events: none;
+}
+.rs-time-icon { color: var(--text-sub); flex: none; pointer-events: none; }
+.rs-ghost {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0;
+}
+.rs-ghost::-webkit-calendar-picker-indicator {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+}
 .rs-pill {
   display: inline-flex; align-items: center; padding: 1.5px 7px;
   border-radius: 999px; font-size: 9.5px; font-weight: 700;
@@ -8221,7 +8246,7 @@ body.theme-light .autocomplete-dropdown {
 <!-- Reschedule Booking modal -->
 <div class="modal-overlay" id="reschedule-modal">
   <div class="modal-dialog" id="rs-dialog" role="dialog" aria-modal="true" aria-labelledby="rs-title" aria-describedby="rs-desc">
-    <div class="undo-topbar rs-topbar"></div>
+    <div class="rs-topclip" aria-hidden="true"><div class="undo-topbar rs-topbar"></div></div>
     <div class="modal-header" style="align-items:flex-start;">
       <div style="display:flex; align-items:center; gap:13px;">
         <div class="undo-icon-pill rs-icon" style="color:#f59e0b;">
@@ -8286,7 +8311,11 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div class="rs-field-time">
           <label class="form-label rs-field-label" for="rs-time">Time</label>
-          <input type="time" class="form-input" id="rs-time" step="900" value="07:00" oninput="renderReschedule()" style="padding:8px 10px; font-size:12.5px;">
+          <div class="rs-time-wrap">
+            <span class="rs-time-text" id="rs-time-text">07:00</span>
+            <svg class="rs-time-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <input type="time" class="rs-ghost" id="rs-time" step="900" value="07:00" oninput="renderReschedule()" onclick="try{this.showPicker()}catch(e){}">
+          </div>
         </div>
       </div>
 
@@ -12707,6 +12736,10 @@ function renderReschedule() {
   };
   const orig = _rescheduleCtx.orig;
   const todayIso = rsIsoToday();
+
+  // 24h time display over the native input
+  const tmTxt = document.getElementById('rs-time-text');
+  if (tmTxt) tmTxt.textContent = cur.time || '--:--';
 
   // Pill next to the picked date
   const rel = document.getElementById('reschedule-date-picker-relative');
