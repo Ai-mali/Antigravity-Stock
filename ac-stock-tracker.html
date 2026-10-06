@@ -1416,6 +1416,18 @@ main > .view-section.active {
   border-color: var(--green-bright);
 }
 
+/* Required field awaiting a value (e.g. checkout customer) */
+.form-input.input-required, .form-input.input-required:focus {
+  border-color: #f87171;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
+}
+
+.btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
 .form-textarea {
   resize: vertical;
   min-height: 84px;
@@ -6993,7 +7005,7 @@ body.theme-light .autocomplete-dropdown {
                   </div>
                 </div>
                 <div>
-                  <button class="btn btn-primary" style="justify-content:center; padding:8px 12px; font-size:12.5px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
+                  <button class="btn btn-primary" id="cart-checkout-btn" style="justify-content:center; padding:8px 12px; font-size:12.5px; font-weight:700; width:100%; white-space:nowrap; box-shadow:0 2px 8px rgba(38,208,124,0.25);" onclick="processCartCheckout()">
                     Complete Checkout &rarr;
                   </button>
                 </div>
@@ -7009,7 +7021,6 @@ body.theme-light .autocomplete-dropdown {
               <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                 <div>
                   <div class="card-title">Dispatch Staging Cart</div>
-                  <div style="font-size:10.5px; color:var(--text-sub);">Sale Batch</div>
                 </div>
                 <span class="badge badge-green" id="cart-pill-count">0 items</span>
               </div>
@@ -11915,6 +11926,7 @@ function resolveItemBrand(item) {
 }
 
 function renderCartSidebar() {
+  syncCheckoutGate();
   const container = document.getElementById('cart-items-container');
   const pillCount = document.getElementById('cart-pill-count');
   const brandRow = document.getElementById('cart-brand-breakdown-row');
@@ -12025,8 +12037,14 @@ async function processCartCheckout() {
     showToast('Staging cart is empty.');
     return;
   }
+  const cust = document.getElementById('cart-customer').value.trim();
+  if (!cust) {
+    const inp = document.getElementById('cart-customer');
+    if (inp) { inp.classList.add('input-required'); inp.focus(); }
+    showToast('Enter a customer name first.', '&#9888;');
+    return;
+  }
   DB._checkoutBusy = true;
-  const cust = document.getElementById('cart-customer').value.trim() || 'Customer';
   const isoOut = document.getElementById('cart-date-out').value
     || formatDateISO(new Date());
   /* Bookings (future date) carry a delivery time — default 07:00. */
@@ -14210,11 +14228,29 @@ function getAllKnownCustomers() {
   return Array.from(map.values());
 }
 
+/* Checkout gate: the Complete Checkout button stays disabled and the
+   customer box keeps a red border until a name is typed/picked. The
+   border only shows once units are staged — no nagging on an empty
+   screen, but the button never submits nameless either way. */
+function syncCheckoutGate() {
+  const input = document.getElementById('cart-customer');
+  const btn = document.getElementById('cart-checkout-btn');
+  const has = !!(input && input.value.trim());
+  if (btn) {
+    btn.disabled = !has;
+    btn.title = has ? '' : 'Enter a customer name first';
+  }
+  if (input) {
+    input.classList.toggle('input-required', !has && DB.stagedCart.length > 0);
+  }
+}
+
 function checkCustomerInputStatus() {
   const input = document.getElementById('cart-customer');
   const tag = document.getElementById('customer-type-tag');
   if (!input || !tag) return;
   const val = input.value.trim();
+  syncCheckoutGate();
   if (!val) {
     tag.innerHTML = '';
     return;
