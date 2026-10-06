@@ -10941,7 +10941,10 @@ function renderAvailable(searchTerm) {
     : (searchInput ? searchInput.value : '');
   const q = rawSearch.trim().toLowerCase();
   const dq = DB.availDateFilter || '';
-  const hasFilter = !!(q || dq);
+  const hasFilter = !!(q || dq || DB.lowStockFilter || DB.avail2ndFilter);
+  // Pills on with no text/date search: every rendered model passed the
+  // pill filter, so all of them count as hits and auto-open.
+  const pillOnly = (DB.lowStockFilter || DB.avail2ndFilter) && !q && !dq;
 
   const clearBtn = document.getElementById('avail-search-clear');
   if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
@@ -11044,7 +11047,7 @@ function renderAvailable(searchTerm) {
 
       // Auto-open only on a direct hit — model name, its Date In, or a
       // serial inside it. A brand-name-only match leaves the row collapsed.
-      const modelHit = modelNameMatch || modelDateMatch ||
+      const modelHit = pillOnly || modelNameMatch || modelDateMatch ||
         matchedSerials.some(s =>
           (q && s.toLowerCase().includes(q)) ||
           (dq && dateMatchesQ(mData.units && mData.units[s] && mData.units[s].dateIn, dq)));
@@ -11204,7 +11207,7 @@ function renderAvailable(searchTerm) {
     emptyNotice.style.cssText = 'text-align:center; padding:40px 20px; color:var(--text-sub);';
     emptyNotice.innerHTML = `
       <div style="font-size:32px; margin-bottom:10px;">🔍</div>
-      <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px;">No inventory matching "${escapeHtml(rawSearch)}" in Available Stock</div>
+      <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px;">${rawSearch ? `No inventory matching "${escapeHtml(rawSearch)}" in Available Stock` : 'No units match the active filters'}</div>
       <div style="font-size:12px; margin-bottom:12px;">This unit is not currently in Available Stock.</div>
       ${extraNotice}
       <div style="margin-top:16px;">
@@ -11400,7 +11403,7 @@ function toggleBrandAcc(brand) {
   if (DB.inventory[brand]) {
     const searchInput = document.getElementById('avail-search');
     const q = (searchInput ? searchInput.value : '').trim();
-    if (q) {
+    if (q || DB.availDateFilter || DB.lowStockFilter || DB.avail2ndFilter) {
       // mid-search: collapse a search-opened brand without touching .open
       const cur = DB.inventory[brand].searchOpen !== undefined ? DB.inventory[brand].searchOpen : true;
       DB.inventory[brand].searchOpen = !cur;
@@ -11416,11 +11419,12 @@ function toggleModelAcc(brand, model) {
   if (!mObj) return;
   const q = ((document.getElementById('avail-search') || {}).value || '').trim().toLowerCase();
   const dq = DB.availDateFilter || '';
-  if (q || dq) {
+  if (q || dq || DB.lowStockFilter || DB.avail2ndFilter) {
     // Mirror the renderer's hit logic so the click collapses an
     // auto-opened model instead of writing a hidden .open flag.
     const brandMatch = !!(q && brand.toLowerCase().includes(q));
-    const modelHit = (q && !brandMatch && model.toLowerCase().includes(q)) ||
+    const modelHit = ((DB.lowStockFilter || DB.avail2ndFilter) && !q && !dq) ||
+      (q && !brandMatch && model.toLowerCase().includes(q)) ||
       (dq && dateMatchesQ(mObj.dateIn, dq)) ||
       (mObj.serials || []).some(s =>
         (q && s.toLowerCase().includes(q)) ||
