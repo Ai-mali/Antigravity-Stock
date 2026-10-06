@@ -4311,7 +4311,7 @@ body.theme-light .tl-status-badge {
 /* Shared cell renderers — parent and unit rows use the same styles so a
    value looks identical before and after it "moves down" on expand. */
 .tl-dest { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); font-weight: 600; min-width: 0; }
-.tl-dest-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.tl-dest-dot { width: 8px; height: 8px; border-radius: 3px; flex: none; }
 .tl-dest > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tl-date { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-sub); min-width: 0; }
 .tl-date svg { color: var(--text-muted); flex: none; }
@@ -12206,12 +12206,13 @@ function renderTrackTable(list, modelColors) {
   /* Parent-row cells: while the group is open, the `moves` columns render
      empty placeholders — the grid track stays so nothing shifts. */
   const parentCell = (key, g, gi, isOpen, st) => {
+    const mc = modelColors[g.model] || '#8995a9';   // per-model accent color
     if (tlCellMovesToUnits(key, isOpen)) return '<div aria-hidden="true"></div>';
     switch (key) {
       case 'model': {
         const modelHit = q && (g.model.toLowerCase().includes(ql) ||
           g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
-        return `<div class="tl-model-cell"><button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg">${pkgSvg}</span><span class="tl-model-name tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></div>`;
+        return `<div class="tl-model-cell"><button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="color:${mc}; background:color-mix(in srgb, ${mc} 15%, transparent); border:1px solid color-mix(in srgb, ${mc} 34%, transparent);">${pkgSvg}</span><span class="tl-model-name tl-copy" style="color:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></div>`;
       }
       case 'customer': return destHTML(g.customer, '');
       case 'dateIn': {
@@ -12221,7 +12222,7 @@ function renderTrackTable(list, modelColors) {
       }
       case 'dateOut':  return dateHTML(tlFmtDate(g.dateOut), '', dOut && dateMatchesQ(g.dateOut, dOut));
       case 'warranty': return warrHTML(g.items, '');
-      case 'qty':      return `<div class="tl-center"><span class="tl-qty"><strong>${g.items.length}</strong> ${g.items.length === 1 ? 'pc' : 'pcs'}</span></div>`;
+      case 'qty':      return `<div class="tl-center"><span class="tl-qty"><strong style="color:${mc};">${g.items.length}</strong> ${g.items.length === 1 ? 'pc' : 'pcs'}</span></div>`;
       case 'status': {
         const reschedBtn = st.label === 'Booked'
           ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" aria-label="Reschedule booking for ${escapeHtml(g.model)}" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})">${calSvg}</button>`
@@ -12276,11 +12277,12 @@ function renderTrackTable(list, modelColors) {
     const custHit = q && g.customer.toLowerCase().includes(ql);
     const outHit = dOut && dateMatchesQ(g.dateOut, dOut);
     const isOpen = DB.trackOpenGroups.has(g.key) || !!q;   // searching auto-expands
+    const mc = modelColors[g.model] || '#8995a9';
     const cells = L.vis.map(c => parentCell(c.key, g, gi, isOpen, st)).join('');
-    const children = `<div class="tl-children" id="tl-panel-${gi}"${isOpen ? '' : ' hidden'}>${isOpen
+    const children = `<div class="tl-children" id="tl-panel-${gi}" style="border-left:3px solid ${mc};"${isOpen ? '' : ' hidden'}>${isOpen
       ? childHeadHTML + g.items.map((r, n) => unitRowHTML(g, r, n, st)).join('')
       : ''}</div>`;
-    return `<div class="tl-group"><div class="tl-g tl-g-row${(modelHit || custHit || outHit) ? ' tl-row-hit' : ''}" data-key="${escapeHtml(g.key)}">${cells}</div>${children}</div>`;
+    return `<div class="tl-group"><div class="tl-g tl-g-row${(modelHit || custHit || outHit) ? ' tl-row-hit' : ''}" data-key="${escapeHtml(g.key)}" style="box-shadow:inset 3px 0 0 ${mc};">${cells}</div>${children}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
 
   /* Clicking anywhere on a parent row toggles it — except copyable text and
