@@ -2,6 +2,18 @@
 
 Commit Hash:
 
+0eef09d
+Git Tag: stable-20261006b
+Commit Description: Available Stock export changed to per-model Excel summary workbook (merged title, autofilter, freeze panes, NO | Model | Brand | TOTAL | Booking | Balance with live =D-E formula, VRE-Air Conditioner Stock-DD-MM-YY.xlsx filename). Includes: booking delivery-time field (default 07:00, Booked flips at planned time), sell-record batch blocks (bordered per-checkout groups, SALE-customer-date-time header, booked-first ordering), model-scoped cart matching (serial+model, fixes same-named REFNET joint cross-dispatch), Stock Out N SELECTED pills, click no longer resets scroll, scan-result model text readable in day mode, fulfillment log starts collapsed, per-model color accents.
+Date: 2026-10-06 +0700
+Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + tag stable-20261006b.
+Verified at this Stop Point: 37/37 grouping tests pass; export endpoint verified on workbook copy (duplicate-model totals, Booking counts, formula cells, sheet structure); model-scoped stock-out verified end-to-end; scroll-preservation + pill screenshots confirmed.
+
+----------------------------------------------------------------------------------------
+PREVIOUS PINNED STABLE STOP POINT
+
+Commit Hash:
+
 07d27a8
 Git Tag: stable-20261006
 Commit Description: Fulfillment Records Log rebuilt on a shared CSS grid — grouped expandable rows where Destination/Date-in/Dispatched/Warranty move from the parent row onto each unit row on expand (fade/slide, reduced-motion safe); chevron keyboard control; per-model color accents + customer color squares; Booked (amber) / Dispatched (blue) status pills with booking reschedule; BOOKED filter chip; Filter Columns checklist; N groups · M units; natural serial sort; Date-in range rule; Mixed warranty; revert/view reuse existing handlers.
@@ -10,7 +22,7 @@ Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + t
 Verified at this Stop Point: 21/21 grouping tests pass (test_fulfillment_groups.js); screenshots verified all-collapsed, expanded-with-unit-values-moved, Filter Columns open.
 
 ----------------------------------------------------------------------------------------
-PREVIOUS PINNED STABLE STOP POINT
+EARLIER PINNED STABLE STOP POINT
 
 Commit Hash:
 
@@ -111,4 +123,4 @@ CSV Order: Sell Record export uses the on-screen filter+sort (default newest-fir
 Text Selection: pywebview text_select=True — click-drag select works everywhere; click-to-copy cells unchanged (fae14de).
 Data Safety: Data Folder button opens the app dir in Explorer; README-RECOVERY.txt documents emergency Excel access + manual stock-out edit; all sheets Excel-protected (no password) against accidental edits — app unaffected, re-locks on save (4ca5917, 25026cc).
 QA Assets: test_assets/ holds 14 DO images — clean sample, phone-photo sample with planted duplicate serial (C4216034), and 11 real DOs with serial ranges/checkmarks for external testing (a12ca37, 46dfa84, 01af28c).
-💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 01af28c"
+💡 Future Recall: If any future feature causes issues, simply ask: "Please revert back to commit 0eef09d"
