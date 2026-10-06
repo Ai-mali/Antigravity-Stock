@@ -12615,7 +12615,7 @@ function renderTrackTable(list, modelColors) {
       g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
     const custHit = q && g.customer.toLowerCase().includes(ql);
     const outHit = dOut && dateMatchesQ(g.dateOut, dOut);
-    const isOpen = DB.trackOpenGroups.has(g.key) || !!q;   // searching auto-expands
+    const isOpen = DB.trackOpenGroups.has(g.key);
     const mc = modelColors[g.model] || '#8995a9';
     gi++;
     const cells = L.vis.map(c => parentCell(c.key, g, gi - 1, isOpen, st, selbox || '')).join('');
