@@ -191,5 +191,60 @@ check('date-only stays date-only', tlFmtDateTime('2026-10-08') === 'Oct 8, 2026'
 /* ---- empty input ---- */
 check('empty list -> no groups', buildTrackGroups([], 'desc').length === 0);
 
+/* ================= Reschedule Booking modal helpers ================= */
+eval(extractFn('formatDateISO'));
+eval(extractFn('rsSplitDT'));
+eval(extractFn('rsDayDiff'));
+eval(extractFn('rsAddDays'));
+eval(extractFn('rsFmtShort'));
+eval(extractFn('rsPillFor'));
+eval(extractFn('rsSaveDisabled'));
+eval(extractFn('rsChangeLine'));
+
+const TODAY = '2026-10-06';
+
+/* ---- rsSplitDT: stored 'YYYY-MM-DD HH:MM' | 'T' | date-only ---- */
+check('split "YYYY-MM-DD HH:MM"',
+  JSON.stringify(rsSplitDT('2026-10-07 07:00')) === JSON.stringify({ date: '2026-10-07', time: '07:00' }));
+check('split "T" separator',
+  rsSplitDT('2026-10-07T09:30').time === '09:30');
+check('date-only defaults to 07:00',
+  rsSplitDT('2026-10-07').time === '07:00');
+check('empty string -> empty date + 07:00',
+  rsSplitDT('').date === '' && rsSplitDT('').time === '07:00');
+
+/* ---- pill: TODAY / TOMORROW / IN N DAYS / PAST ---- */
+check('pill TODAY', rsPillFor(TODAY, TODAY).text === 'TODAY'
+  && rsPillFor(TODAY, TODAY).cls === 'rs-pill-today');
+check('pill TOMORROW', rsPillFor(rsAddDays(TODAY, 1), TODAY).text === 'TOMORROW'
+  && rsPillFor(rsAddDays(TODAY, 1), TODAY).cls === 'rs-pill-tomorrow');
+check('pill IN N DAYS', rsPillFor(rsAddDays(TODAY, 5), TODAY).text === 'IN 5 DAYS'
+  && rsPillFor(rsAddDays(TODAY, 5), TODAY).cls === 'rs-pill-future');
+check('pill PAST', rsPillFor(rsAddDays(TODAY, -1), TODAY).text === 'PAST'
+  && rsPillFor(rsAddDays(TODAY, -1), TODAY).cls === 'rs-pill-past');
+
+/* ---- Save disabled rules ---- */
+const orig = { date: '2026-10-07', time: '07:00' };
+check('unchanged -> disabled', rsSaveDisabled(orig, { date: '2026-10-07', time: '07:00' }, TODAY));
+check('empty date -> disabled', rsSaveDisabled(orig, { date: '', time: '07:00' }, TODAY));
+check('empty time -> disabled', rsSaveDisabled(orig, { date: '2026-10-08', time: '' }, TODAY));
+check('past date -> disabled', rsSaveDisabled(orig, { date: '2026-10-05', time: '07:00' }, TODAY));
+check('new date -> enabled', !rsSaveDisabled(orig, { date: '2026-10-08', time: '07:00' }, TODAY));
+check('same date, new time -> enabled', !rsSaveDisabled(orig, { date: '2026-10-07', time: '09:00' }, TODAY));
+
+/* ---- change line ---- */
+check('incomplete -> prompt', rsChangeLine(orig, { date: '', time: '07:00' }, TODAY).tone === 'rs-line-bad');
+check('past -> warning',
+  rsChangeLine(orig, { date: '2026-10-05', time: '07:00' }, TODAY).msg.includes('already passed'));
+check('unchanged -> idle',
+  rsChangeLine(orig, { date: '2026-10-07', time: '07:00' }, TODAY).msg === 'No change yet. Pick a new date or time.');
+check('+2 days line',
+  rsChangeLine(orig, { date: '2026-10-09', time: '07:00' }, TODAY).msg
+    === 'Delivery moves Oct 7, 07:00 → Oct 9, 07:00 (+2 days)');
+check('same day, new time',
+  rsChangeLine(orig, { date: '2026-10-07', time: '09:00' }, TODAY).msg.includes('(same day, new time)'));
+check('earlier day wording',
+  rsChangeLine(orig, { date: '2026-10-06', time: '07:00' }, '2026-10-05').msg.includes('1 day earlier'));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

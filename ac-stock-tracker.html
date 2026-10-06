@@ -4456,9 +4456,92 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
 
 /* Reschedule modal: the date picker popover must overflow the dialog,
    so unclip it and round the topbar corners manually instead. */
-#reschedule-modal .modal-dialog { overflow: visible; }
+#reschedule-modal .modal-dialog { overflow: visible; max-width: 540px; }
 #reschedule-modal .undo-topbar { border-radius: 13px 13px 0 0; }
 #reschedule-modal .datepicker-popover { z-index: 110; }
+.rs-topbar { background: linear-gradient(90deg, #fbbf24, #f59e0b, #f97316) !important; height: 5px; }
+.rs-icon { position: relative; }
+.rs-icon-dot {
+  position: absolute; top: -3px; right: -3px; width: 9px; height: 9px;
+  border-radius: 50%; background: #f59e0b;
+}
+.rs-icon-dot::after {
+  content: ''; position: absolute; inset: -3px; border-radius: 50%;
+  border: 1.5px solid rgba(245, 158, 11, .7);
+  animation: rmaPulse 1.6s ease-out infinite;
+}
+.rs-summary {
+  display: grid; grid-template-columns: 1fr 1fr 1.5fr;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 6px;
+}
+.rs-sum-cell { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 0 10px; }
+.rs-sum-cell + .rs-sum-cell { border-left: 1px solid var(--border); }
+.rs-sum-label {
+  display: inline-flex; align-items: center; gap: 5px; height: 15px;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--text-sub); margin-bottom: 7px;
+}
+.rs-pill-val {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 2px 8px; min-height: 30px; max-width: 100%;
+  padding: 3px 12px; background: var(--surface);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25); white-space: nowrap;
+}
+.rs-pill-val > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rs-qty { font-size: 16px; font-weight: 800; color: #f59e0b; letter-spacing: -.01em; }
+.rs-div { width: 1px; height: 16px; background: var(--border-light); }
+.rs-deliver { font-size: 11px; font-weight: 600; color: var(--text-sub); }
+.rs-sched-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap; margin: 16px 0 9px;
+}
+.rs-sched-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-sub);
+}
+.rs-chips { display: flex; align-items: center; gap: 6px; }
+.rs-chip {
+  font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600;
+  border: 1px solid transparent; background: var(--surface3);
+  color: var(--text-sub); cursor: pointer; transition: all .12s;
+}
+.rs-chip:hover { background: var(--surface2); color: var(--text); }
+.rs-chip.on {
+  background: rgba(245, 158, 11, .13); color: #f59e0b;
+  border-color: rgba(245, 158, 11, .4);
+}
+.rs-fields { display: flex; gap: 12px; align-items: flex-end; }
+.rs-field-date { flex: 1; min-width: 0; }
+.rs-field-time { width: 108px; flex: none; }
+.rs-field-label { margin-bottom: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.rs-trigger { width: 100%; justify-content: flex-start; padding: 8px 12px; font-size: 12.5px; }
+.rs-trigger .dp-icon-chevron { margin-left: auto; }
+.rs-pill {
+  display: inline-flex; align-items: center; padding: 1.5px 7px;
+  border-radius: 999px; font-size: 9.5px; font-weight: 700;
+  letter-spacing: .5px; border: 1px solid transparent; white-space: nowrap;
+}
+.rs-pill-today { background: rgba(245, 158, 11, .15); color: #f59e0b; border-color: rgba(245, 158, 11, .45); }
+.rs-pill-tomorrow { background: rgba(16, 185, 129, .15); color: #10b981; border-color: rgba(16, 185, 129, .45); }
+.rs-pill-future { background: var(--surface3); color: var(--text-sub); border-color: var(--border); }
+.rs-pill-past { background: rgba(239, 68, 68, .14); color: #f87171; border-color: rgba(239, 68, 68, .45); }
+.rs-line { margin: 10px 0 0; font-size: 12px; font-weight: 600; min-height: 15px; }
+.rs-line-idle { color: var(--text-sub); }
+.rs-line-bad { color: #f87171; }
+.rs-line-good { color: var(--text); }
+.rs-banner {
+  display: flex; gap: 9px; align-items: flex-start; margin-top: 12px;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(245, 158, 11, .08); border: 1px solid rgba(245, 158, 11, .25);
+  color: var(--text-sub); font-size: 12px; line-height: 1.5;
+}
+.rs-banner svg { color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+.rs-banner b { color: var(--text); font-weight: 700; }
+#rs-save-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.dp-day-cell.dp-day-disabled { opacity: .25; cursor: not-allowed; }
+.dp-day-cell.dp-day-disabled:hover { background: none; color: var(--text); }
 .tl-resched-btn {
   background: none; border: none; color: var(--text-muted); cursor: pointer;
   padding: 3px 5px; border-radius: 6px; display: inline-flex; align-items: center;
@@ -8137,68 +8220,90 @@ body.theme-light .autocomplete-dropdown {
 
 <!-- Reschedule Booking modal -->
 <div class="modal-overlay" id="reschedule-modal">
-  <div class="modal-dialog rma-detail-dialog" style="max-width:420px;">
-    <div class="undo-topbar" style="background:#f59e0b;"></div>
+  <div class="modal-dialog" id="rs-dialog" role="dialog" aria-modal="true" aria-labelledby="rs-title" aria-describedby="rs-desc">
+    <div class="undo-topbar rs-topbar"></div>
     <div class="modal-header" style="align-items:flex-start;">
-      <div style="display:flex; align-items:flex-start; gap:13px;">
-        <div class="undo-icon-pill" style="color:#f59e0b;">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      <div style="display:flex; align-items:center; gap:13px;">
+        <div class="undo-icon-pill rs-icon" style="color:#f59e0b;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path></svg>
+          <span class="rs-icon-dot" aria-hidden="true"></span>
         </div>
         <div>
-          <h3 class="modal-title" style="font-size:18px;">Reschedule Booking</h3>
-          <div class="modal-subtitle">Move the whole booking to a new delivery date</div>
+          <h3 class="modal-title" id="rs-title" style="font-size:18px;">Reschedule Booking</h3>
+          <div class="modal-subtitle" id="rs-desc">Move the whole booking to a new delivery date</div>
         </div>
       </div>
-      <button class="btn-circle" onclick="closeReschedule()" title="Close">&#10005;</button>
+      <button class="btn-circle" onclick="closeReschedule()" title="Close" aria-label="Close dialog">&#10005;</button>
     </div>
     <div class="modal-body" style="padding-top:14px; padding-bottom:14px;">
-      <div class="undo-summary" style="grid-template-columns:1.15fr 1fr .95fr; margin-bottom:14px;">
-        <div class="undo-sum-cell">
-          <span class="rma-detail-label">Model</span>
-          <div id="rs-model" style="font-size:14px; font-weight:800; margin-top:5px; letter-spacing:.01em;">—</div>
+      <!-- Booking summary: model | customer | qty · delivers -->
+      <div class="rs-summary" aria-label="Booking summary">
+        <div class="rs-sum-cell">
+          <span class="rs-sum-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            Model
+          </span>
+          <span class="rs-pill-val"><span class="mono" id="rs-model" style="font-weight:800; font-size:13.5px;">—</span></span>
         </div>
-        <div class="undo-sum-cell">
-          <span class="rma-detail-label">Customer</span>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:7px;">
-            <div class="undo-avatar" id="rs-avatar">?</div>
-            <div id="rs-customer" style="font-size:13px; font-weight:700; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
-          </div>
+        <div class="rs-sum-cell">
+          <span class="rs-sum-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            Customer
+          </span>
+          <span class="rs-pill-val"><span id="rs-customer" style="font-weight:700; font-size:13px;">—</span></span>
         </div>
-        <div class="undo-sum-cell">
-          <span class="rma-detail-label">Qty · Delivers</span>
-          <div style="display:flex; align-items:baseline; gap:6px; margin-top:6px;">
-            <span class="mono" id="rs-qty" style="font-size:19px; font-weight:800; color:#f59e0b;">0</span>
-            <span class="mono" id="rs-date" style="font-size:11px; color:var(--text-sub); font-weight:600;">—</span>
-          </div>
+        <div class="rs-sum-cell">
+          <span class="rs-sum-label">Qty &bull; Delivers</span>
+          <span class="rs-pill-val"><b class="rs-qty" id="rs-qty">0</b><i class="rs-div" aria-hidden="true"></i><span class="rs-deliver" id="rs-deliver">—</span></span>
         </div>
       </div>
-      <div style="display:flex; gap:10px; align-items:flex-end;">
-        <div style="flex:1; min-width:0;">
-          <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">New Delivery Date</label>
+
+      <!-- Section label + quick chips (relative to today) -->
+      <div class="rs-sched-head">
+        <span class="rs-sched-title">Set New Schedule</span>
+        <span class="rs-chips" id="rs-chips" role="group" aria-label="Quick select">
+          <button type="button" class="rs-chip" data-offset="1" onclick="rsQuickPick(1)">Tomorrow</button>
+          <button type="button" class="rs-chip" data-offset="2" onclick="rsQuickPick(2)">+2 Days</button>
+          <button type="button" class="rs-chip" data-offset="7" onclick="rsQuickPick(7)">Next Week</button>
+        </span>
+      </div>
+
+      <!-- Date (existing custom picker) + time -->
+      <div class="rs-fields">
+        <div class="rs-field-date">
+          <label class="form-label rs-field-label" for="rs-date-trigger">New Delivery Date</label>
           <div class="custom-datepicker" id="reschedule-date-picker" style="width:100%;">
-            <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('reschedule-date-picker', event)" style="width:100%; justify-content:space-between; padding:8px 12px; font-size:12.5px;">
-              <span style="display:flex; align-items:center; gap:7px;">
-                <span class="dp-icon-cal">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                </span>
-                <span class="dp-date-text" id="reschedule-date-picker-display">—</span>
-                <span class="dp-badge-relative" id="reschedule-date-picker-relative"></span>
+            <button type="button" class="datepicker-trigger rs-trigger" id="rs-date-trigger" onclick="toggleDatePicker('reschedule-date-picker', event)">
+              <span class="dp-icon-cal">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
               </span>
+              <span class="dp-date-text" id="reschedule-date-picker-display">—</span>
+              <span class="rs-pill" id="reschedule-date-picker-relative" style="display:none;"></span>
               <span class="dp-icon-chevron">&#9662;</span>
             </button>
             <div class="datepicker-popover" id="reschedule-date-picker-popover"></div>
           </div>
         </div>
-        <div style="width:104px; flex:none;">
-          <label class="form-label" style="margin-bottom:5px; font-size:11px; font-weight:600;">Time</label>
-          <input type="time" class="form-input" id="rs-time" value="07:00" style="padding:8px 10px; font-size:12.5px;">
+        <div class="rs-field-time">
+          <label class="form-label rs-field-label" for="rs-time">Time</label>
+          <input type="time" class="form-input" id="rs-time" step="900" value="07:00" oninput="renderReschedule()" style="padding:8px 10px; font-size:12.5px;">
         </div>
       </div>
-      <p style="margin:10px 0 0; font-size:11px; color:var(--text-sub);">The whole booking moves together — warranty dates follow the new delivery date.</p>
+
+      <p class="rs-line rs-line-idle" id="rs-change-line" role="status" aria-live="polite"></p>
+
+      <!-- Impact notice (text only — the backend moves warranty dates) -->
+      <div class="rs-banner">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p style="margin:0;">The whole booking moves together. <b>Warranty dates follow the new delivery date</b> automatically.</p>
+      </div>
     </div>
     <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn btn-ghost" onclick="closeReschedule()">Cancel</button>
-      <button class="btn btn-primary" onclick="doReschedule()" style="background:#f59e0b; border-color:#f59e0b; color:#111;">Save New Date</button>
+      <button class="btn btn-primary" id="rs-save-btn" onclick="doReschedule()" style="background:#f59e0b; border-color:#f59e0b; color:#111;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+        Save New Date
+      </button>
     </div>
   </div>
 </div>
@@ -12490,49 +12595,177 @@ function toggleTrackBookedFilter() {
   renderTrackList(DB.trackSearch);
 }
 
+/* ------------------------------------------------------------------ */
+/* Reschedule Booking modal                                            */
+/* Pure helpers (kept DOM-free so tests can exercise them).            */
+/* ------------------------------------------------------------------ */
+const RS_PRESETS = [
+  { label: 'Today', days: 0 },
+  { label: 'Tomorrow', days: 1 },
+  { label: '+7 Days', days: 7 },
+];
+
+function rsIsoToday() { return formatDateISO(new Date()); }
+
+function rsSplitDT(s) {
+  // 'YYYY-MM-DD HH:MM' | 'YYYY-MM-DDTHH:MM' | 'YYYY-MM-DD' -> { date, time }
+  const m = String(s || '').trim().match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if (!m) return { date: '', time: '07:00' };
+  return { date: m[1], time: m[2] ? `${m[2].padStart(2, '0')}:${m[3]}` : '07:00' };
+}
+
+function rsDayDiff(aIso, bIso) {
+  // Whole days from a to b (UTC, so DST cannot shift the result).
+  const A = aIso.split('-').map(Number), B = bIso.split('-').map(Number);
+  return Math.round((Date.UTC(B[0], B[1] - 1, B[2]) - Date.UTC(A[0], A[1] - 1, A[2])) / 86400000);
+}
+
+function rsAddDays(iso, n) {
+  const p = iso.split('-').map(Number);
+  return formatDateISO(new Date(p[0], p[1] - 1, p[2] + n));
+}
+
+function rsFmtShort(iso) {
+  const p = iso.split('-').map(Number);
+  return `${TL_MONTHS[p[1] - 1]} ${p[2]}`;
+}
+
+function rsPillFor(iso, todayIso) {
+  const n = rsDayDiff(todayIso, iso);
+  if (n < 0)  return { text: 'PAST',        cls: 'rs-pill-past' };
+  if (n === 0) return { text: 'TODAY',      cls: 'rs-pill-today' };
+  if (n === 1) return { text: 'TOMORROW',   cls: 'rs-pill-tomorrow' };
+  return { text: `IN ${n} DAYS`, cls: 'rs-pill-future' };
+}
+
+function rsSaveDisabled(orig, cur, todayIso) {
+  // orig/cur: { date: 'YYYY-MM-DD', time: 'HH:MM' }
+  if (!cur.date || !cur.time) return true;                 // incomplete
+  if (rsDayDiff(todayIso, cur.date) < 0) return true;      // in the past
+  return cur.date === orig.date && cur.time === orig.time; // nothing changed
+}
+
+function rsChangeLine(orig, cur, todayIso) {
+  if (!cur.date || !cur.time)
+    return { msg: 'Choose both a date and a time.', tone: 'rs-line-bad' };
+  if (rsDayDiff(todayIso, cur.date) < 0)
+    return { msg: 'That date has already passed. Pick today or a later date.', tone: 'rs-line-bad' };
+  if (cur.date === orig.date && cur.time === orig.time)
+    return { msg: 'No change yet. Pick a new date or time.', tone: 'rs-line-idle' };
+  const n = rsDayDiff(orig.date, cur.date);
+  const how = n === 0 ? 'same day, new time'
+    : n > 0 ? `+${n} day${n === 1 ? '' : 's'}`
+    : `${Math.abs(n)} day${n === -1 ? '' : 's'} earlier`;
+  return {
+    msg: `Delivery moves ${rsFmtShort(orig.date)}, ${orig.time} → ${rsFmtShort(cur.date)}, ${cur.time} (${how})`,
+    tone: 'rs-line-good'
+  };
+}
+
 let _rescheduleCtx = null;
 
 function openRescheduleModal(gi) {
   const g = (DB._trackGroups || [])[gi];
   if (!g || !g.items.length) return;
+  const orig = rsSplitDT(g.dateOut);
   _rescheduleCtx = {
     batch: g.items[0].batch || '',
     customer: g.customer || '',
-    date_out: g.dateOut || ''
+    date_out: g.dateOut || '',
+    orig,
+    opener: document.activeElement
   };
-  const d = parseDateAny(g.dateOut);
-  initDatePicker('reschedule-date-picker', d ? formatDateISO(d) : formatDateISO(new Date()));
-  const cust = g.customer || '—';
-  const cc = trackCustomerColor(g.customer);
-  const av = document.getElementById('rs-avatar');
-  if (av) {
-    av.textContent = cust.split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
-    av.style.background = cc + '29';   // customer color at ~16% alpha
-    av.style.borderColor = cc;
-    av.style.color = cc;
-  }
+  const todayIso = rsIsoToday();
+  initDatePicker('reschedule-date-picker', orig.date || todayIso, renderReschedule, {
+    minDate: todayIso,          // a booking can only move forward
+    presets: RS_PRESETS         // Today / Tomorrow / +7 Days
+  });
   document.getElementById('rs-model').textContent = g.model;
-  document.getElementById('rs-customer').textContent = cust;
+  document.getElementById('rs-customer').textContent = g.customer || '—';
   document.getElementById('rs-qty').textContent = g.items.length;
-  const rd = document.getElementById('rs-date');
-  const dtm = String(g.dateOut || '').match(/[ T](\d{1,2}:\d{2})/);
-  if (rd) rd.textContent = d
-    ? `${TL_MONTHS[d.getMonth()]} ${d.getDate()}${dtm ? ' \u00b7 ' + dtm[1] : ''}`
+  const del = document.getElementById('rs-deliver');
+  const d = orig.date ? parseDateAny(orig.date) : null;
+  if (del) del.textContent = d
+    ? `${TL_MONTHS[d.getMonth()]} ${d.getDate()} \u00b7 ${orig.time}`
     : (g.dateOut || '—');
-  /* Prefill the planned time from the booking; default 07:00. */
-  const tm = String(g.dateOut || '').match(/[ T](\d{1,2}):(\d{2})/);
-  const rsTime = document.getElementById('rs-time');
-  if (rsTime) rsTime.value = tm ? `${tm[1].padStart(2, '0')}:${tm[2]}` : '07:00';
+  document.getElementById('rs-time').value = orig.time;
   document.getElementById('reschedule-modal').classList.add('open');
+  renderReschedule();
+  setTimeout(() => {
+    const t = document.getElementById('rs-date-trigger');
+    if (t) t.focus();
+  }, 50);
+}
+
+function renderReschedule() {
+  if (!_rescheduleCtx) return;
+  const st = DatePickerState['reschedule-date-picker'];
+  const tmEl = document.getElementById('rs-time');
+  const cur = {
+    date: st && st.selectedDate ? formatDateISO(st.selectedDate) : '',
+    time: tmEl ? tmEl.value : ''
+  };
+  const orig = _rescheduleCtx.orig;
+  const todayIso = rsIsoToday();
+
+  // Pill next to the picked date
+  const rel = document.getElementById('reschedule-date-picker-relative');
+  if (rel) {
+    if (cur.date) {
+      const p = rsPillFor(cur.date, todayIso);
+      rel.textContent = p.text;
+      rel.className = 'rs-pill ' + p.cls;
+      rel.style.display = 'inline-flex';
+    } else {
+      rel.style.display = 'none';
+    }
+  }
+
+  // Quick chips: highlight the one matching the chosen date (vs today)
+  document.querySelectorAll('#rs-chips .rs-chip').forEach(b => {
+    const on = !!cur.date && cur.date === rsAddDays(todayIso, Number(b.dataset.offset));
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+
+  // Live change line + save gate
+  const line = document.getElementById('rs-change-line');
+  if (line) {
+    const info = rsChangeLine(orig, cur, todayIso);
+    line.textContent = info.msg;
+    line.className = 'rs-line ' + info.tone;
+  }
+  const saveBtn = document.getElementById('rs-save-btn');
+  if (saveBtn) saveBtn.disabled = rsSaveDisabled(orig, cur, todayIso);
+}
+
+function rsQuickPick(offset) {
+  const st = DatePickerState['reschedule-date-picker'];
+  if (!st) return;
+  const now = new Date();
+  st.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+  st.viewYear = st.selectedDate.getFullYear();
+  st.viewMonth = st.selectedDate.getMonth();
+  st.picked = true;
+  updateDatePickerDisplay('reschedule-date-picker');
+  const dp = document.getElementById('reschedule-date-picker');
+  if (dp) dp.classList.remove('open');
+  renderReschedule();
 }
 
 function closeReschedule() {
+  const dp = document.getElementById('reschedule-date-picker');
+  if (dp) dp.classList.remove('open');
   document.getElementById('reschedule-modal').classList.remove('open');
+  const opener = _rescheduleCtx && _rescheduleCtx.opener;
   _rescheduleCtx = null;
+  if (opener && opener.isConnected && opener.focus) opener.focus();
 }
 
 async function doReschedule() {
   if (!_rescheduleCtx) return;
+  const saveBtn = document.getElementById('rs-save-btn');
+  if (saveBtn && saveBtn.disabled) return;
   const st = DatePickerState['reschedule-date-picker'];
   if (!st || !st.selectedDate) { showToast('Pick a new delivery date.'); return; }
   const tmEl = document.getElementById('rs-time');
@@ -12552,6 +12785,21 @@ async function doReschedule() {
     showToast('Reschedule failed: ' + e.message);
   }
 }
+
+/* Focus stays inside the dialog while it is open (Esc is handled by the
+   global listener: it closes an open picker first, then the modal). */
+document.addEventListener('keydown', e => {
+  const modal = document.getElementById('reschedule-modal');
+  if (!modal || !modal.classList.contains('open') || e.key !== 'Tab') return;
+  const dlg = document.getElementById('rs-dialog');
+  if (!dlg) return;
+  const f = [...dlg.querySelectorAll('button, input, [href], [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.getClientRects().length);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 function renderTrackPagination(total, pages, units) {
   const el = document.getElementById('track-pagination');
@@ -14636,7 +14884,15 @@ function closePhotoViewerModal() {
    ========================================================================== */
 const DatePickerState = {};
 
-function initDatePicker(id, initialDateStr = null, onChange = null) {
+/* Default quick shortcuts. Pickers may override via opts.presets
+   (array of { label, days }) — e.g. reschedule uses future offsets. */
+const DP_DEFAULT_PRESETS = [
+  { label: 'Today', days: 0 },
+  { label: 'Yesterday', days: -1 },
+  { label: '-7 Days', days: -7 },
+];
+
+function initDatePicker(id, initialDateStr = null, onChange = null, opts = {}) {
   const container = document.getElementById(id);
   if (!container) return;
 
@@ -14647,13 +14903,21 @@ function initDatePicker(id, initialDateStr = null, onChange = null) {
   const initialMonth = parseInt(parts[1], 10) - 1; // 0-indexed
   const initialDay = parseInt(parts[2], 10);
 
+  // opts.minDate: Date or 'YYYY-MM-DD' — earlier days render disabled.
+  const md = opts.minDate
+    ? (opts.minDate instanceof Date ? opts.minDate : new Date(String(opts.minDate) + 'T00:00:00'))
+    : null;
+  if (md) md.setHours(0, 0, 0, 0);
+
   DatePickerState[id] = {
     selectedDate: new Date(initialYear, initialMonth, initialDay),
     viewYear: initialYear,
     viewMonth: initialMonth,
     inputId: id === 'scan-date-in-picker' ? 'scan-date-in' : (id === 'dispatch-date-out-picker' ? 'cart-date-out' : null),
     onChange,
-    picked: !!initialDateStr
+    picked: !!initialDateStr,
+    minDate: md,
+    presets: Array.isArray(opts.presets) && opts.presets.length ? opts.presets : null
   };
 
   updateDatePickerDisplay(id);
@@ -14767,6 +15031,8 @@ function renderDatePickerPopover(id) {
   const isCurrentMonthSelected = state.selectedDate.getFullYear() === state.viewYear && state.selectedDate.getMonth() === state.viewMonth;
   const selectedDateNum = state.selectedDate.getDate();
 
+  const minTime = state.minDate ? state.minDate.getTime() : null;
+
   let daysHtml = '';
   // Empty leading cells
   for (let i = 0; i < firstDayIndex; i++) {
@@ -14774,17 +15040,24 @@ function renderDatePickerPopover(id) {
   }
   // Days of month
   for (let d = 1; d <= daysInMonth; d++) {
+    if (minTime !== null && new Date(state.viewYear, state.viewMonth, d).getTime() < minTime) {
+      daysHtml += `<div class="dp-day-cell dp-day-disabled">${d}</div>`;
+      continue;
+    }
     let cls = 'dp-day-cell';
     if (isCurrentMonthSelected && d === selectedDateNum) cls += ' dp-day-selected';
     if (isCurrentMonthToday && d === todayDate) cls += ' dp-day-today';
     daysHtml += `<div class="${cls}" onclick="selectDatePickerDate('${id}', ${state.viewYear}, ${state.viewMonth}, ${d})">${d}</div>`;
   }
 
+  const presets = state.presets || DP_DEFAULT_PRESETS;
+  const presetsHtml = presets.map((p, i) =>
+    `<button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', ${i})">${p.label}</button>`
+  ).join('');
+
   popover.innerHTML = `
     <div class="dp-presets-row">
-      <button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', 'today')">Today</button>
-      <button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', 'yesterday')">Yesterday</button>
-      <button type="button" class="dp-preset-btn" onclick="applyDatePickerPreset('${id}', 'last7')">-7 Days</button>
+      ${presetsHtml}
     </div>
     <div class="dp-header">
       <button type="button" class="dp-nav-btn" onclick="changeDatePickerMonth('${id}', -12)" title="Previous year">&#171;</button>
@@ -14832,7 +15105,9 @@ function toggleDatePicker(id, event) {
 function selectDatePickerDate(id, y, m, d) {
   const state = DatePickerState[id];
   if (!state) return;
-  state.selectedDate = new Date(y, m, d);
+  const nd = new Date(y, m, d);
+  if (state.minDate && nd < state.minDate) return;
+  state.selectedDate = nd;
   state.viewYear = y;
   state.viewMonth = m;
   state.picked = true;
@@ -14845,16 +15120,19 @@ function selectDatePickerDate(id, y, m, d) {
 function applyDatePickerPreset(id, preset) {
   const state = DatePickerState[id];
   if (!state) return;
+  // Numeric = index into state.presets; string keys kept for legacy callers.
+  let days = null;
+  if (typeof preset === 'number') {
+    const presets = state.presets || DP_DEFAULT_PRESETS;
+    if (presets[preset]) days = presets[preset].days;
+  } else if (preset === 'today') days = 0;
+  else if (preset === 'yesterday') days = -1;
+  else if (preset === 'last7') days = -7;
+  if (days === null) return;
   const now = new Date();
-  if (preset === 'today') {
-    state.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  } else if (preset === 'yesterday') {
-    now.setDate(now.getDate() - 1);
-    state.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  } else if (preset === 'last7') {
-    now.setDate(now.getDate() - 7);
-    state.selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  }
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
+  if (state.minDate && d < state.minDate) return;
+  state.selectedDate = d;
   state.viewYear = state.selectedDate.getFullYear();
   state.viewMonth = state.selectedDate.getMonth();
   state.picked = true;
@@ -15081,6 +15359,12 @@ document.addEventListener('keydown', e => {
     }
   }
   if (e.key === 'Escape') {
+    // An open date picker eats the first Esc; whatever sits under it gets the next one.
+    const openPickers = document.querySelectorAll('.custom-datepicker.open');
+    if (openPickers.length) {
+      openPickers.forEach(p => p.classList.remove('open'));
+      return;
+    }
     clearAvailSelection();
     closeConfigModal();
     closeManualStockInModal();
@@ -15094,6 +15378,7 @@ document.addEventListener('keydown', e => {
     closeDoPhotosModal();
     closePhotoViewerModal();
     closeReturnDetail();
+    closeReschedule();
     resolveAppConfirm(false);
     endBgAdjust();
   }
