@@ -393,11 +393,14 @@ body.theme-light.has-user-bg .table-scroll-10 thead th, body.theme-light.bg-wall
 body.theme-light.has-user-bg .stock-in-table-scroll thead th, body.theme-light.bg-wallpaper .stock-in-table-scroll thead th {
   background: #f1f5f8;
 }
-/* Grouped-log detail panel uses --surface2 as well — keep it solid. */
-body.has-user-bg tr.tl-detail-row > td, body.bg-wallpaper tr.tl-detail-row > td {
+/* Grouped-log sticky header + unit panel use --surface2 too — keep them
+   solid in wallpaper mode. */
+body.has-user-bg .tl-g-head, body.bg-wallpaper .tl-g-head,
+body.has-user-bg .tl-children, body.bg-wallpaper .tl-children {
   background: #192227;
 }
-body.theme-light.has-user-bg tr.tl-detail-row > td, body.theme-light.bg-wallpaper tr.tl-detail-row > td {
+body.theme-light.has-user-bg .tl-g-head, body.theme-light.bg-wallpaper .tl-g-head,
+body.theme-light.has-user-bg .tl-children, body.theme-light.bg-wallpaper .tl-children {
   background: #eef3f7;
 }
 
@@ -4147,16 +4150,6 @@ body.theme-light .track-breakdown-chip:hover {
 }
 
 /* Records table cells */
-.tl-no-col {
-  width: 44px;
-  text-align: center !important;
-}
-#track-table td.tl-no-col {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  color: var(--text-sub);
-  font-weight: 600;
-}
 .tl-model-cell {
   display: flex;
   align-items: center;
@@ -4266,88 +4259,130 @@ body.theme-light .tl-status-badge {
   background: var(--surface3);
 }
 
-/* ---- Fulfillment log: grouped expandable rows ---- */
-tr.tl-group-row { cursor: pointer; }
-tr.tl-group-row:hover td { background: rgba(255,255,255,.028); }
-tr.tl-group-row:focus { outline: 1px solid var(--border-light); outline-offset: -1px; }
-tr.tl-group-row[aria-expanded="true"] td { background: rgba(255,255,255,.03); }
+/* ---- Fulfillment log: grouped rows on ONE shared grid ----
+   Header, parent rows and unit rows all use --tl-cols (set from JS) so
+   every column lines up. On expand, the "moves" values (Destination,
+   Date in, Dispatched, Warranty) leave the parent row and render on
+   each unit row in the same grid tracks. */
+.tl-grid { min-width: 980px; }
+.tl-g { display: grid; grid-template-columns: var(--tl-cols); align-items: center; }
+.tl-center { justify-self: center; text-align: center; }
 
-/* boxed chevron */
-.tl-chev-box {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; margin-right: 9px;
-  border: 1px solid var(--border-light); border-radius: 6px;
-  color: var(--text-muted); font-size: 9px; vertical-align: middle;
-  transition: all .15s ease;
-}
-tr.tl-group-row[aria-expanded="true"] .tl-chev-box { color: var(--text); border-color: var(--text-muted); }
-.tl-chev-box i { font-style: normal; transition: transform .15s ease; display: inline-block; }
-tr.tl-group-row[aria-expanded="true"] .tl-chev-box i { transform: rotate(90deg); }
-
-.tl-group-model { font-weight: 700; letter-spacing: .01em; vertical-align: middle; }
-
-/* customer: small colored square + name */
-.tl-cust-sq {
-  display: inline-block; width: 9px; height: 9px; border-radius: 3px;
-  margin-right: 8px; vertical-align: -1px;
+.tl-g-head {
+  position: sticky; top: 0; z-index: 6;
+  min-height: 44px; padding: 0 24px 0 20px;
+  color: var(--text-muted); font-size: 10px; font-weight: 700;
+  letter-spacing: .085em; text-transform: uppercase;
+  background: var(--surface2); box-shadow: 0 1px 0 var(--border);
 }
 
-/* soft pill badges: dot + label on a translucent tint */
+.tl-group { border-top: 1px solid var(--border); }
+.tl-g-row {
+  min-height: 62px; padding: 0 24px 0 20px; cursor: pointer;
+  transition: background .15s;
+}
+.tl-g-row:hover { background: rgba(255,255,255,.03); }
+.tl-g-row.tl-row-hit { background: rgba(38, 208, 124, 0.06); }
+
+/* chevron toggle button — the keyboard-focusable control; picks up
+   the status color while the group is open */
+.tl-tgl {
+  width: 28px; height: 28px; display: grid; place-items: center; flex: none;
+  border: 1px solid var(--border-light); border-radius: 7px;
+  color: var(--text-sub); background: var(--surface3); padding: 0; cursor: pointer;
+}
+.tl-tgl svg { transition: transform .18s ease; transform: rotate(-90deg); }
+.tl-tgl.open svg { transform: rotate(0); }
+.tl-tgl.open.is-booked { border-color: rgba(247,183,49,.35); color: #f7b731; background: rgba(247,183,49,.14); }
+.tl-tgl.open.is-dispatched { border-color: rgba(108,180,255,.3); color: #6cb4ff; background: rgba(108,180,255,.12); }
+.tl-tgl:focus-visible { outline: 2px solid #f7b731; outline-offset: 2px; }
+
+.tl-model-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tl-pkg {
+  width: 30px; height: 30px; display: grid; place-items: center; flex: none;
+  border-radius: 8px; color: var(--text-sub); background: var(--surface3);
+}
+.tl-model-name {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Shared cell renderers — parent and unit rows use the same styles so a
+   value looks identical before and after it "moves down" on expand. */
+.tl-dest { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); font-weight: 600; min-width: 0; }
+.tl-dest-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.tl-dest > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-date { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-sub); min-width: 0; }
+.tl-date svg { color: var(--text-muted); flex: none; }
+.tl-date > span { white-space: nowrap; }
+
+.tl-warr { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; white-space: nowrap; }
+.tl-warr i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.tl-warr.w-active   { color: #3dd6a0; }
+.tl-warr.w-expiring { color: #f7b731; }
+.tl-warr.w-expired  { color: #ff6b6b; }
+.tl-warr.w-mixed    { color: #f7b731; }
+.tl-warr.w-none     { color: var(--text-muted); }
+
+/* quantity badge: bordered mono "N pcs" */
+.tl-qty {
+  padding: 5px 8px; border: 1px solid var(--border-light); border-radius: 6px;
+  color: var(--text-sub); font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px; white-space: nowrap;
+}
+.tl-qty strong { color: var(--text); font-weight: 600; }
+
+/* status pill: amber Booked / blue Dispatched */
 .tl-pill-soft {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
   background: color-mix(in srgb, var(--pc) 14%, transparent); color: var(--pc);
   white-space: nowrap;
 }
-.tl-pill-soft::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--pc); flex-shrink: 0; }
-.tl-pill-soft.p-ok   { --pc: #34d399; }
-.tl-pill-soft.p-info { --pc: #60a5fa; }
-.tl-pill-soft.p-warn { --pc: #fbbf24; }
-.tl-pill-soft.p-bad  { --pc: #f87171; }
-.tl-pill-soft.p-none { --pc: var(--text-muted); background: var(--surface3); }
+.tl-pill-soft::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--pc); flex-shrink: 0; }
+.tl-pill-soft.p-info { --pc: #6cb4ff; }
+.tl-pill-soft.p-warn { --pc: #f7b731; }
+.tl-status-cell { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-/* qty badge */
-.tl-qty-pill {
-  display: inline-block; min-width: 54px; text-align: center;
-  padding: 3px 10px; border-radius: 7px; border: 1px solid rgba(251,191,36,.35);
-  background: rgba(251,191,36,.08); color: #fbbf24;
-  font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+/* expanded unit panel — one bordered card, same shared grid */
+.tl-children {
+  margin: 0 23px 16px 19px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface2);
 }
+.tl-children[hidden] { display: none; }
+.tl-u-head {
+  min-height: 38px; padding: 0 8px 0 0;
+  background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border);
+  color: var(--text-muted); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.tl-u-row { min-height: 44px; border-top: 1px solid var(--border); font-size: 12px; transition: background .15s; }
+.tl-u-head + .tl-u-row { border-top: none; }
+.tl-u-row:hover { background: rgba(255,255,255,.025); }
+.tl-u-id { grid-column: 1; padding-left: 16px; display: grid; grid-template-columns: 46px 1fr; align-items: center; min-width: 0; }
+.tl-u-no { color: var(--text-muted); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; }
+.tl-u-serial {
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px;
+  font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tl-u-qty { justify-self: center; color: var(--text-sub); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; }
+.tl-u-actions { justify-self: center; display: flex; gap: 2px; opacity: .45; transition: opacity .15s; }
+.tl-u-row:hover .tl-u-actions, .tl-u-head .tl-u-actions { opacity: 1; }
+.tl-g-empty { padding: 46px 20px; text-align: center; color: var(--text-sub); font-size: 13px; }
 
-/* dispatched date with calendar icon */
-.tl-date-cell { display: inline-flex; align-items: center; gap: 7px; }
-.tl-date-cell svg { color: var(--text-muted); flex-shrink: 0; }
+/* Undo-button hover previews the whole batch it would revert. */
+#track-grid .tl-u-row.tl-batch-focus { background: rgba(59, 130, 246, .12); }
+#track-grid .tl-u-row.tl-batch-focus .tl-u-id { box-shadow: inset 3px 0 0 #3b82f6; }
 
-/* expanded detail card */
-tr.tl-detail-row > td { padding: 0 14px 14px; background: transparent; }
-.tl-detail-inner {
-  padding: 0; border: 1px solid var(--border); border-radius: 10px;
-  background: var(--surface2); overflow: hidden;
-}
-.tl-detail-inner table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-/* Fixed column widths keep every expanded group's columns aligned. */
-.tl-detail-inner th:nth-child(1), .tl-detail-inner td:nth-child(1) { width: 38px; }
-.tl-detail-inner th:nth-child(3), .tl-detail-inner td:nth-child(3) { width: 110px; }
-.tl-detail-inner th:nth-child(4), .tl-detail-inner td:nth-child(4) { width: 130px; }
-.tl-detail-inner th:nth-child(5), .tl-detail-inner td:nth-child(5) { width: 90px; }
-.tl-detail-inner th {
-  text-align: left; font-weight: 600; font-size: 10px; letter-spacing: .05em;
-  text-transform: uppercase; color: var(--text-muted);
-  padding: 9px 14px; border-bottom: 1px solid var(--border);
-  background: rgba(255,255,255,.02);
-}
-.tl-detail-inner td { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
-.tl-detail-inner tbody tr:last-child td { border-bottom: none; }
-.tl-detail-inner tbody tr:hover td { background: rgba(255,255,255,.03); }
-.tl-unit-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; margin-right: 8px; vertical-align: 1px; }
-.tl-unit-serial { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text); font-weight: 600; }
-.tl-unit-actions { white-space: nowrap; opacity: .45; transition: opacity .15s; }
-tr:hover > td .tl-unit-actions { opacity: 1; }
-body.theme-light tr.tl-group-row:hover td,
-body.theme-light tr.tl-group-row[aria-expanded="true"] td { background: rgba(15,23,42,.035); }
-body.theme-light .tl-detail-inner { background: #f1f5f8; }
-body.theme-light .tl-detail-inner th { background: rgba(15,23,42,.02); }
-body.theme-light .tl-detail-inner tbody tr:hover td { background: rgba(15,23,42,.035); }
+body.theme-light .tl-g-row:hover { background: rgba(15,23,42,.035); }
+body.theme-light .tl-g-row.tl-row-hit { background: rgba(22,163,74,.08); }
+body.theme-light .tl-children { background: #f1f5f8; }
+body.theme-light .tl-u-head { background: rgba(15,23,42,.03); }
+body.theme-light .tl-u-row:hover { background: rgba(15,23,42,.035); }
+body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
 
 /* BOOKED filter toggle + booking affordances */
 .tl-booked-toggle { display: inline-flex; align-items: center; gap: 6px; }
@@ -4369,12 +4404,9 @@ body.theme-light .tl-detail-inner tbody tr:hover td { background: rgba(15,23,42,
 .tl-resched-btn {
   background: none; border: none; color: var(--text-muted); cursor: pointer;
   padding: 3px 5px; border-radius: 6px; display: inline-flex; align-items: center;
-  opacity: .45; transition: all .12s; vertical-align: middle; margin-right: 4px;
+  opacity: .45; transition: all .12s; vertical-align: middle;
 }
-tr.tl-group-row:hover .tl-resched-btn, .tl-resched-btn:hover { opacity: 1; color: #f59e0b; background: var(--surface3); }
-body.theme-light tr.tl-detail-row > td { background: #eef3f7; }
-body.theme-light tr.tl-group-row:hover td,
-body.theme-light .tl-detail-inner tr:hover td { background: rgba(15,23,42,.035); }
+.tl-g-row:hover .tl-resched-btn, .tl-resched-btn:hover { opacity: 1; color: #f59e0b; background: var(--surface3); }
 
 /* Filter Columns dropdown */
 .tl-colmenu-wrap {
@@ -4802,24 +4834,8 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   max-height: none;
 }
 
-/* Column hiding via data-tlcol */
-#track-table.tl-hide-model   [data-tlcol="model"],
-#track-table.tl-hide-serial  [data-tlcol="serial"],
-#track-table.tl-hide-dateIn  [data-tlcol="dateIn"],
-#track-table.tl-hide-dateOut [data-tlcol="dateOut"],
-#track-table.tl-hide-customer [data-tlcol="customer"],
-#track-table.tl-hide-warranty [data-tlcol="warranty"],
-#track-table.tl-hide-status  [data-tlcol="status"],
-/* Sell Record: per-dispatch group tint + undo hover preview */
-#track-table tbody tr.tl-batch-alt td { background: rgba(255, 255, 255, .028); }
-#track-table tbody tr.tl-batch-focus td { background: rgba(59, 130, 246, .12); }
-#track-table tbody tr.tl-batch-focus td:first-child { box-shadow: inset 3px 0 0 #3b82f6; }
-body.theme-light #track-table tbody tr.tl-batch-alt td { background: rgba(0, 0, 0, .045); }
-body.theme-light #track-table tbody tr.tl-batch-focus td { background: rgba(59, 130, 246, .12); }
-
-#track-table.tl-hide-actions [data-tlcol="actions"] {
-  display: none;
-}
+/* Filter Columns hides columns by re-rendering the grid with a smaller
+   track template — no hide-classes needed. */
 
 @media (max-width: 780px) {
   .tl-filter-warranty { border-left: none; padding-left: 0; }
@@ -6964,21 +6980,8 @@ body.theme-light .autocomplete-dropdown {
             </button>
           </div>
         </div>
-        <div class="table-container table-scroll-10">
-          <table class="data-table" id="track-table">
-            <thead>
-              <tr>
-                <th data-tlcol="model">Model &amp; Description</th>
-                <th data-tlcol="customer">Customer Destination</th>
-                <th data-tlcol="dateOut">Dispatched</th>
-                <th data-tlcol="warranty">Warranty</th>
-                <th data-tlcol="status">Status</th>
-                <th style="text-align:right;">Qty</th>
-                <th data-tlcol="actions" style="text-align:right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="track-table-tbody"></tbody>
-          </table>
+        <div class="table-container table-scroll-10 tl-scroll">
+          <div class="tl-grid" id="track-grid" role="table" aria-label="Fulfillment records"></div>
         </div>
         <div class="tl-pagination" id="track-pagination"></div>
       </div>
@@ -8166,7 +8169,7 @@ const DB = {
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
   trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
 
-  trackCols: { model: true, serial: true, dateIn: true, dateOut: true, customer: true, warranty: true, status: true, actions: true },
+  trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
   soRecentHidden: false, // hide the Recent customer chips row (ui_pref soRecent)
   rmaSearch: '',            // Return registry text search
   rmaDateOut: '',           // Return registry Date Out filter (raw value)
@@ -12003,88 +12006,143 @@ function toggleTrackBreakdown() {
   apiPost('/api/ui-prefs', { prefs: { tlCollapsed: DB.trackBreakdownCollapsed } }).catch(() => {});
 }
 
-/* ---- Fulfillment Records Log table ---- */
-const TRACK_COL_DEFS = [
-  ['model', 'Model & Description'], ['serial', 'Serial Num/Desc'], ['dateIn', 'Date In'],
-  ['dateOut', 'Dispatched At'], ['customer', 'Customer Destination'], ['warranty', 'Warranty'],
-  ['status', 'Status'], ['actions', 'Actions']
+/* ---- Fulfillment Records Log table (grouped rows on ONE shared grid) ----
+   Columns: Model | Destination | Date in | Dispatched | Warranty | Quantity | Status.
+   `moves` columns render on the parent row while the group is collapsed; when
+   expanded they appear on EACH unit row instead, in the same grid tracks. */
+const TL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TL_COLS = [
+  { key: 'model',    label: 'Model',       w: 'minmax(200px,1.6fr)', fixed: true },
+  { key: 'customer', label: 'Destination', w: 'minmax(110px,.7fr)',  moves: true },
+  { key: 'dateIn',   label: 'Date in',     w: 'minmax(120px,.8fr)',  moves: true },
+  { key: 'dateOut',  label: 'Dispatched',  w: 'minmax(120px,.8fr)',  moves: true },
+  { key: 'warranty', label: 'Warranty',    w: 'minmax(140px,.85fr)', moves: true },
+  { key: 'qty',      label: 'Quantity',    w: '90px' },
+  { key: 'status',   label: 'Status',      w: '110px' },
 ];
+/* Filter Columns: every column except Model can be hidden. */
+const TRACK_COL_DEFS = TL_COLS.filter(c => !c.fixed).map(c => [c.key, c.label]);
 
-function trackWarrantyBadge(r) {
-  const w = r.warranty || { status: 'none', expiry: '', daysRemaining: null };
-  if (w.status === 'active') {
-    return `<span class="tl-warranty-badge w-active" title="Warranty expires ${escapeHtml(w.expiry)}"><i class="tl-wdot" style="background:var(--green-bright)"></i>Active (${w.daysRemaining}d)</span>`;
-  }
-  if (w.status === 'expiring') {
-    return `<span class="tl-warranty-badge w-expiring" title="Warranty expires ${escapeHtml(w.expiry)}"><i class="tl-wdot" style="background:#f59e0b"></i>Expiring (${w.daysRemaining}d)</span>`;
-  }
-  if (w.status === 'expired') {
-    return `<span class="tl-warranty-badge w-expired" title="Warranty expired ${escapeHtml(w.expiry)}"><i class="tl-wdot" style="background:#f87171"></i>Expired</span>`;
-  }
-  return '<span class="tl-warranty-badge w-none">\u2014</span>';
+/* Visible columns -> shared grid template + 1-based position per column.
+   Unit-row actions sit under Status; if Status is hidden, a trailing track
+   keeps them off the other cells. */
+function tlLayout() {
+  const vis = TL_COLS.filter(c => c.fixed || DB.trackCols[c.key] !== false);
+  const pos = {};
+  vis.forEach((c, i) => { pos[c.key] = i + 1; });
+  const actionsCol = pos.status || vis.length + 1;
+  return { vis, pos, actionsCol, template: vis.map(c => c.w).join(' ') + (pos.status ? '' : ' 100px') };
 }
 
-/* Quiet warranty display: text label + colored soft pill. */
-function tlWarrantyText(w) {
-  w = w || { status: 'none', expiry: '', daysRemaining: null };
-  if (w.status === 'active')   return `Active (${w.daysRemaining}d)`;
-  if (w.status === 'expiring') return `Expiring (${w.daysRemaining}d)`;
+/* While a group is expanded, the `moves` columns leave the parent row and
+   render on each unit row instead; collapse brings them back. */
+function tlCellMovesToUnits(key, isOpen) {
+  const col = TL_COLS.find(c => c.key === key);
+  return !!(isOpen && col && col.moves);
+}
+
+/* 'YYYY-MM-DD' -> 'Oct 5, 2026' (parsed by hand to dodge timezone shifts). */
+function tlFmtDate(s) {
+  const p = String(s || '').slice(0, 10).split('-');
+  const y = +p[0], m = +p[1], d = +p[2];
+  return (y && m && d) ? `${TL_MONTHS[m - 1]} ${d}, ${y}` : String(s || '\u2014');
+}
+
+/* Date in compares by calendar day only: one day -> 'Oct 5, 2026',
+   different days -> a range 'Oct 5, 2026 – Oct 7, 2026'. Never 'Various'. */
+function tlDateInLabel(items) {
+  const days = [...new Set(items.map(r => String(r.dateIn || '').slice(0, 10)))].sort();
+  return days.length === 1
+    ? tlFmtDate(days[0])
+    : `${tlFmtDate(days[0])} \u2013 ${tlFmtDate(days[days.length - 1])}`;
+}
+
+/* Warranty: shared state + days -> 'Active · 366 days' (green/red);
+   units that differ -> 'Mixed' (amber). */
+function tlWarrantyLabel(w) {
+  w = w || {};
+  if (w.status === 'active')   return `Active \u00b7 ${w.daysRemaining} days`;
+  if (w.status === 'expiring') return `Expiring \u00b7 ${w.daysRemaining} days`;
   if (w.status === 'expired')  return 'Expired';
   return '\u2014';
 }
-function tlWarrantyDot(r) {
-  const w = r.warranty || { status: 'none', expiry: '', daysRemaining: null };
-  const cls = w.status === 'active' ? 'p-ok' : w.status === 'expiring' ? 'p-warn'
-            : w.status === 'expired' ? 'p-bad' : 'p-none';
+function tlWarrantyCls(w) {
+  const s = (w && w.status) || 'none';
+  return s === 'active' ? 'w-active' : s === 'expiring' ? 'w-expiring' : s === 'expired' ? 'w-expired' : 'w-none';
+}
+function tlWarrantyCell(items) {
+  const sig = r => `${(r.warranty || {}).status}|${(r.warranty || {}).daysRemaining}`;
+  if (new Set(items.map(sig)).size !== 1) {
+    return '<span class="tl-warr w-mixed"><i></i>Mixed</span>';
+  }
+  const w = items[0].warranty || {};
   const title = w.expiry ? ` title="Warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(w.expiry)}"` : '';
-  return `<span class="tl-pill-soft ${cls}"${title}>${escapeHtml(tlWarrantyText(w))}</span>`;
+  return `<span class="tl-warr ${tlWarrantyCls(w)}"${title}>${escapeHtml(tlWarrantyLabel(w))}</span>`;
 }
 
-/* Fulfillment status: future date = Booked, today = Dispatched,
-   past = Delivered. Same Sold record — label follows Date Out. */
+/* Status: future Date Out = Booked (amber), otherwise Dispatched (blue). */
 function tlStatusInfo(r) {
-  const t = parseDateAny(r && r.dateOut);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  if (t && t.getTime() > today.getTime()) return { label: 'Booked',     cls: 'p-warn' };
-  if (t && t.getTime() < today.getTime()) return { label: 'Delivered',  cls: 'p-ok'   };
-  return { label: 'Dispatched', cls: 'p-info' };
-}
-function tlStatusPill(r) {
-  const s = tlStatusInfo(r);
-  return `<span class="tl-pill-soft ${s.cls}">${s.label}</span>`;
+  return isTrackBooked(r)
+    ? { label: 'Booked',     cls: 'p-warn', tone: 'is-booked' }
+    : { label: 'Dispatched', cls: 'p-info', tone: 'is-dispatched' };
 }
 
-/* Natural order: "#1, #2 ... #13", not "#1, #10, #11, #2". */
+/* Natural order: '#1, #2 ... #13', not '#1, #10, #11, #2'. */
 function naturalCompareSerials(a, b) {
   return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
 }
 
 /* Group sold units by model + destination + dispatched date + status.
-   Input list is already display-sorted; group order follows it. */
-function buildTrackGroups(list) {
+   Serials natural-sorted inside each group; groups sorted by dispatch
+   date (sortDir 'asc'|'desc'), then by model. */
+function buildTrackGroups(list, sortDir) {
   const groups = new Map();
   list.forEach(r => {
-    const key = [r.model || '', r.customer || '', r.dateOut || '', 'Dispatched'].join('|');
+    const status = isTrackBooked(r) ? 'Booked' : 'Dispatched';
+    const key = [r.model || '', r.customer || '', r.dateOut || '', status].join('|');
     let g = groups.get(key);
     if (!g) {
-      g = { key, model: r.model || '', customer: r.customer || '', dateOut: r.dateOut || '', items: [] };
+      g = { key, model: r.model || '', customer: r.customer || '', dateOut: r.dateOut || '', status, items: [] };
       groups.set(key, g);
     }
     g.items.push(r);
   });
   const arr = [...groups.values()];
   arr.forEach(g => g.items.sort((a, b) => naturalCompareSerials(a.serial, b.serial)));
+  const dir = sortDir === 'asc' ? 1 : -1;
+  arr.sort((a, b) =>
+    dir * ((parseDateAny(a.dateOut) || new Date(0)) - (parseDateAny(b.dateOut) || new Date(0)))
+    || naturalCompareSerials(a.model, b.model));
   return arr;
 }
 
+/* Short fade/slide so moved values visibly travel between the parent row
+   and the unit rows. Skipped for reduced-motion users. */
+function tlAnimateToggle(key, opening) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const row = document.querySelector(`#track-grid .tl-g-row[data-key="${CSS.escape(key)}"]`);
+  if (!row) return;
+  const targets = opening
+    ? row.parentElement.querySelectorAll('.tl-u-row [data-moves]')
+    : row.querySelectorAll('[data-moves]');
+  const frames = [
+    { opacity: 0, transform: `translateY(${opening ? -8 : 8}px)` },
+    { opacity: 1, transform: 'none' },
+  ];
+  targets.forEach(el => { if (el.animate) el.animate(frames, { duration: 220, easing: 'ease-out' }); });
+}
+
 function toggleTrackGroup(key) {
-  if (!DB.trackOpenGroups.has(key)) DB.trackOpenGroups.add(key);
-  else DB.trackOpenGroups.delete(key);
+  const opening = !DB.trackOpenGroups.has(key);
+  opening ? DB.trackOpenGroups.add(key) : DB.trackOpenGroups.delete(key);
   renderTrackList(DB.trackSearch, true);
+  tlAnimateToggle(key, opening);
+  const btn = document.querySelector(`#track-grid .tl-g-row[data-key="${CSS.escape(key)}"] .tl-tgl`);
+  if (btn) btn.focus();
 }
 
 function toggleAllTrackGroups() {
-  const groups = buildTrackGroups(getSortedTrackList(getFilteredTrackList()));
+  const groups = buildTrackGroups(getSortedTrackList(getFilteredTrackList()), DB.trackSortDir);
   const allOpen = groups.length > 0 && groups.every(g => DB.trackOpenGroups.has(g.key));
   groups.forEach(g => {
     if (allOpen) DB.trackOpenGroups.delete(g.key);
@@ -12094,17 +12152,19 @@ function toggleAllTrackGroups() {
 }
 
 function renderTrackTable(list, modelColors) {
-  const tbody = document.getElementById('track-table-tbody');
-  const table = document.getElementById('track-table');
-  if (!tbody || !table) return;
-
-  for (const k in DB.trackCols) {
-    table.classList.toggle('tl-hide-' + k, !DB.trackCols[k]);
-  }
+  const grid = document.getElementById('track-grid');
+  if (!grid) return;
 
   const sorted = getSortedTrackList(list);
-  const groups = buildTrackGroups(sorted);
+  const groups = buildTrackGroups(sorted, DB.trackSortDir);
   DB._trackGroups = groups;   // reschedule modal looks groups up by index
+
+  /* The first group starts expanded (once — after that the user's
+     open/collapse choices are remembered). */
+  if (!DB._trackAutoOpened && groups.length) {
+    DB.trackOpenGroups.add(groups[0].key);
+    DB._trackAutoOpened = true;
+  }
 
   // Dispatch batch (or legacy customer+date) still drives the undo-button
   // hover preview and its tooltip unit count.
@@ -12121,108 +12181,127 @@ function renderTrackTable(list, modelColors) {
   if (DB.trackPage < 0) DB.trackPage = 0;
   const pageGroups = groups.slice(DB.trackPage * size, DB.trackPage * size + size);
 
-  const eyeSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
-  const undoSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
-
   const q = (DB.trackSearch || '').trim();
   const ql = q.toLowerCase();
   const dIn = DB.trackDateIn || '';
   const dOut = DB.trackDateOut || '';
-  const open = DB.trackOpenGroups;
+  const L = tlLayout();
+  grid.style.setProperty('--tl-cols', L.template);
 
-  tbody.innerHTML = '';
-  if (!pageGroups.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:26px 14px; color:var(--text-sub);">No records match the current filters.</td></tr>';
-  }
+  const calSvg  = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+  const chevSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+  const pkgSvg  = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>';
+  const undoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+  const eyeSvg  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7-4.477 0-8.268 2.943-9.542 7z"></path></svg>';
 
-  pageGroups.forEach((g, gi) => {
-    const booked = isTrackBooked(g.items[0]);   // all units share Date Out
+  /* Shared cell renderers — parent and unit rows call the same functions so
+     a value looks identical before and after it "moves down" on expand. */
+  const destHTML = (dest, attr) =>
+    `<div class="tl-dest" data-moves ${attr}><i class="tl-dest-dot" style="background:${trackCustomerColor(dest)}"></i><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(dest || ''))}')">${q && (dest || '').toLowerCase().includes(ql) ? markMatchedText(dest || '', q) : escapeHtml(dest || '\u2014')}</span></div>`;
+  const dateHTML = (label, attr, hit, title) =>
+    `<div class="tl-date" data-moves ${attr}${title ? ` title="${escapeHtml(title)}"` : ''}>${calSvg}<span${hit ? ' style="color:var(--green-bright); font-weight:600;"' : ''}>${escapeHtml(label)}</span></div>`;
+  const warrHTML = (items, attr) =>
+    `<div class="tl-center" data-moves ${attr}>${tlWarrantyCell(items)}</div>`;
+
+  /* Parent-row cells: while the group is open, the `moves` columns render
+     empty placeholders — the grid track stays so nothing shifts. */
+  const parentCell = (key, g, gi, isOpen, st) => {
+    if (tlCellMovesToUnits(key, isOpen)) return '<div aria-hidden="true"></div>';
+    switch (key) {
+      case 'model': {
+        const modelHit = q && (g.model.toLowerCase().includes(ql) ||
+          g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
+        return `<div class="tl-model-cell"><button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg">${pkgSvg}</span><span class="tl-model-name tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></div>`;
+      }
+      case 'customer': return destHTML(g.customer, '');
+      case 'dateIn': {
+        const hit = dIn && g.items.some(r => dateMatchesQ(r.dateIn, dIn));
+        const multi = new Set(g.items.map(r => String(r.dateIn || '').slice(0, 10))).size > 1;
+        return dateHTML(tlDateInLabel(g.items), '', hit, multi ? 'Units in this group came in on different days' : '');
+      }
+      case 'dateOut':  return dateHTML(tlFmtDate(g.dateOut), '', dOut && dateMatchesQ(g.dateOut, dOut));
+      case 'warranty': return warrHTML(g.items, '');
+      case 'qty':      return `<div class="tl-center"><span class="tl-qty"><strong>${g.items.length}</strong> ${g.items.length === 1 ? 'pc' : 'pcs'}</span></div>`;
+      case 'status': {
+        const reschedBtn = st.label === 'Booked'
+          ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" aria-label="Reschedule booking for ${escapeHtml(g.model)}" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})">${calSvg}</button>`
+          : '';
+        return `<div class="tl-center tl-status-cell"><span class="tl-pill-soft ${st.cls}">${st.label}</span>${reschedBtn}</div>`;
+      }
+    }
+    return '';
+  };
+
+  /* Unit-row cells sit in the same grid columns as the parent cells. */
+  const unitCell = (key, r) => {
+    const attr = `style="grid-column:${L.pos[key]}"`;
+    switch (key) {
+      case 'customer': return destHTML(r.customer, attr);
+      case 'dateIn':   return dateHTML(tlFmtDate(r.dateIn), attr, dIn && dateMatchesQ(r.dateIn, dIn));
+      case 'dateOut':  return dateHTML(tlFmtDate(r.dateOut), attr, dOut && dateMatchesQ(r.dateOut, dOut));
+      case 'warranty': return warrHTML([r], attr);
+      case 'qty':      return `<div class="tl-u-qty" ${attr}>1 pc</div>`;
+    }
+    return '';
+  };
+
+  const childHeadHTML = `<div class="tl-g tl-u-head">
+    <div class="tl-u-id"><span class="tl-u-no">No</span><span>Serial / description</span></div>
+    ${L.vis.filter(c => c.key !== 'model' && c.key !== 'status').map(c =>
+      `<div class="${c.key === 'customer' ? '' : 'tl-center'}" style="grid-column:${L.pos[c.key]}">${c.label}</div>`).join('')}
+    <div class="tl-u-actions" style="grid-column:${L.actionsCol}">Actions</div>
+  </div>`;
+
+  const unitRowHTML = (g, r, n, st) => {
+    const label = st.label === 'Booked' ? 'Cancel booking' : 'Revert dispatch';
+    const jsSerial = escapeHtml(escapeJs(r.serial));
+    const serialHit = q && (r.serial || '').toLowerCase().includes(ql);
+    const bKey = batchKey(r);
+    const moved = ['customer', 'dateIn', 'dateOut', 'warranty', 'qty']
+      .filter(k => L.pos[k]).map(k => unitCell(k, r)).join('');
+    return `<div class="tl-g tl-u-row" data-batch="${escapeHtml(bKey)}">
+      <div class="tl-u-id"><span class="tl-u-no">${n + 1}</span><span class="tl-u-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></div>
+      ${moved}
+      <div class="tl-u-actions" style="grid-column:${L.actionsCol}"><button type="button" class="tl-eye-btn tl-undo-btn" style="color:#f59e0b;" title="${label} — ${batchCount.get(bKey)} unit(s) back to stock" aria-label="${label} ${escapeHtml(r.serial)}" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})">${undoSvg}</button><button type="button" class="tl-eye-btn" title="View details" aria-label="View details for ${escapeHtml(r.serial)}" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></div>
+    </div>`;
+  };
+
+  const headHTML = `<div class="tl-g tl-g-head">${L.vis.map(c =>
+    `<div class="${c.key === 'model' || c.key === 'customer' ? '' : 'tl-center'}">${c.label}</div>`).join('')}</div>`;
+
+  grid.innerHTML = pageGroups.length ? headHTML + pageGroups.map((g, gi) => {
+    const st = tlStatusInfo(g.items[0]);   // all units share Date Out
     const modelHit = q && (g.model.toLowerCase().includes(ql) ||
       g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
     const custHit = q && g.customer.toLowerCase().includes(ql);
     const outHit = dOut && dateMatchesQ(g.dateOut, dOut);
-    const isOpen = open.has(g.key) || !!q;   // searching auto-expands matches
+    const isOpen = DB.trackOpenGroups.has(g.key) || !!q;   // searching auto-expands
+    const cells = L.vis.map(c => parentCell(c.key, g, gi, isOpen, st)).join('');
+    const children = `<div class="tl-children" id="tl-panel-${gi}"${isOpen ? '' : ' hidden'}>${isOpen
+      ? childHeadHTML + g.items.map((r, n) => unitRowHTML(g, r, n, st)).join('')
+      : ''}</div>`;
+    return `<div class="tl-group"><div class="tl-g tl-g-row${(modelHit || custHit || outHit) ? ' tl-row-hit' : ''}" data-key="${escapeHtml(g.key)}">${cells}</div>${children}</div>`;
+  }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
 
-    const gtr = document.createElement('tr');
-    gtr.className = 'tl-group-row' + ((modelHit || custHit || outHit) ? ' tl-row-hit' : '');
-    gtr.dataset.gkey = g.key;
-    gtr.tabIndex = 0;
-    gtr.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-
-    // Warranty column: the shared value, or "Mixed" when units differ.
-    const warrTexts = [...new Set(g.items.map(r => tlWarrantyText(r.warranty)))];
-    const warrCell = warrTexts.length === 1
-      ? tlWarrantyDot(g.items[0])
-      : '<span class="tl-pill-soft p-warn">Mixed</span>';
-
-    const calSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
-    const reschedBtn = booked
-      ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})">${calSvg}</button>`
-      : '';
-
-    gtr.innerHTML = `
-      <td data-tlcol="model"><span class="tl-chev-box"><i>&#9654;</i></span><span class="tl-group-model tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></td>
-      <td data-tlcol="customer"><span class="tl-cust-sq" style="background:${trackCustomerColor(g.customer)}"></span><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(g.customer))}')">${custHit ? markMatchedText(g.customer, q) : escapeHtml(g.customer || '—')}</span></td>
-      <td data-tlcol="dateOut" class="mono"><span class="tl-date-cell">${calSvg}${outHit ? markMatchedText(g.dateOut, dOut) : escapeHtml(g.dateOut)}</span></td>
-      <td data-tlcol="warranty">${warrCell}</td>
-      <td data-tlcol="status">${tlStatusPill(g.items[0])}</td>
-      <td style="text-align:right;"><span class="tl-qty-pill">${g.items.length} unit${g.items.length === 1 ? '' : 's'}</span></td>
-      <td data-tlcol="actions" style="text-align:right;">${reschedBtn}</td>
-    `;
-    tbody.appendChild(gtr);
-
-    if (!isOpen) return;
-
-    const dtr = document.createElement('tr');
-    dtr.className = 'tl-detail-row';
-    const dtd = document.createElement('td');
-    dtd.colSpan = 7;
-    const unitRows = g.items.map((r, i) => {
-      const jsSerial = escapeHtml(escapeJs(r.serial));
-      const serialHit = q && (r.serial || '').toLowerCase().includes(ql);
-      const warrHit = q && r.warranty && (r.warranty.status || '').toLowerCase().includes(ql);
-      const inHit = dIn && dateMatchesQ(r.dateIn, dIn);
-      const bKey = batchKey(r);
-      return `<tr data-batch="${escapeHtml(bKey)}">
-        <td class="mono" style="color:var(--text-muted); width:34px;">${i + 1}</td>
-        <td data-tlcol="serial"><i class="tl-unit-dot"></i><span class="tl-unit-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
-        <td data-tlcol="dateIn" class="mono" style="color:var(--text-sub);">${inHit ? markMatchedText(r.dateIn, dIn) : escapeHtml(r.dateIn)}</td>
-        <td data-tlcol="warranty">${warrHit ? `<span class="tl-warr-hit">${tlWarrantyDot(r)}</span>` : tlWarrantyDot(r)}</td>
-        <td data-tlcol="actions" style="text-align:right;"><span class="tl-unit-actions"><button type="button" class="tl-eye-btn tl-undo-btn" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})" title="Undo dispatch — ${batchCount.get(bKey)} unit(s) back to stock" style="color:#f59e0b;">${undoSvg}</button><button type="button" class="tl-eye-btn" title="Inspect in Return &amp; RMA" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></span></td>
-      </tr>`;
-    }).join('');
-    dtd.innerHTML = `<div class="tl-detail-inner"><table>
-      <thead><tr><th style="width:34px;">#</th><th data-tlcol="serial">Serial / Description</th><th data-tlcol="dateIn">Date In</th><th data-tlcol="warranty">Warranty</th><th data-tlcol="actions" style="text-align:right;">Actions</th></tr></thead>
-      <tbody>${unitRows}</tbody></table></div>`;
-    dtr.appendChild(dtd);
-    tbody.appendChild(dtr);
-  });
-
-  // Group toggle: click or Enter/Space on a focused row. Clicks on
-  // copyable text or buttons inside the row don't toggle.
-  if (!tbody._tlDelegated) {
-    tbody._tlDelegated = true;
-    tbody.addEventListener('click', e => {
-      const gtr = e.target.closest('tr.tl-group-row');
-      if (!gtr) return;
-      if (e.target.closest('.tl-copy, button, a, input, select')) return;
-      toggleTrackGroup(gtr.dataset.gkey);
-    });
-    tbody.addEventListener('keydown', e => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      const gtr = e.target;
-      if (!gtr.matches || !gtr.matches('tr.tl-group-row')) return;
-      e.preventDefault();
-      toggleTrackGroup(gtr.dataset.gkey);
+  /* Clicking anywhere on a parent row toggles it — except copyable text and
+     the reschedule button, which keep their own behavior. The chevron is the
+     keyboard-focusable control; Enter/Space fire its click natively. */
+  if (!grid._tlDelegated) {
+    grid._tlDelegated = true;
+    grid.addEventListener('click', e => {
+      const row = e.target.closest('.tl-g-row');
+      if (!row || !grid.contains(row)) return;
+      if (e.target.closest('.tl-copy, .tl-resched-btn, a, input, select')) return;
+      toggleTrackGroup(row.dataset.key);
     });
   }
 
   const sb = document.getElementById('track-showing-badge');
-  if (sb) sb.textContent = `${groups.length} groups · ${sorted.length} units`;
+  if (sb) sb.textContent = `${groups.length} group${groups.length === 1 ? '' : 's'} \u00b7 ${sorted.length} unit${sorted.length === 1 ? '' : 's'}`;
 
   const eb = document.getElementById('track-expand-btn');
   if (eb) {
-    const allOpen = groups.length > 0 && groups.every(g => open.has(g.key));
+    const allOpen = groups.length > 0 && groups.every(g => DB.trackOpenGroups.has(g.key));
     eb.childNodes.forEach(n => {
       if (n.nodeType === 3 && n.textContent.trim()) n.textContent = allOpen ? ' Collapse all' : ' Expand all';
     });
@@ -13039,12 +13118,12 @@ function resolveAppConfirm(ok) {
 let _batchHoverKey = null;
 document.addEventListener('mouseover', e => {
   if (!e.target.closest) return;
-  const btn = e.target.closest('#track-table-tbody .tl-undo-btn');
-  const tr = btn ? btn.closest('tr[data-batch]') : null;
-  const key = tr ? tr.dataset.batch : null;
+  const btn = e.target.closest('#track-grid .tl-undo-btn');
+  const row = btn ? btn.closest('.tl-u-row[data-batch]') : null;
+  const key = row ? row.dataset.batch : null;
   if (key === _batchHoverKey) return;
   _batchHoverKey = key;
-  document.querySelectorAll('#track-table-tbody tr[data-batch]')
+  document.querySelectorAll('#track-grid .tl-u-row[data-batch]')
     .forEach(x => x.classList.toggle('tl-batch-focus', !!key && x.dataset.batch === key));
 });
 

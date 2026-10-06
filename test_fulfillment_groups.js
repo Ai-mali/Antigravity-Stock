@@ -1,6 +1,7 @@
-/* Test: Fulfillment Records Log grouping + natural serial sort.
-   Extracts buildTrackGroups() and naturalCompareSerials() from
-   ac-stock-tracker.html so the test exercises the real shipped code. */
+/* Test: Fulfillment Records Log — grouping, natural sort, group ordering,
+   the Date-in range rule, the Mixed warranty rule, and the expand/collapse
+   "moves" column rule. Extracts the real functions from ac-stock-tracker.html
+   so the test exercises shipped code. */
 const fs = require('fs');
 const path = require('path');
 
@@ -17,9 +18,32 @@ function extractFn(name) {
   return html.slice(start, i + 1);
 }
 
-// buildTrackGroups depends on naturalCompareSerials — eval both.
+function extractConst(name) {
+  const start = html.indexOf('const ' + name + ' =');
+  if (start < 0) throw new Error(name + ' not found in html');
+  let i = html.indexOf('[', start), depth = 0;
+  for (; i < html.length; i++) {
+    if (html[i] === '[') depth++;
+    else if (html[i] === ']') { depth--; if (!depth) break; }
+  }
+  return html.slice(start, i + 2);
+}
+
+// Dependencies of the functions under test — eval them all.
+// (const/let don't escape eval scope, so extract as var.)
+eval(extractConst('TL_MONTHS').replace('const ', 'var '));
+eval(extractConst('TL_COLS').replace('const ', 'var '));
+eval(extractFn('escapeHtml'));
+eval(extractFn('parseDateAny'));
+eval(extractFn('isTrackBooked'));
 eval(extractFn('naturalCompareSerials'));
 eval(extractFn('buildTrackGroups'));
+eval(extractFn('tlFmtDate'));
+eval(extractFn('tlDateInLabel'));
+eval(extractFn('tlWarrantyLabel'));
+eval(extractFn('tlWarrantyCls'));
+eval(extractFn('tlWarrantyCell'));
+eval(extractFn('tlCellMovesToUnits'));
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -27,25 +51,34 @@ function check(name, cond) {
   else { fail++; console.log('FAIL  ' + name); }
 }
 
-const rec = (model, serial, customer, dateOut, status) =>
-  ({ model, serial, customer, dateOut, status, dateIn: '2025-01-01', batch: '' });
+const PAST = '2020-03-01';      // -> Dispatched
+const FUTURE = '2999-03-01';    // -> Booked
+const rec = (model, serial, customer, dateOut, dateIn, warranty) => ({
+  model, serial, customer, dateOut,
+  dateIn: dateIn || '2025-01-01',
+  batch: '',
+  warranty: warranty || { status: 'active', daysRemaining: 366, expiry: '2026-03-01' },
+});
 
 /* ---- grouping: model + destination + dispatched date + status ---- */
 const list = [
-  rec('BRC2E61', 'BRC2E61 #10', 'John',  '2026-03-01', 'SOLD'),
-  rec('BRC2E61', 'BRC2E61 #2',  'John',  '2026-03-01', 'SOLD'),
-  rec('BRC2E61', 'BRC2E61 #1',  'John',  '2026-03-01', 'SOLD'),
-  rec('BRC2E61', 'BRC2E61 #11', 'John',  '2026-03-01', 'SOLD'),
-  rec('BYCQ125EAF', 'S-1',      'John',  '2026-03-01', 'SOLD'),  // different model
-  rec('BRC2E61', 'BRC2E61 #3',  'Mary',  '2026-03-01', 'SOLD'),  // different destination
-  rec('BRC2E61', 'BRC2E61 #4',  'John',  '2026-03-02', 'SOLD'),  // different date
+  rec('BRC2E61', 'BRC2E61 #10', 'John', PAST),
+  rec('BRC2E61', 'BRC2E61 #2',  'John', PAST),
+  rec('BRC2E61', 'BRC2E61 #1',  'John', PAST),
+  rec('BRC2E61', 'BRC2E61 #11', 'John', PAST),
+  rec('BYCQ125EAF', 'S-1',      'John', PAST),           // different model
+  rec('BRC2E61', 'BRC2E61 #3',  'Mary', PAST),           // different destination
+  rec('BRC2E61', 'BRC2E61 #4',  'John', '2020-03-02'),   // different date
+  rec('BRC2E61', 'BRC2E61 #5',  'John', FUTURE),         // different status (Booked)
 ];
-const groups = buildTrackGroups(list);
+const groups = buildTrackGroups(list, 'desc');
 
-check('groups by model+destination+date+status -> 4 groups', groups.length === 4);
+check('groups by model+destination+date+status -> 5 groups', groups.length === 5);
 
-const john = groups.find(g => g.model === 'BRC2E61' && g.customer === 'John' && g.dateOut === '2026-03-01');
+const john = groups.find(g => g.model === 'BRC2E61' && g.customer === 'John' && g.dateOut === PAST);
 check('main group has 4 units', !!john && john.items.length === 4);
+check('future-dated group is Booked', groups.some(g => g.dateOut === FUTURE && g.status === 'Booked'));
+check('past-dated group is Dispatched', john && john.status === 'Dispatched');
 
 /* ---- natural sort inside a group ---- */
 check('natural order #1 #2 #10 #11',
@@ -57,12 +90,48 @@ check('plain serials natural-sort too',
 check('alpha tiebreak stable-ish (#1 before #10 before #2)',
   ['MODEL #2', 'MODEL #10', 'MODEL #1'].sort(naturalCompareSerials).join(',') === 'MODEL #1,MODEL #2,MODEL #10');
 
-/* ---- group ordering follows input list order ---- */
-check('group insertion order preserved (first seen first)',
-  groups[0].model === 'BRC2E61' && groups[0].customer === 'John');
+/* ---- group ordering: dispatchedAt Desc/Asc, then model ---- */
+const ordered = [
+  rec('ZZZ', 'a', 'X', '2020-01-01'),
+  rec('AAA', 'b', 'X', '2020-01-01'),   // same date -> model sorts first
+  rec('MMM', 'c', 'X', '2020-06-01'),
+];
+const desc = buildTrackGroups(ordered, 'desc');
+check('desc: newest date first', desc[0].dateOut === '2020-06-01');
+check('desc: same-date tiebreak by model', desc[1].model === 'AAA' && desc[2].model === 'ZZZ');
+const asc = buildTrackGroups(ordered, 'asc');
+check('asc: oldest date first', asc[0].dateOut === '2020-01-01' && asc[0].model === 'AAA');
+check('asc: newest last', asc[asc.length - 1].dateOut === '2020-06-01');
+
+/* ---- Date in range rule (calendar day only, never 'Various') ---- */
+const sameDay = [rec('M', 's1', 'c', PAST, '2025-10-05'), rec('M', 's2', 'c', PAST, '2025-10-05T14:30')];
+check('same calendar day -> single date', tlDateInLabel(sameDay) === 'Oct 5, 2025');
+const diffDay = [rec('M', 's1', 'c', PAST, '2025-10-05'), rec('M', 's2', 'c', PAST, '2025-10-07')];
+check('different days -> range', tlDateInLabel(diffDay) === 'Oct 5, 2025 \u2013 Oct 7, 2025');
+check('never Various', tlDateInLabel(diffDay).indexOf('Various') < 0);
+
+/* ---- warranty: shared value or Mixed ---- */
+check('shared warranty -> Active · N days',
+  tlWarrantyCell([rec('M','a','c',PAST), rec('M','b','c',PAST)]).includes('Active \u00b7 366 days'));
+check('expired -> Expired label',
+  tlWarrantyCell([rec('M','a','c',PAST,'2025-01-01',{status:'expired',daysRemaining:0,expiry:'2024-01-01'})]).includes('Expired'));
+const mixed = tlWarrantyCell([
+  rec('M','a','c',PAST,'2025-01-01',{status:'active',daysRemaining:366,expiry:''}),
+  rec('M','b','c',PAST,'2025-01-01',{status:'active',daysRemaining:100,expiry:''}),
+]);
+check('differing units -> Mixed (amber)', mixed.includes('Mixed') && mixed.includes('w-mixed'));
+
+/* ---- expand/collapse: the four "moves" values leave the parent row ---- */
+const MOVES = ['customer', 'dateIn', 'dateOut', 'warranty'];
+check('moves columns blank on parent when open',
+  MOVES.every(k => tlCellMovesToUnits(k, true)));
+check('moves columns render on parent when closed',
+  MOVES.every(k => !tlCellMovesToUnits(k, false)));
+check('model/qty/status never move',
+  ['model', 'qty', 'status'].every(k => !tlCellMovesToUnits(k, true) && !tlCellMovesToUnits(k, false)));
 
 /* ---- empty input ---- */
-check('empty list -> no groups', buildTrackGroups([]).length === 0);
+check('empty list -> no groups', buildTrackGroups([], 'desc').length === 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
