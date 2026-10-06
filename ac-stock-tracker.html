@@ -4277,6 +4277,29 @@ body.theme-light .tl-status-badge {
 }
 
 .tl-group { border-top: 1px solid var(--border); }
+
+/* One checkout spanning several models = adjacent groups in a bordered
+   block, headed by the sale id so a multi-model sale reads as one batch. */
+.tl-batch-block {
+  margin: 10px 0;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,.012);
+}
+.tl-batch-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 20px;
+  color: var(--text-muted); font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--border);
+}
+.tl-batch-id { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--text-sub); }
+.tl-batch-meta { text-transform: none; letter-spacing: 0; font-weight: 500; }
+/* Hovering anywhere in a batch block gently tints all its sibling rows. */
+.tl-batch-block:hover .tl-g-row { background: rgba(96,165,250,.05); }
+.tl-batch-block .tl-children { margin-bottom: 12px; }
 .tl-g-row {
   min-height: 62px; padding: 0 24px 0 20px; cursor: pointer;
   transition: background .15s;
@@ -12100,17 +12123,22 @@ function naturalCompareSerials(a, b) {
   return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-/* Group sold units by model + destination + dispatched date + status.
-   Serials natural-sorted inside each group; groups sorted by dispatch
-   date (sortDir 'asc'|'desc'), then by model. */
+/* Group sold units by model + destination + dispatched date + status +
+   sale batch — each checkout keeps its own row set, so a multi-model sale
+   shows as adjacent sibling groups instead of merging with other sales.
+   Order: Booked always on top, then dispatch date (sortDir), then batch
+   time (same day: newer checkout first), then model. */
 function buildTrackGroups(list, sortDir) {
   const groups = new Map();
   list.forEach(r => {
     const status = isTrackBooked(r) ? 'Booked' : 'Dispatched';
-    const key = [r.model || '', r.customer || '', r.dateOut || '', status].join('|');
+    const batch = r.batch || `LEG:${r.customer || ''}|${r.dateOut || ''}`;
+    const key = [r.model || '', r.customer || '', r.dateOut || '', status, batch].join('|');
     let g = groups.get(key);
     if (!g) {
-      g = { key, model: r.model || '', customer: r.customer || '', dateOut: r.dateOut || '', status, items: [] };
+      const tm = (r.batch || '').match(/SALE-\d{8}-(\d{6})/);
+      g = { key, model: r.model || '', customer: r.customer || '', dateOut: r.dateOut || '',
+            status, batch, batchTime: tm ? +tm[1] : 0, items: [] };
       groups.set(key, g);
     }
     g.items.push(r);
@@ -12119,8 +12147,10 @@ function buildTrackGroups(list, sortDir) {
   arr.forEach(g => g.items.sort((a, b) => naturalCompareSerials(a.serial, b.serial)));
   const dir = sortDir === 'asc' ? 1 : -1;
   arr.sort((a, b) =>
-    dir * ((parseDateAny(a.dateOut) || new Date(0)) - (parseDateAny(b.dateOut) || new Date(0)))
-    || naturalCompareSerials(a.model, b.model));
+    ((b.status === 'Booked') - (a.status === 'Booked')) ||
+    dir * ((parseDateAny(a.dateOut) || new Date(0)) - (parseDateAny(b.dateOut) || new Date(0))) ||
+    dir * (a.batchTime - b.batchTime) ||
+    naturalCompareSerials(a.model, b.model));
   return arr;
 }
 
@@ -12274,7 +12304,22 @@ function renderTrackTable(list, modelColors) {
   const headHTML = `<div class="tl-g tl-g-head">${L.vis.map(c =>
     `<div class="${c.key === 'model' || c.key === 'customer' ? '' : 'tl-center'}">${c.label}</div>`).join('')}</div>`;
 
-  grid.innerHTML = pageGroups.length ? headHTML + pageGroups.map((g, gi) => {
+  /* One checkout that spans several models renders as adjacent groups inside
+     a bordered batch block with a small header — one box per sale. */
+  const linkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>';
+  const shortBatch = b => {
+    const m = (b || '').match(/SALE-\d{8}-\d{6}-(\w+)/);
+    return m ? `SALE-\u2026${m[1]}` : 'Linked sale';
+  };
+  const blocks = [];
+  pageGroups.forEach(g => {
+    const last = blocks[blocks.length - 1];
+    if (last && last.batch === g.batch) last.groups.push(g);
+    else blocks.push({ batch: g.batch, groups: [g] });
+  });
+
+  let gi = 0;   // running group index (panel ids + reschedule lookups)
+  const groupHTML = g => {
     const st = tlStatusInfo(g.items[0]);   // all units share Date Out
     const modelHit = q && (g.model.toLowerCase().includes(ql) ||
       g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
@@ -12282,11 +12327,18 @@ function renderTrackTable(list, modelColors) {
     const outHit = dOut && dateMatchesQ(g.dateOut, dOut);
     const isOpen = DB.trackOpenGroups.has(g.key) || !!q;   // searching auto-expands
     const mc = modelColors[g.model] || '#8995a9';
-    const cells = L.vis.map(c => parentCell(c.key, g, gi, isOpen, st)).join('');
-    const children = `<div class="tl-children" id="tl-panel-${gi}" style="border-left:3px solid ${mc};"${isOpen ? '' : ' hidden'}>${isOpen
+    gi++;
+    const cells = L.vis.map(c => parentCell(c.key, g, gi - 1, isOpen, st)).join('');
+    const children = `<div class="tl-children" id="tl-panel-${gi - 1}" style="border-left:3px solid ${mc};"${isOpen ? '' : ' hidden'}>${isOpen
       ? childHeadHTML + g.items.map((r, n) => unitRowHTML(g, r, n, st)).join('')
       : ''}</div>`;
     return `<div class="tl-group"><div class="tl-g tl-g-row${(modelHit || custHit || outHit) ? ' tl-row-hit' : ''}" data-key="${escapeHtml(g.key)}" style="box-shadow:inset 3px 0 0 ${mc};">${cells}</div>${children}</div>`;
+  };
+
+  grid.innerHTML = pageGroups.length ? headHTML + blocks.map(blk => {
+    if (blk.groups.length === 1) return groupHTML(blk.groups[0]);
+    const units = blk.groups.reduce((n, g) => n + g.items.length, 0);
+    return `<div class="tl-batch-block"><div class="tl-batch-head">${linkSvg}<span class="tl-batch-id">${escapeHtml(shortBatch(blk.batch))}</span><span class="tl-batch-meta">${units} units \u00b7 ${blk.groups.length} models \u2014 one checkout</span></div>${blk.groups.map(groupHTML).join('')}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
 
   /* Clicking anywhere on a parent row toggles it — except copyable text and

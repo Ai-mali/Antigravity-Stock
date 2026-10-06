@@ -53,10 +53,10 @@ function check(name, cond) {
 
 const PAST = '2020-03-01';      // -> Dispatched
 const FUTURE = '2999-03-01';    // -> Booked
-const rec = (model, serial, customer, dateOut, dateIn, warranty) => ({
+const rec = (model, serial, customer, dateOut, dateIn, warranty, batch) => ({
   model, serial, customer, dateOut,
   dateIn: dateIn || '2025-01-01',
-  batch: '',
+  batch: batch || '',
   warranty: warranty || { status: 'active', daysRemaining: 366, expiry: '2026-03-01' },
 });
 
@@ -74,6 +74,33 @@ const list = [
 const groups = buildTrackGroups(list, 'desc');
 
 check('groups by model+destination+date+status -> 5 groups', groups.length === 5);
+
+/* ---- a second checkout of the same model on the same day must NOT merge ---- */
+const twoSales = [
+  rec('BRC2E61', 'X #1', 'John', PAST, null, null, 'SALE-20200301-090000-AAA11'),
+  rec('BRC2E61', 'X #2', 'John', PAST, null, null, 'SALE-20200301-090000-AAA11'),
+  rec('BRC2E61', 'Y #1', 'John', PAST, null, null, 'SALE-20200301-120000-BBB22'),
+];
+const ts = buildTrackGroups(twoSales, 'desc');
+check('same model+dest+date, two batches -> 2 groups', ts.length === 2);
+check('same-day: newer checkout (later batch time) first',
+  ts[0].batch === 'SALE-20200301-120000-BBB22');
+
+/* ---- multi-model checkout: siblings stay adjacent, ordered by model ---- */
+const linked = [
+  rec('AAA', 'a1', 'GCNP', '2020-05-01', null, null, 'SALE-20200501-100000-000X1'),
+  rec('ZZZ', 'z1', 'GCNP', '2020-05-01', null, null, 'SALE-20200501-100000-000X1'),
+  rec('MMM', 'm1', 'GCNP', '2020-05-01', null, null, 'SALE-20200501-090000-000Y2'),
+];
+const lg = buildTrackGroups(linked, 'desc');
+check('multi-model batch: newer sale block on top', lg[0].batch.endsWith('X1') && lg[2].batch.endsWith('Y2'));
+check('batch siblings render adjacent', lg[0].batch === lg[1].batch);
+check('siblings ordered by model', lg[0].model === 'AAA' && lg[1].model === 'ZZZ');
+
+/* ---- Booked (future) pins to the top regardless of sort direction ---- */
+const mixBD = [rec('AAA', 's1', 'c', PAST), rec('ZZZ', 's2', 'c', FUTURE)];
+check('booked first in desc', buildTrackGroups(mixBD, 'desc')[0].status === 'Booked');
+check('booked first even in asc', buildTrackGroups(mixBD, 'asc')[0].status === 'Booked');
 
 const john = groups.find(g => g.model === 'BRC2E61' && g.customer === 'John' && g.dateOut === PAST);
 check('main group has 4 units', !!john && john.items.length === 4);
