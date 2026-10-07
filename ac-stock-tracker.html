@@ -12718,7 +12718,7 @@ function renderTrackTable(list, modelColors) {
       const c = getBrandColor(b);
       return `<span class="tl-batch-brand" style="color:${c}; border-color:${c}55; background:${c}14;" title="${bCounts[b]} unit${bCounts[b] === 1 ? '' : 's'} of ${escapeHtml(b)} in this sale">${escapeHtml(b)} (${bCounts[b]})</span>`;
     }).join('');
-    return `<div class="tl-batch-block${selOn ? ' tl-batch-sel' : ''}"><div class="tl-batch-head">${selboxHTML(blk.batch, selOn, batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${brandMeta}<span style="color:var(--text-sub);">${units} unit${units === 1 ? '' : 's'} \u00b7 one checkout</span></span></div>${blk.groups.map(g => groupHTML(g)).join('')}</div>`;
+    return `<div class="tl-batch-block${selOn ? ' tl-batch-sel' : ''}"><div class="tl-batch-head">${selboxHTML(blk.batch, selOn, batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${brandMeta}<span style="color:var(--text-sub);">${units} unit${units === 1 ? '' : 's'}</span></span></div>${blk.groups.map(g => groupHTML(g)).join('')}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
   updateTrackSelBadge();
 
