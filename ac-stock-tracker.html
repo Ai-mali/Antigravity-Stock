@@ -13157,9 +13157,12 @@ function renderTrackSidebar() {
   if (wc) wc.textContent = `${wCounts.active}/${wCounts.expired}`;
 
   // Customers tab — "All Customers" then each customer (units desc)
-  const mkCust = (key, name, units, last, color, initials, worst) => `
+  const mkCust = (key, name, units, last, color, initials, worst) => {
+    const dbl = key === 'ALL' ? ''
+      : ` ondblclick="event.stopPropagation(); openRenameModal('customer','${escapeHtml(escapeJs(name))}')"`;
+    return `
     <button type="button" class="tl-cust-item${DB.trackFilter === key ? ' active' : ''}"
-            onclick="selectTrackCustomer('${escapeHtml(escapeJs(key))}')" title="${escapeHtml(name)} — filter records">
+            onclick="selectTrackCustomer('${escapeHtml(escapeJs(key))}')"${dbl} title="${escapeHtml(name)} — filter records${dbl ? ' · double-click to rename' : ''}">
       <span class="tl-cust-avatar" style="background:${color}26; color:${color}; border:1px solid ${color}55;">
         ${escapeHtml(initials)}<i class="tl-wdot" style="background:${TL_WORST_DOT[worst]}"></i>
       </span>
@@ -13168,6 +13171,7 @@ function renderTrackSidebar() {
         <span class="tl-cust-line2"><span class="tl-cust-sub">&#128230; Purchased: <b>${units} unit${units === 1 ? '' : 's'}</b></span><span class="tl-cust-date">${escapeHtml(last || '—')}</span></span>
       </span>
     </button>`;
+  };
 
   const sq = (DB.trackSideSearch || '').trim().toLowerCase();
   const visCust = sq ? customers.filter(c => (c.name || '').toLowerCase().includes(sq)) : customers;
@@ -14481,10 +14485,12 @@ async function saveRenameModal() {
     await apiPost(kind === 'customer' ? '/api/customers/rename' : '/api/brands/rename',
                   { old, new: newName });
     closeRenameModal();
-    // A renamed brand leaves any stale sidebar filter pointing nowhere
+    // A renamed brand/customer leaves any stale filter pointing nowhere
     if (kind === 'brand') {
       if (DB.availFilter === old) DB.availFilter = 'ALL';
       if (DB.soFilter === old) DB.soFilter = 'ALL';
+    } else if (DB.trackFilter === old) {
+      DB.trackFilter = 'ALL';
     }
     await refreshData();
     showToast(`${kind === 'customer' ? 'Customer' : 'Brand'} renamed: ${old} → ${newName}`, '&#10003;');
