@@ -29,9 +29,9 @@ PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
 # Finalized multi-resolution icon. Prefer the exact source path the user
 # maintains; fall back to the bundled copy (repo / PyInstaller --add-data).
 _ICON_CANDIDATES = [
-    r'D:\AI-Project\Devin\Icon\VRE_Hybrid.ico',
-    os.path.join(_APP_DIR, 'VRE_Hybrid.ico'),
-    os.path.join(getattr(sys, '_MEIPASS', _APP_DIR), 'VRE_Hybrid.ico'),
+    r'D:\AI-Project\Devin\Icon\VRE_Zoomed_Flat.ico',
+    os.path.join(_APP_DIR, 'VRE_Zoomed_Flat.ico'),
+    os.path.join(getattr(sys, '_MEIPASS', _APP_DIR), 'VRE_Zoomed_Flat.ico'),
 ]
 ICON_FILE = next((p for p in _ICON_CANDIDATES if os.path.exists(p)),
                  _ICON_CANDIDATES[0])
@@ -1060,9 +1060,10 @@ class DesktopApi:
                     0x0027  # SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER
                 )
 
-                # 3. App icon — VRE_Hybrid.ico (ICON_FILE resolves the exact
-                #    D:\...\Icon path first, then the bundled copy). Frameless
-                #    windows still take taskbar/alt-tab icons from WM_SETICON.
+                # 3. App icon — VRE_Zoomed_Flat.ico (ICON_FILE resolves the
+                #    exact D:\...\Icon path first, then the bundled copy).
+                #    Frameless windows still take taskbar/alt-tab icons
+                #    from WM_SETICON.
                 if os.path.exists(ICON_FILE):
                     LR_LOADFROMFILE = 0x0010
                     LR_DEFAULTSIZE = 0x0040

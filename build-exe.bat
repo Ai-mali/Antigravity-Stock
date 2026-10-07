@@ -1,16 +1,16 @@
 @echo off
 REM ============================================================
 REM  Build "VRE AC Stock.exe" — one file, no console, VRE icon.
-REM  Icon: exact finalized path D:\AI-Project\Devin\Icon\VRE_Hybrid.ico
+REM  Icon: exact finalized path D:\AI-Project\Devin\Icon\VRE_Zoomed_Flat.ico
 REM  (falls back to the bundled copy next to this script).
 REM  Output lands in dist\VRE AC Stock.exe
 REM ============================================================
 cd /d "%~dp0"
 
-set "ICON=D:\AI-Project\Devin\Icon\VRE_Hybrid.ico"
-if not exist "%ICON%" set "ICON=%~dp0VRE_Hybrid.ico"
+set "ICON=D:\AI-Project\Devin\Icon\VRE_Zoomed_Flat.ico"
+if not exist "%ICON%" set "ICON=%~dp0VRE_Zoomed_Flat.ico"
 if not exist "%ICON%" (
-    echo [ERROR] VRE_Hybrid.ico not found in D:\AI-Project\Devin\Icon or beside this script.
+    echo [ERROR] VRE_Zoomed_Flat.ico not found in D:\AI-Project\Devin\Icon or beside this script.
     pause
     exit /b 1
 )
