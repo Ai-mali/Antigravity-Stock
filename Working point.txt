@@ -2,6 +2,18 @@
 
 Commit Hash:
 
+7370dfe
+Git Tag: stable-20261007
+Commit Description: Sell Record shows real batch headers for every checkout (incl. single-model) with per-brand count chips + (BRAND) tags on each model row — sold units carry their stored Brand from the record instead of guessing from in-stock models; brand + customer rename via double-click (sidebar brand rows, Sell Record customer rows, recent-customer chips — customers auto-uppercase, case-insensitive rename merges duplicates, brand merge blocked); checkout requires a customer name (grayed button + red field highlight); LOW STOCK + 2ND filter pills with live counts and search-style auto-expand; every backup event writes ready-to-read Available-Stock_* + Sell-Record_* .xlsx into backups\ready_exports\ (keep-10 loop, all cells center-aligned); light-mode fixes (filter toggle thumb, inspection notes); reschedule modal corner/popover fix; folder cleanup.
+Date: 2026-10-07 +0700
+Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + tag stable-20261007.
+Verified at this Stop Point: 73/73 tests pass; rename exercised on workbook copy (152 records re-branded, 43 sale rows + 3 return rows re-customered, merge refused, backup+ready-exports triggered); auto-exports generated + rotation trimmed to 10; screenshots confirmed brand chips, pills, batch headers, reschedule modal.
+
+----------------------------------------------------------------------------------------
+PREVIOUS PINNED STABLE STOP POINT
+
+Commit Hash:
+
 0a4bc1a
 Git Tag: stable-20261006c
 Commit Description: Sell Record exports real Excel workbooks — tick a sale batch to get one .xlsx per sale named 'Customer-Mon D, YYYY HH_MM.xlsx', nothing ticked merges the filtered view into VRE-Sell Record-DD-MM-YY.xlsx; Print Labels removed from Sell Record; Activity & Backups modal tables fixed (table-layout:fixed — Model column no longer balloons, Details gets the spare width, rows back to normal height, no overlapping text, model lists clamp to 4 lines with hover tooltip); search no longer auto-expands record groups.
@@ -10,7 +22,7 @@ Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + t
 Verified at this Stop Point: 73/73 tests pass (test_fulfillment_groups.js incl. export job-splitting, filename stamps, sanitizing); POST /api/export/sales verified to return valid .xlsx; activity modal screenshots confirmed correct row heights and no cell overlap.
 
 ----------------------------------------------------------------------------------------
-PREVIOUS PINNED STABLE STOP POINT
+EARLIER PINNED STABLE STOP POINT
 
 Commit Hash:
 
@@ -22,7 +34,7 @@ Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + t
 Verified at this Stop Point: 37/37 grouping tests pass; export endpoint verified on workbook copy (duplicate-model totals, Booking counts, formula cells, sheet structure); model-scoped stock-out verified end-to-end; scroll-preservation + pill screenshots confirmed.
 
 ----------------------------------------------------------------------------------------
-EARLIER PINNED STABLE STOP POINT
+OLDER PINNED STABLE STOP POINT
 
 Commit Hash:
 
@@ -34,7 +46,7 @@ Repository Status: Synced to main on GitHub (Ai-mali/Antigravity-Stock repo) + t
 Verified at this Stop Point: 21/21 grouping tests pass (test_fulfillment_groups.js); screenshots verified all-collapsed, expanded-with-unit-values-moved, Filter Columns open.
 
 ----------------------------------------------------------------------------------------
-OLDER PINNED STABLE STOP POINT
+OLDEST PINNED STABLE STOP POINT
 
 Commit Hash:
 
