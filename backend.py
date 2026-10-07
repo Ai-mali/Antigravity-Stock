@@ -96,6 +96,22 @@ def index_alias():
     return FileResponse(HTML_PATH, headers=_NOCACHE)
 
 
+# Titlebar brand-icon — exact maintained path first, bundled copy fallback.
+_ICON_CANDIDATES = [
+    Path(r"D:\AI-Project\Devin\Icon\VRE.ico"),
+    BASE / "VRE.ico",
+    Path(__file__).parent / "VRE.ico",
+]
+
+
+@app.get("/app-icon.ico")
+def app_icon():
+    for p in _ICON_CANDIDATES:
+        if p.exists():
+            return FileResponse(p, media_type="image/x-icon", headers=_NOCACHE)
+    raise HTTPException(status_code=404, detail="app icon not found")
+
+
 @app.post("/api/reload")
 def reload():
     store.load()

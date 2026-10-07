@@ -21,6 +21,7 @@ pyinstaller --noconfirm --clean --onefile --windowed ^
   --icon "%ICON%" ^
   --add-data "ac-stock-tracker.html;." ^
   --add-data "%ICON%;." ^
+  --add-data "VRE.ico;." ^
   --hidden-import backend ^
   --hidden-import stock_store ^
   --hidden-import scanner ^

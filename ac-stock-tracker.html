@@ -948,6 +948,13 @@ body.is-desktop-shell .desktop-window-controls {
   color: var(--green-bright);
   font-size: 17px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.brand-icon img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .brand-text h1 {
@@ -6459,7 +6466,7 @@ body.theme-light .autocomplete-dropdown {
   <!-- TOP APP HEADER -->
   <header class="pywebview-drag-region" ondblclick="handleHeaderDblClick(event)">
     <div class="brand">
-      <div class="brand-icon">&#x25A6;</div>
+      <div class="brand-icon"><img src="/app-icon.ico" alt="VRE" draggable="false"></div>
       <div class="brand-text">
         <h1>
           <span class="brand-title-full">VRE <span class="brand-glow">AC Stock</span></span>
