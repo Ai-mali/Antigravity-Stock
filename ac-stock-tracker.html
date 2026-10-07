@@ -5024,6 +5024,22 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
 .tl-side-mini .tl-cust-item.active { box-shadow: inset -3px 0 0 var(--green-bright); }
 .tl-side-mini .tl-side-menu-btn { margin: 0; }
 
+/* Day mode: --surface3 is nearly white — use an emerald tint so the
+   selected row is unmistakable (the running-light ::after is unchanged) */
+body.theme-light .tl-cust-item.active {
+  background: rgba(17, 104, 82, 0.12);
+  box-shadow: inset 3px 0 0 var(--green-bright),
+              inset 0 1px 0 rgba(17, 104, 82, 0.22),
+              inset 0 -1px 0 rgba(17, 104, 82, 0.22);
+}
+body.theme-light .tl-cust-item.active .tl-cust-name { color: var(--green); }
+body.theme-light .tl-side-mini .tl-cust-item.active {
+  box-shadow: inset -3px 0 0 var(--green-bright),
+              inset 1px 0 0 rgba(17, 104, 82, 0.22),
+              inset 0 1px 0 rgba(17, 104, 82, 0.22),
+              inset 0 -1px 0 rgba(17, 104, 82, 0.22);
+}
+
 @media (max-width: 1150px) {
   .tl-sidebar { width: 240px; }
 }
