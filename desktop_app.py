@@ -26,6 +26,7 @@ HEALTH_URL = 'http://127.0.0.1:%d/api/ui-prefs' % BACKEND_PORT
 _APP_DIR = (os.path.dirname(sys.executable) if getattr(sys, 'frozen', False)
             else os.path.dirname(os.path.abspath(__file__)))
 PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
+ICON_FILE = os.path.join(_APP_DIR, 'VRE.ico')
 
 # Shown instantly while the backend (heavy imports + workbook parse) boots
 # in a background thread; replaced via load_url() once port 8000 is live.
@@ -271,6 +272,13 @@ _u32.DrawTextW.argtypes = [wintypes.HDC, ctypes.c_wchar_p, ctypes.c_int,
 _u32.SetProcessDPIAware.restype = wintypes.BOOL
 _u32.FindWindowW.restype = wintypes.HWND
 _u32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+_u32.LoadImageW.restype = wintypes.HICON
+_u32.LoadImageW.argtypes = [wintypes.HINSTANCE, wintypes.LPCWSTR,
+                            wintypes.UINT, ctypes.c_int, ctypes.c_int,
+                            wintypes.UINT]
+_u32.SendMessageW.restype = _LRESULT
+_u32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT,
+                              wintypes.WPARAM, _LRESULT]
 _u32.MonitorFromWindow.restype = wintypes.HMONITOR
 _u32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
 _u32.GetMonitorInfoW.restype = wintypes.BOOL
@@ -1043,6 +1051,22 @@ class DesktopApi:
                     hwnd, 0, 0, 0, 0, 0,
                     0x0027  # SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER
                 )
+
+                # 3. App icon — VRE.ico next to the script/exe. Frameless
+                #    windows still take taskbar/alt-tab icons from WM_SETICON.
+                if os.path.exists(ICON_FILE):
+                    LR_LOADFROMFILE = 0x0010
+                    LR_DEFAULTSIZE = 0x0040
+                    IMAGE_ICON = 1
+                    WM_SETICON = 0x0080
+                    h_big = _u32.LoadImageW(None, ICON_FILE, IMAGE_ICON,
+                                            0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE)
+                    h_sm = _u32.LoadImageW(None, ICON_FILE, IMAGE_ICON,
+                                           16, 16, LR_LOADFROMFILE)
+                    if h_big:
+                        _u32.SendMessageW(hwnd, WM_SETICON, 1, h_big)   # ICON_BIG
+                    if h_sm:
+                        _u32.SendMessageW(hwnd, WM_SETICON, 0, h_sm)    # ICON_SMALL
                 return True
         except Exception:
             pass
@@ -1437,6 +1461,14 @@ def main():
         pass
 
     # One port probe — bind() is instant on this box; connect probes cost ~2s each.
+    # Give the process its own taskbar identity so the icon/pinning isn't
+    # shared with other pythonw.exe windows.
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            'VRE.ACStock')
+    except Exception:
+        pass
+
     port_free = not is_port_in_use(BACKEND_PORT)
     bk.t("port probe -> free=%s" % port_free)
     if port_free:
