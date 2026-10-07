@@ -39,7 +39,7 @@ overflow:hidden;user-select:none;-webkit-user-select:none}
 .splash-container{padding:50px}
 .wrapper{position:relative;width:460px;max-width:86vw}
 .glow-svg,.ring-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.glow-svg{z-index:0;filter:blur(9px);opacity:.95}
+.glow-svg{z-index:0;filter:blur(9px);opacity:.95;clip-path:inset(0 round 18px)}
 .ring-svg{z-index:2}
 .card{position:relative;z-index:1;background:linear-gradient(180deg,#151617 0%,#0b0c0d 100%);
 border-radius:18px;width:460px;height:220px;box-sizing:border-box;padding:0 40px;
@@ -465,13 +465,13 @@ class _NativeSplash:
     RING_W         = 2.4      # sharp comet width at the head (logical px)
     GLOW_W         = 14.0     # widest glow pass at the head (logical px)
     GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha) - fallback only
-    GLOW_SIGMA     = 6.5      # glow softness outside the card edge (logical px)
+    GLOW_SIGMA     = 6.5      # glow softness inside the card edge (logical px)
     GLOW_AMP       = 0.85     # glow strength 0..1
     COMETS         = 2        # 2 = second comet is 180 degrees behind
     COMET_COLOR_OFFSET_MS = 0.0
     TITLE_SWEEP_MS = 4000     # title gradient sweep period (CSS shimmer 4s)
     CARD_R         = 18.0     # card corner radius (logical px)
-    MARGIN         = 50       # transparent margin around the card — glow bleed
+    MARGIN         = 50       # transparent margin around the card
     WIN_W, WIN_H   = 560, 320 # logical window size incl. margins
     TIMER_MS       = 16       # ~60fps
     # ---- ARGB palette, 0xAARRGGBB (mirrors SPLASH_HTML) ----
@@ -835,10 +835,13 @@ class _NativeSplash:
 
     # ---------------- frame rendering ----------------
 
-    def _comet(self, head, tail, seg, t_ms, w_head, a_mul):
-        """One comet pass: SEGMENTS short strokes, tail->head, tapered."""
+    def _comet(self, head, tail, seg, t_ms, w_head, a_mul, inside=False):
+        """One comet pass: SEGMENTS short strokes, tail->head, tapered.
+        inside=True insets each stroke by half its own width so the glow
+        stays within the card instead of bleeding into the margin."""
         gfx = self._gfx
         n = self.SEGMENTS
+        P_out = self._perim
         for i in range(n):
             k = i / (n - 1)
             a = int(255 * (k ** 1.5) * a_mul)
@@ -852,15 +855,29 @@ class _NativeSplash:
             rr, gg, bb = colorsys.hls_to_rgb((hue % 360) / 360.0, light, 0.9)
             argb = ((a << 24) | (int(rr * 255) << 16)
                     | (int(gg * 255) << 8) | int(bb * 255))
+            wk = w_head * (0.5 + 0.5 * k)
             pen = _vp()
-            if _gd.GdipCreatePen1(argb, w_head * (0.5 + 0.5 * k), 0,
+            if _gd.GdipCreatePen1(argb, wk, 0,
                                   ctypes.byref(pen)):
                 continue
             _gd.GdipSetPenStartCap(pen, 2)          # LineCapRound
             _gd.GdipSetPenEndCap(pen, 2)
             s0 = head - tail + i * seg
-            x1, y1 = self._point_at(s0)
-            x2, y2 = self._point_at(s0 + seg * 0.92)
+            if inside:
+                off = wk / 2.0
+                P_in = P_out - 2 * math.pi * off
+                sc_s = P_in / P_out
+                x1, y1 = self._rr_point(s0 * sc_s, self._m + off,
+                                        self._m + off, self._cw - 2 * off,
+                                        self._ch - 2 * off,
+                                        max(0.5, self._rad - off), P_in)
+                x2, y2 = self._rr_point((s0 + seg * 0.92) * sc_s,
+                                        self._m + off, self._m + off,
+                                        self._cw - 2 * off, self._ch - 2 * off,
+                                        max(0.5, self._rad - off), P_in)
+            else:
+                x1, y1 = self._point_at(s0)
+                x2, y2 = self._point_at(s0 + seg * 0.92)
             _gd.GdipDrawLine(gfx, pen, x1, y1, x2, y2)
             _gd.GdipDeletePen(pen)
 
@@ -894,7 +911,8 @@ class _NativeSplash:
             for c in range(self.COMETS):
                 head_c = head + c * P / self.COMETS
                 for ws, am in self.GLOW_PASSES:
-                    self._comet(head_c, tail, seg, t_ms, self.GLOW_W * ws * sc, am)
+                    self._comet(head_c, tail, seg, t_ms,
+                                self.GLOW_W * ws * sc, am, inside=True)
                 self._comet(head_c, tail, seg, t_ms, self.RING_W * sc, 1.0)
 
         # ---- card contents (unchanged layout) ----

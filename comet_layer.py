@@ -51,8 +51,8 @@ class CometLayer:
         self.lag_total_ms = float(lag_total_ms)
         self.hue_start, self.hue_span = float(hue_start), float(hue_span)
         self.ring_w = float(ring_w) * sc
-        self.sig_o = float(glow_sigma) * sc      # glow falloff outside the card
-        self.sig_i = 1.6 * sc                    # glow falloff inside (hidden mostly)
+        self.sig_o = 1.6 * sc                    # glow falloff outside (kept tight)
+        self.sig_i = float(glow_sigma) * sc      # glow falloff inside the card
         self.glow_amp = float(glow_amp)
         self.n_comets = max(1, int(comets))
         self.color_offset_ms = float(color_offset_ms)
@@ -96,8 +96,8 @@ class CometLayer:
                            sx + 2 * arcl + sy + (ix - ux))
         s = np.where(corner, s_corner, np.where(vert, s_vert, s_horiz)).astype(np.float32)
 
-        b_out = 3.3 * self.sig_o
-        b_in = self.ring_w + 2.0
+        b_out = max(3.3 * self.sig_o, self.ring_w + 2.0)
+        b_in = 3.3 * self.sig_i
         band = (d > -b_in) & (d < b_out)
         self.idx = np.flatnonzero(band.ravel())
         self.d = d.ravel()[self.idx]
@@ -115,7 +115,7 @@ class CometLayer:
         """Composite ONE comet whose head is at arc-length `head`."""
         P, L, sc = self.P, self.L, self.sc
         delta = np.mod(head - self.s + P / 2.0, P) - P / 2.0     # > 0 behind the head
-        m = (delta > -3.0 * self.sig_o) & (delta < L)
+        m = (delta > -3.0 * self.sig_i) & (delta < L)
         sel = np.flatnonzero(m)
         if sel.size == 0:
             return
