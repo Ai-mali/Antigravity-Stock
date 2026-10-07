@@ -4399,6 +4399,18 @@ body.theme-light .tl-status-badge {
   font-size: 12px; font-weight: 600; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* Small (BRAND) tag after the model name in Sell Record rows */
+.tl-model-brand {
+  font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
+  opacity: .85; white-space: nowrap; flex: none;
+}
+/* Per-brand unit chips inside a sale-batch header */
+.tl-batch-meta { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.tl-batch-brand {
+  font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
+  padding: 1px 7px; border-radius: 999px; border: 1px solid;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
 
 /* Shared cell renderers — parent and unit rows use the same styles so a
    value looks identical before and after it "moves down" on expand. */
@@ -12590,7 +12602,10 @@ function renderTrackTable(list, modelColors) {
       case 'model': {
         const modelHit = q && (g.model.toLowerCase().includes(ql) ||
           g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
-        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="color:${mc}; background:color-mix(in srgb, ${mc} 15%, transparent); border:1px solid color-mix(in srgb, ${mc} 34%, transparent);">${pkgSvg}</span><span class="tl-model-name tl-copy" style="color:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span></div>`;
+        const gBrand = resolveItemBrand(g.items[0]);
+        const gBrandTag = gBrand && gBrand !== 'UNBRANDED'
+          ? `<span class="tl-model-brand" style="color:${getBrandColor(gBrand)};" title="Brand: ${escapeHtml(gBrand)}">(${escapeHtml(gBrand)})</span>` : '';
+        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="color:${mc}; background:color-mix(in srgb, ${mc} 15%, transparent); border:1px solid color-mix(in srgb, ${mc} 34%, transparent);">${pkgSvg}</span><span class="tl-model-name tl-copy" style="color:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span>${gBrandTag}</div>`;
       }
       case 'customer': return destHTML(g.customer, '');
       case 'dateIn':
@@ -12653,7 +12668,7 @@ function renderTrackTable(list, modelColors) {
   const batchLabel = (b, customer, dateOut) => {
     const m = (b || '').match(/SALE-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-(\w+)/);
     if (!m) return 'Linked sale';
-    return `SALE-${customer || '\u2014'}-${tlFmtDate(dateOut)}-${m[4]}:${m[5]}`;
+    return `SALE-${customer || '\u2014'}-${tlFmtDate(dateOut)} \u2014 ${m[4]}:${m[5]}`;
   };
   const blocks = [];
   pageGroups.forEach(g => {
@@ -12689,7 +12704,18 @@ function renderTrackTable(list, modelColors) {
       return groupHTML(g0, selboxHTML(blk.batch, selOn, g0.model), selOn);
     }
     const units = blk.groups.reduce((n, g) => n + g.items.length, 0);
-    return `<div class="tl-batch-block${selOn ? ' tl-batch-sel' : ''}"><div class="tl-batch-head">${selboxHTML(blk.batch, selOn, batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${units} units \u00b7 ${blk.groups.length} models \u2014 one checkout</span></div>${blk.groups.map(g => groupHTML(g)).join('')}</div>`;
+    // Per-brand unit chips in the batch header — a mixed-brand checkout
+    // reads DAIKIN (4) · LG (2) at a glance, colored by brand.
+    const bCounts = {};
+    blk.groups.forEach(g => g.items.forEach(r => {
+      const b = resolveItemBrand(r);
+      bCounts[b] = (bCounts[b] || 0) + 1;
+    }));
+    const brandMeta = Object.keys(bCounts).sort().map(b => {
+      const c = getBrandColor(b);
+      return `<span class="tl-batch-brand" style="color:${c}; border-color:${c}55; background:${c}14;" title="${bCounts[b]} unit${bCounts[b] === 1 ? '' : 's'} of ${escapeHtml(b)} in this sale">${escapeHtml(b)} (${bCounts[b]})</span>`;
+    }).join('');
+    return `<div class="tl-batch-block${selOn ? ' tl-batch-sel' : ''}"><div class="tl-batch-head">${selboxHTML(blk.batch, selOn, batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${brandMeta}<span style="color:var(--text-sub);">${units} unit${units === 1 ? '' : 's'} \u00b7 one checkout</span></span></div>${blk.groups.map(g => groupHTML(g)).join('')}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
   updateTrackSelBadge();
 
