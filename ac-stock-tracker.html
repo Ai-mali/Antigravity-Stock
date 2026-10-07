@@ -12699,7 +12699,10 @@ function renderTrackTable(list, modelColors) {
 
   grid.innerHTML = pageGroups.length ? headHTML + blocks.map(blk => {
     const selOn = DB.trackSelBatches.has(blk.batch);
-    if (blk.groups.length === 1) {
+    // A checkout always shows its SALE- header — even a single-model one.
+    // Only legacy batch-less sales render as bare rows (checkbox moves
+    // into the model cell since there's no header to host it).
+    if (blk.groups.length === 1 && !blk.batch) {
       const g0 = blk.groups[0];
       return groupHTML(g0, selboxHTML(blk.batch, selOn, g0.model), selOn);
     }

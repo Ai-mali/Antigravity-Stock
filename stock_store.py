@@ -638,6 +638,7 @@ class StockStore:
     def track_list(self) -> list[dict]:
         """Sold units, newest first, with warranty information."""
         out = [{"model": str(r["Model"]), "serial": str(r["Serial"]),
+                "brand": str(r.get("Brand", "")),
                 "dateIn": str(r["Date In"]), "dateOut": str(r["Date Out"]),
                 "customer": str(r["Customer"]), "status": str(r["Status"]),
                 "batch": str(r.get("Batch") or ""),
