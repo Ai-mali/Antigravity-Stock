@@ -39,7 +39,7 @@ overflow:hidden;user-select:none;-webkit-user-select:none}
 .splash-container{padding:50px}
 .wrapper{position:relative;width:460px;max-width:86vw}
 .glow-svg,.ring-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.glow-svg{z-index:0;filter:blur(9px);opacity:.95;clip-path:inset(0 round 18px)}
+.glow-svg{z-index:0;filter:blur(4.5px);opacity:.95;clip-path:inset(0 round 18px)}
 .ring-svg{z-index:2}
 .card{position:relative;z-index:1;background:linear-gradient(180deg,#151617 0%,#0b0c0d 100%);
 border-radius:18px;width:460px;height:220px;box-sizing:border-box;padding:0 40px;
@@ -87,7 +87,7 @@ var CONFIG = {
   colorOffsetMs: 0,   /* color-cycle offset between comets (e.g. 3000)  */
   radius: 18,         /* must match .card border-radius                 */
   ringWidth: 2.4,     /* sharp line thickness at the head               */
-  glowWidth: 8,       /* glow thickness before blur                     */
+  glowWidth: 4,       /* glow thickness before blur                     */
   hueStart: 155,      /* green                                          */
   hueEnd: 275,        /* purple (passes cyan ~190, blue ~220)           */
   lagMs: 55           /* color lag inside the tail = gradient streak    */
@@ -463,9 +463,9 @@ class _NativeSplash:
     HUE_START      = 155.0    # green
     HUE_SPAN       = 120.0    # +120 deg -> purple (passes cyan, blue)
     RING_W         = 2.4      # sharp comet width at the head (logical px)
-    GLOW_W         = 14.0     # widest glow pass at the head (logical px)
+    GLOW_W         = 7.0      # widest glow pass at the head (logical px)
     GLOW_PASSES    = ((1.0, 0.16), (0.72, 0.22), (0.5, 0.30))  # (width, alpha) - fallback only
-    GLOW_SIGMA     = 6.5      # glow softness inside the card edge (logical px)
+    GLOW_SIGMA     = 3.25     # glow softness inside the card edge (logical px)
     GLOW_AMP       = 0.85     # glow strength 0..1
     COMETS         = 2        # 2 = second comet is 180 degrees behind
     COMET_COLOR_OFFSET_MS = 0.0
