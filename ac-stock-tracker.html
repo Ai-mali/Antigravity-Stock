@@ -4510,14 +4510,26 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
 .avail-2nd-toggle.on { border-color: #f87171; color: #f87171; background: rgba(239,68,68,.1); }
 .avail-2nd-toggle.on .tl-booked-count { background: #ef4444; color: #fff; }
 
-/* Reschedule modal: the date picker popover must overflow the dialog,
-   so unclip it and round the topbar corners manually instead. */
-#reschedule-modal .modal-dialog { overflow: visible; max-width: 540px; }
+/* Reschedule modal: rounded corners WITHOUT overflow-hidden — the date
+   picker popover has to be able to hang outside the dialog. The amber
+   bar is the dialog's OWN background strip: a background is clipped by
+   border-radius automatically, which a separate 6px-tall element can
+   never do (its corner radius shrinks to its height). The 6px padding
+   makes room for it; the footer carries the dialog's radius itself. */
+#reschedule-modal .modal-dialog {
+  overflow: visible; max-width: 540px;
+  padding-top: 6px;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b, #f97316) top left / 100% 6px no-repeat padding-box, var(--surface);
+}
+body.theme-light #reschedule-modal .modal-dialog {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b, #f97316) top left / 100% 6px no-repeat padding-box, #ffffff;
+}
+#reschedule-modal .modal-footer {
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+#reschedule-modal .modal-footer .btn { border-radius: 12px; }
 #reschedule-modal .datepicker-popover { z-index: 110; }
-/* The accent bar can't round its own corners to match the dialog's arc —
-   a clipped wrapper cuts it to the exact curve (popover still overflows). */
-.rs-topclip { border-radius: 13px 13px 0 0; overflow: hidden; }
-.rs-topbar { background: linear-gradient(90deg, #fbbf24, #f59e0b, #f97316) !important; height: 5px; }
 .rs-icon { position: relative; }
 .rs-icon-dot {
   position: absolute; top: -3px; right: -3px; width: 9px; height: 9px;
@@ -8336,7 +8348,6 @@ body.theme-light .autocomplete-dropdown {
 <!-- Reschedule Booking modal -->
 <div class="modal-overlay" id="reschedule-modal">
   <div class="modal-dialog" id="rs-dialog" role="dialog" aria-modal="true" aria-labelledby="rs-title" aria-describedby="rs-desc">
-    <div class="rs-topclip" aria-hidden="true"><div class="undo-topbar rs-topbar"></div></div>
     <div class="modal-header" style="align-items:flex-start;">
       <div style="display:flex; align-items:center; gap:13px;">
         <div class="undo-icon-pill rs-icon" style="color:#f59e0b;">
