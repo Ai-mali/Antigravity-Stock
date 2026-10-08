@@ -1197,7 +1197,8 @@ class StockStore:
 
         # Pair changed (serial or model edit) → the new pair must be free
         m_str = model.strip()
-        old_pair = self._pair_key(rec["Model"], rec["Serial"])
+        old_m = str(rec["Model"])
+        old_pair = self._pair_key(old_m, rec["Serial"])
         new_pair = self._pair_key(m_str, new_s)
         if new_pair != old_pair:
             if new_pair in self._pair_set:
@@ -1213,6 +1214,10 @@ class StockStore:
         rec["Model"] = m_str
         rec["Brand"] = b_str
         rec["Date In"] = d_str
+        # Renaming the model away orphans the old name — forget its brand
+        # mapping if no other record still uses it.
+        if old_m.strip().upper() != m_str.upper():
+            self._forget_brand_if_gone(old_m)
 
         # Update cell in openpyxl worksheet (Column 1: Brand, 2: Model, 3: Serial, 4: Date In)
         row = rec["_row"]
@@ -1255,6 +1260,7 @@ class StockStore:
                 r["_row"] -= 1
 
         self._compact_synthetic_ids(str(rec.get("Model", "")))
+        self._forget_brand_if_gone(str(rec.get("Model", "")))
         self.log_activity("Unit Deleted", model=str(rec.get("Model", "")), count=1,
                           details=f"Deleted Serial: {rec.get('Serial', '')} | Model: {rec.get('Model', '')} | Brand: {rec.get('Brand', '')}")
         self.save(backup=True)
@@ -1309,6 +1315,7 @@ class StockStore:
                           "model": str(r["Model"])} for r in targets]
         for m in models:
             self._compact_synthetic_ids(m)
+            self._forget_brand_if_gone(m)
         self.log_activity("Units Deleted", model=", ".join(models[:6]),
                           count=len(deleted),
                           details=f"{len(deleted)} units deleted | Serials: {', '.join(deleted)}")
@@ -1316,6 +1323,24 @@ class StockStore:
         return deleted, missing, deleted_units
 
     # ---------------------------------------------------------- brands
+    def _forget_brand_if_gone(self, model: str):
+        """Drop the Model -> Brand mapping once a model has NO records left
+        at all — deleting every unit means the model starts over, so the
+        next stock-in must ask for a brand again instead of silently
+        filing it under the old one. Mappings survive while sold or
+        returned records still reference the model."""
+        key = model.strip().upper()
+        if not key or key not in self.model_to_brand:
+            return
+        if any(str(r.get("Model", "")).strip().upper() == key
+               for r in self.records):
+            return
+        del self.model_to_brand[key]
+        self._model_canon.pop(key, None)
+        for i in range(self.map_sheet.max_row, 1, -1):
+            if str(self.map_sheet.cell(row=i, column=1).value or "").strip().upper() == key:
+                self.map_sheet.delete_rows(i)
+
     def assign_brand(self, model: str, brand: str):
         """Remember Model -> Brand permanently (exact full string match)."""
         brand = self._canon_brand(brand)

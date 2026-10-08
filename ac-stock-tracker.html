@@ -14977,6 +14977,28 @@ function closeConfirmDeleteModal() {
   pendingDeleteUnit = { serial: '', model: '' };
 }
 
+/* Drop deleted units from the local inventory snapshot and repaint —
+   mutating DB.inventory keeps the accordion .open flags, so the screen
+   doesn't flash-collapse like a full refreshData() does. Other tabs
+   that list in-stock units are just marked dirty for their next visit. */
+function dropUnitsLocally(units) {
+  for (const u of units) {
+    for (const b in DB.inventory) {
+      const mData = (DB.inventory[b].models || {})[u.model];
+      if (!mData) continue;
+      const i = (mData.serials || []).indexOf(u.serial);
+      if (i < 0) continue;
+      mData.serials.splice(i, 1);
+      if (mData.units) delete mData.units[u.serial];
+      if (!mData.serials.length) delete DB.inventory[b].models[u.model];
+      break;
+    }
+  }
+  dirtyScreens.add('stock-out');  // its Ready-unit list is now stale
+  if (DB.activeTab === 'available') renderAvailable();
+  updateGlobalBadges();
+}
+
 async function executeConfirmDelete() {
   const serial = pendingDeleteUnit.serial;
   const model = pendingDeleteUnit.model;
@@ -14998,7 +15020,7 @@ async function executeConfirmDelete() {
           !(item.serial === serial && item.model === model));
       }
       closeConfirmDeleteModal();
-      await refreshData();
+      dropUnitsLocally([{ serial, model }]);
     }
   } catch (e) {
     showToast('Delete failed: ' + e.message);
@@ -15176,7 +15198,9 @@ async function confirmDeleteSelected() {
       DB.stagedCart = DB.stagedCart.filter(i => !gonePairs.has(i.serial + '\u001f' + i.model));
     }
     DB.availSel.clear();
-    await refreshData();
+    dropUnitsLocally(res.units && res.units.length
+      ? res.units
+      : items.filter(i => gone.has(i.serial)));
     updateAvailSelBar();
     const missed = (res.missing && res.missing.length)
       ? ` — ${res.missing.length} already gone` : '';
