@@ -188,7 +188,7 @@ class StockStore:
         self.model_to_brand: dict[str, str] = {}  # UPPER(model) -> Brand
         self.returns: list[dict] = []            # parsed Returns rows
         self.activities: list[dict] = []         # parsed ActivityLog rows
-        self._serial_set: set[str] = set()       # lowercase serials
+        self._pair_set: set[tuple] = set()       # (UPPER model, lower serial) — a unit is unique per model+serial pair
         self.load()
 
     # ---------------------------------------------------------- load/save
@@ -207,7 +207,7 @@ class StockStore:
         self.act_sheet = self._sheet("ActivityLog", ACTIVITY_HEADER)
 
         self.records, self.brands, self.model_to_brand = [], [], {}
-        self.returns, self.activities, self._serial_set = [], [], set()
+        self.returns, self.activities, self._pair_set = [], [], set()
         self._model_canon: dict[str, str] = {}   # UPPER(model) -> display case
         for idx, row in enumerate(
                 self.recs.iter_rows(min_row=2, values_only=True), start=2):
@@ -220,7 +220,7 @@ class StockStore:
             rec["Batch"] = str(rec.get("Batch") or "")
             rec["_row"] = idx  # Excel row, so updates hit the right cells
             self.records.append(rec)
-            self._serial_set.add(str(rec["Serial"]).strip().lower())
+            self._pair_set.add(self._pair_key(rec["Model"], rec["Serial"]))
             self._model_canon.setdefault(str(rec["Model"]).strip().upper(),
                                          str(rec["Model"]).strip())
         for row in self.brands_sheet.iter_rows(min_row=2, values_only=True):
@@ -585,9 +585,33 @@ class StockStore:
     def brand_for(self, model: str) -> str:
         return self.model_to_brand.get(model.strip().upper(), "")
 
-    def find_dupes(self, serials: list[str]) -> list[str]:
+    @staticmethod
+    def _pair_key(model, serial) -> tuple:
+        """Identity of a physical unit: (model, serial). The same serial
+        printed on a different model is a DIFFERENT unit — Daikin reuses
+        serial ranges across product families (e.g. K000177 on an FTKE50AV1F
+        and an FDMFC60AV1), so duplicates are model-scoped, not global."""
+        return (str(model).strip().upper(), str(serial).strip().lower())
+
+    def _unit_find(self, serial: str, status: str, model: str = ""):
+        """Find the single record matching serial (+status, +model if given).
+        Returns (record, ambiguous): ambiguous=True when several units in that
+        status share the serial and no model disambiguated them."""
+        key = str(serial).strip().lower()
+        cands = [r for r in self.records
+                 if str(r["Serial"]).strip().lower() == key
+                 and str(r["Status"]).strip() == status]
+        mk = str(model).strip().upper()
+        if mk:
+            cands = [r for r in cands
+                     if str(r.get("Model", "")).strip().upper() == mk]
+            return (cands[0] if cands else None), False
+        return (cands[0] if len(cands) <= 1 else None), len(cands) > 1
+
+    def find_dupes(self, serials: list[str], model: str = "") -> list[str]:
+        mk = str(model).strip().upper()
         return [s for s in serials
-                if s.strip().lower() in self._serial_set]
+                if (mk, s.strip().lower()) in self._pair_set]
 
     def _brand_color(self, name: str) -> str:
         try:
@@ -608,7 +632,8 @@ class StockStore:
         inv: dict[str, dict] = {}
         # Only units that sat in Quarantine then were released are tagged 2nd.
         # A plain restock (e.g. cancelled order, like-new) is not second-hand.
-        restocked = {str(r["Serial"]).strip().lower() for r in self.returns
+        restocked = {self._pair_key(r.get("Model", ""), r["Serial"])
+                     for r in self.returns
                      if str(r.get("Action", "")).strip() == "Restocked"
                      and "released from quarantine" in str(r.get("Notes", "")).lower()}
         for rec in self.records:
@@ -624,7 +649,7 @@ class StockStore:
             m["serials"].append(s)
             m["units"][s] = {
                 "dateIn": str(rec.get("Date In", "")).strip(),
-                "secondHand": s.lower() in restocked
+                "secondHand": self._pair_key(model, s) in restocked
             }
         # keep zero-stock brands visible too
         for brand in self.brands:
@@ -647,15 +672,16 @@ class StockStore:
         return out
 
     def returns_list(self) -> list[dict]:
-        # Date In lives on the master record, not the returns row — join it in
-        date_in_map = {str(rec["Serial"]).strip().lower():
+        # Date In lives on the master record, not the returns row — join it
+        # in on (model, serial) so a shared serial picks the right unit
+        date_in_map = {self._pair_key(rec["Model"], rec["Serial"]):
                        str(rec.get("Date In", "")).strip()
                        for rec in self.records}
         return [{"serial": str(r["Serial"]), "model": str(r["Model"]),
                  "customer": str(r["Customer"]), "reason": str(r["Reason"]),
                  "condition": str(r["Condition"]), "notes": str(r["Notes"]),
                  "action": str(r["Action"]), "date": str(r["Date"]),
-                 "dateIn": date_in_map.get(str(r["Serial"]).strip().lower(), ""),
+                 "dateIn": date_in_map.get(self._pair_key(r["Model"], r["Serial"]), ""),
                  "dateOut": str(r.get("Date Out", "")),
                  "warranty": compute_warranty(str(r.get("Date Out", "")))}
                 for r in self.returns]
@@ -702,7 +728,7 @@ class StockStore:
         serials = [s.strip() for s in serials if s.strip()]
         if not model.strip() or not serials:
             return [], serials, True
-        dupes, new_serials = self._split_dupes(serials, auto_ids)
+        dupes, new_serials = self._split_dupes(serials, model, auto_ids)
         brand = self.brand_for(model)
         if not brand:
             return [], dupes, False
@@ -719,7 +745,7 @@ class StockStore:
             return [], serials
         self.assign_brand(model, brand)
         dupes, new_serials = self._split_dupes(
-            [s.strip() for s in serials if s.strip()], auto_ids)
+            [s.strip() for s in serials if s.strip()], model, auto_ids)
         self._write_rows(self._canon_model(model), brand,
                          new_serials, date_in)
         return new_serials, dupes
@@ -751,28 +777,31 @@ class StockStore:
         self.ret_sheet = self._sheet("Returns", RETURN_HEADER)
         self.act_sheet = self._sheet("ActivityLog", ACTIVITY_HEADER)
         self.records, self.brands, self.model_to_brand = [], [], {}
-        self.returns, self.activities, self._serial_set = [], [], set()
+        self.returns, self.activities, self._pair_set = [], [], set()
         self._model_canon = {}
         self._schema_dirty = False
 
-    def _split_dupes(self, serials, auto_ids: bool = False):
-        """Known serials AND repeated serials inside the same batch are dupes.
+    def _split_dupes(self, serials, model: str = "", auto_ids: bool = False):
+        """Known (model, serial) pairs AND repeats inside the same batch are
+        dupes — the same serial under a different model is a different unit.
         ' #' synthetic unit IDs auto-increment to the next free sequence
         number — but ONLY for non-serial rows the caller flagged as
         generated, so a real serial like 'SN #5001' can't be silently
         renamed."""
         seen, dupes, new_serials = set(), [], []
-        active = None  # lazy: serials of units not yet sold (incl. quarantined)
+        active = None  # lazy: serials of this model's unsold units
+        mk = str(model).strip().upper()
         for raw_s in serials:
             s = str(raw_s).strip()
             if auto_ids and " #" in s:
                 # Auto-increment synthetic non-serial part IDs until unique
-                # among CURRENT stock — '#N' is a position label, so sold
-                # numbers are free to reuse once they're dispatched.
+                # among THIS MODEL's current stock — '#N' is a position label,
+                # so sold numbers are free to reuse once they're dispatched.
                 if active is None:
                     active = {str(r["Serial"]).strip().lower()
                               for r in self.records
-                              if str(r["Status"]).strip() != SOLD}
+                              if str(r["Status"]).strip() != SOLD
+                              and str(r["Model"]).strip().upper() == mk}
                 prefix, num_str = s.rsplit(" #", 1)
                 try:
                     num = int(num_str)
@@ -786,7 +815,7 @@ class StockStore:
                 seen.add(cand.lower())
                 continue
 
-            if s.lower() in seen or s.lower() in self._serial_set:
+            if s.lower() in seen or (mk, s.lower()) in self._pair_set:
                 dupes.append(s)
             else:
                 new_serials.append(s)
@@ -810,9 +839,10 @@ class StockStore:
             new_s = f"{s.rsplit(' #', 1)[0]} #{i}"
             if s == new_s:
                 continue
+            self._pair_set.discard(self._pair_key(model, s))
+            self._pair_set.add(self._pair_key(model, new_s))
             rec["Serial"] = new_s
             self.recs.cell(row=rec["_row"], column=3, value=new_s)
-            self._serial_set.add(new_s.lower())
 
     def _write_rows(self, model, brand, serials, date_in, save=True):
         self._model_canon.setdefault(model.strip().upper(), model.strip())
@@ -824,7 +854,7 @@ class StockStore:
                                  "Date In": date_in, "Status": IN_STOCK,
                                  "Customer": "", "Date Out": "",
                                  "_row": self.recs.max_row})
-            self._serial_set.add(s.lower())
+            self._pair_set.add(self._pair_key(model, s))
         if serials:
             self.log_activity("Stock In", model=model, count=len(serials),
                               details=f"Brand: {brand} | {len(serials)} units added | Serials: {', '.join(serials)}")
@@ -868,7 +898,7 @@ class StockStore:
             if brand not in self.brands:
                 self.brands.append(brand)
                 self.brands_sheet.append([brand])
-            dupes, new_serials = self._split_dupes(serials, auto_ids)
+            dupes, new_serials = self._split_dupes(serials, model, auto_ids)
             if new_serials:
                 self._write_rows(self._canon_model(model), brand,
                                  new_serials, date_in, save=False)
@@ -1011,13 +1041,16 @@ class StockStore:
         return done, ""
 
     def create_return(self, serial: str, reason: str, condition: str,
-                      notes: str, action: str, date: str):
+                      notes: str, action: str, date: str, model: str = ""):
         """Return a sold unit: action 'restock' puts it back In Stock,
         'quarantine' pulls it aside. Returns (record, error)."""
-        key = serial.strip().lower()
-        rec = next((r for r in self.records
-                    if str(r["Serial"]).strip().lower() == key
-                    and str(r["Status"]).strip() == SOLD), None)
+        rec, ambiguous = self._unit_find(serial, SOLD, model)
+        if ambiguous:
+            models = sorted({str(r["Model"]) for r in self.records
+                             if str(r["Serial"]).strip().lower() == serial.strip().lower()
+                             and str(r["Status"]).strip() == SOLD})
+            return None, (f"Serial {serial} exists under several models "
+                          f"({', '.join(models)}) — model needed")
         if rec is None:
             return None, "No sold unit found for serial " + serial
         action_label = "Restocked" if action == "restock" else "Quarantined"
@@ -1052,20 +1085,27 @@ class StockStore:
         self.save(backup=True)
         return rec, None
 
-    def release_quarantine(self, serial: str, date: str) -> tuple:
+    def release_quarantine(self, serial: str, date: str,
+                           model: str = "") -> tuple:
         """Release a quarantined unit back to In Stock after inspection.
         Flips the latest 'Quarantined' returns entry to 'Restocked' so the
         unit keeps its second-hand flag. Returns (record, error)."""
         key = serial.strip().lower()
-        rec = next((r for r in self.records
-                    if str(r["Serial"]).strip().lower() == key
-                    and str(r["Status"]).strip() == QUARANTINED), None)
+        mk = str(model).strip().upper()
+        rec, ambiguous = self._unit_find(serial, QUARANTINED, model)
+        if ambiguous:
+            models = sorted({str(r["Model"]) for r in self.records
+                             if str(r["Serial"]).strip().lower() == key
+                             and str(r["Status"]).strip() == QUARANTINED})
+            return None, (f"Serial {serial} exists under several models "
+                          f"({', '.join(models)}) — model needed")
         if rec is None:
             # Orphan registry row (e.g. legacy/migrated data): a Returns
             # entry marked Quarantined whose unit no longer exists. Closing
             # it keeps the registry resolvable instead of stuck forever.
             orphan = next((r for r in reversed(self.returns)
                            if str(r["Serial"]).strip().lower() == key
+                           and (not mk or str(r.get("Model", "")).strip().upper() == mk)
                            and str(r.get("Action", "")).strip() == "Quarantined"),
                           None)
             if orphan is None:
@@ -1093,9 +1133,13 @@ class StockStore:
         self.recs.cell(row=row, column=8, value="")
         self._ensure_brand(rec.get("Brand", ""))
         self._compact_synthetic_ids(str(rec["Model"]))
-        # Resolve the latest open quarantine in the returns registry
+        # Resolve the latest open quarantine in the returns registry —
+        # model-scoped: a same-serial sibling under another model is a
+        # different unit's quarantine and must not be closed.
+        rec_mk = str(rec["Model"]).strip().upper()
         ret = next((r for r in reversed(self.returns)
                     if str(r["Serial"]).strip().lower() == key
+                    and str(r.get("Model", "")).strip().upper() == rec_mk
                     and str(r.get("Action", "")).strip() == "Quarantined"), None)
         if ret is not None:
             ret["Action"] = "Restocked"
@@ -1127,32 +1171,41 @@ class StockStore:
         return rec, None
 
     def update_unit(self, old_serial: str, new_serial: str, model: str,
-                    brand: str = "", date_in: str = "") -> tuple[dict | None, str]:
+                    brand: str = "", date_in: str = "",
+                    old_model: str = "") -> tuple[dict | None, str]:
         """Edit an In-Stock unit's serial, model, brand, or date_in.
-        Creates backup snapshot and logs activity."""
-        old_key = old_serial.strip().lower()
+        Creates backup snapshot and logs activity. `old_model` identifies
+        WHICH unit carries old_serial — required when several models share
+        that serial. The new (model, serial) pair is dupe-checked."""
         new_s = new_serial.strip()
-        new_key = new_s.lower()
 
         if not new_s:
             return None, "Serial number cannot be empty"
         if not model.strip():
             return None, "Model cannot be empty"
 
-        rec = next((r for r in self.records
-                    if str(r.get("Serial", "")).strip().lower() == old_key
-                    and str(r.get("Status", "")).strip() == IN_STOCK), None)
+        rec, ambiguous = self._unit_find(old_serial, IN_STOCK, old_model)
+        if ambiguous:
+            models = sorted({str(r["Model"]) for r in self.records
+                             if str(r["Serial"]).strip().lower()
+                             == old_serial.strip().lower()
+                             and str(r["Status"]).strip() == IN_STOCK})
+            return None, (f"Serial {old_serial} exists under several models "
+                          f"({', '.join(models)}) — model needed")
         if not rec:
             return None, f"Unit with serial '{old_serial}' not found in stock"
 
-        # Check duplicate if serial changed
-        if new_key != old_key:
-            if new_key in self._serial_set:
-                return None, f"Serial '{new_s}' already exists in records"
-            self._serial_set.discard(old_key)
-            self._serial_set.add(new_key)
-
+        # Pair changed (serial or model edit) → the new pair must be free
         m_str = model.strip()
+        old_pair = self._pair_key(rec["Model"], rec["Serial"])
+        new_pair = self._pair_key(m_str, new_s)
+        if new_pair != old_pair:
+            if new_pair in self._pair_set:
+                return None, (f"Serial '{new_s}' already exists for "
+                              f"model {m_str}")
+            self._pair_set.discard(old_pair)
+            self._pair_set.add(new_pair)
+
         b_str = brand.strip() or self.brand_for(m_str) or str(rec.get("Brand", ""))
         d_str = date_in.strip() or str(rec.get("Date In", ""))
 
@@ -1173,18 +1226,24 @@ class StockStore:
         self.save(backup=True)
         return rec, ""
 
-    def delete_unit(self, serial: str) -> tuple[bool, str]:
+    def delete_unit(self, serial: str, model: str = "") -> tuple[bool, str]:
         """Delete an In-Stock unit from MasterRecord.
-        Creates backup snapshot and logs activity."""
-        key = serial.strip().lower()
-        idx = next((i for i, r in enumerate(self.records)
-                    if str(r.get("Serial", "")).strip().lower() == key
-                    and str(r.get("Status", "")).strip() == IN_STOCK), None)
-        if idx is None:
+        Creates backup snapshot and logs activity. `model` disambiguates
+        when several models share the serial."""
+        rec, ambiguous = self._unit_find(serial, IN_STOCK, model)
+        if ambiguous:
+            models = sorted({str(r["Model"]) for r in self.records
+                             if str(r["Serial"]).strip().lower()
+                             == serial.strip().lower()
+                             and str(r["Status"]).strip() == IN_STOCK})
+            return False, (f"Serial {serial} exists under several models "
+                           f"({', '.join(models)}) — model needed")
+        if rec is None:
             return False, f"Unit with serial '{serial}' not found in stock"
 
+        idx = self.records.index(rec)
         rec = self.records.pop(idx)
-        self._serial_set.discard(key)
+        self._pair_set.discard(self._pair_key(rec["Model"], rec["Serial"]))
         row = rec["_row"]
 
         # Delete from openpyxl sheet
@@ -1201,24 +1260,44 @@ class StockStore:
         self.save(backup=True)
         return True, ""
 
-    def delete_units(self, serials: list[str]) -> tuple[list[str], list[str]]:
+    def delete_units(self, serials: list[str] = None,
+                     items: list[dict] = None) -> tuple[list[str], list[str]]:
         """Delete many In-Stock units in ONE save — marquee bulk-delete.
-        Returns (deleted, missing): serials not In Stock are reported,
+        `items` ([{serial, model}]) is the precise form: it deletes exactly
+        the listed units, so same-serial siblings under other models are
+        untouched. Bare `serials` keeps legacy behavior but skips serials
+        that are ambiguous (shared across models in stock).
+        Returns (deleted, missing): serials not matched are reported,
         never silently ignored. One backup pair + one activity entry."""
-        wanted = {str(s).strip().lower() for s in serials if str(s).strip()}
-        targets = [r for r in self.records
-                   if str(r.get("Serial", "")).strip().lower() in wanted
-                   and str(r.get("Status", "")).strip() == IN_STOCK]
-        missing = [s for s in serials
-                   if str(s).strip().lower() not in
-                   {str(r["Serial"]).strip().lower() for r in targets}]
+        if items is None:
+            items = [{"serial": s, "model": ""} for s in (serials or [])]
+        stock = [r for r in self.records
+                 if str(r.get("Status", "")).strip() == IN_STOCK]
+        targets, missing, claimed = [], [], set()
+        for it in items:
+            s_key = str(it.get("serial", "")).strip().lower()
+            if not s_key:
+                continue
+            mk = str(it.get("model", "")).strip().upper()
+            cands = [r for r in stock
+                     if id(r) not in claimed
+                     and str(r.get("Serial", "")).strip().lower() == s_key
+                     and (not mk
+                          or str(r.get("Model", "")).strip().upper() == mk)]
+            if len(cands) == 1:
+                targets.append(cands[0])
+                claimed.add(id(cands[0]))
+            else:
+                # 0 = not in stock; >1 = serial shared across models and no
+                # model given — never guess which unit the user meant
+                missing.append(str(it.get("serial", "")))
         if not targets:
-            return [], missing
+            return [], missing, []
         # Sheet rows die highest-first so earlier _row values stay valid
         for r in sorted(targets, key=lambda x: x.get("_row", 0),
                         reverse=True):
             self.recs.delete_rows(r["_row"], 1)
-            self._serial_set.discard(str(r["Serial"]).strip().lower())
+            self._pair_set.discard(self._pair_key(r["Model"], r["Serial"]))
         gone = {id(r) for r in targets}
         self.records = [r for r in self.records if id(r) not in gone]
         # records order mirrors sheet order — renumber rows wholesale
@@ -1226,13 +1305,15 @@ class StockStore:
             r["_row"] = i
         models = sorted({str(r.get("Model", "")) for r in targets})
         deleted = [str(r["Serial"]) for r in targets]
+        deleted_units = [{"serial": str(r["Serial"]),
+                          "model": str(r["Model"])} for r in targets]
         for m in models:
             self._compact_synthetic_ids(m)
         self.log_activity("Units Deleted", model=", ".join(models[:6]),
                           count=len(deleted),
                           details=f"{len(deleted)} units deleted | Serials: {', '.join(deleted)}")
         self.save(backup=True)
-        return deleted, missing
+        return deleted, missing, deleted_units
 
     # ---------------------------------------------------------- brands
     def assign_brand(self, model: str, brand: str):

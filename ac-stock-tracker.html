@@ -7773,6 +7773,7 @@ body.theme-light .autocomplete-dropdown {
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-unit-old-serial" value="">
+      <input type="hidden" id="edit-unit-old-model" value="">
 
       <div style="margin-bottom:14px;">
         <label class="form-label" for="edit-unit-serial">Serial Num/Desc *</label>
@@ -8509,6 +8510,7 @@ const DB = {
   rmaPage: 0,
   rmaPageSize: 25,
   rmaSelectedSerial: '',    // dispatch unit picked in the inspection form
+  rmaSelectedModel: '',     // its model — serials can repeat across models
   lowStockFilter: false,      // toggles showing only models with <= 3 units
   avail2ndFilter: false,      // toggles showing only second-hand (returned) units
   scans: [],        // filled by POST /api/scan or the manual + button
@@ -8977,22 +8979,29 @@ let selectedScanIndices = new Set();
 let isDraggingScanSelect = false;
 let dragSelectTargetState = true;
 
+/* Duplicate identity is (model, serial) — the same serial printed on a
+   different model is a different unit, so the known-set is keyed by pair. */
+function unitPairKey(model, serial) {
+  return String(model || '').trim().toUpperCase() + '\u001f' +
+         String(serial || '').trim().toUpperCase();
+}
+
 function getKnownMasterSerialsSet() {
   const s = new Set();
   for (const b in DB.inventory) {
     for (const m in DB.inventory[b]?.models || {}) {
-      (DB.inventory[b].models[m].serials || []).forEach(ser => s.add(String(ser).trim().toUpperCase()));
+      (DB.inventory[b].models[m].serials || []).forEach(ser => s.add(unitPairKey(m, ser)));
     }
   }
   if (Array.isArray(DB.trackList)) {
     DB.trackList.forEach(r => {
-      if (r.serial) s.add(String(r.serial).trim().toUpperCase());
+      if (r.serial) s.add(unitPairKey(r.model, r.serial));
     });
   }
   if (Array.isArray(DB.returns)) {
     DB.returns.forEach(r => {
       const ser = r.serial || r.Serial;
-      if (ser) s.add(String(ser).trim().toUpperCase());
+      if (ser) s.add(unitPairKey(r.model || r.Model, ser));
     });
   }
   return s;
@@ -9058,11 +9067,13 @@ function markDuplicateScans() {
   const known = getKnownMasterSerialsSet();
   // Serials repeated across DIFFERENT scan rows in the same sheet are
   // just as wrong as serials already in stock — flag them pre-commit.
+  // Counted by (model, serial) pair: the same serial on a different
+  // model row is a different unit, not a repeat.
   const inScanCount = {};
   DB.scans.forEach(row => {
     if (!row.serials) return;
     row.serials.forEach(s => {
-      const k = String(s).trim().toUpperCase();
+      const k = unitPairKey(row.model, s);
       inScanCount[k] = (inScanCount[k] || 0) + 1;
     });
   });
@@ -9080,8 +9091,9 @@ function markDuplicateScans() {
     }
 
     if (!row.serials || !row.serials.length) return;
-    const foundDupes = row.serials.filter(ser => known.has(String(ser).trim().toUpperCase()));
-    const inScanDupes = row.serials.filter(ser => (inScanCount[String(ser).trim().toUpperCase()] || 0) > 1);
+    const rowPk = s => unitPairKey(row.model, s);
+    const foundDupes = row.serials.filter(ser => known.has(rowPk(ser)));
+    const inScanDupes = row.serials.filter(ser => (inScanCount[rowPk(ser)] || 0) > 1);
     const allDupes = [...new Set([...foundDupes, ...inScanDupes])];
     if (allDupes.length > 0) {
       row.dupeSerials = allDupes;
@@ -11149,7 +11161,7 @@ function renderAvailable(searchTerm) {
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
         const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
         return `
-          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" data-serial="${escapeHtml(s)}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
+          <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" data-serial="${escapeHtml(s)}" data-model="${escapeHtml(mKey)}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
             <span class="card-glow-bar-right"></span>
             <div class="avail-card-header">
@@ -12687,7 +12699,7 @@ function renderTrackTable(list, modelColors) {
     return `<div class="tl-g tl-u-row" data-batch="${escapeHtml(bKey)}">
       <div class="tl-u-id"><span class="tl-u-no">${n + 1}</span><span class="tl-u-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></div>
       ${moved}
-      <div class="tl-u-actions" style="grid-column:${L.actionsCol}"><button type="button" class="tl-eye-btn tl-undo-btn" style="color:#f59e0b;" title="${label} — ${batchCount.get(bKey)} unit(s) back to stock" aria-label="${label} ${escapeHtml(r.serial)}" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})">${undoSvg}</button><button type="button" class="tl-eye-btn" title="View details" aria-label="View details for ${escapeHtml(r.serial)}" onclick="inspectTrackRow('${jsSerial}')">${eyeSvg}</button></div>
+      <div class="tl-u-actions" style="grid-column:${L.actionsCol}"><button type="button" class="tl-eye-btn tl-undo-btn" style="color:#f59e0b;" title="${label} — ${batchCount.get(bKey)} unit(s) back to stock" aria-label="${label} ${escapeHtml(r.serial)}" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})">${undoSvg}</button><button type="button" class="tl-eye-btn" title="View details" aria-label="View details for ${escapeHtml(r.serial)}" onclick="inspectTrackRow('${jsSerial}', '${escapeHtml(escapeJs(r.model))}')">${eyeSvg}</button></div>
     </div>`;
   };
 
@@ -13142,11 +13154,11 @@ document.addEventListener('click', e => {
 });
 
 /* ---- Eye action: inspect a dispatched unit in Return & RMA ---- */
-function inspectTrackRow(serial) {
+function inspectTrackRow(serial, model) {
   switchTab('return');
   setTimeout(() => {
     const inp = document.getElementById('rma-serial-input');
-    pickRmaSerial(serial);
+    pickRmaSerial(serial, model);
     if (inp) {
       inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       inp.style.outline = '2px solid var(--green-bright)';
@@ -13398,6 +13410,7 @@ function renderReturnScreen() {
   const inp = document.getElementById('rma-serial-input');
   if (inp) inp.value = '';
   DB.rmaSelectedSerial = '';
+  DB.rmaSelectedModel = '';
   hideRmaSuggest();
   updateRmaWarrantyCard();
   updateRmaReasonState();
@@ -13429,6 +13442,7 @@ function handleRmaSerialFocus() {
 
 function handleRmaSerialInput(v) {
   DB.rmaSelectedSerial = '';
+  DB.rmaSelectedModel = '';
   updateRmaWarrantyCard();
   renderRmaSuggest(v);
 }
@@ -13450,7 +13464,7 @@ function renderRmaSuggest(q) {
       const ws = (r.warranty && r.warranty.status) || '';
       const wTag = ws && ws !== 'none' ? `<span class="rsi-warr ${ws}">${ws.toUpperCase()}</span>` : '';
       const serialHtml = ql && (r.serial || '').toLowerCase().includes(ql) ? markMatchedText(r.serial, q.trim()) : escapeHtml(r.serial);
-      return `<button type="button" class="rma-suggest-item" onmousedown="pickRmaSerial('${escapeHtml(escapeJs(r.serial))}')">
+      return `<button type="button" class="rma-suggest-item" onmousedown="pickRmaSerial('${escapeHtml(escapeJs(r.serial))}', '${escapeHtml(escapeJs(r.model))}')">
         <span class="rsi-serial">${serialHtml}</span>
         <span class="rsi-meta">${escapeHtml(r.model)} \u00b7 ${escapeHtml(r.customer)} \u00b7 Out ${escapeHtml(r.dateOut || '\u2014')}</span>
         ${wTag}
@@ -13460,10 +13474,14 @@ function renderRmaSuggest(q) {
   box.style.display = 'block';
 }
 
-function pickRmaSerial(serial) {
-  const r = DB.trackList.find(x => x.serial === serial);
+function pickRmaSerial(serial, model) {
+  // Serials can repeat across models — match on the pair so the wrong
+  // unit's warranty card / return can't be loaded.
+  const r = DB.trackList.find(x => x.serial === serial
+    && (!model || x.model === model));
   if (!r) return;
   DB.rmaSelectedSerial = serial;
+  DB.rmaSelectedModel = r.model;
   const inp = document.getElementById('rma-serial-input');
   if (inp) inp.value = `${r.serial} - ${r.model} (${r.customer})`;
   hideRmaSuggest();
@@ -13484,7 +13502,9 @@ function updateRmaWarrantyCard() {
   const strip = document.getElementById('rma-meta-strip');
   const pill = document.getElementById('rma-status-pill');
   if (!card) return;
-  const rec = DB.rmaSelectedSerial ? DB.trackList.find(r => r.serial === DB.rmaSelectedSerial) : null;
+  const rec = DB.rmaSelectedSerial ? DB.trackList.find(r =>
+    r.serial === DB.rmaSelectedSerial
+    && (!DB.rmaSelectedModel || r.model === DB.rmaSelectedModel)) : null;
 
   if (pill) {
     const ws = rec && rec.warranty && rec.warranty.status;
@@ -13639,7 +13659,7 @@ function renderReturnTable() {
           : '<span class="rma-action-pill quarantined">Quarantined</span>');
     const releaseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
     const releaseBtn = r.action === 'Quarantined'
-      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeHtml(escapeJs(r.serial))}')" style="color:#f59e0b;">${releaseSvg}</button>`
+      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeHtml(escapeJs(r.serial))}', '${escapeHtml(escapeJs(r.model))}')" style="color:#f59e0b;">${releaseSvg}</button>`
       : '';
     const rIdx = DB.returns.indexOf(r);
     tr.innerHTML = `
@@ -13655,7 +13675,7 @@ function renderReturnTable() {
       <td style="text-align:right; white-space:nowrap;">
         ${releaseBtn}
         <button type="button" class="tl-eye-btn" title="Inspect details" onclick="inspectReturnRow(${rIdx})">${eyeSvg}</button>
-        <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag('${escapeHtml(escapeJs(r.serial))}')" style="color:var(--green-bright);">${printSvg}</button>
+        <button type="button" class="tl-eye-btn" title="Reprint RMA tag" onclick="reprintRmaTag(${rIdx})" style="color:var(--green-bright);">${printSvg}</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -13919,8 +13939,10 @@ async function confirmDeleteBrand(brand) {
   }
 }
 
-async function releaseQuarantine(serial) {
-  const rec = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
+async function releaseQuarantine(serial, model) {
+  const rec = DB.returns.find(x =>
+    String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase()
+    && (!model || String(x.model || '').trim().toUpperCase() === String(model).trim().toUpperCase()));
   const ok = await appConfirm({
     title: 'Release from Quarantine',
     sub: 'Return this unit to sellable stock',
@@ -13933,7 +13955,7 @@ async function releaseQuarantine(serial) {
   });
   if (!ok) return;
   try {
-    await apiPost('/api/returns/release', { serial });
+    await apiPost('/api/returns/release', { serial, model });
     showToast(`Released ${serial} back to stock`, '&#10003;');
     await refreshData();
   } catch (e) {
@@ -13941,8 +13963,8 @@ async function releaseQuarantine(serial) {
   }
 }
 
-function reprintRmaTag(serial) {
-  const r = DB.returns.find(x => String(x.serial).trim().toUpperCase() === String(serial).trim().toUpperCase());
+function reprintRmaTag(rIdx) {
+  const r = DB.returns[rIdx];
   if (!r) return;
   const sheet = document.getElementById('tl-print-sheet');
   if (!sheet) return;
@@ -13981,6 +14003,7 @@ function printRmaTags() {
 
 async function submitRmaAction(isRestock) {
   const serial = DB.rmaSelectedSerial;
+  const model = DB.rmaSelectedModel;
   if (!serial) {
     showToast('Please select a valid dispatched unit.');
     return;
@@ -13995,7 +14018,7 @@ async function submitRmaAction(isRestock) {
   const notes = (document.getElementById('rma-notes').value || '').trim();
   try {
     await apiPost('/api/returns', {
-      serial, reason, condition, notes,
+      serial, model, reason, condition, notes,
       action: isRestock ? 'restock' : 'quarantine'
     });
     showToast(isRestock
@@ -14826,6 +14849,7 @@ function openEditUnitModal(serial, model, brand, dateIn) {
   if (!modal) return;
 
   document.getElementById('edit-unit-old-serial').value = serial || '';
+  document.getElementById('edit-unit-old-model').value = model || '';
   document.getElementById('edit-unit-serial').value = serial || '';
   document.getElementById('edit-unit-model').value = model || '';
 
@@ -14884,6 +14908,7 @@ function closeEditUnitModal() {
 
 async function saveEditUnitModal() {
   const oldSerial = (document.getElementById('edit-unit-old-serial').value || '').trim();
+  const oldModel = (document.getElementById('edit-unit-old-model').value || '').trim();
   const newSerial = (document.getElementById('edit-unit-serial').value || '').trim();
   const model = (document.getElementById('edit-unit-model').value || '').trim();
   const brand = (document.getElementById('edit-unit-brand').value || '').trim();
@@ -14904,16 +14929,18 @@ async function saveEditUnitModal() {
       new_serial: newSerial,
       model,
       brand,
-      date_in: dateIn
+      date_in: dateIn,
+      old_model: oldModel
     });
 
     if (res.ok) {
       showToast(`Updated unit "${newSerial}" successfully!`);
       closeEditUnitModal();
 
-      // If staged in cart, update staged item
+      // If staged in cart, update the exact staged unit (serial+model pair)
       if (DB.stagedCart && DB.stagedCart.length) {
-        const cartItem = DB.stagedCart.find(item => item.serial === oldSerial);
+        const cartItem = DB.stagedCart.find(item =>
+          item.serial === oldSerial && item.model === oldModel);
         if (cartItem) {
           cartItem.serial = newSerial;
           cartItem.model = model;
@@ -14952,6 +14979,7 @@ function closeConfirmDeleteModal() {
 
 async function executeConfirmDelete() {
   const serial = pendingDeleteUnit.serial;
+  const model = pendingDeleteUnit.model;
   if (!serial) {
     closeConfirmDeleteModal();
     return;
@@ -14962,11 +14990,12 @@ async function executeConfirmDelete() {
     btn.innerHTML = 'Deleting...';
   }
   try {
-    const res = await apiPost('/api/inventory/delete', { serial });
+    const res = await apiPost('/api/inventory/delete', { serial, model });
     if (res.ok) {
       showToast(`Deleted unit ${serial} from inventory.`);
       if (DB.stagedCart && DB.stagedCart.length) {
-        DB.stagedCart = DB.stagedCart.filter(item => item.serial !== serial);
+        DB.stagedCart = DB.stagedCart.filter(item =>
+          !(item.serial === serial && item.model === model));
       }
       closeConfirmDeleteModal();
       await refreshData();
@@ -14994,10 +15023,15 @@ async function executeConfirmDelete() {
 let _marquee = null;      // {x0, y0, base:Set|null, box:div|null}
 let _marqueeDragged = false;
 
+/* Selection keys are "MODEL\u001FSERIAL" pairs — a serial shared across
+   models must select only the card under its own model. */
+function availSelKey(model, serial) { return model + '\u001f' + serial; }
+function availSelPair(key) { const i = key.indexOf('\u001f'); return { model: key.slice(0, i), serial: key.slice(i + 1) }; }
+
 function applyAvailSelClasses() {
   const sel = DB.availSel;
   document.querySelectorAll('#avail-accordion-container .avail-unit-card')
-    .forEach(c => c.classList.toggle('avail-sel', sel.has(c.dataset.serial)));
+    .forEach(c => c.classList.toggle('avail-sel', sel.has(availSelKey(c.dataset.model || '', c.dataset.serial))));
 }
 
 function updateAvailSelBar() {
@@ -15028,11 +15062,11 @@ function clearAvailSelection() {
 function pruneAvailSelection() {
   const alive = new Set();
   Object.values(DB.inventory || {}).forEach(b =>
-    Object.values(b.models || {}).forEach(m =>
-      (m.serials || []).forEach(s => alive.add(s))));
+    Object.entries(b.models || {}).forEach(([mk, m]) =>
+      (m.serials || []).forEach(s => alive.add(availSelKey(mk, s)))));
   let changed = false;
-  [...DB.availSel].forEach(s => {
-    if (!alive.has(s)) { DB.availSel.delete(s); changed = true; }
+  [...DB.availSel].forEach(k => {
+    if (!alive.has(k)) { DB.availSel.delete(k); changed = true; }
   });
   if (changed) { applyAvailSelClasses(); updateAvailSelBar(); }
 }
@@ -15070,7 +15104,7 @@ document.addEventListener('mousemove', e => {
     .forEach(c => {
       const r = c.getBoundingClientRect();
       if (r.left < x2 && r.right > x1 && r.top < y2 && r.bottom > y1)
-        hit.add(c.dataset.serial);
+        hit.add(availSelKey(c.dataset.model || '', c.dataset.serial));
     });
   DB.availSel = hit;
   applyAvailSelClasses();
@@ -15103,25 +15137,20 @@ document.addEventListener('click', e => {
    Target Selection card, serial chips grid, amber warning, split buttons. */
 let _bulkDelResolve = null;
 
-function openBulkDeleteModal(serials, models) {
+function openBulkDeleteModal(items) {
+  const models = [...new Set(items.map(i => i.model))];
   document.getElementById('bulk-del-model').textContent =
     models.length === 1 ? models[0] : `${models.length} models`;
-  document.getElementById('bulk-del-count').textContent = `${serials.length} items`;
+  document.getElementById('bulk-del-count').textContent = `${items.length} items`;
   document.getElementById('bulk-del-showing').textContent =
-    `Showing ${serials.length} of ${serials.length}`;
+    `Showing ${items.length} of ${items.length}`;
   const showModel = models.length > 1;
-  const modelOf = {};
-  if (showModel) {
-    Object.values(DB.inventory || {}).forEach(b =>
-      Object.entries(b.models || {}).forEach(([m, d]) =>
-        (d.serials || []).forEach(s => { modelOf[s] = m; })));
-  }
-  document.getElementById('bulk-del-chips').innerHTML = serials.map(s =>
-    `<div class="bulk-del-chip mono" title="${escapeHtml(s)}${showModel ? ' — ' + escapeHtml(modelOf[s] || '') : ''}"><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s)}</span></div>`
+  document.getElementById('bulk-del-chips').innerHTML = items.map(it =>
+    `<div class="bulk-del-chip mono" title="${escapeHtml(it.serial)}${showModel ? ' — ' + escapeHtml(it.model || '') : ''}"><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.serial)}</span></div>`
   ).join('');
   const btn = document.getElementById('btn-bulk-delete');
   btn.disabled = false;
-  document.getElementById('bulk-del-btn-label').textContent = `Delete ${serials.length} Unit${serials.length !== 1 ? 's' : ''}`;
+  document.getElementById('bulk-del-btn-label').textContent = `Delete ${items.length} Unit${items.length !== 1 ? 's' : ''}`;
   document.getElementById('bulk-delete-modal').classList.add('open');
   return new Promise(res => { _bulkDelResolve = res; });
 }
@@ -15132,24 +15161,21 @@ function resolveBulkDelete(ok) {
 }
 
 async function confirmDeleteSelected() {
-  const serials = [...DB.availSel];
-  if (!serials.length) return;
-  const modelSet = new Set();
-  Object.values(DB.inventory || {}).forEach(b =>
-    Object.entries(b.models || {}).forEach(([m, d]) =>
-      (d.serials || []).forEach(s => {
-        if (DB.availSel.has(s)) modelSet.add(m);
-      })));
-  const ok = await openBulkDeleteModal(serials, [...modelSet]);
+  const items = [...DB.availSel].map(availSelPair);
+  if (!items.length) return;
+  const ok = await openBulkDeleteModal(items);
   if (!ok) return;
   const btn = document.getElementById('btn-bulk-delete');
   if (btn) btn.disabled = true;
   try {
-    const res = await apiPost('/api/inventory/delete', { serials });
+    const res = await apiPost('/api/inventory/delete', { items });
     const gone = new Set(res.deleted || []);
-    if (DB.stagedCart.length)
-      DB.stagedCart = DB.stagedCart.filter(i => !gone.has(i.serial));
-    serials.forEach(s => DB.availSel.delete(s));
+    if (DB.stagedCart.length) {
+      const gonePairs = new Set((res.units || [])
+        .map(u => u.serial + '\u001f' + u.model));
+      DB.stagedCart = DB.stagedCart.filter(i => !gonePairs.has(i.serial + '\u001f' + i.model));
+    }
+    DB.availSel.clear();
     await refreshData();
     updateAvailSelBar();
     const missed = (res.missing && res.missing.length)
@@ -15753,7 +15779,7 @@ document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       document.querySelectorAll('#avail-accordion-container .avail-unit-card')
-        .forEach(c => DB.availSel.add(c.dataset.serial));
+        .forEach(c => DB.availSel.add(availSelKey(c.dataset.model || '', c.dataset.serial)));
       applyAvailSelClasses();
       updateAvailSelBar();
       return;

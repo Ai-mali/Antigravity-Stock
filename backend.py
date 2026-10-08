@@ -474,6 +474,7 @@ def stock_out(body: StockOutBody):
 
 class ReturnBody(BaseModel):
     serial: str = Field(min_length=1)
+    model: str = ""   # needed when the serial is shared across models
     reason: str = ""
     condition: str = ""
     notes: str = ""
@@ -485,7 +486,8 @@ def create_return(body: ReturnBody):
     _fresh()
     today = datetime.date.today().strftime("%m/%d/%Y")
     rec, err = store.create_return(body.serial, body.reason, body.condition,
-                                   body.notes, body.action, today)
+                                   body.notes, body.action, today,
+                                   model=body.model)
     _saved()
     if err:
         return JSONResponse({"ok": False, "error": err}, status_code=404)
@@ -494,13 +496,14 @@ def create_return(body: ReturnBody):
 
 class ReleaseQuarantineBody(BaseModel):
     serial: str
+    model: str = ""  # needed when the serial is shared across models
 
 
 @app.post("/api/returns/release")
 def release_quarantine(body: ReleaseQuarantineBody):
     _fresh()
     today = datetime.date.today().strftime("%m/%d/%Y")
-    rec, err = store.release_quarantine(body.serial, today)
+    rec, err = store.release_quarantine(body.serial, today, model=body.model)
     if err:
         return JSONResponse({"ok": False, "error": err}, status_code=404)
     _saved()
@@ -513,11 +516,14 @@ class UpdateUnitBody(BaseModel):
     model: str
     brand: str = ""
     date_in: str = ""
+    old_model: str = ""  # which unit carries old_serial (models may share it)
 
 
 class DeleteUnitBody(BaseModel):
     serial: str = ""
-    serials: list[str] = []  # bulk path: one save for the whole selection
+    model: str = ""        # disambiguates a serial shared across models
+    serials: list[str] = []  # legacy bulk path: one save for the selection
+    items: list[dict] = []   # precise bulk path: [{serial, model}] pairs
 
 
 @app.post("/api/inventory/update")
@@ -528,7 +534,8 @@ def update_inventory_unit(body: UpdateUnitBody):
         new_serial=body.new_serial,
         model=body.model,
         brand=body.brand,
-        date_in=body.date_in
+        date_in=body.date_in,
+        old_model=body.old_model
     )
     if err:
         return JSONResponse({"ok": False, "error": err}, status_code=400)
@@ -544,11 +551,17 @@ def update_inventory_unit(body: UpdateUnitBody):
 @app.post("/api/inventory/delete")
 def delete_inventory_unit(body: DeleteUnitBody):
     _fresh()
-    if body.serials:
-        deleted, missing = store.delete_units(body.serials)
+    if body.items:
+        deleted, missing, units = store.delete_units(items=body.items)
         _saved()
-        return {"ok": True, "deleted": deleted, "missing": missing}
-    ok, err = store.delete_unit(body.serial)
+        return {"ok": True, "deleted": deleted, "missing": missing,
+                "units": units}
+    if body.serials:
+        deleted, missing, units = store.delete_units(body.serials)
+        _saved()
+        return {"ok": True, "deleted": deleted, "missing": missing,
+                "units": units}
+    ok, err = store.delete_unit(body.serial, model=body.model)
     if not ok:
         return JSONResponse({"ok": False, "error": err}, status_code=400)
     _saved()
