@@ -4784,10 +4784,11 @@ body.theme-light #reschedule-modal .modal-dialog {
 .rs-time-pop {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 120;
   display: none; gap: 6px; padding: 8px;
-  background: var(--surface); border: 1px solid var(--border-light);
+  /* opaque — --surface can go translucent when a wallpaper bg is set */
+  background: var(--bg-app); border: 1px solid var(--border-light);
   border-radius: 10px; box-shadow: 0 16px 36px rgba(0, 0, 0, .5);
-  backdrop-filter: blur(12px);
 }
+body.theme-light .rs-time-pop { box-shadow: 0 16px 36px rgba(15, 23, 42, .22); }
 .rs-time-wrap.open .rs-time-pop { display: flex; }
 .rs-time-col { max-height: 172px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; min-width: 52px; }
 .rs-time-opt {
@@ -12350,8 +12351,8 @@ function cartToggleTimePop(e) {
 
   const cur = (document.getElementById('cart-time-out') || {}).value || '07:00';
   const [ch, cm] = cur.split(':').map(Number);
-  const mins = [0, 15, 30, 45];
-  if (!isNaN(cm) && !mins.includes(cm)) { mins.push(cm); mins.sort((a, b) => a - b); }
+  const mins = [];
+  for (let m = 0; m < 60; m++) mins.push(m);
 
   let hHtml = '', mHtml = '';
   for (let h = 0; h < 24; h++) {
@@ -13231,8 +13232,7 @@ function rsQuickPick(offset) {
   renderReschedule();
 }
 
-/* Custom 24h time popover: hour 00-23 + quarter-hour minutes
-   (an odd stored minute is inserted so it stays selectable). */
+/* Custom 24h time popover: hour 00-23 + full minute range 00-59. */
 function rsToggleTimePop(e) {
   if (e) { e.stopPropagation(); e.preventDefault(); }
   const wrap = document.getElementById('rs-time-wrap');
@@ -13242,8 +13242,8 @@ function rsToggleTimePop(e) {
 
   const cur = (document.getElementById('rs-time') || {}).value || '07:00';
   const [ch, cm] = cur.split(':').map(Number);
-  const mins = [0, 15, 30, 45];
-  if (!isNaN(cm) && !mins.includes(cm)) { mins.push(cm); mins.sort((a, b) => a - b); }
+  const mins = [];
+  for (let m = 0; m < 60; m++) mins.push(m);
 
   let hHtml = '', mHtml = '';
   for (let h = 0; h < 24; h++) {
