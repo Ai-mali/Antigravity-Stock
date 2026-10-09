@@ -7489,6 +7489,28 @@ body.theme-light .autocomplete-dropdown {
               </div>
             </div>
             <div>
+              <label class="form-label">Return Date</label>
+              <div class="custom-datepicker" id="rma-return-date-picker" style="width:100%;">
+                <input type="hidden" id="rma-return-date" value="">
+                <button type="button" class="datepicker-trigger" onclick="toggleDatePicker('rma-return-date-picker', event)" style="width:100%; justify-content:space-between; padding:6px 10px; font-size:11.5px;">
+                  <span style="display:flex; align-items:center; gap:6px;">
+                    <span class="dp-icon-cal">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </span>
+                    <span class="dp-date-text" id="rma-return-date-picker-display">Return Date</span>
+                    <span class="dp-badge-relative" id="rma-return-date-picker-relative"></span>
+                  </span>
+                  <span class="dp-icon-chevron">&#9662;</span>
+                </button>
+                <div class="datepicker-popover" id="rma-return-date-picker-popover"></div>
+              </div>
+            </div>
+            <div>
               <label class="form-label">Return Reason</label>
               <select class="form-select" id="rma-reason" onchange="updateRmaReasonState()">
                 <option>Ordered Cancelled</option>
@@ -14282,15 +14304,19 @@ async function submitRmaAction(isRestock) {
   }
   const condition = '';
   const notes = (document.getElementById('rma-notes').value || '').trim();
+  // ISO date from the picker; backend falls back to today if blank/invalid.
+  const retDate = (document.getElementById('rma-return-date') || {}).value || '';
   try {
     await apiPost('/api/returns', {
-      serial, model, reason, condition, notes,
+      serial, model, reason, condition, notes, date: retDate,
       action: isRestock ? 'restock' : 'quarantine'
     });
     showToast(isRestock
       ? `Restocked ${serial} to Available Stock`
       : `Quarantined ${serial} for audit`);
     document.getElementById('rma-notes').value = '';
+    // Back to today for the next return
+    initDatePicker('rma-return-date-picker', formatDateISO(new Date()), null, { inputId: 'rma-return-date' });
     await refreshData();
   } catch (e) {
     showToast('Return failed: ' + e.message);
@@ -15629,7 +15655,7 @@ function initDatePicker(id, initialDateStr = null, onChange = null, opts = {}) {
     selectedDate: new Date(initialYear, initialMonth, initialDay),
     viewYear: initialYear,
     viewMonth: initialMonth,
-    inputId: id === 'scan-date-in-picker' ? 'scan-date-in' : (id === 'dispatch-date-out-picker' ? 'cart-date-out' : null),
+    inputId: opts.inputId || (id === 'scan-date-in-picker' ? 'scan-date-in' : (id === 'dispatch-date-out-picker' ? 'cart-date-out' : null)),
     onChange,
     picked: !!initialDateStr,
     minDate: md,
@@ -16766,6 +16792,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const todayStr = formatDateISO(new Date());
   initDatePicker('scan-date-in-picker', todayStr);
   initDatePicker('dispatch-date-out-picker', todayStr);
+  initDatePicker('rma-return-date-picker', todayStr, null, { inputId: 'rma-return-date' });
   initDatePicker('avail-datein-picker', null, setAvailDateFilter);
   initDatePicker('so-datein-picker', null, setSODateFilter);
   initDatePicker('track-datein-picker', null, setTrackDateInFilter);

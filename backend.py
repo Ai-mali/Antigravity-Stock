@@ -478,15 +478,19 @@ class ReturnBody(BaseModel):
     reason: str = ""
     condition: str = ""
     notes: str = ""
+    date: str = ""    # ISO YYYY-MM-DD from the Return Date picker; today if blank
     action: Literal["restock", "quarantine"] = "quarantine"
 
 
 @app.post("/api/returns")
 def create_return(body: ReturnBody):
     _fresh()
-    today = datetime.date.today().strftime("%m/%d/%Y")
+    try:
+        ret_date = datetime.date.fromisoformat(body.date).strftime("%m/%d/%Y")
+    except (ValueError, TypeError):
+        ret_date = datetime.date.today().strftime("%m/%d/%Y")
     rec, err = store.create_return(body.serial, body.reason, body.condition,
-                                   body.notes, body.action, today,
+                                   body.notes, body.action, ret_date,
                                    model=body.model)
     _saved()
     if err:
