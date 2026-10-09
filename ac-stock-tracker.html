@@ -6704,32 +6704,146 @@ body.theme-light .autocomplete-dropdown {
 .lic-foot { margin-top: 16px; font-size: 10.5px; color: var(--text-muted); }
 .lic-foot b { color: var(--text-sub); }
 
-/* License admin modal */
-.licm-status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.licm-pill {
-  padding: 4px 12px; border-radius: 99px;
-  font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-  background: color-mix(in srgb, var(--green) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
-  color: var(--green-bright);
+/* License admin modal — "License & Activation" card design */
+.licm-card {
+  --lc-bg: #ffffff; --lc-head: linear-gradient(180deg,#f8fafc 0%,#ffffff 100%);
+  --lc-foot: #f8fafc; --lc-border: #e2e8f0; --lc-sep: #e2e8f0;
+  --lc-text: #0f172a; --lc-sub: #64748b; --lc-mut: #94a3b8;
+  --lc-input-bg: #f8fafc; --lc-input-bd: #e2e8f0; --lc-input-text: #334155;
+  --lc-btn-bg: #ffffff; --lc-btn-hover: #f1f5f9;
+  --lc-ic-bg: #ecfdf5; --lc-ic-bd: rgba(5,150,105,.18); --lc-ic: #047857;
+  --lc-go: #047857; --lc-go-hover: #065f46;
+  width: 510px; max-width: 94vw; overflow: hidden; border-radius: 16px;
+  background: var(--lc-bg); border: 1px solid var(--lc-border);
+  box-shadow: 0 20px 40px -15px rgba(0,0,0,.35), 0 0 1px 1px rgba(255,255,255,.08);
+  color: var(--lc-text);
 }
-.licm-pill.warn {
-  background: rgba(251,191,36,.14); border-color: rgba(251,191,36,.4); color: var(--gold-ink);
+body:not(.theme-light) .licm-card {
+  --lc-bg: #131A29; --lc-head: linear-gradient(180deg,#16202f 0%,#131A29 100%);
+  --lc-foot: #0f1622; --lc-border: #1E293B; --lc-sep: #1E293B;
+  --lc-text: #e2e8f0; --lc-sub: #94a3b8; --lc-mut: #64748b;
+  --lc-input-bg: #090D14; --lc-input-bd: #1E293B; --lc-input-text: #cbd5e1;
+  --lc-btn-bg: #1E293B; --lc-btn-hover: #334155;
+  --lc-ic-bg: rgba(16,185,129,.12); --lc-ic-bd: rgba(16,185,129,.3); --lc-ic: #34d399;
+  --lc-go: #059669; --lc-go-hover: #10b981;
 }
-.licm-pill.bad {
-  background: rgba(244,63,94,.14); border-color: rgba(244,63,94,.4); color: var(--red-ink);
+.licm-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 24px 18px; background: var(--lc-head);
+  border-bottom: 1px solid var(--lc-border);
 }
-.licm-days { font-size: 11.5px; color: var(--text-sub); font-weight: 600; }
-.licm-grid {
-  display: grid; grid-template-columns: auto 1fr; gap: 7px 16px;
-  font-size: 12px; margin-bottom: 4px;
+.licm-title-row { display: flex; align-items: center; gap: 9px; }
+.licm-key-ic {
+  width: 28px; height: 28px; border-radius: 8px; display: flex;
+  align-items: center; justify-content: center;
+  background: var(--lc-ic-bg); border: 1px solid var(--lc-ic-bd); color: var(--lc-ic);
 }
-.licm-k { color: var(--text-sub); font-weight: 600; }
-.licm-v {
-  color: var(--text); font-weight: 600; text-align: right;
-  font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.licm-title { font-size: 16.5px; font-weight: 700; letter-spacing: -0.2px; color: var(--lc-text); }
+.licm-sub { font-size: 11px; color: var(--lc-sub); padding-left: 37px; margin-top: 3px; }
+.licm-x {
+  width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer;
+  background: transparent; color: var(--lc-mut); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
 }
+.licm-x:hover { background: var(--lc-btn-hover); color: var(--lc-text); }
+.licm-body { padding: 18px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+/* status banner — ok / warn / bad variants */
+.licm-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px; border-radius: 11px; font-size: 11px;
+  border: 1px solid; font-weight: 600;
+}
+.licm-banner.ok  { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.licm-banner.warn{ background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.licm-banner.bad { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
+body:not(.theme-light) .licm-banner.ok  { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.35); color: #6ee7b7; }
+body:not(.theme-light) .licm-banner.warn{ background: rgba(251,191,36,.12); border-color: rgba(251,191,36,.3); color: #fcd34d; }
+body:not(.theme-light) .licm-banner.bad { background: rgba(244,63,94,.12); border-color: rgba(244,63,94,.35); color: #fda4af; }
+.licm-banner-left { display: flex; align-items: center; gap: 8px; }
+.licm-banner-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; }
+.licm-banner-dot::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: inherit; animation: licmPing 1.6s cubic-bezier(0,0,.2,1) infinite;
+}
+.licm-banner.ok .licm-banner-dot  { background: #10b981; }
+.licm-banner.warn .licm-banner-dot{ background: #f59e0b; }
+.licm-banner.bad .licm-banner-dot { background: #f43f5e; }
+@keyframes licmPing { 0% { transform: scale(1); opacity: .75; } 80%,100% { transform: scale(2.2); opacity: 0; } }
+.licm-banner-label { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.licm-banner-chip {
+  padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 600;
+  background: rgba(0,0,0,.06);
+}
+body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
+
+/* metadata card */
+.licm-meta {
+  border: 1px solid var(--lc-border); border-radius: 11px;
+  background: var(--lc-input-bg); padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.licm-meta-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; }
+.licm-meta-row + .licm-meta-row { border-top: 1px solid var(--lc-sep); padding-top: 9px; }
+.licm-meta-row span { color: var(--lc-sub); font-weight: 600; }
+.licm-meta-row b {
+  color: var(--lc-text); font-weight: 600;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+}
+
+/* section label rows */
+.licm-sec-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.licm-sec-head label {
+  font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--lc-sub);
+}
+.licm-sec-head span { font-size: 10px; color: var(--lc-mut); }
+
+/* machine id + copy */
+.licm-mid-row { display: flex; gap: 8px; }
+.licm-mid {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: 9px;
+  background: var(--lc-input-bg); border: 1px solid var(--lc-input-bd);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+  letter-spacing: .04em; color: var(--lc-input-text); outline: none;
+}
+.licm-mid:focus { border-color: var(--lc-mut); background: var(--lc-bg); }
+.licm-btn2 {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 14px; border-radius: 9px; cursor: pointer;
+  background: var(--lc-btn-bg); border: 1px solid var(--lc-border);
+  color: var(--lc-text); font-size: 11px; font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: all .15s; white-space: nowrap;
+}
+.licm-btn2:hover { background: var(--lc-btn-hover); }
+
+/* renew textarea */
+.licm-key2 {
+  width: 100%; resize: none; padding: 10px 12px; border-radius: 9px;
+  background: var(--lc-bg); border: 1px solid var(--lc-input-bd);
+  color: var(--lc-input-text); font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; line-height: 1.55; outline: none; transition: all .15s;
+}
+.licm-key2::placeholder { font-family: inherit; color: var(--lc-mut); }
+.licm-key2:focus { border-color: var(--lc-go); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc-go) 18%, transparent); }
+.licm-msg { min-height: 14px; font-size: 11px; font-weight: 600; margin-top: 6px; }
+
+/* footer */
+.licm-foot {
+  padding: 14px 24px; background: var(--lc-foot); border-top: 1px solid var(--lc-border);
+}
+.licm-foot-btns { display: flex; gap: 10px; }
+.licm-btn-go {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 14px; border: none; border-radius: 9px; cursor: pointer;
+  background: var(--lc-go); color: #fff; font-size: 11.5px; font-weight: 700;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--lc-go) 30%, transparent);
+  transition: all .15s;
+}
+.licm-btn-go:hover:not(:disabled) { background: var(--lc-go-hover); }
+.licm-btn-go:disabled { opacity: .55; cursor: default; }
+.licm-support { margin-top: 11px; text-align: center; font-size: 10px; color: var(--lc-mut); }
+.licm-support b { color: var(--lc-sub); font-weight: 600; }
 #lic-banner {
   position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
   z-index: 99998; display: flex; align-items: center; gap: 14px;
@@ -8954,7 +9068,7 @@ async function submitLicenseKey() {
 async function copyMachineId(midId = 'lic-machine-id', btnId = 'lic-copy-btn') {
   const mid = document.getElementById(midId);
   const btn = document.getElementById(btnId);
-  const txt = mid ? mid.textContent.trim() : '';
+  const txt = mid ? ((mid.value || mid.textContent || '').trim()) : '';
   if (!txt || txt === 'unavailable') return;
   try { await navigator.clipboard.writeText(txt); }
   catch (e) {
@@ -8964,9 +9078,10 @@ async function copyMachineId(midId = 'lic-machine-id', btnId = 'lic-copy-btn') {
     sel.removeAllRanges();
   }
   if (btn) {
-    const t = btn.textContent;
-    btn.textContent = 'Copied';
-    setTimeout(() => { btn.textContent = t; }, 1500);
+    const lbl = btn.querySelector('.copy-label') || btn;
+    const t = lbl.textContent;
+    lbl.textContent = 'Copied';
+    setTimeout(() => { lbl.textContent = t; }, 1500);
   }
 }
 
@@ -8987,26 +9102,30 @@ async function refreshLicenseModal() {
   try { s = await apiGet('/api/license/status'); }
   catch (e) { s = { ok: false, state: 'unreachable' }; }
   _licState = s;
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = v;
+    else el.textContent = v;
+  };
   set('licm-machine-id', s.machine || 'unavailable');
   set('licm-customer', s.customer || (s.master ? '(master key)' : '—'));
   set('licm-expires', s.expires ? fmtDMY(s.expires) : (s.ok ? 'Never' : '—'));
   set('licm-issued', s.issued ? fmtDMY(s.issued) : '—');
-  const pill = document.getElementById('licm-pill');
+  const banner = document.getElementById('licm-banner');
+  const label = document.getElementById('licm-pill');
   const days = document.getElementById('licm-days');
-  if (pill) {
-    pill.classList.remove('warn', 'bad');
-    if (s.ok) {
-      if (typeof s.days_left === 'number' && s.days_left <= 30) {
-        pill.textContent = 'Expires Soon'; pill.classList.add('warn');
-      } else pill.textContent = 'Active';
-    } else { pill.textContent = 'Invalid'; pill.classList.add('bad'); }
-  }
-  if (days) {
-    if (s.ok && typeof s.days_left === 'number')
-      days.textContent = `${s.days_left} day${s.days_left === 1 ? '' : 's'} remaining`;
-    else if (s.ok) days.textContent = 'No expiry';
-    else days.textContent = s.detail || s.error || '';
+  if (banner) banner.classList.remove('ok', 'warn', 'bad');
+  if (s.ok) {
+    const soon = typeof s.days_left === 'number' && s.days_left <= 30;
+    if (banner) banner.classList.add(soon ? 'warn' : 'ok');
+    if (label) label.textContent = soon ? 'Expires Soon' : 'Active';
+    if (days) days.textContent = typeof s.days_left === 'number'
+      ? `${s.days_left} day${s.days_left === 1 ? '' : 's'} remaining` : 'No expiry';
+  } else {
+    if (banner) banner.classList.add('bad');
+    if (label) label.textContent = 'Invalid';
+    if (days) days.textContent = s.detail || s.error || '';
   }
 }
 
@@ -9016,8 +9135,10 @@ async function licmActivate() {
   const msg = document.getElementById('licm-msg');
   const say = (t, ok) => { if (msg) { msg.style.color = ok ? 'var(--mint-ink)' : 'var(--red-ink)'; msg.textContent = t; } };
   const key = (inp && inp.value || '').trim();
+  const txt = document.getElementById('licm-activate-txt');
   if (!key) return say('Paste the license key first.', false);
-  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  if (btn) btn.disabled = true;
+  if (txt) txt.textContent = 'Verifying…';
   try {
     const res = await apiPost('/api/license/activate', { key });
     if (res.ok) {
@@ -9034,7 +9155,8 @@ async function licmActivate() {
   } catch (e) {
     say(e.message === 'license_required' ? 'That key was rejected.' : (e.message || 'Activation failed.'), false);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Activate New Key'; }
+    if (btn) btn.disabled = false;
+    if (txt) txt.textContent = 'Activate New Key';
   }
 }
 
@@ -17145,33 +17267,56 @@ window.addEventListener('DOMContentLoaded', async () => {
 <!-- License admin — view status & renew/replace the key while licensed.
      The unlicensed case is handled by the hard gate below. -->
 <div class="modal-overlay" id="license-modal">
-  <div class="modal-dialog" style="max-width:430px;">
-    <div class="modal-header">
-      <div class="modal-title">License</div>
-      <button class="btn-circle" onclick="closeLicenseModal()">&#10005;</button>
-    </div>
-    <div class="modal-body">
-      <div class="licm-status-row">
-        <span class="licm-pill" id="licm-pill">Active</span>
-        <span class="licm-days" id="licm-days"></span>
+  <div class="licm-card" role="dialog" aria-modal="true" aria-labelledby="licm-title">
+    <header class="licm-head">
+      <div>
+        <div class="licm-title-row">
+          <span class="licm-key-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
+          <span class="licm-title" id="licm-title">License &amp; Activation</span>
+        </div>
+        <div class="licm-sub">Pro License — seat tied to this workstation</div>
       </div>
-      <div class="licm-grid">
-        <div class="licm-k">Licensed to</div><div class="licm-v" id="licm-customer">—</div>
-        <div class="licm-k">Expires</div><div class="licm-v" id="licm-expires">—</div>
-        <div class="licm-k">Issued</div><div class="licm-v" id="licm-issued">—</div>
+      <button class="licm-x" onclick="closeLicenseModal()" aria-label="Close">&#10005;</button>
+    </header>
+    <div class="licm-body">
+      <div class="licm-banner ok" id="licm-banner">
+        <div class="licm-banner-left">
+          <span class="licm-banner-dot"></span>
+          <span class="licm-banner-label" id="licm-pill">Active</span>
+        </div>
+        <span class="licm-banner-chip" id="licm-days"></span>
       </div>
-      <label class="lic-label">Machine ID</label>
-      <div class="lic-mid-row">
-        <code class="lic-mid" id="licm-machine-id">—</code>
-        <button type="button" class="lic-copy" id="licm-copy-btn" onclick="licmCopyId()">Copy</button>
+      <div class="licm-meta">
+        <div class="licm-meta-row"><span>Licensed to</span><b id="licm-customer">—</b></div>
+        <div class="licm-meta-row"><span>Expires On</span><b id="licm-expires">—</b></div>
+        <div class="licm-meta-row"><span>Issued On</span><b id="licm-issued">—</b></div>
       </div>
-      <label class="lic-label" for="licm-key-input">Renew / replace key</label>
-      <textarea class="lic-key" id="licm-key-input" placeholder="VRE1.&#8230;" spellcheck="false" autocomplete="off" style="min-height:56px;"></textarea>
-      <div class="lic-error" id="licm-msg" style="margin:8px 0 0; min-height:0;"></div>
+      <div>
+        <div class="licm-sec-head"><label for="licm-machine-id">Machine ID</label><span>Locked to this workstation</span></div>
+        <div class="licm-mid-row">
+          <input class="licm-mid" id="licm-machine-id" readonly value="—" onclick="this.select()" spellcheck="false">
+          <button type="button" class="licm-btn2" id="licm-copy-btn" onclick="licmCopyId()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect height="13" rx="2" ry="2" width="13" x="9" y="9"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span class="copy-label">Copy</span>
+          </button>
+        </div>
+      </div>
+      <div>
+        <div class="licm-sec-head"><label for="licm-key-input">Renew / Replace Key</label><span>e.g. VRE1.eyJ…</span></div>
+        <textarea class="licm-key2" id="licm-key-input" placeholder="Paste your VRE1 key here…" rows="2" spellcheck="false" autocomplete="off"></textarea>
+        <div class="licm-msg" id="licm-msg"></div>
+      </div>
     </div>
-    <div class="modal-footer">
-      <button type="button" class="lic-activate" id="licm-activate-btn" onclick="licmActivate()" style="margin-top:0;">Activate New Key</button>
-    </div>
+    <footer class="licm-foot">
+      <div class="licm-foot-btns">
+        <button type="button" class="licm-btn2" id="licm-renew-btn" style="flex:1" onclick="copyMachineId('licm-machine-id','licm-renew-btn')" title="Copies your Machine ID — send it to your supplier to renew"><span class="copy-label">Purchase Renewal</span></button>
+        <button type="button" class="licm-btn-go" id="licm-activate-btn" style="flex:1" onclick="licmActivate()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <span id="licm-activate-txt">Activate New Key</span>
+        </button>
+      </div>
+      <div class="licm-support">Trouble activating? Copy your <b>Machine ID</b> and send it to your supplier to receive a key.</div>
+    </footer>
   </div>
 </div>
 
