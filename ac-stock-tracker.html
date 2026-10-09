@@ -7229,8 +7229,15 @@ body.theme-light .autocomplete-dropdown {
                     <div class="datepicker-popover" id="dispatch-date-out-popover"></div>
                   </div>
                   <div id="cart-time-row" style="display:none; margin-top:8px;">
-                    <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Delivery Time</label>
-                    <input type="time" class="form-input" id="cart-time-out" value="07:00" style="padding:6px 10px; font-size:12px;">
+                    <label class="form-label" style="margin-bottom:3px; font-size:11px; font-weight:600;">Delivery Time (24h)</label>
+                    <div class="rs-time-wrap" id="cart-time-wrap">
+                      <button type="button" class="rs-time-btn" id="cart-time-btn" onclick="cartToggleTimePop(event)" style="height:34px;">
+                        <span class="rs-time-text" id="cart-time-text">07:00</span>
+                        <svg class="rs-time-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      </button>
+                      <input type="hidden" id="cart-time-out" value="07:00">
+                      <div class="rs-time-pop" id="cart-time-pop"></div>
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -12326,6 +12333,57 @@ function cartTimeVisible() {
 function syncCartTimeVisibility() {
   const row = document.getElementById('cart-time-row');
   if (row) row.style.display = cartTimeVisible() ? '' : 'none';
+  const tw = document.getElementById('cart-time-wrap');
+  if (row && row.style.display === 'none' && tw) tw.classList.remove('open');
+}
+
+/* 24h popover for the dispatch Delivery Time field — same widget style
+   as the reschedule modal's picker (shared .rs-time-* classes). The
+   native <input type="time"> followed Windows' 12h format, so this
+   custom picker keeps hour 00-23 regardless of OS locale. */
+function cartToggleTimePop(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  const wrap = document.getElementById('cart-time-wrap');
+  const pop = document.getElementById('cart-time-pop');
+  if (!wrap || !pop) return;
+  if (wrap.classList.contains('open')) { wrap.classList.remove('open'); return; }
+
+  const cur = (document.getElementById('cart-time-out') || {}).value || '07:00';
+  const [ch, cm] = cur.split(':').map(Number);
+  const mins = [0, 15, 30, 45];
+  if (!isNaN(cm) && !mins.includes(cm)) { mins.push(cm); mins.sort((a, b) => a - b); }
+
+  let hHtml = '', mHtml = '';
+  for (let h = 0; h < 24; h++) {
+    hHtml += `<button type="button" class="rs-time-opt${h === ch ? ' sel' : ''}" onclick="cartPickTime(${h}, 'h')">${String(h).padStart(2, '0')}</button>`;
+  }
+  for (const m of mins) {
+    mHtml += `<button type="button" class="rs-time-opt${m === cm ? ' sel' : ''}" onclick="cartPickTime(${m}, 'm')">${String(m).padStart(2, '0')}</button>`;
+  }
+  pop.innerHTML = `<div class="rs-time-col" id="cart-time-hours">${hHtml}</div><div class="rs-time-col" id="cart-time-mins">${mHtml}</div>`;
+
+  wrap.classList.add('open');
+  ['cart-time-hours', 'cart-time-mins'].forEach(id => {
+    const sel = document.getElementById(id).querySelector('.sel');
+    if (sel) sel.scrollIntoView({ block: 'center' });
+  });
+}
+
+function cartPickTime(v, part) {
+  const input = document.getElementById('cart-time-out');
+  if (!input) return;
+  const cur = input.value || '07:00';
+  const [h, m] = cur.split(':');
+  input.value = part === 'h'
+    ? `${String(v).padStart(2, '0')}:${m}`
+    : `${h}:${String(v).padStart(2, '0')}`;
+  const txt = document.getElementById('cart-time-text');
+  if (txt) txt.textContent = input.value;
+  const [nh, nm] = input.value.split(':').map(Number);
+  const hrs = document.getElementById('cart-time-hours');
+  const mns = document.getElementById('cart-time-mins');
+  if (hrs) [...hrs.children].forEach(b => b.classList.toggle('sel', parseInt(b.textContent, 10) === nh));
+  if (mns) [...mns.children].forEach(b => b.classList.toggle('sel', parseInt(b.textContent, 10) === nm));
 }
 
 async function processCartCheckout() {
