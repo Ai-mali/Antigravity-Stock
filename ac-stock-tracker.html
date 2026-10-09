@@ -7502,7 +7502,7 @@ body.theme-light .autocomplete-dropdown {
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                       </svg>
                     </span>
-                    <span class="dp-date-text" id="rma-return-date-picker-display">Return Date</span>
+                    <span class="dp-date-text mono" id="rma-return-date-picker-display">Return Date</span>
                     <span class="dp-badge-relative" id="rma-return-date-picker-relative"></span>
                   </span>
                   <span class="dp-icon-chevron">&#9662;</span>
@@ -14316,7 +14316,7 @@ async function submitRmaAction(isRestock) {
       : `Quarantined ${serial} for audit`);
     document.getElementById('rma-notes').value = '';
     // Back to today for the next return
-    initDatePicker('rma-return-date-picker', formatDateISO(new Date()), null, { inputId: 'rma-return-date' });
+    initDatePicker('rma-return-date-picker', formatDateISO(new Date()), null, { inputId: 'rma-return-date', displayIso: true });
     await refreshData();
   } catch (e) {
     showToast('Return failed: ' + e.message);
@@ -15659,6 +15659,7 @@ function initDatePicker(id, initialDateStr = null, onChange = null, opts = {}) {
     onChange,
     picked: !!initialDateStr,
     minDate: md,
+    displayIso: !!opts.displayIso,   // show YYYY-MM-DD in the trigger instead of "Mon d, yyyy"
     presets: Array.isArray(opts.presets) && opts.presets.length ? opts.presets : null
   };
 
@@ -15740,7 +15741,9 @@ function updateDatePickerDisplay(id) {
     if (container) container.classList.toggle('picked', !!state.picked);
     if (cap) cap.style.display = state.picked ? 'flex' : 'none';
     if (disp) disp.textContent = state.picked
-      ? state.selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      ? (state.displayIso
+          ? isoText
+          : state.selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }))
       : (state.placeholder || 'Date In');
     if (batch) batch.textContent = (state.picked && state.batchNo) ? `(Batch #${state.batchNo})` : '';
     if (rel) {
@@ -16792,7 +16795,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const todayStr = formatDateISO(new Date());
   initDatePicker('scan-date-in-picker', todayStr);
   initDatePicker('dispatch-date-out-picker', todayStr);
-  initDatePicker('rma-return-date-picker', todayStr, null, { inputId: 'rma-return-date' });
+  initDatePicker('rma-return-date-picker', todayStr, null, { inputId: 'rma-return-date', displayIso: true });
   initDatePicker('avail-datein-picker', null, setAvailDateFilter);
   initDatePicker('so-datein-picker', null, setSODateFilter);
   initDatePicker('track-datein-picker', null, setTrackDateInFilter);
