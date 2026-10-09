@@ -39,6 +39,20 @@
   --frame-bg: #39434c;
   --scrollbar-thumb: #3d4a55;
   --scrollbar-thumb-hover: #4d5c69;
+
+  /* Status text colors — vivid hues for dark surfaces. Day mode
+     overrides these with darker counterparts (see theme-light). */
+  --amber-ink: #f59e0b;
+  --gold-ink: #fbbf24;
+  --sky-ink: #38bdf8;
+  --cyan-ink: #22d3ee;
+  --mint-ink: #34d399;
+  --emerald-ink: #10b981;
+  --rose-ink: #fb7185;
+  --violet-ink: #a78bfa;
+  --red-ink: #f87171;
+  --slate-ink: #94a3b8;
+  --blue-ink: #60a5fa;
   color-scheme: dark;
 }
 
@@ -66,6 +80,19 @@ body.theme-light {
   --red-badge-text: #dc2626;
   --scrollbar-thumb: #a8b7c2;
   --scrollbar-thumb-hover: #8fa2b0;
+
+  /* Same status hues, darkened ~40% so they hold 4.5:1 contrast on white */
+  --amber-ink: #b45309;
+  --gold-ink: #a16207;
+  --sky-ink: #0369a1;
+  --cyan-ink: #0e7490;
+  --mint-ink: #047857;
+  --emerald-ink: #047857;
+  --rose-ink: #be123c;
+  --violet-ink: #6d28d9;
+  --red-ink: #dc2626;
+  --slate-ink: #64748b;
+  --blue-ink: #2563eb;
   color-scheme: light;
   --frame-bg: #b6c1ca;
 }
@@ -153,8 +180,30 @@ body.theme-light .so-serial-card.staged {
   border-color: var(--brand-c, #116852);
 }
 body.theme-light .so-serial-card.staged .serial-val {
-  color: var(--brand-c, #116852);
+  color: var(--brand-ink, #116852);
 }
+
+/* === Day-mode text contrast sweep =========================================
+   Pale/vivid text literals that are fine on dark surfaces wash out on
+   white — remap them to the darker --*-ink tokens defined on body. */
+body.theme-light .log-line-active      { color: var(--gold-ink); }
+body.theme-light .sl-seg-btn.is-active { color: var(--mint-ink); }
+body.theme-light .le-label-cyan        { color: var(--cyan-ink); }
+body.theme-light .scan-warn-icon.warn-yellow { color: var(--gold-ink); }
+body.theme-light .tl-batch-block.tl-batch-sel .tl-batch-head { color: var(--blue-ink); }
+body.theme-light .tl-tgl.open.is-booked,
+body.theme-light .tl-warr.w-expiring,
+body.theme-light .tl-warr.w-mixed      { color: var(--gold-ink); }
+body.theme-light .tl-tgl.open.is-dispatched { color: var(--blue-ink); }
+body.theme-light .tl-warr.w-active     { color: var(--emerald-ink); }
+body.theme-light .tl-warr.w-expired    { color: var(--red-ink); }
+body.theme-light .undo-flow-avail,
+body.theme-light .undo-chip-serial     { color: var(--mint-ink); }
+body.theme-light .act-pill-cyan,
+body.theme-light .act-units,
+body.theme-light .bk-kind-manual       { color: var(--cyan-ink); }
+/* ========================================================================== */
+
 body.theme-light .nav-tab-bar {
   background: #f1f5f9;
   border-color: #e2e8f0;
@@ -1357,7 +1406,7 @@ main > .view-section.active {
 
 .btn-danger-ghost {
   background: transparent;
-  color: #f87171;
+  color: var(--red-ink);
   border: 1px solid #5c2626;
   border-radius: 6px;
   padding: 5px 12px;
@@ -1544,7 +1593,7 @@ body.theme-light .search-filter-bar {
   display: flex; align-items: center; gap: 4px;
 }
 .dp-date-line { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
-.dp-batch { font-size: 9px; font-weight: 400; color: #fbbf24; }
+.dp-batch { font-size: 9px; font-weight: 400; color: var(--gold-ink); }
 .dp-live-dot {
   width: 5px; height: 5px; border-radius: 50%;
   background: var(--green-bright);
@@ -1560,7 +1609,7 @@ body.theme-light .search-filter-bar {
 .dp-filter.picked .datepicker-trigger:hover { border-color: #fbbf24 !important; }
 .dp-filter.picked .dp-date-caption { color: rgba(251, 191, 36, 0.9); }
 .dp-filter.picked .dp-date-text { color: #fff; font-weight: 700; font-family: 'JetBrains Mono', Consolas, monospace; overflow: visible; text-overflow: clip; }
-.dp-filter.picked .dp-icon-cal { color: #fbbf24; }
+.dp-filter.picked .dp-icon-cal { color: var(--gold-ink); }
 
 /* Quick Date chip row (shares the pills bar) */
 .quick-date-label {
@@ -1717,7 +1766,7 @@ body.theme-light .search-filter-bar {
 }
 
 .search-clear-btn:hover {
-  color: #ef4444;
+  color: var(--red-ink);
   background: rgba(239, 68, 68, 0.12);
 }
 
@@ -1788,13 +1837,17 @@ body.theme-light .search-filter-bar {
 
 /* High-visibility count pill — glows in the brand's accent color */
 .badge-glow {
-  color: var(--brand-c, var(--green-bright));
+  color: var(--brand-ink, var(--green-bright));
   background: color-mix(in srgb, var(--brand-c, var(--green)) 14%, transparent);
   border: 1px solid var(--brand-c, var(--green));
   font-weight: 800;
   text-shadow: 0 0 8px color-mix(in srgb, var(--brand-c, var(--green)) 75%, transparent);
   box-shadow: 0 0 12px color-mix(in srgb, var(--brand-c, var(--green)) 40%, transparent),
               inset 0 0 8px color-mix(in srgb, var(--brand-c, var(--green)) 15%, transparent);
+}
+body.theme-light .badge-glow {
+  text-shadow: none;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--brand-c, var(--green)) 22%, transparent);
 }
 
 .badge-red {
@@ -1814,7 +1867,7 @@ body.theme-light .search-filter-bar {
   padding: 3px 10px;
   border-radius: 6px;
   background: rgba(14, 165, 233, 0.16);
-  color: #38bdf8;
+  color: var(--sky-ink);
   border: 1px solid rgba(56, 189, 248, 0.45);
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
   text-transform: uppercase;
@@ -1831,14 +1884,8 @@ body.theme-light .brand-display-badge {
 .brand-name-tag {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 800;
-  color: var(--brand-c, #38bdf8);
+  color: var(--brand-ink, #38bdf8);
   letter-spacing: 0.04em;
-}
-
-body.theme-light .brand-name-tag {
-  /* darken brand color 22% so light hues (yellow, lime) stay readable on white */
-  color: color-mix(in srgb, var(--brand-c, #0284c7) 78%, #1e293b);
-  font-weight: 800;
 }
 
 body.theme-light .pill-filter-btn {
@@ -2092,7 +2139,7 @@ body.theme-light #scan-results-tbody tr.scan-row-partial td:first-child {
   letter-spacing: .04em;
   border-radius: 4px;
   background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  color: var(--amber-ink);
   border: 1px solid rgba(245, 158, 11, 0.35);
   user-select: none;
   text-transform: uppercase;
@@ -2209,7 +2256,7 @@ body.theme-light .scan-serial-badge-dupe {
 }
 
 .btn-action-trash {
-  color: #f87171 !important;
+  color: var(--red-ink) !important;
   border-color: rgba(239, 68, 68, 0.25) !important;
 }
 
@@ -2516,7 +2563,7 @@ body.theme-light .scan-serial-badge-dupe {
 
 .btn-preview-action.btn-clear:hover {
   border-color: rgba(239, 68, 68, 0.45);
-  color: #f87171;
+  color: var(--red-ink);
   background: rgba(239, 68, 68, 0.08);
 }
 
@@ -2618,7 +2665,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #34d399; background: rgba(16,185,129,0.13);
+  color: var(--mint-ink); background: rgba(16,185,129,0.13);
   border: 1px solid rgba(16,185,129,0.3);
 }
 .sl-live-dot { width: 4px; height: 4px; border-radius: 50%; background: #34d399; }
@@ -2644,7 +2691,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px; font-weight: 700;
   padding: 0 5px; border-radius: 4px;
-  color: #fbbf24; background: rgba(245,158,11,0.18);
+  color: var(--gold-ink); background: rgba(245,158,11,0.18);
   border: 1px solid rgba(245,158,11,0.4);
 }
 .sl-clear-btn {
@@ -2653,7 +2700,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   display: inline-flex; align-items: center;
   transition: color .15s, background .15s;
 }
-.sl-clear-btn:hover { color: #fda4af; background: rgba(244,63,94,0.1); }
+.sl-clear-btn:hover { color: var(--rose-ink); background: rgba(244,63,94,0.1); }
 
 .status-log-console {
   display: flex; flex-direction: column; gap: 6px;
@@ -2693,11 +2740,11 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase; flex-shrink: 0;
 }
-.leb-info    { color: #94a3b8; background: rgba(148,163,184,0.12); border: 1px solid rgba(148,163,184,0.3); }
-.leb-ok      { color: #34d399; background: rgba(6,78,59,0.5); border: 1px solid rgba(16,185,129,0.35); }
-.leb-extract { color: #38bdf8; background: rgba(56,189,248,0.12);  border: 1px solid rgba(56,189,248,0.3); }
+.leb-info    { color: var(--slate-ink); background: rgba(148,163,184,0.12); border: 1px solid rgba(148,163,184,0.3); }
+.leb-ok      { color: var(--mint-ink); background: rgba(6,78,59,0.5); border: 1px solid rgba(16,185,129,0.35); }
+.leb-extract { color: var(--sky-ink); background: rgba(56,189,248,0.12);  border: 1px solid rgba(56,189,248,0.3); }
 .leb-commit  { color: #071310; background: #10b981; border: 1px solid #10b981; font-weight: 800; }
-.leb-issue   { color: #fbbf24; background: rgba(245,158,11,0.16); border: 1px solid rgba(245,158,11,0.4); }
+.leb-issue   { color: var(--gold-ink); background: rgba(245,158,11,0.16); border: 1px solid rgba(245,158,11,0.4); }
 .le-ping { position: relative; width: 10px; height: 10px; flex-shrink: 0; }
 .le-ping-ring {
   position: absolute; inset: 0; border-radius: 50%;
@@ -2713,7 +2760,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   letter-spacing: -0.02em; flex-shrink: 0;
 }
 .le-sep { color: #475569; flex-shrink: 0; }
-.le-sep-em { color: #10b981; flex-shrink: 0; font-weight: 700; }
+.le-sep-em { color: var(--emerald-ink); flex-shrink: 0; font-weight: 700; }
 .le-msg {
   font-family: 'Inter', 'Segoe UI', sans-serif;
   color: #cbd5e1; font-size: 11px;
@@ -2742,7 +2789,7 @@ body.theme-light .btn-preview-action.btn-clear:hover {
   font-size: 11px; font-weight: 600; color: #cbd5e1;
   min-width: 0; overflow: hidden;
 }
-.le-brand { color: #94a3b8; flex-shrink: 0; }
+.le-brand { color: var(--slate-ink); flex-shrink: 0; }
 .le-model { color: #f1f5f9; letter-spacing: 0.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status-log-foot {
   display: flex; flex-direction: column; gap: 6px;
@@ -2764,9 +2811,9 @@ body.theme-light .btn-preview-action.btn-clear:hover {
 .slf-batch { color: var(--text-sub); }
 .slf-batch b { color: var(--text); font-weight: 700; }
 .slf-right { display: flex; align-items: center; gap: 12px; }
-.slf-pending { color: #fbbf24; font-weight: 600; }
+.slf-pending { color: var(--gold-ink); font-weight: 600; }
 .slf-sep { color: var(--border); }
-.slf-synced { display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 600; }
+.slf-synced { display: inline-flex; align-items: center; gap: 5px; color: var(--mint-ink); font-weight: 600; }
 
 body.theme-light .status-log-console { background: #f1f5f9; }
 body.theme-light .log-entry { background: #ffffff; border-color: #e2e8f0; }
@@ -2912,7 +2959,7 @@ body.theme-light .slf-bar { background: #e2e8f0; }
 tr.scan-row-error td { background: rgba(248, 113, 113, 0.07); }
 tr.scan-row-warn td { background: rgba(240, 180, 41, 0.06); }
 .scan-warn-icon.warn-red {
-  color: #f87171;
+  color: var(--red-ink);
   background: rgba(248, 113, 113, 0.12);
   border: 1px solid rgba(248, 113, 113, 0.4);
 }
@@ -3122,14 +3169,22 @@ body.theme-light .model-accordion-header {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-/* --brand-c is set per .brand-accordion section by the renderers */
-.brand-accordion { --brand-c: #38bdf8; }
+/* --brand-c is set per .brand-accordion section by the renderers.
+   --brand-ink is the text-safe derivative: identical hue in Dark mode,
+   pulled ~45% toward near-black in Day mode so vivid accents (yellow,
+   mint, sky) stay readable on white. Dots/borders/glows keep --brand-c. */
+.brand-accordion { --brand-c: #38bdf8; --brand-ink: var(--brand-c); }
+body.theme-light .brand-accordion {
+  --brand-ink: color-mix(in srgb, var(--brand-c) 55%, #0f172a);
+}
+/* Elements that carry --brand-c inline (JS-generated, outside accordions)
+   pick up the same ink treatment via their own class rules below. */
 
 .model-index-pill {
   font-size: 11px;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: var(--brand-c);
+  color: var(--brand-ink);
   background: color-mix(in srgb, var(--brand-c) 13%, transparent);
   border: 1px solid color-mix(in srgb, var(--brand-c) 32%, transparent);
   padding: 2px 7px;
@@ -3187,14 +3242,14 @@ body.theme-light .model-accordion-header {
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.05em;
-  color: var(--brand-c);
+  color: var(--brand-ink);
 }
 .bmp-label {
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--brand-c) 75%, var(--text-sub, #64748b));
+  color: color-mix(in srgb, var(--brand-ink) 75%, var(--text-sub, #64748b));
 }
 .bmp-slash {
   color: var(--text-sub, #64748b);
@@ -3214,7 +3269,7 @@ body.theme-light .model-accordion-header {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brand-c);
+  color: var(--brand-ink);
   background: color-mix(in srgb, var(--brand-c) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--brand-c) 30%, transparent);
 }
@@ -3404,7 +3459,7 @@ body.avail-marquee-active, body.avail-marquee-active * {
 
 .search-match-text {
   background: rgba(38, 208, 124, 0.28);
-  color: #34d399;
+  color: var(--mint-ink);
   font-weight: 800;
   border-radius: 3px;
   padding: 0 2px;
@@ -3698,7 +3753,7 @@ body.theme-light .unit-action-btn {
 }
 
 .so-serial-card.staged .so-card-bottom {
-  color: var(--brand-c, var(--green-bright));
+  color: var(--brand-ink, var(--green-bright));
 }
 
 /* "N SELECTED" pill on a model header when some of its serials are
@@ -3794,7 +3849,9 @@ body.theme-light .so-sel-pill {
   border-radius: 4px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  border: 1px solid currentColor;
+  color: var(--brand-ink);
+  background: color-mix(in srgb, var(--brand-c) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 33%, transparent);
 }
 
 .cart-item-remove-btn {
@@ -3813,7 +3870,7 @@ body.theme-light .so-sel-pill {
 }
 
 .cart-item-remove-btn:hover {
-  color: #ef4444;
+  color: var(--red-ink);
   background: rgba(239, 68, 68, 0.12);
 }
 
@@ -4250,7 +4307,7 @@ body.theme-light .track-breakdown-chip:hover {
   font-size: 10.5px;
   font-weight: 600;
   background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
+  color: var(--sky-ink);
   border: 1px solid rgba(56, 189, 248, 0.3);
   white-space: nowrap;
 }
@@ -4276,7 +4333,7 @@ body.theme-light .tl-status-badge {
 }
 .tl-warranty-badge.w-expiring {
   background: rgba(217, 119, 6, 0.12);
-  color: #f59e0b;
+  color: var(--amber-ink);
   border: 1px solid rgba(217, 119, 6, 0.3);
 }
 .tl-warranty-badge.w-expired {
@@ -4369,7 +4426,7 @@ body.theme-light .tl-status-badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 5px 3px 10px; border-radius: 999px;
   background: rgba(59,130,246,.13); border: 1px solid rgba(59,130,246,.4);
-  color: #60a5fa; font-size: 11px; font-weight: 600;
+  color: var(--blue-ink); font-size: 11px; font-weight: 600;
 }
 .tl-sel-clear {
   border: none; background: transparent; color: inherit; cursor: pointer;
@@ -4397,25 +4454,58 @@ body.theme-light .tl-status-badge {
 .tl-tgl:focus-visible { outline: 2px solid #f7b731; outline-offset: 2px; }
 
 .tl-model-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Elements carrying --brand-c inline (generated outside .brand-accordion)
+   derive --brand-ink the same way — Day mode pulls it toward near-black
+   so vivid accent hues stay readable as text on white. */
+.tl-model-name, .tl-model-brand, .tl-batch-brand, .tl-pkg,
+.cart-item-brand-badge, .tl-cust-avatar, .chip-serial,
+.tl-qty strong, .tl-cust-units {
+  --brand-ink: var(--brand-c, var(--green-bright));
+}
+body.theme-light .tl-model-name, body.theme-light .tl-model-brand,
+body.theme-light .tl-batch-brand, body.theme-light .tl-pkg,
+body.theme-light .cart-item-brand-badge, body.theme-light .tl-cust-avatar,
+body.theme-light .chip-serial, body.theme-light .tl-qty strong,
+body.theme-light .tl-cust-units {
+  --brand-ink: color-mix(in srgb, var(--brand-c, #0f172a) 55%, #0f172a);
+}
+.chip-serial { color: var(--brand-ink); font-weight: 700; }
+.tl-qty strong[style*="--brand-c"] { color: var(--brand-ink); }
+.tl-cust-units[style*="--brand-c"] {
+  color: var(--brand-ink);
+  background: color-mix(in srgb, var(--brand-c) 10%, transparent);
+  border-color: color-mix(in srgb, var(--brand-c) 33%, transparent);
+}
+
 .tl-pkg {
   width: 30px; height: 30px; display: grid; place-items: center; flex: none;
   border-radius: 8px; color: var(--text-sub); background: var(--surface3);
+}
+.tl-pkg[style*="--brand-c"] {
+  color: var(--brand-ink);
+  background: color-mix(in srgb, var(--brand-c) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 34%, transparent);
 }
 .tl-model-name {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 12px; font-weight: 600; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.tl-model-name[style*="--brand-c"] { color: var(--brand-ink); }
 /* Small (BRAND) tag after the model name in Sell Record rows */
 .tl-model-brand {
   font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
+  color: var(--brand-ink);
   opacity: .85; white-space: nowrap; flex: none;
 }
 /* Per-brand unit chips inside a sale-batch header */
 .tl-batch-meta { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .tl-batch-brand {
   font-size: 9.5px; font-weight: 800; letter-spacing: .04em;
-  padding: 1px 7px; border-radius: 999px; border: 1px solid;
+  padding: 1px 7px; border-radius: 999px;
+  color: var(--brand-ink);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 33%, transparent);
+  background: color-mix(in srgb, var(--brand-c) 8%, transparent);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -4502,6 +4592,10 @@ body.theme-light .tl-children { background: #f1f5f8; }
 body.theme-light .tl-u-head { background: rgba(15,23,42,.03); }
 body.theme-light .tl-u-row:hover { background: rgba(15,23,42,.035); }
 body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
+/* brand-tinted icon boxes keep their tint in Day mode */
+body.theme-light .tl-pkg[style*="--brand-c"] {
+  background: color-mix(in srgb, var(--brand-c) 12%, transparent);
+}
 
 /* BOOKED filter toggle + booking affordances */
 .tl-booked-toggle { display: inline-flex; align-items: center; gap: 6px; }
@@ -4511,10 +4605,10 @@ body.theme-light .tl-pkg, body.theme-light .tl-tgl { background: #e8eef4; }
   background: var(--surface3); color: var(--text-sub); font-size: 10.5px; font-variant-numeric: tabular-nums;
 }
 .tl-booked-toggle.on {
-  border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,.1);
+  border-color: #f59e0b; color: var(--amber-ink); background: rgba(245,158,11,.1);
 }
 .tl-booked-toggle.on .tl-booked-count { background: #f59e0b; color: #111; }
-.avail-2nd-toggle.on { border-color: #f87171; color: #f87171; background: rgba(239,68,68,.1); }
+.avail-2nd-toggle.on { border-color: #f87171; color: var(--red-ink); background: rgba(239,68,68,.1); }
 .avail-2nd-toggle.on .tl-booked-count { background: #ef4444; color: #fff; }
 
 /* Reschedule modal: rounded corners WITHOUT overflow-hidden — the date
@@ -4567,7 +4661,7 @@ body.theme-light #reschedule-modal .modal-dialog {
   box-shadow: 0 1px 2px rgba(0, 0, 0, .25); white-space: nowrap;
 }
 .rs-pill-val > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.rs-qty { font-size: 16px; font-weight: 800; color: #f59e0b; letter-spacing: -.01em; }
+.rs-qty { font-size: 16px; font-weight: 800; color: var(--amber-ink); letter-spacing: -.01em; }
 .rs-div { width: 1px; height: 16px; background: var(--border-light); }
 .rs-deliver { font-size: 11px; font-weight: 600; color: var(--text-sub); }
 .rs-sched-head {
@@ -4586,7 +4680,7 @@ body.theme-light #reschedule-modal .modal-dialog {
 }
 .rs-chip:hover { background: var(--surface2); color: var(--text); }
 .rs-chip.on {
-  background: rgba(245, 158, 11, .13); color: #f59e0b;
+  background: rgba(245, 158, 11, .13); color: var(--amber-ink);
   border-color: rgba(245, 158, 11, .4);
 }
 .rs-fields { display: flex; gap: 12px; align-items: flex-end; }
@@ -4625,20 +4719,20 @@ body.theme-light #reschedule-modal .modal-dialog {
   color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px;
   font-weight: 600; cursor: pointer; text-align: center; transition: all .1s;
 }
-.rs-time-opt:hover { background: rgba(245, 158, 11, .14); color: #f59e0b; }
+.rs-time-opt:hover { background: rgba(245, 158, 11, .14); color: var(--amber-ink); }
 .rs-time-opt.sel { background: #f59e0b; color: #111; }
 .rs-pill {
   display: inline-flex; align-items: center; padding: 1.5px 7px;
   border-radius: 999px; font-size: 9.5px; font-weight: 700;
   letter-spacing: .5px; border: 1px solid transparent; white-space: nowrap;
 }
-.rs-pill-today { background: rgba(245, 158, 11, .15); color: #f59e0b; border-color: rgba(245, 158, 11, .45); }
-.rs-pill-tomorrow { background: rgba(16, 185, 129, .15); color: #10b981; border-color: rgba(16, 185, 129, .45); }
+.rs-pill-today { background: rgba(245, 158, 11, .15); color: var(--amber-ink); border-color: rgba(245, 158, 11, .45); }
+.rs-pill-tomorrow { background: rgba(16, 185, 129, .15); color: var(--emerald-ink); border-color: rgba(16, 185, 129, .45); }
 .rs-pill-future { background: var(--surface3); color: var(--text-sub); border-color: var(--border); }
-.rs-pill-past { background: rgba(239, 68, 68, .14); color: #f87171; border-color: rgba(239, 68, 68, .45); }
+.rs-pill-past { background: rgba(239, 68, 68, .14); color: var(--red-ink); border-color: rgba(239, 68, 68, .45); }
 .rs-line { margin: 10px 0 0; font-size: 12px; font-weight: 600; min-height: 15px; }
 .rs-line-idle { color: var(--text-sub); }
-.rs-line-bad { color: #f87171; }
+.rs-line-bad { color: var(--red-ink); }
 .rs-line-good { color: var(--text); }
 .rs-banner {
   display: flex; gap: 9px; align-items: flex-start; margin-top: 12px;
@@ -4646,7 +4740,7 @@ body.theme-light #reschedule-modal .modal-dialog {
   background: rgba(245, 158, 11, .08); border: 1px solid rgba(245, 158, 11, .25);
   color: var(--text-sub); font-size: 12px; line-height: 1.5;
 }
-.rs-banner svg { color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+.rs-banner svg { color: var(--amber-ink); flex-shrink: 0; margin-top: 2px; }
 .rs-banner b { color: var(--text); font-weight: 700; }
 #rs-save-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 .dp-day-cell.dp-day-disabled { opacity: .25; cursor: not-allowed; }
@@ -4656,7 +4750,7 @@ body.theme-light #reschedule-modal .modal-dialog {
   padding: 3px 5px; border-radius: 6px; display: inline-flex; align-items: center;
   opacity: .45; transition: all .12s; vertical-align: middle;
 }
-.tl-g-row:hover .tl-resched-btn, .tl-resched-btn:hover { opacity: 1; color: #f59e0b; background: var(--surface3); }
+.tl-g-row:hover .tl-resched-btn, .tl-resched-btn:hover { opacity: 1; color: var(--amber-ink); background: var(--surface3); }
 
 /* Filter Columns dropdown */
 .tl-colmenu-wrap {
@@ -4947,6 +5041,18 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   flex-shrink: 0;
   position: relative;
 }
+/* Tinted avatar: colored initials on a 15% brand wash */
+.tl-cust-avatar[style*="--brand-c"]:not(.tl-cust-avatar-solid) {
+  background: color-mix(in srgb, var(--brand-c) 15%, transparent);
+  color: var(--brand-ink);
+  border: 1px solid color-mix(in srgb, var(--brand-c) 33%, transparent);
+}
+/* Solid avatar: white initials on the brand color — needs a darker fill
+   in Day mode or pale hues (yellow, mint) wash the white text out */
+.tl-cust-avatar-solid { background: var(--brand-c); color: #fff; }
+body.theme-light .tl-cust-avatar-solid {
+  background: color-mix(in srgb, var(--brand-c) 62%, #1e293b);
+}
 .tl-cust-avatar .tl-wdot {
   position: absolute;
   right: -2px;
@@ -5002,7 +5108,7 @@ body.tl-resizing .tl-sidebar { transition: none !important; }
   flex-shrink: 0;
 }
 .brand-del.on {
-  color: #f87171;
+  color: var(--red-ink);
   border-color: rgba(248, 113, 113, .45);
   cursor: pointer;
 }
@@ -5427,7 +5533,7 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
 .rma-quar-btn {
   flex: 1; justify-content: center; display: inline-flex;
   align-items: center; gap: 7px;
-  background: transparent; color: #f59e0b;
+  background: transparent; color: var(--amber-ink);
   border: 1px solid rgba(245, 158, 11, 0.4);
 }
 .rma-quar-btn:hover { background: rgba(245, 158, 11, 0.1); }
@@ -5470,7 +5576,7 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
   border-radius: 4px;
 }
 .rma-suggest-item .rsi-warr.active { background: rgba(38,208,124,.12); color: var(--green-bright); }
-.rma-suggest-item .rsi-warr.expiring { background: rgba(245,158,11,.12); color: #f59e0b; }
+.rma-suggest-item .rsi-warr.expiring { background: rgba(245,158,11,.12); color: var(--amber-ink); }
 .rma-suggest-item .rsi-warr.expired { background: var(--red-badge-bg); color: var(--red-badge-text); }
 .rma-suggest-empty { padding: 14px 12px; font-size: 11px; color: var(--text-sub); text-align: center; }
 .rma-status-pill {
@@ -5479,7 +5585,7 @@ body.theme-light .tl-side-mini .tl-cust-item.active {
   font-family: 'JetBrains Mono', monospace; pointer-events: none;
 }
 .rma-status-pill.active { background: rgba(38,208,124,.12); color: var(--green-bright); border: 1px solid rgba(38,208,124,.3); }
-.rma-status-pill.expiring { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+.rma-status-pill.expiring { background: rgba(245,158,11,.12); color: var(--amber-ink); border: 1px solid rgba(245,158,11,.3); }
 .rma-status-pill.expired { background: var(--red-badge-bg); color: var(--red-badge-text); border: 1px solid var(--red-badge-border); }
 .rma-meta-strip {
   display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
@@ -5762,7 +5868,7 @@ body.light .undo-flow { background: var(--surface2); }
   font-size: 11.5px; font-weight: 600;
 }
 .undo-flow-dot { width: 6px; height: 6px; border-radius: 50%; }
-.undo-flow-sell { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; }
+.undo-flow-sell { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: var(--rose-ink); }
 .undo-flow-avail { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7; }
 .undo-flow-note { font-size: 11px; color: var(--text-sub); line-height: 1.5; flex: 1; min-width: 160px; text-align: right; }
 .undo-items-pill {
@@ -5838,7 +5944,7 @@ body.light .undo-serial-box { background: var(--surface2); }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 2px 10px; border-radius: 99px;
   font-size: 10.5px; font-weight: 600;
-  background: rgba(16,185,129,0.1); color: #34d399;
+  background: rgba(16,185,129,0.1); color: var(--mint-ink);
   border: 1px solid rgba(16,185,129,0.25);
 }
 .act-sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; animation: actPulse 1.6s ease-in-out infinite; }
@@ -5847,7 +5953,7 @@ body.light .undo-serial-box { background: var(--surface2); }
   display: flex; align-items: center; gap: 7px;
   margin-top: 5px; font-size: 11.5px; color: var(--text-sub);
 }
-.act-file-name { color: #22d3ee; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.act-file-name { color: var(--cyan-ink); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
 .act-tabs {
   display: flex; gap: 8px;
   margin-top: 15px; padding-top: 12px;
@@ -5898,7 +6004,7 @@ body.light .undo-serial-box { background: var(--surface2); }
   font-family: inherit; cursor: pointer; transition: all .15s;
 }
 .act-refresh-btn:hover { background: var(--surface2); }
-.act-refresh-btn:hover svg { color: #22d3ee; transform: rotate(180deg); }
+.act-refresh-btn:hover svg { color: var(--cyan-ink); transform: rotate(180deg); }
 .act-refresh-btn svg { color: var(--text-muted); transition: all .3s; }
 .act-live {
   display: flex; align-items: center; gap: 8px;
@@ -5924,10 +6030,10 @@ body.light .undo-serial-box { background: var(--surface2); }
 }
 .act-pill svg { width: 11px; height: 11px; flex-shrink: 0; }
 .act-pill-cyan { background: rgba(8,145,178,0.16); color: #67e8f9; border: 1px solid rgba(34,211,238,0.32); }
-.act-pill-amber { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-.act-pill-emerald { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-.act-pill-rose { background: rgba(244,63,94,0.1); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
-.act-pill-violet { background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+.act-pill-amber { background: rgba(245,158,11,0.12); color: var(--gold-ink); border: 1px solid rgba(245,158,11,0.3); }
+.act-pill-emerald { background: rgba(16,185,129,0.12); color: var(--mint-ink); border: 1px solid rgba(16,185,129,0.3); }
+.act-pill-rose { background: rgba(244,63,94,0.1); color: var(--rose-ink); border: 1px solid rgba(244,63,94,0.3); }
+.act-pill-violet { background: rgba(139,92,246,0.12); color: var(--violet-ink); border: 1px solid rgba(139,92,246,0.3); }
 .act-pill-slate { background: var(--surface3); color: var(--text-sub); border: 1px solid var(--border-light); }
 .act-units {
   display: inline-block; padding: 2px 9px; border-radius: 6px;
@@ -5939,11 +6045,11 @@ body.light .undo-serial-box { background: var(--surface2); }
   padding: 2px 9px; border-radius: 99px;
   font-size: 10.5px; font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(16,185,129,0.1); color: #34d399;
+  background: rgba(16,185,129,0.1); color: var(--mint-ink);
   border: 1px solid rgba(16,185,129,0.25);
 }
 .act-ok .act-ok-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
-.act-ok-bad { background: rgba(244,63,94,0.1); color: #fb7185; border-color: rgba(244,63,94,0.3); }
+.act-ok-bad { background: rgba(244,63,94,0.1); color: var(--rose-ink); border-color: rgba(244,63,94,0.3); }
 .act-ok-bad .act-ok-dot { background: #fb7185; box-shadow: 0 0 6px #fb7185; }
 .act-code {
   font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
@@ -5968,7 +6074,7 @@ body.light .act-code { background: var(--surface3); }
 .bk-latest {
   display: inline-block; padding: 1px 7px; border-radius: 5px;
   font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em;
-  background: rgba(16,185,129,0.15); color: #34d399;
+  background: rgba(16,185,129,0.15); color: var(--mint-ink);
   border: 1px solid rgba(16,185,129,0.3); margin-left: 8px;
   vertical-align: middle;
 }
@@ -5987,15 +6093,15 @@ body.light .act-code { background: var(--surface3); }
 .bk-btn-dl { background: var(--surface3); border: 1px solid var(--border-light); color: var(--text); }
 .bk-btn-dl:hover { background: var(--surface2); }
 .bk-btn-dl svg { color: var(--text-muted); }
-.bk-btn-rs { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #fb7185; margin-left: 6px; }
-.bk-btn-rs:hover { background: rgba(244,63,94,0.2); color: #fda4af; }
+.bk-btn-rs { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: var(--rose-ink); margin-left: 6px; }
+.bk-btn-rs:hover { background: rgba(244,63,94,0.2); color: var(--rose-ink); }
 .bk-kind {
   display: inline-block; padding: 1px 7px; border-radius: 5px;
   font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em;
   margin-left: 8px; vertical-align: middle;
 }
-.bk-kind-before { background: rgba(245,158,11,0.14); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-.bk-kind-after { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.bk-kind-before { background: rgba(245,158,11,0.14); color: var(--gold-ink); border: 1px solid rgba(245,158,11,0.3); }
+.bk-kind-after { background: rgba(16,185,129,0.12); color: var(--mint-ink); border: 1px solid rgba(16,185,129,0.3); }
 .bk-kind-manual { background: rgba(34,211,238,0.12); color: #67e8f9; border: 1px solid rgba(34,211,238,0.3); }
 .bk-count-pill {
   padding: 2px 8px; border-radius: 6px; font-size: 10.5px;
@@ -6091,7 +6197,7 @@ body.light .act-code { background: var(--surface3); }
   display: inline-block; margin-left: 4px; padding: 0 5px;
   border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .03em;
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(245, 158, 11, 0.16); color: #f59e0b;
+  background: rgba(245, 158, 11, 0.16); color: var(--amber-ink);
   border: 1px solid rgba(245, 158, 11, 0.35); vertical-align: 1px;
   cursor: pointer;
   transition: background .12s, box-shadow .12s;
@@ -6174,7 +6280,7 @@ body.light .act-code { background: var(--surface3); }
   border: 1.5px solid rgba(251,191,36,.85) !important;
   animation: fieldAlertPulse 1.1s ease-in-out infinite;
 }
-.field-alert::placeholder { color: #fbbf24; opacity:.75; }
+.field-alert::placeholder { color: var(--gold-ink); opacity:.75; }
 
 .modal-footer {
   padding: 14px 20px;
@@ -6304,7 +6410,7 @@ body.light .act-code { background: var(--surface3); }
 .badge-amber {
   background: rgba(217, 119, 6, 0.15);
   border: 1px solid rgba(217, 119, 6, 0.35);
-  color: #f59e0b;
+  color: var(--amber-ink);
 }
 body.theme-light .badge-amber {
   background: rgba(217, 119, 6, 0.12);
@@ -6314,7 +6420,7 @@ body.theme-light .badge-amber {
 .badge-blue {
   background: rgba(37, 99, 235, 0.15);
   border: 1px solid rgba(37, 99, 235, 0.35);
-  color: #38bdf8;
+  color: var(--sky-ink);
 }
 body.theme-light .badge-blue {
   background: rgba(37, 99, 235, 0.12);
@@ -6410,7 +6516,7 @@ body.theme-light .autocomplete-dropdown {
 .warranty-alert-card.expiring {
   background: rgba(217, 119, 6, 0.12);
   border: 1px solid rgba(217, 119, 6, 0.35);
-  color: #f59e0b;
+  color: var(--amber-ink);
 }
 .warranty-alert-card.expired {
   background: var(--red-badge-bg);
@@ -6639,7 +6745,7 @@ body.theme-light .autocomplete-dropdown {
                       <span id="preview-filename" style="font-weight:600;">photo_sample.jpg</span>
                       <span id="preview-filesize" style="color:var(--text-sub); font-size:10px;">(240 KB)</span>
                     </div>
-                    <button class="btn btn-ghost btn-sm" onclick="clearPreview(event)" title="Remove photo" style="color:#f87171; padding:2px 8px; font-size:11px; height:24px;">
+                    <button class="btn btn-ghost btn-sm" onclick="clearPreview(event)" title="Remove photo" style="color: var(--red-ink); padding:2px 8px; font-size:11px; height:24px;">
                       &#10005; Remove
                     </button>
                   </div>
@@ -6693,7 +6799,7 @@ body.theme-light .autocomplete-dropdown {
                   </span>
                 </button>
                 <button class="btn-preview-action btn-clear" onclick="clearPreview(event)" title="Clear Photo Preview">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#f87171;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--red-ink);">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -6716,7 +6822,7 @@ body.theme-light .autocomplete-dropdown {
                 <div class="sl-seg">
                   <button type="button" class="sl-seg-btn is-active" data-filter="all" onclick="setLogFilter('all')">All</button>
                   <button type="button" class="sl-seg-btn" data-filter="issue" onclick="setLogFilter('issue')">Issues <span class="sl-seg-count" id="sl-issue-count">0</span></button>
-                  <button type="button" class="sl-seg-btn" data-filter="commit" onclick="setLogFilter('commit')">Committed <span class="sl-seg-count" id="sl-commit-count" style="color:#34d399; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.4);">0</span></button>
+                  <button type="button" class="sl-seg-btn" data-filter="commit" onclick="setLogFilter('commit')">Committed <span class="sl-seg-count" id="sl-commit-count" style="color: var(--mint-ink); background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.4);">0</span></button>
                 </div>
                 <button type="button" class="sl-clear-btn" title="Clear log" onclick="clearStatusLog()">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -6807,7 +6913,7 @@ body.theme-light .autocomplete-dropdown {
               <span id="scan-selected-badge" class="badge badge-green" style="display:none; font-size:11px; padding:2px 8px;">0 selected</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <button class="btn btn-ghost btn-sm" id="btn-delete-selected-scans" onclick="deleteSelectedScans()" style="display:none; color:#f87171; border-color:rgba(239, 68, 68, 0.35);" title="Remove selected rows from scan list">
+              <button class="btn btn-ghost btn-sm" id="btn-delete-selected-scans" onclick="deleteSelectedScans()" style="display:none; color: var(--red-ink); border-color:rgba(239, 68, 68, 0.35);" title="Remove selected rows from scan list">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -7840,7 +7946,7 @@ body.theme-light .autocomplete-dropdown {
   <div class="modal-dialog" style="max-width: 420px; border: 1px solid rgba(239, 68, 68, 0.28); box-shadow: 0 16px 40px rgba(0,0,0,0.65);">
     <div class="modal-header" style="align-items:flex-start;">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:34px; height:34px; border-radius:8px; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); display:flex; align-items:center; justify-content:center; color: var(--red-ink); flex-shrink:0;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -7849,7 +7955,7 @@ body.theme-light .autocomplete-dropdown {
           </svg>
         </div>
         <div>
-          <div class="modal-title" style="color:#ef4444;">Delete In-Stock Unit?</div>
+          <div class="modal-title" style="color: var(--red-ink);">Delete In-Stock Unit?</div>
           <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
             This will permanently remove the unit from stock.
           </div>
@@ -7861,7 +7967,7 @@ body.theme-light .autocomplete-dropdown {
       <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">Serial/Desc</div>
-          <div id="confirm-del-serial" class="mono" style="font-size:16px; font-weight:800; color:#ef4444; margin-top:3px;">—</div>
+          <div id="confirm-del-serial" class="mono" style="font-size:16px; font-weight:800; color: var(--red-ink); margin-top:3px;">—</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">Model</div>
@@ -7890,7 +7996,7 @@ body.theme-light .autocomplete-dropdown {
   <div class="modal-dialog" style="max-width: 460px; border-radius:20px; border:1px solid rgba(255,255,255,0.09); box-shadow:0 25px 50px -12px rgba(0,0,0,0.85);">
     <div class="modal-header" style="align-items:flex-start; border-bottom:none; padding-bottom:4px;">
       <div style="display:flex; align-items:center; gap:14px; width:100%;">
-        <div style="position:relative; width:48px; height:48px; border-radius:16px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 0 24px -4px rgba(239,68,68,0.35);">
+        <div style="position:relative; width:48px; height:48px; border-radius:16px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color: var(--red-ink); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 0 24px -4px rgba(239,68,68,0.35);">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path>
           </svg>
@@ -7901,7 +8007,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div style="flex:1; text-align:center; padding-right:8px;">
           <div class="modal-title" style="font-size:19px; letter-spacing:-0.01em;">Delete Selected Units</div>
-          <div id="bulk-del-model" class="mono" style="font-size:15px; font-weight:800; color:#ef4444; margin-top:2px;">—</div>
+          <div id="bulk-del-model" class="mono" style="font-size:15px; font-weight:800; color: var(--red-ink); margin-top:2px;">—</div>
         </div>
       </div>
       <button class="btn-circle" onclick="resolveBulkDelete(false)" title="Close">&#10005;</button>
@@ -7910,7 +8016,7 @@ body.theme-light .autocomplete-dropdown {
       <div style="background:rgba(39,39,42,0.4); border:1px solid #27272a; border-radius:16px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-size:11px; color:var(--text-sub);">Target Selection</div>
-          <div style="font-size:13.5px; color:var(--text); margin-top:3px;">Permanently delete <strong id="bulk-del-count" style="color:#f87171;">0 items</strong></div>
+          <div style="font-size:13.5px; color:var(--text); margin-top:3px;">Permanently delete <strong id="bulk-del-count" style="color: var(--red-ink);">0 items</strong></div>
         </div>
         <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; background:rgba(69,10,10,0.8); border:1px solid rgba(185,28,28,0.4); color:#fca5a5;">
           <span style="width:6px; height:6px; border-radius:50%; background:#ef4444;"></span>
@@ -7924,8 +8030,8 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div id="bulk-del-chips" class="bulk-del-scroll" style="max-height:190px; overflow-y:auto; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding-right:4px;"></div>
       </div>
-      <div style="display:flex; gap:10px; margin-top:14px; padding:12px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:#fcd34d; font-size:11.5px; line-height:1.5;">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0; margin-top:1px; color:#fbbf24;">
+      <div style="display:flex; gap:10px; margin-top:14px; padding:12px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color: var(--gold-ink); font-size:11.5px; line-height:1.5;">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0; margin-top:1px; color: var(--gold-ink);">
           <path clip-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" fill-rule="evenodd"></path>
         </svg>
         <span>This action cannot be undone. All logs, history, and records linked to these units will be permanently unlinked.</span>
@@ -8025,7 +8131,7 @@ body.theme-light .autocomplete-dropdown {
   <div class="modal-dialog" style="max-width: 480px; border: 1px solid rgba(239, 68, 68, 0.35); box-shadow: 0 16px 45px rgba(0,0,0,0.7);">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:34px; height:34px; border-radius:8px; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
+        <div style="width:34px; height:34px; border-radius:8px; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); display:flex; align-items:center; justify-content:center; color: var(--red-ink); flex-shrink:0;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
             <line x1="12" y1="9" x2="12" y2="13"/>
@@ -8033,7 +8139,7 @@ body.theme-light .autocomplete-dropdown {
           </svg>
         </div>
         <div>
-          <div class="modal-title" style="color:#ef4444;">Duplicate Serial Location</div>
+          <div class="modal-title" style="color: var(--red-ink);">Duplicate Serial Location</div>
           <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
             Existing unit location &amp; history in master record
           </div>
@@ -8046,7 +8152,7 @@ body.theme-light .autocomplete-dropdown {
       <div style="background:var(--surface2); border:1px solid rgba(239, 68, 68, 0.28); border-radius:8px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); letter-spacing:0.05em; font-weight:700;">DUPLICATE SERIAL</div>
-          <div id="dupe-loc-serial" class="mono" style="font-size:16px; font-weight:800; color:#ef4444; margin-top:3px;">—</div>
+          <div id="dupe-loc-serial" class="mono" style="font-size:16px; font-weight:800; color: var(--red-ink); margin-top:3px;">—</div>
         </div>
         <div id="dupe-loc-status-badge" style="text-align:right;"></div>
       </div>
@@ -8202,7 +8308,7 @@ body.theme-light .autocomplete-dropdown {
         </div>
         <div class="rma-metric-card">
           <span class="rma-detail-label">Return Reason</span>
-          <div class="rma-detail-val" id="rma-detail-reason" style="margin-top:8px; color:#fbbf24; font-weight:700;"></div>
+          <div class="rma-detail-val" id="rma-detail-reason" style="margin-top:8px; color: var(--gold-ink); font-weight:700;"></div>
         </div>
         <div class="rma-metric-card">
           <span class="rma-detail-label">Customer</span>
@@ -8244,8 +8350,8 @@ body.theme-light .autocomplete-dropdown {
             <div class="mono" id="rma-detail-dateout" style="font-size:13px; font-weight:700; margin-top:4px;"></div>
           </div>
           <div class="rma-metric-card rma-metric-rose" style="padding:10px 12px;">
-            <span class="rma-detail-label" style="font-size:9.5px; color:#fda4af;">Date Returned</span>
-            <div class="mono" id="rma-detail-dateret" style="font-size:13px; font-weight:800; margin-top:4px; color:#fecdd3;"></div>
+            <span class="rma-detail-label" style="font-size:9.5px; color: var(--rose-ink);">Date Returned</span>
+            <div class="mono" id="rma-detail-dateret" style="font-size:13px; font-weight:800; margin-top:4px; color: var(--rose-ink);"></div>
           </div>
         </div>
       </div>
@@ -8374,7 +8480,7 @@ body.theme-light .autocomplete-dropdown {
   <div class="modal-dialog" id="rs-dialog" role="dialog" aria-modal="true" aria-labelledby="rs-title" aria-describedby="rs-desc">
     <div class="modal-header" style="align-items:flex-start;">
       <div style="display:flex; align-items:center; gap:13px;">
-        <div class="undo-icon-pill rs-icon" style="color:#f59e0b;">
+        <div class="undo-icon-pill rs-icon" style="color: var(--amber-ink);">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path></svg>
           <span class="rs-icon-dot" aria-hidden="true"></span>
         </div>
@@ -9266,7 +9372,7 @@ function showDuplicateLocation(serial, modelHint) {
     `;
   } else if (loc.status === 'SOLD') {
     statusBadgeHtml = `
-      <span class="badge" style="background:rgba(129, 140, 248, 0.16); border:1px solid rgba(129, 140, 248, 0.4); color:#a5b4fc; font-size:11px; padding:3px 10px; font-weight:700;">
+      <span class="badge" style="background:rgba(129, 140, 248, 0.16); border:1px solid rgba(129, 140, 248, 0.4); color: var(--violet-ink); font-size:11px; padding:3px 10px; font-weight:700;">
         &#9679; SOLD / DISPATCHED
       </span>
     `;
@@ -9279,7 +9385,7 @@ function showDuplicateLocation(serial, modelHint) {
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Customer / Dispatched To</div>
-          <div style="font-size:13px; font-weight:800; color:#38bdf8; margin-top:2px;">${loc.customer}</div>
+          <div style="font-size:13px; font-weight:800; color: var(--sky-ink); margin-top:2px;">${loc.customer}</div>
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date Out (Dispatched)</div>
@@ -9315,7 +9421,7 @@ function showDuplicateLocation(serial, modelHint) {
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Reason for Return</div>
-          <div style="font-size:12px; font-weight:600; color:#fbbf24; margin-top:2px;">${loc.reason}</div>
+          <div style="font-size:12px; font-weight:600; color: var(--gold-ink); margin-top:2px;">${loc.reason}</div>
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Customer</div>
@@ -11273,7 +11379,7 @@ function renderAvailable(searchTerm) {
       if (otherLoc.status === 'SOLD') {
         extraNotice = `
           <div style="margin-top:14px; padding:12px 16px; background:var(--surface2); border:1px solid rgba(59, 130, 246, 0.3); border-radius:8px; display:inline-block; text-align:left; max-width:460px;">
-            <div style="font-weight:700; color:#38bdf8; font-size:12px; display:flex; align-items:center; gap:6px;">
+            <div style="font-weight:700; color: var(--sky-ink); font-size:12px; display:flex; align-items:center; gap:6px;">
               <span>ℹ️</span> Found in Sell Record (Dispatched / Sold)
             </div>
             <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">
@@ -11287,7 +11393,7 @@ function renderAvailable(searchTerm) {
       } else if (otherLoc.status === 'RETURN') {
         extraNotice = `
           <div style="margin-top:14px; padding:12px 16px; background:var(--surface2); border:1px solid rgba(245, 158, 11, 0.3); border-radius:8px; display:inline-block; text-align:left; max-width:460px;">
-            <div style="font-weight:700; color:#fbbf24; font-size:12px; display:flex; align-items:center; gap:6px;">
+            <div style="font-weight:700; color: var(--gold-ink); font-size:12px; display:flex; align-items:center; gap:6px;">
               <span>⚠️</span> Found in Returns &amp; RMA (${otherLoc.action || 'Quarantined'})
             </div>
             <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">
@@ -11388,7 +11494,7 @@ function renderAvailBrandSidebar() {
     return `
     <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}${nameHit ? ' search-hit' : ''}" style="align-items:flex-start;"
             onclick="selectAvailBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
-      <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
+      <span class="tl-cust-avatar tl-cust-avatar-solid" style="--brand-c:${o.color}; width:36px; height:36px; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
@@ -11402,7 +11508,7 @@ function renderAvailBrandSidebar() {
 
   const statusOf = u =>
     u === 0 ? ['Empty', 'var(--text-sub)']
-    : u <= SO_LOW_STOCK_MAX ? ['&#9888; Low Stock Warning', '#fbbf24']
+    : u <= SO_LOW_STOCK_MAX ? ['&#9888; Low Stock Warning', 'var(--gold-ink)']
     : [`&#10003; ${u} Units Verified`, 'var(--green-bright)'];
 
   listEl.innerHTML =
@@ -11623,7 +11729,7 @@ function renderSOBrandSidebar() {
     return `
     <button type="button" class="tl-cust-item${active ? ' active' : ''}${empty ? ' brand-empty' : ''}${nameHit ? ' search-hit' : ''}" style="align-items:flex-start;"
             onclick="selectSOBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
-      <span class="tl-cust-avatar" style="width:36px; height:36px; background:${o.color}; color:#fff; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
+      <span class="tl-cust-avatar tl-cust-avatar-solid" style="--brand-c:${o.color}; width:36px; height:36px; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
         <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
@@ -11637,7 +11743,7 @@ function renderSOBrandSidebar() {
 
   const statusOf = u =>
     u === 0 ? ['Empty', 'var(--text-sub)']
-    : u <= SO_LOW_STOCK_MAX ? ['&#9888; Low Stock Warning', '#fbbf24']
+    : u <= SO_LOW_STOCK_MAX ? ['&#9888; Low Stock Warning', 'var(--gold-ink)']
     : [`&#10003; ${u} Units Verified`, 'var(--green-bright)'];
 
   // "All Brands" top row + per-brand rows (Stitch: avatar, name+date, model
@@ -12075,7 +12181,7 @@ function renderCartSidebar() {
         <div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span class="mono" style="font-weight:700; font-size:12.5px;">${escapeHtml(item.serial)}</span>
-            <span class="cart-item-brand-badge" style="color:${bColor}; background:${bColor}18; border-color:${bColor}55;">
+            <span class="cart-item-brand-badge" style="--brand-c:${bColor};">
               ${escapeHtml(bName)}
             </span>
           </div>
@@ -12390,7 +12496,7 @@ function renderTrackBreakdown(list, modelColors) {
   }
   const chipHtml = r => {
     const c = modelColors[r.model] || 'var(--green-bright)';
-    return `<span class="track-breakdown-chip" title="${escapeHtml(r.model)} \u2014 ${escapeHtml(r.customer)} \u00b7 dispatched ${escapeHtml(r.dateOut)}" onclick="trackChipSearch('${escapeHtml(escapeJs(r.serial))}')" style="cursor:pointer;"><span style="color:${c}; font-weight:700;">${escapeHtml(r.serial)}</span> <span class="chip-model">(${escapeHtml(r.model)})</span></span>`;
+    return `<span class="track-breakdown-chip" title="${escapeHtml(r.model)} \u2014 ${escapeHtml(r.customer)} \u00b7 dispatched ${escapeHtml(r.dateOut)}" onclick="trackChipSearch('${escapeHtml(escapeJs(r.serial))}')" style="cursor:pointer;"><span class="chip-serial" style="--brand-c:${c};">${escapeHtml(r.serial)}</span> <span class="chip-model">(${escapeHtml(r.model)})</span></span>`;
   };
   if (DB.trackViewMode === 'grouped') {
     const groups = {};
@@ -12650,15 +12756,15 @@ function renderTrackTable(list, modelColors) {
           g.items.some(r => resolveItemBrand(r).toLowerCase().includes(ql)));
         const gBrand = resolveItemBrand(g.items[0]);
         const gBrandTag = gBrand && gBrand !== 'UNBRANDED'
-          ? `<span class="tl-model-brand" style="color:${getBrandColor(gBrand)};" title="Brand: ${escapeHtml(gBrand)}">(${escapeHtml(gBrand)})</span>` : '';
-        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="color:${mc}; background:color-mix(in srgb, ${mc} 15%, transparent); border:1px solid color-mix(in srgb, ${mc} 34%, transparent);">${pkgSvg}</span><span class="tl-model-name tl-copy" style="color:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span>${gBrandTag}</div>`;
+          ? `<span class="tl-model-brand" style="--brand-c:${getBrandColor(gBrand)};" title="Brand: ${escapeHtml(gBrand)}">(${escapeHtml(gBrand)})</span>` : '';
+        return `<div class="tl-model-cell">${selbox || ''}<button type="button" class="tl-tgl${isOpen ? ' open' : ''} ${st.tone}" aria-expanded="${isOpen}" aria-controls="tl-panel-${gi}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${escapeHtml(g.model)}">${chevSvg}</button><span class="tl-pkg" style="--brand-c:${mc};">${pkgSvg}</span><span class="tl-model-name tl-copy" style="--brand-c:${mc};" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(g.model))}')">${modelHit ? markMatchedText(g.model, q) : escapeHtml(g.model)}</span>${gBrandTag}</div>`;
       }
       case 'customer': return destHTML(g.customer, '');
       case 'dateIn':
         return dateInRangeHTML(g.items, '', dIn && g.items.some(r => dateMatchesQ(r.dateIn, dIn)));
       case 'dateOut':  return dateHTML(tlFmtDateTime(g.dateOut), '', dOut && dateMatchesQ(g.dateOut, dOut));
       case 'warranty': return warrHTML(g.items, '');
-      case 'qty':      return `<div class="tl-center"><span class="tl-qty"><strong style="color:${mc};">${g.items.length}</strong> ${g.items.length === 1 ? 'pc' : 'pcs'}</span></div>`;
+      case 'qty':      return `<div class="tl-center"><span class="tl-qty"><strong style="--brand-c:${mc};">${g.items.length}</strong> ${g.items.length === 1 ? 'pc' : 'pcs'}</span></div>`;
       case 'status': {
         const reschedBtn = st.label === 'Booked'
           ? `<button type="button" class="tl-resched-btn" title="Reschedule booking" aria-label="Reschedule booking for ${escapeHtml(g.model)}" onclick="event.stopPropagation(); openRescheduleModal(${DB.trackPage * size + gi})">${calSvg}</button>`
@@ -12699,7 +12805,7 @@ function renderTrackTable(list, modelColors) {
     return `<div class="tl-g tl-u-row" data-batch="${escapeHtml(bKey)}">
       <div class="tl-u-id"><span class="tl-u-no">${n + 1}</span><span class="tl-u-serial tl-copy" title="Click to copy serial" onclick="copySerial('${jsSerial}')">${serialHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></div>
       ${moved}
-      <div class="tl-u-actions" style="grid-column:${L.actionsCol}"><button type="button" class="tl-eye-btn tl-undo-btn" style="color:#f59e0b;" title="${label} — ${batchCount.get(bKey)} unit(s) back to stock" aria-label="${label} ${escapeHtml(r.serial)}" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})">${undoSvg}</button><button type="button" class="tl-eye-btn" title="View details" aria-label="View details for ${escapeHtml(r.serial)}" onclick="inspectTrackRow('${jsSerial}', '${escapeHtml(escapeJs(r.model))}')">${eyeSvg}</button></div>
+      <div class="tl-u-actions" style="grid-column:${L.actionsCol}"><button type="button" class="tl-eye-btn tl-undo-btn" style="color: var(--amber-ink);" title="${label} — ${batchCount.get(bKey)} unit(s) back to stock" aria-label="${label} ${escapeHtml(r.serial)}" onclick="confirmRevertSale(${DB.trackList.indexOf(r)})">${undoSvg}</button><button type="button" class="tl-eye-btn" title="View details" aria-label="View details for ${escapeHtml(r.serial)}" onclick="inspectTrackRow('${jsSerial}', '${escapeHtml(escapeJs(r.model))}')">${eyeSvg}</button></div>
     </div>`;
   };
 
@@ -12762,7 +12868,7 @@ function renderTrackTable(list, modelColors) {
     }));
     const brandMeta = Object.keys(bCounts).sort().map(b => {
       const c = getBrandColor(b);
-      return `<span class="tl-batch-brand" style="color:${c}; border-color:${c}55; background:${c}14;" title="${bCounts[b]} unit${bCounts[b] === 1 ? '' : 's'} of ${escapeHtml(b)} in this sale">${escapeHtml(b)} (${bCounts[b]})</span>`;
+      return `<span class="tl-batch-brand" style="--brand-c:${c};" title="${bCounts[b]} unit${bCounts[b] === 1 ? '' : 's'} of ${escapeHtml(b)} in this sale">${escapeHtml(b)} (${bCounts[b]})</span>`;
     }).join('');
     return `<div class="tl-batch-block${selOn ? ' tl-batch-sel' : ''}"><div class="tl-batch-head">${selboxHTML(blk.batch, selOn, batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}${linkSvg}<span class="tl-batch-id">${escapeHtml(batchLabel(blk.batch, blk.groups[0].customer, blk.groups[0].dateOut))}</span><span class="tl-batch-meta">${brandMeta}<span style="color:var(--text-sub);">${units} unit${units === 1 ? '' : 's'}</span></span></div>${blk.groups.map(g => groupHTML(g)).join('')}</div>`;
   }).join('') : '<div class="tl-g-empty">No records match the current filters.</div>';
@@ -13238,7 +13344,7 @@ function renderTrackSidebar() {
     return `
     <button type="button" class="tl-cust-item${DB.trackFilter === key ? ' active' : ''}"
             onclick="selectTrackCustomer('${escapeHtml(escapeJs(key))}')"${dbl} title="${escapeHtml(name)} — filter records${dbl ? ' · double-click to rename' : ''}">
-      <span class="tl-cust-avatar" style="background:${color}26; color:${color}; border:1px solid ${color}55;">
+      <span class="tl-cust-avatar" style="--brand-c:${color};">
         ${escapeHtml(initials)}<i class="tl-wdot" style="background:${TL_WORST_DOT[worst]}"></i>
       </span>
       <span class="tl-cust-meta">
@@ -13258,11 +13364,11 @@ function renderTrackSidebar() {
   const mkWarr = (key, label, count, dot) => `
     <button type="button" class="tl-cust-item tl-warr-row${DB.trackWarrantyFilter === key ? ' active' : ''}"
             onclick="selectTrackWarranty('${key}')" title="Show ${label} records">
-      <span class="tl-cust-avatar" style="background:${dot}26; color:${dot}; border:1px solid ${dot}55;">
+      <span class="tl-cust-avatar" style="--brand-c:${dot};">
         <i class="tl-wdot" style="background:${dot}; position:static; border:none;"></i>
       </span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-line1"><span class="tl-cust-name">${label}</span><span class="tl-cust-units" style="color:${dot}; border-color:${dot}55; background:${dot}1a;">${count}</span></span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${label}</span><span class="tl-cust-units" style="--brand-c:${dot};">${count}</span></span>
         <span class="tl-cust-line2"><span class="tl-cust-sub">${count} record${count === 1 ? '' : 's'}</span></span>
       </span>
     </button>`;
@@ -13659,7 +13765,7 @@ function renderReturnTable() {
           : '<span class="rma-action-pill quarantined">Quarantined</span>');
     const releaseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
     const releaseBtn = r.action === 'Quarantined'
-      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeHtml(escapeJs(r.serial))}', '${escapeHtml(escapeJs(r.model))}')" style="color:#f59e0b;">${releaseSvg}</button>`
+      ? `<button type="button" class="tl-eye-btn" title="Release back to Available Stock" onclick="releaseQuarantine('${escapeHtml(escapeJs(r.serial))}', '${escapeHtml(escapeJs(r.model))}')" style="color: var(--amber-ink);">${releaseSvg}</button>`
       : '';
     const rIdx = DB.returns.indexOf(r);
     tr.innerHTML = `
@@ -13752,7 +13858,7 @@ function openReturnDetail(idx) {
 
   const w = r.warranty || {};
   const wTxt = { active: 'Active', expiring: 'Expiring Soon', expired: 'Expired' }[w.status];
-  const wColor = { active: 'var(--green-bright)', expiring: '#fbbf24', expired: '#f87171' }[w.status];
+  const wColor = { active: 'var(--green-bright)', expiring: 'var(--gold-ink)', expired: 'var(--red-ink)' }[w.status];
   const wEl = document.getElementById('rma-detail-warranty');
   const track = document.getElementById('rma-warranty-track');
   const fill = document.getElementById('rma-warranty-fill');
@@ -13950,7 +14056,7 @@ async function releaseQuarantine(serial, model) {
     bannerValue: serial,
     banner2Label: 'Model Code',
     banner2Value: rec ? (rec.model || '') : '',
-    message: 'The unit will be restocked into <b>Available Stock</b> and automatically tagged <b style="color:#fbbf24;">2nd</b> (second-hand).',
+    message: 'The unit will be restocked into <b>Available Stock</b> and automatically tagged <b style="color: var(--gold-ink);">2nd</b> (second-hand).',
     okText: '&#10003; Release to Stock'
   });
   if (!ok) return;
@@ -14222,7 +14328,7 @@ function renderProviderKeys(prov) {
       <td style="white-space:nowrap;"><span style="color:var(--green-bright); font-weight:700; font-size:10.5px;">${idx === 0 ? 'PRIMARY' : 'FAILOVER'}</span></td>
       <td style="color:var(--text-muted); white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis;" title="${k.remark || ''}">${k.remark || '\u2014'}</td>
       <td style="text-align:center; width:36px; padding:6px 4px; white-space:nowrap;">
-        <button style="background:none; border:none; color:#f87171; cursor:pointer; font-size:14px; padding:2px 4px; line-height:1; display:inline-flex; align-items:center; justify-content:center;" onclick="removeKey('${escapeHtml(escapeJs(prov))}', ${idx})" title="Remove key">&#128465;</button>
+        <button style="background:none; border:none; color: var(--red-ink); cursor:pointer; font-size:14px; padding:2px 4px; line-height:1; display:inline-flex; align-items:center; justify-content:center;" onclick="removeKey('${escapeHtml(escapeJs(prov))}', ${idx})" title="Remove key">&#128465;</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -14777,7 +14883,7 @@ function renderBackupsTable() {
       : escapeHtml(ts);
     const kindBadge = { before: '<span class="bk-kind bk-kind-before">BEFORE</span>', after: '<span class="bk-kind bk-kind-after">AFTER</span>', manual: '<span class="bk-kind bk-kind-manual">MANUAL</span>' }[b.kind] || '';
     return `<tr class="act-row">
-      <td class="mono" style="font-weight:600; font-size:11.5px; color:#34d399;">${escapeHtml(b.filename)}${i === 0 ? '<span class="bk-latest">LATEST</span>' : ''}${kindBadge}</td>
+      <td class="mono" style="font-weight:600; font-size:11.5px; color: var(--mint-ink);">${escapeHtml(b.filename)}${i === 0 ? '<span class="bk-latest">LATEST</span>' : ''}${kindBadge}</td>
       <td class="mono" style="color:var(--text-sub); font-size:11px; white-space:nowrap;">${tsHtml}</td>
       <td><span class="bk-size">${sizeKb}</span></td>
       <td style="text-align:right; white-space:nowrap;">
