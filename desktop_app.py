@@ -1361,6 +1361,17 @@ def backend_healthy(timeout: float = 1.5) -> bool:
         return False
 
 
+def _webview2_present() -> bool:
+    """Edge WebView2 runtime check — preinstalled on Win10/11 but a stripped
+    or LTSC image can lack it."""
+    for env in ("ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"):
+        base = os.environ.get(env)
+        if base and os.path.isdir(os.path.join(
+                base, "Microsoft", "EdgeWebView", "Application")):
+            return True
+    return False
+
+
 def _pid_alive(pid: int) -> bool:
     try:
         h = _k32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
@@ -1540,6 +1551,22 @@ def main():
     # resources are released immediately, so an instant relaunch works.
     # private_mode=False: reuse a persistent WebView2 profile — the runtime's
     # caches survive between launches instead of cold-starting every time.
+    if not _webview2_present():
+        # Client PCs without the runtime would crash-opaque — point them at
+        # Microsoft's evergreen bootstrapper instead.
+        try:
+            ctypes.windll.user32.MessageBoxW(
+                0,
+                "VRE AC Stock needs the Microsoft Edge WebView2 Runtime, which "
+                "is missing on this PC.\n\nClick OK to download the free "
+                "installer from Microsoft, run it, then reopen this app.",
+                "VRE AC Stock — Missing Component", 0x30)  # MB_ICONWARNING
+            import webbrowser
+            webbrowser.open("https://go.microsoft.com/fwlink/p/?LinkId=2124703")
+        except Exception:
+            pass
+        os._exit(2)
+
     bk.t("webview.start() called")
     webview.start(on_started, window, debug=False, private_mode=False)
     os._exit(0)

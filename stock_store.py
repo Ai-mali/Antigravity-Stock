@@ -29,10 +29,26 @@ import uuid
 
 from openpyxl import Workbook, load_workbook
 
-if getattr(sys, "frozen", False):
-    DB_PATH = Path(sys.executable).parent / "daikin_stock.xlsx"
-else:
-    DB_PATH = Path(__file__).with_name("daikin_stock.xlsx")
+def _resolve_db_path() -> Path:
+    """Workbook lives beside the script/exe. In a packaged build the operator
+    may drop their existing Excel next to the exe under any filename — adopt
+    the newest .xlsx found (Excel lock files ~$* are ignored)."""
+    base = (Path(sys.executable).parent if getattr(sys, "frozen", False)
+            else Path(__file__).resolve().parent)
+    canonical = base / "daikin_stock.xlsx"
+    if canonical.exists() or not getattr(sys, "frozen", False):
+        return canonical
+    try:
+        candidates = [p for p in base.glob("*.xlsx")
+                      if not p.name.startswith("~$")]
+        if candidates:
+            return max(candidates, key=lambda p: p.stat().st_mtime)
+    except OSError:
+        pass
+    return canonical
+
+
+DB_PATH = _resolve_db_path()
 BACKUP_DIR = DB_PATH.parent / "backups"
 DO_DIR = DB_PATH.parent / "delivery_orders"
 

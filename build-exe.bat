@@ -26,6 +26,7 @@ pyinstaller --noconfirm --clean --onefile --windowed ^
   --hidden-import stock_store ^
   --hidden-import license_check ^
   --collect-all cryptography ^
+  --hidden-import multipart ^
   --hidden-import scanner ^
   --hidden-import excel_exports ^
   --hidden-import comet_layer ^
@@ -48,7 +49,9 @@ if errorlevel 1 (
 ) else (
     echo.
     echo [OK] dist\VRE AC Stock.exe ready.
-    echo NOTE: daikin_stock.xlsx / backups / ui_prefs.json stay NEXT TO the exe,
-    echo       so keep the exe in this folder (or a folder with your data).
+    echo NOTE: data lives NEXT TO the exe — drop a customer's .xlsx beside it
+    echo       (any filename is adopted), plus license.lic, backups\,
+    echo       delivery_orders\ and ui_prefs.json all live in that folder.
+    echo       Keep the exe in a writable folder, NOT Program Files.
 )
 pause
