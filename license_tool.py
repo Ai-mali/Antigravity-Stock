@@ -65,6 +65,9 @@ def cmd_sign(args) -> int:
     sk = load_pem_private_key(PRIVATE_KEY_PATH.read_bytes(), password=None)
 
     expires = "" if args.perpetual else (args.expires or "")
+    if getattr(args, "days", None):
+        expires = (datetime.date.today()
+                   + datetime.timedelta(days=args.days)).isoformat()
     if expires:
         try:
             datetime.date.fromisoformat(expires)
@@ -103,10 +106,14 @@ def cmd_sign(args) -> int:
 
 
 def _parse_expiry(text: str):
-    """DD/MM/YYYY (the app's display format), ISO, or blank = perpetual."""
+    """A bare number = that many days from now; DD/MM/YYYY or ISO also
+    accepted; blank = perpetual."""
     t = text.strip()
     if not t:
         return ""
+    if t.isdigit():
+        return (datetime.date.today()
+                + datetime.timedelta(days=int(t))).isoformat()
     for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"):
         try:
             return datetime.datetime.strptime(t, fmt).date().isoformat()
@@ -138,11 +145,15 @@ def cmd_interactive() -> int:
             machine = input("Machine ID to license (Enter = this PC): ").strip()
             customer = input("Customer / shop name: ").strip()
             while True:
-                exp_in = input("Expiry date DD/MM/YYYY (Enter = never): ").strip()
+                exp_in = input("License valid for how many days? "
+                               "e.g. 365 (Enter = never): ").strip()
                 expires = _parse_expiry(exp_in)
                 if expires is not None:
+                    if expires:
+                        d = datetime.date.fromisoformat(expires)
+                        print(f"  -> expires {d:%d/%m/%Y}")
                     break
-                print("  Not a date — try e.g. 31/12/2027.")
+                print("  Type a number of days, e.g. 365.")
             print()
         except (EOFError, KeyboardInterrupt):
             print("\nCancelled.")
@@ -175,6 +186,8 @@ def main() -> int:
     g = s.add_mutually_exclusive_group()
     g.add_argument("--expires", metavar="YYYY-MM-DD",
                    help="expiry date for this key")
+    g.add_argument("--days", type=int, metavar="N",
+                   help="expire N days from today (e.g. --days 365)")
     g.add_argument("--perpetual", action="store_true",
                    help="key never expires")
     args = ap.parse_args()

@@ -6703,6 +6703,33 @@ body.theme-light .autocomplete-dropdown {
 .lic-activate:disabled { opacity: .55; cursor: default; }
 .lic-foot { margin-top: 16px; font-size: 10.5px; color: var(--text-muted); }
 .lic-foot b { color: var(--text-sub); }
+
+/* License admin modal */
+.licm-status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.licm-pill {
+  padding: 4px 12px; border-radius: 99px;
+  font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  background: color-mix(in srgb, var(--green) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+  color: var(--green-bright);
+}
+.licm-pill.warn {
+  background: rgba(251,191,36,.14); border-color: rgba(251,191,36,.4); color: var(--gold-ink);
+}
+.licm-pill.bad {
+  background: rgba(244,63,94,.14); border-color: rgba(244,63,94,.4); color: var(--red-ink);
+}
+.licm-days { font-size: 11.5px; color: var(--text-sub); font-weight: 600; }
+.licm-grid {
+  display: grid; grid-template-columns: auto 1fr; gap: 7px 16px;
+  font-size: 12px; margin-bottom: 4px;
+}
+.licm-k { color: var(--text-sub); font-weight: 600; }
+.licm-v {
+  color: var(--text); font-weight: 600; text-align: right;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 #lic-banner {
   position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
   z-index: 99998; display: flex; align-items: center; gap: 14px;
@@ -6838,6 +6865,11 @@ body.theme-light .autocomplete-dropdown {
       <!-- Backup & Activity Log Button -->
       <button class="icon-square-btn" onclick="openActivityModal()" title="Database Backups & Activity Log">
         &#9201;
+      </button>
+
+      <!-- License Admin Button -->
+      <button class="icon-square-btn" onclick="openLicenseModal()" title="License Status &amp; Renewal">
+        &#128273;
       </button>
 
       <!-- Desktop Frameless Window Controls (—, □, ✕) -->
@@ -8919,9 +8951,9 @@ async function submitLicenseKey() {
   }
 }
 
-async function copyMachineId() {
-  const mid = document.getElementById('lic-machine-id');
-  const btn = document.getElementById('lic-copy-btn');
+async function copyMachineId(midId = 'lic-machine-id', btnId = 'lic-copy-btn') {
+  const mid = document.getElementById(midId);
+  const btn = document.getElementById(btnId);
   const txt = mid ? mid.textContent.trim() : '';
   if (!txt || txt === 'unavailable') return;
   try { await navigator.clipboard.writeText(txt); }
@@ -8935,6 +8967,74 @@ async function copyMachineId() {
     const t = btn.textContent;
     btn.textContent = 'Copied';
     setTimeout(() => { btn.textContent = t; }, 1500);
+  }
+}
+
+/* ---------------- License admin modal (status + renewal) ---------------- */
+function openLicenseModal() {
+  const m = document.getElementById('license-modal');
+  if (m) m.classList.add('open');
+  refreshLicenseModal();
+}
+function closeLicenseModal() {
+  const m = document.getElementById('license-modal');
+  if (m) m.classList.remove('open');
+}
+const licmCopyId = () => copyMachineId('licm-machine-id', 'licm-copy-btn');
+
+async function refreshLicenseModal() {
+  let s;
+  try { s = await apiGet('/api/license/status'); }
+  catch (e) { s = { ok: false, state: 'unreachable' }; }
+  _licState = s;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('licm-machine-id', s.machine || 'unavailable');
+  set('licm-customer', s.customer || (s.master ? '(master key)' : '—'));
+  set('licm-expires', s.expires ? fmtDMY(s.expires) : (s.ok ? 'Never' : '—'));
+  set('licm-issued', s.issued ? fmtDMY(s.issued) : '—');
+  const pill = document.getElementById('licm-pill');
+  const days = document.getElementById('licm-days');
+  if (pill) {
+    pill.classList.remove('warn', 'bad');
+    if (s.ok) {
+      if (typeof s.days_left === 'number' && s.days_left <= 30) {
+        pill.textContent = 'Expires Soon'; pill.classList.add('warn');
+      } else pill.textContent = 'Active';
+    } else { pill.textContent = 'Invalid'; pill.classList.add('bad'); }
+  }
+  if (days) {
+    if (s.ok && typeof s.days_left === 'number')
+      days.textContent = `${s.days_left} day${s.days_left === 1 ? '' : 's'} remaining`;
+    else if (s.ok) days.textContent = 'No expiry';
+    else days.textContent = s.detail || s.error || '';
+  }
+}
+
+async function licmActivate() {
+  const inp = document.getElementById('licm-key-input');
+  const btn = document.getElementById('licm-activate-btn');
+  const msg = document.getElementById('licm-msg');
+  const say = (t, ok) => { if (msg) { msg.style.color = ok ? 'var(--mint-ink)' : 'var(--red-ink)'; msg.textContent = t; } };
+  const key = (inp && inp.value || '').trim();
+  if (!key) return say('Paste the license key first.', false);
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  try {
+    const res = await apiPost('/api/license/activate', { key });
+    if (res.ok) {
+      if (inp) inp.value = '';
+      say('License activated.', true);
+      await refreshLicenseModal();
+      // keep the 30-day banner in sync with the new license
+      const ban = document.getElementById('lic-banner');
+      if (ban) ban.remove();
+      const s = _licState;
+      if (s && s.ok && typeof s.days_left === 'number' && s.days_left <= 30)
+        showLicenseBanner(s);
+    } else say(res.error || 'Activation failed.', false);
+  } catch (e) {
+    say(e.message === 'license_required' ? 'That key was rejected.' : (e.message || 'Activation failed.'), false);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Activate New Key'; }
   }
 }
 
@@ -17041,6 +17141,39 @@ window.addEventListener('DOMContentLoaded', async () => {
   switchTab('stock-in');
 });
 </script>
+
+<!-- License admin — view status & renew/replace the key while licensed.
+     The unlicensed case is handled by the hard gate below. -->
+<div class="modal-overlay" id="license-modal">
+  <div class="modal-dialog" style="max-width:430px;">
+    <div class="modal-header">
+      <div class="modal-title">License</div>
+      <button class="btn-circle" onclick="closeLicenseModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="licm-status-row">
+        <span class="licm-pill" id="licm-pill">Active</span>
+        <span class="licm-days" id="licm-days"></span>
+      </div>
+      <div class="licm-grid">
+        <div class="licm-k">Licensed to</div><div class="licm-v" id="licm-customer">—</div>
+        <div class="licm-k">Expires</div><div class="licm-v" id="licm-expires">—</div>
+        <div class="licm-k">Issued</div><div class="licm-v" id="licm-issued">—</div>
+      </div>
+      <label class="lic-label">Machine ID</label>
+      <div class="lic-mid-row">
+        <code class="lic-mid" id="licm-machine-id">—</code>
+        <button type="button" class="lic-copy" id="licm-copy-btn" onclick="licmCopyId()">Copy</button>
+      </div>
+      <label class="lic-label" for="licm-key-input">Renew / replace key</label>
+      <textarea class="lic-key" id="licm-key-input" placeholder="VRE1.&#8230;" spellcheck="false" autocomplete="off" style="min-height:56px;"></textarea>
+      <div class="lic-error" id="licm-msg" style="margin:8px 0 0; min-height:0;"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="lic-activate" id="licm-activate-btn" onclick="licmActivate()" style="margin-top:0;">Activate New Key</button>
+    </div>
+  </div>
+</div>
 
 <!-- License gate — hard lockout; shown by licenseGateCheck() when no valid
      license is installed. The backend blocks /api/ independently of this UI. -->
