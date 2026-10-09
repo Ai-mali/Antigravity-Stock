@@ -3099,6 +3099,11 @@ body.theme-light .btn-action-icon.btn-action-commit:hover {
   border-bottom: none;
   box-shadow: none;
 }
+/* peek strip continues below — square off the header's bottom corners */
+.brand-accordion.has-peek .brand-accordion-header {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
 
 body.theme-light .brand-accordion-header {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
@@ -3107,6 +3112,77 @@ body.theme-light .brand-accordion-header {
 .brand-accordion-header:hover {
   background: var(--surface3);
 }
+
+/* Expand affordance — a real button, not a bare glyph: brand-tinted pill
+   that reads "click me". Pulses twice on render when closed so the eye
+   lands on it, then leaves it alone. */
+.brand-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--brand-ink, var(--green-bright));
+  border: 1px solid color-mix(in srgb, var(--brand-c, var(--green)) 45%, transparent);
+  background: color-mix(in srgb, var(--brand-c, var(--green)) 10%, transparent);
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.brand-accordion-header:hover .brand-expand-btn {
+  background: color-mix(in srgb, var(--brand-c, var(--green)) 20%, transparent);
+  transform: translateY(-1px);
+}
+.brand-expand-btn .bx-chev {
+  font-size: 8px;
+  font-style: normal;
+  transition: transform .25s;
+}
+.brand-accordion.is-open .bx-chev { transform: rotate(180deg); }
+.brand-accordion.is-closed .brand-expand-btn {
+  animation: expandHint 1.6s ease .4s 2;
+}
+@keyframes expandHint {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-c, var(--green)) 45%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand-c, var(--green)) 0%, transparent); }
+}
+
+/* Peek strip — a ghost row of the model names hidden inside a closed
+   accordion. Dashed/faded chips + right-edge fade say "preview, not
+   content", and it's the clearest signal there IS content to open. */
+.brand-peek {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+  mask-image: linear-gradient(to right, #000 72%, transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 72%, transparent);
+}
+.brand-peek .bp-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px dashed color-mix(in srgb, var(--brand-c, var(--green)) 40%, transparent);
+  color: var(--brand-ink, var(--green-bright));
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.brand-peek .bp-more {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-sub);
+  flex-shrink: 0;
+}
+.brand-peek:hover .bp-chip { opacity: 1; }
 
 .brand-title-group {
   display: flex;
@@ -11349,9 +11425,16 @@ function renderAvailable(searchTerm) {
       ? (bData.searchOpen !== undefined ? bData.searchOpen : true)
       : (bData.open === true);
 
-    const brandModels = Object.keys(bData.models || {}).length;
+    const brandModels = Object.keys(bData.models || {});
+    const modelNames = brandModels;
+    const peekHtml = (!isBrandOpen && modelNames.length)
+      ? `<div class="brand-peek" onclick="toggleBrandAcc('${escapeHtml(escapeJs(brandKey))}')">` +
+        modelNames.slice(0, 6).map(m => `<span class="bp-chip">${escapeHtml(m)}</span>`).join('') +
+        (modelNames.length > 6 ? `<span class="bp-more">+${modelNames.length - 6} more</span>` : '') +
+        `</div>`
+      : '';
     const brandSection = document.createElement('div');
-    brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
+    brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed') + (peekHtml ? ' has-peek' : '');
     brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleBrandAcc('${escapeHtml(escapeJs(brandKey))}')">
@@ -11361,15 +11444,16 @@ function renderAvailable(searchTerm) {
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="brand-metrics-pill">
             <span class="bmp-dot"></span>
-            <span class="bmp-seg"><span class="bmp-num">${brandModels}</span><span class="bmp-label">${brandModels === 1 ? 'Model' : 'Models'}</span></span>
+            <span class="bmp-seg"><span class="bmp-num">${brandModels.length}</span><span class="bmp-label">${brandModels.length === 1 ? 'Model' : 'Models'}</span></span>
             <span class="bmp-slash">/</span>
             <span class="bmp-seg"><span class="bmp-num">${brandUnits}</span><span class="bmp-label">${brandUnits === 1 ? 'Unit' : 'Units'}</span></span>
             <span class="bmp-divider"></span>
             <span class="bmp-total">Total</span>
           </span>
         </div>
-        <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
+        <span class="brand-expand-btn">${isBrandOpen ? 'Collapse' : 'Expand'}<i class="bx-chev">&#9660;</i></span>
       </div>
+      ${peekHtml}
       <div style="padding:12px; display:${isBrandOpen ? 'block' : 'none'};">
         ${modelsHtml}
       </div>
@@ -11990,9 +12074,16 @@ function renderStockOut(searchTerm) {
       ? (bData.soSearchOpen !== undefined ? bData.soSearchOpen : true)
       : (bData.open === true);
 
-    const brandModels = Object.keys(bData.models || {}).length;
+    const brandModels = Object.keys(bData.models || {});
+    const modelNames = brandModels;
+    const peekHtml = (!isBrandOpen && modelNames.length)
+      ? `<div class="brand-peek" onclick="toggleSOBrandAcc('${escapeHtml(escapeJs(brandKey))}')">` +
+        modelNames.slice(0, 6).map(m => `<span class="bp-chip">${escapeHtml(m)}</span>`).join('') +
+        (modelNames.length > 6 ? `<span class="bp-more">+${modelNames.length - 6} more</span>` : '') +
+        `</div>`
+      : '';
     const brandSection = document.createElement('div');
-    brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed');
+    brandSection.className = 'brand-accordion ' + (isBrandOpen ? 'is-open' : 'is-closed') + (peekHtml ? ' has-peek' : '');
     brandSection.style.setProperty('--brand-c', getBrandColor(brandKey));
     brandSection.innerHTML = `
       <div class="brand-accordion-header" onclick="toggleSOBrandAcc('${escapeHtml(escapeJs(brandKey))}')">
@@ -12002,15 +12093,16 @@ function renderStockOut(searchTerm) {
           <span style="font-weight:700; font-size:12px; letter-spacing:0.04em; opacity:0.85;">INVENTORY</span>
           <span class="brand-metrics-pill">
             <span class="bmp-dot"></span>
-            <span class="bmp-seg"><span class="bmp-num">${brandModels}</span><span class="bmp-label">${brandModels === 1 ? 'Model' : 'Models'}</span></span>
+            <span class="bmp-seg"><span class="bmp-num">${brandModels.length}</span><span class="bmp-label">${brandModels.length === 1 ? 'Model' : 'Models'}</span></span>
             <span class="bmp-slash">/</span>
             <span class="bmp-seg"><span class="bmp-num">${brandUnits}</span><span class="bmp-label">${brandUnits === 1 ? 'Unit' : 'Units'}</span></span>
             <span class="bmp-divider"></span>
             <span class="bmp-total">Total</span>
           </span>
         </div>
-        <span style="color:var(--text-sub); font-size:12px;">${isBrandOpen ? '&#9650;' : '&#9660;'}</span>
+        <span class="brand-expand-btn">${isBrandOpen ? 'Collapse' : 'Expand'}<i class="bx-chev">&#9660;</i></span>
       </div>
+      ${peekHtml}
       <div style="padding:12px; display:${isBrandOpen ? 'block' : 'none'};">
         ${modelsHtml}
       </div>
