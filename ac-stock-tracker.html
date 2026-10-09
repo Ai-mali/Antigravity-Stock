@@ -4784,11 +4784,15 @@ body.theme-light #reschedule-modal .modal-dialog {
 .rs-time-pop {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 120;
   display: none; gap: 6px; padding: 8px;
-  /* opaque — --surface can go translucent when a wallpaper bg is set */
-  background: var(--bg-app); border: 1px solid var(--border-light);
+  /* explicit opaque bg — theme vars go translucent under wallpaper mode,
+     and a floating picker must never bleed the content behind it */
+  background: #141b21; border: 1px solid var(--border-light);
   border-radius: 10px; box-shadow: 0 16px 36px rgba(0, 0, 0, .5);
 }
-body.theme-light .rs-time-pop { box-shadow: 0 16px 36px rgba(15, 23, 42, .22); }
+body.theme-light .rs-time-pop {
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .22);
+}
 .rs-time-wrap.open .rs-time-pop { display: flex; }
 .rs-time-col { max-height: 172px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; min-width: 52px; }
 .rs-time-opt {
