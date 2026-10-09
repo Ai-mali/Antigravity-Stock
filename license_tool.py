@@ -183,8 +183,91 @@ def cmd_interactive() -> int:
 
 
 def cmd_gui() -> int:
-    """Default no-args mode: a small dark window for issuing keys.
-    Falls back to the console prompts if Tkinter is unavailable."""
+    """Default no-args mode: the WebView2 window (license_tool_ui.html).
+    Falls back to the Tkinter window, then the console prompts."""
+    if not PRIVATE_KEY_PATH.exists():
+        # Keypair generation is a deliberate one-time act — keep it in the
+        # console flow where the warnings are unmissable.
+        print("No signing key yet — generating via console:")
+        return cmd_interactive()
+    ui = Path(__file__).resolve().parent / "license_tool_ui.html"
+    try:
+        import webview
+    except Exception:
+        return cmd_gui_tk()
+    if not ui.exists():
+        return cmd_gui_tk()
+
+    class _Api:
+        _maxed = False
+
+        def signing_status(self):
+            try:
+                import license_check
+                mid = license_check.machine_id()
+            except Exception:
+                mid = ""
+            return {"ready": PRIVATE_KEY_PATH.exists(), "machine": mid}
+
+        def this_machine(self):
+            try:
+                import license_check
+                return license_check.machine_id()
+            except Exception:
+                return ""
+
+        def generate(self, machine, customer, days):
+            try:
+                d = int(str(days).strip() or "0")
+            except ValueError:
+                return {"ok": False, "error": "Days must be a number."}
+            expires = ("" if d <= 0 else (datetime.date.today()
+                       + datetime.timedelta(days=d)).isoformat())
+            try:
+                key, payload = issue_key(machine or "", customer or "", expires)
+            except (ValueError, FileNotFoundError) as e:
+                return {"ok": False, "error": str(e)}
+            return {"ok": True, "key": key, "master": payload["machine"] == "*",
+                    "expires": payload["expires"], "issued": payload["issued"]}
+
+        def save_lic(self, key, customer):
+            try:
+                name = "".join(c for c in (customer or "license")
+                               if c.isalnum() or c in " ._-").strip() or "license"
+                res = webview.windows[0].create_file_dialog(
+                    webview.SAVE_DIALOG, save_filename=f"{name}.lic",
+                    file_types=("License file (*.lic)", "All files (*.*)"))
+                if not res:
+                    return {"ok": False, "error": "cancelled"}
+                Path(res if isinstance(res, str) else res[0]).write_text(
+                    (key or "").strip())
+                return {"ok": True}
+            except Exception as e:
+                return {"ok": False, "error": str(e)}
+
+        def win_min(self):
+            webview.windows[0].minimize()
+
+        def win_toggle_max(self):
+            w = webview.windows[0]
+            if self._maxed:
+                w.restore()
+            else:
+                w.maximize()
+            self._maxed = not self._maxed
+
+        def win_close(self):
+            webview.windows[0].destroy()
+
+    webview.create_window("VRE License Generator", str(ui), js_api=_Api(),
+                          width=700, height=840, min_size=(640, 760),
+                          frameless=True, background_color="#07090E")
+    webview.start()
+    return 0
+
+
+def cmd_gui_tk() -> int:
+    """Fallback window when pywebview isn't available."""
     try:
         import tkinter as tk
         from tkinter import filedialog

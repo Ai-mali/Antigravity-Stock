@@ -1,0 +1,320 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>VRE License Generator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            app: {
+              bg: '#0B0F17',
+              window: '#0F1523',
+              card: '#131A29',
+              border: '#1E293B',
+              'border-subtle': '#182234',
+              input: '#090D14',
+            },
+            mint: {
+              400: '#34D399',
+              500: '#10B981',
+              accent: '#00F59B',
+            }
+          },
+          boxShadow: {
+            'glow-mint': '0 0 25px -4px rgba(0, 245, 155, 0.28)',
+            'glow-subtle': '0 4px 20px -2px rgba(0, 0, 0, 0.65)',
+            'inner-input': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.4)',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #07090E;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(30, 41, 59, 0.2) 0%, transparent 50%);
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0B0F17; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .glow-input:focus-within {
+      box-shadow: 0 0 0 1px #10B981, 0 0 16px -2px rgba(16, 185, 129, 0.25);
+    }
+    .key-pulse { animation: keyPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes keyPulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.03); }
+    }
+    .pywebview-drag-region { -webkit-app-region: drag; }
+  </style>
+</head>
+<body class="min-h-screen text-slate-200 font-sans flex items-center justify-center antialiased selection:bg-mint-500/30 selection:text-emerald-300">
+<main class="w-full bg-app-window flex flex-col" style="height:100vh;">
+<!-- TitleBar — drag region; controls wired to the real window -->
+<header class="h-10 bg-[#090D15]/90 border-b border-app-border-subtle flex items-center justify-between px-4 select-none pywebview-drag-region shrink-0">
+<div class="flex items-center gap-2.5">
+<span class="w-5 h-5 rounded-md bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[10px] text-emerald-400">
+<i class="fa-solid fa-key"></i>
+</span>
+<span class="text-xs font-semibold tracking-wide text-slate-300">VRE License Generator</span>
+</div>
+<div class="flex items-center gap-1" style="-webkit-app-region: no-drag;">
+<button class="w-7 h-7 rounded-md hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 flex items-center justify-center text-xs transition-colors" title="Minimize" onclick="winCtl('min')">
+<i class="fa-solid fa-minus"></i>
+</button>
+<button class="w-7 h-7 rounded-md hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 flex items-center justify-center text-xs transition-colors" title="Maximize" onclick="winCtl('max')">
+<i class="fa-regular fa-square"></i>
+</button>
+<button class="w-7 h-7 rounded-md hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center text-xs transition-colors" title="Close" onclick="winCtl('close')">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+</header>
+<div class="p-6 sm:p-7 space-y-6 overflow-y-auto flex-1">
+<!-- AppHeader -->
+<section class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 shadow-inner flex items-center justify-center text-emerald-400 text-xl shrink-0 key-pulse">
+<i class="fa-solid fa-key"></i>
+</div>
+<div class="space-y-0.5">
+<h1 class="text-2xl font-bold tracking-tight text-white">License Generator</h1>
+<p class="text-sm text-slate-400">Issue cryptographically signed activation keys for customer workstations.</p>
+</div>
+</section>
+<!-- SecurityWarningBanner -->
+<section class="relative overflow-hidden rounded-xl bg-rose-950/20 border border-rose-500/25 p-3.5 px-4 flex items-center gap-3">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-rose-500/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 text-sm shrink-0">
+<i class="fa-solid fa-shield-halved"></i>
+</div>
+<div class="text-xs text-rose-300/90 leading-relaxed">
+<strong class="font-semibold text-rose-200">Private internal tool:</strong> Never distribute this application or <code class="font-mono bg-rose-950/60 px-1 py-0.5 rounded text-rose-200 border border-rose-800/40 text-[11px]">license_private.pem</code>.
+</div>
+</section>
+<!-- FormFields -->
+<form class="space-y-5" onsubmit="event.preventDefault();">
+<!-- Machine ID -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5" for="machine-id-input">
+<span>Machine ID</span><span class="text-rose-400/80">*</span>
+</label>
+<span class="text-[11px] text-slate-500">Hardware UUID hash — from the app's activation screen</span>
+</div>
+<div class="flex gap-2">
+<div class="relative flex-1 rounded-xl bg-app-input border border-app-border focus-within:border-emerald-500/80 focus-within:ring-1 focus-within:ring-emerald-500/40 transition-all glow-input shadow-inner-input flex items-center">
+<span class="pl-3.5 text-slate-500 text-sm"><i class="fa-solid fa-fingerprint"></i></span>
+<input autocomplete="off" class="w-full bg-transparent border-0 text-slate-100 placeholder-slate-600 text-sm font-mono focus:ring-0 px-3 py-2.5 tracking-wide" id="machine-id-input" placeholder="Paste the customer's Machine ID (e.g. C71A-4CBE-...)" type="text" spellcheck="false">
+</div>
+<button class="px-3.5 py-2.5 bg-slate-800/70 hover:bg-slate-700/80 active:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-xl text-slate-200 text-xs font-medium tracking-wide flex items-center gap-2 transition-all duration-150 shrink-0" id="btn-this-pc" title="Populate this PC's machine ID" type="button">
+<i class="fa-solid fa-desktop text-emerald-400 text-xs"></i><span>This PC</span>
+</button>
+</div>
+</div>
+<!-- Customer -->
+<div class="space-y-1.5">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5" for="shop-name-input">
+<span>Customer / Shop Name</span><span class="text-rose-400/80">*</span>
+</label>
+<div class="relative rounded-xl bg-app-input border border-app-border focus-within:border-emerald-500/80 focus-within:ring-1 focus-within:ring-emerald-500/40 transition-all glow-input shadow-inner-input flex items-center">
+<span class="pl-3.5 text-slate-500 text-sm"><i class="fa-solid fa-store"></i></span>
+<input autocomplete="off" class="w-full bg-transparent border-0 text-slate-100 placeholder-slate-600 text-sm focus:ring-0 px-3 py-2.5" id="shop-name-input" placeholder="e.g. Northside Auto Repair LLC" type="text">
+</div>
+</div>
+<!-- Validity -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-400" for="days-input">Valid For (Days)</label>
+<span class="text-[11px] text-slate-500">Select preset or type custom value</span>
+</div>
+<div class="grid grid-cols-12 gap-2">
+<div class="col-span-12 sm:col-span-3">
+<div class="rounded-xl bg-app-input border border-app-border focus-within:border-emerald-500/80 focus-within:ring-1 focus-within:ring-emerald-500/40 transition-all glow-input shadow-inner-input flex items-center px-3 py-2">
+<input class="w-full bg-transparent border-0 text-slate-100 placeholder-slate-600 font-mono text-sm font-semibold p-0 text-center focus:ring-0" id="days-input" max="9999" min="0" type="number" value="365">
+</div>
+</div>
+<div aria-label="License Duration Presets" class="col-span-12 sm:col-span-9 flex items-center gap-1.5" role="radiogroup">
+<button class="duration-preset flex-1 py-2 px-2.5 text-xs font-medium rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 hover:text-white transition-all text-center" data-preset="30" type="button">30 days</button>
+<button class="duration-preset flex-1 py-2 px-2.5 text-xs font-medium rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 hover:text-white transition-all text-center" data-preset="90" type="button">90 days</button>
+<button class="duration-preset active-preset flex-1 py-2 px-2.5 text-xs font-medium rounded-xl border border-emerald-500/50 bg-emerald-500/15 text-emerald-300 shadow-sm shadow-emerald-950 transition-all text-center" data-preset="365" type="button">1 year</button>
+<button class="duration-preset flex-1 py-2 px-2.5 text-xs font-medium rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 hover:text-white transition-all text-center" data-preset="0" type="button">Perpetual</button>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs pt-0.5">
+<div class="inline-flex items-center gap-1.5 text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 text-[11px]">
+<i class="fa-regular fa-calendar-check text-[11px]"></i>
+<span id="expiry-text">Expires on 09/10/2027</span>
+</div>
+<span class="text-slate-500 text-[11px]">0 or blank = perpetual license</span>
+</div>
+</div>
+<!-- Output -->
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-400">License Key</label>
+<div class="flex items-center gap-1.5 text-xs font-medium text-rose-400" id="status-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span><span>No key yet</span>
+</div>
+</div>
+<div class="relative rounded-xl border border-dashed border-slate-800 bg-app-input/90 min-h-[105px] p-4 flex flex-col justify-center items-center transition-colors">
+<textarea class="w-full bg-transparent border-0 text-slate-300 font-mono text-xs focus:ring-0 resize-none p-0 tracking-wider text-center select-all placeholder:text-slate-600 hidden" id="license-key-display" placeholder="Your key will appear here..." readonly rows="3" spellcheck="false" style="overflow-wrap:anywhere;"></textarea>
+<div class="text-center space-y-1 text-slate-600" id="key-placeholder">
+<i class="fa-solid fa-cube text-slate-700 text-lg"></i>
+<p class="text-xs font-mono">Your signed cryptographic key will appear here.</p>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+<button class="flex-1 bg-gradient-to-r from-mint-500 to-mint-accent hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-semibold text-sm px-5 py-3 rounded-xl shadow-glow-mint hover:shadow-emerald-400/40 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer" id="btn-generate" type="button">
+<i class="fa-solid fa-bolt-lightning text-xs"></i><span>Generate Key</span>
+</button>
+<div class="flex items-center gap-2">
+<button class="flex-1 sm:flex-none px-4 py-3 bg-slate-800/80 hover:bg-slate-700/80 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-700/60 rounded-xl text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all" disabled id="btn-copy" title="Copy license key to clipboard" type="button">
+<i class="fa-regular fa-copy"></i><span>Copy</span>
+</button>
+<button class="flex-1 sm:flex-none px-4 py-3 bg-slate-800/80 hover:bg-slate-700/80 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-700/60 rounded-xl text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all" disabled id="btn-save" title="Save as .lic file" type="button">
+<i class="fa-solid fa-download"></i><span>Save .lic</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+<!-- Footer -->
+<footer class="px-6 py-2.5 bg-[#090D14]/70 border-t border-app-border-subtle flex items-center justify-between text-[11px] text-slate-500 font-mono shrink-0">
+<div class="flex items-center gap-2">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-500" id="foot-dot"></span>
+<span id="foot-signing">signing key: checking…</span>
+</div>
+<div class="truncate max-w-[300px]" id="foot-machine" title="This PC's Machine ID"></div>
+</footer>
+</main>
+<script>
+    const api = () => (window.pywebview && window.pywebview.api) || null;
+
+    const machineInput = document.getElementById('machine-id-input');
+    const shopInput = document.getElementById('shop-name-input');
+    const daysInput = document.getElementById('days-input');
+    const expiryText = document.getElementById('expiry-text');
+    const presetButtons = document.querySelectorAll('.duration-preset');
+    const btnThisPc = document.getElementById('btn-this-pc');
+    const btnGenerate = document.getElementById('btn-generate');
+    const btnCopy = document.getElementById('btn-copy');
+    const btnSave = document.getElementById('btn-save');
+    const statusBadge = document.getElementById('status-badge');
+    const licenseDisplay = document.getElementById('license-key-display');
+    const placeholderMsg = document.getElementById('key-placeholder');
+
+    function fmtDMY(d) {
+      const p = n => String(n).padStart(2, '0');
+      return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+    }
+    function updateExpiryDisplay(days) {
+      const val = parseInt(days, 10);
+      if (isNaN(val) || val <= 0) {
+        expiryText.textContent = 'Perpetual (no expiry)';
+        return;
+      }
+      const d = new Date();
+      d.setDate(d.getDate() + val);
+      expiryText.textContent = `Expires on ${fmtDMY(d)}`;
+    }
+    const PRESET_ON = 'duration-preset active-preset flex-1 py-2 px-2.5 text-xs font-medium rounded-xl border border-emerald-500/50 bg-emerald-500/15 text-emerald-300 shadow-sm shadow-emerald-950 transition-all text-center';
+    const PRESET_OFF = 'duration-preset flex-1 py-2 px-2.5 text-xs font-medium rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 hover:text-white transition-all text-center';
+    function syncPresetStyles(days) {
+      presetButtons.forEach(b => { b.className = b.dataset.preset === String(days) ? PRESET_ON : PRESET_OFF; });
+    }
+    presetButtons.forEach(btn => btn.addEventListener('click', () => {
+      daysInput.value = btn.dataset.preset;
+      syncPresetStyles(btn.dataset.preset);
+      updateExpiryDisplay(btn.dataset.preset);
+    }));
+    daysInput.addEventListener('input', e => {
+      syncPresetStyles(e.target.value);
+      updateExpiryDisplay(e.target.value);
+    });
+
+    function badge(kind, text) {
+      const c = { ok: 'emerald-400', err: 'rose-400', wait: 'amber-400' }[kind];
+      statusBadge.className = `flex items-center gap-1.5 text-xs font-medium text-${c}`;
+      statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-${c}${kind === 'wait' ? ' animate-pulse' : ''}"></span><span>${text}</span>`;
+    }
+
+    btnThisPc.addEventListener('click', async () => {
+      try { machineInput.value = (await api().this_machine()) || ''; } catch (e) {}
+      machineInput.focus();
+    });
+
+    btnGenerate.addEventListener('click', async () => {
+      const machine = machineInput.value.trim();
+      if (!machine) { badge('err', 'Machine ID required'); machineInput.focus(); return; }
+      btnGenerate.disabled = true;
+      badge('wait', 'Signing…');
+      try {
+        const r = await api().generate(machine, shopInput.value.trim(), daysInput.value);
+        if (r && r.ok) {
+          placeholderMsg.classList.add('hidden');
+          licenseDisplay.classList.remove('hidden');
+          licenseDisplay.value = r.key;
+          badge(r.master ? 'err' : 'ok', r.master ? 'MASTER KEY — any PC' : 'Active & Signed');
+          btnCopy.disabled = false;
+          btnSave.disabled = false;
+        } else badge('err', (r && r.error) || 'Signing failed');
+      } catch (e) { badge('err', 'Signing backend not ready'); }
+      btnGenerate.disabled = false;
+    });
+
+    btnCopy.addEventListener('click', () => {
+      if (!licenseDisplay.value) return;
+      licenseDisplay.select();
+      const done = () => {
+        const orig = btnCopy.innerHTML;
+        btnCopy.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i><span>Copied!</span>';
+        setTimeout(() => { btnCopy.innerHTML = orig; }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(licenseDisplay.value).then(done, () => { document.execCommand('copy'); done(); });
+      else { document.execCommand('copy'); done(); }
+    });
+
+    btnSave.addEventListener('click', async () => {
+      if (!licenseDisplay.value) return;
+      try {
+        const r = await api().save_lic(licenseDisplay.value, shopInput.value.trim() || 'license');
+        if (r && r.ok) badge('ok', 'Saved .lic file');
+        else if (r && r.error !== 'cancelled') badge('err', r.error);
+      } catch (e) { badge('err', 'Save failed'); }
+    });
+
+    function winCtl(op) {
+      try { const a = api(); if (!a) return;
+        if (op === 'min') a.win_min();
+        else if (op === 'max') a.win_toggle_max();
+        else a.win_close();
+      } catch (e) {}
+    }
+
+    window.addEventListener('pywebviewready', async () => {
+      try {
+        const st = await api().signing_status();
+        document.getElementById('foot-signing').textContent = st.ready ? 'signing key: ready' : 'signing key: MISSING';
+        document.getElementById('foot-dot').className = 'inline-block w-2 h-2 rounded-full ' + (st.ready ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse');
+        if (st.machine) document.getElementById('foot-machine').textContent = st.machine;
+      } catch (e) {}
+    });
+    updateExpiryDisplay(daysInput.value);
+  </script>
+</body></html>
