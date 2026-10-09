@@ -7517,10 +7517,10 @@ body.theme-light .autocomplete-dropdown {
       <!-- Serialized Units Mode -->
       <div id="manual-mode-serial-fields">
         <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>Serial Numbers * (Comma, space, or new line)</span>
+          <span>Serial Numbers * (Comma, space, new line, or Excel MODEL + SERIAL columns)</span>
           <span id="manual-serial-count-hint" style="font-size:10.5px; color:var(--green-bright); font-weight:600;">0 serials entered</span>
         </label>
-        <textarea class="form-input mono" id="manual-serials-textarea" rows="4" placeholder="K001234, K001235, K001236&#10;or paste a list of serials..." oninput="updateManualSerialsCount()" style="font-size:12px; line-height:1.5; resize:vertical;"></textarea>
+        <textarea class="form-input mono" id="manual-serials-textarea" rows="4" placeholder="K001234, K001235, K001236&#10;or paste Excel rows: MODEL&#9;SERIAL" oninput="updateManualSerialsCount()" style="font-size:12px; line-height:1.5; resize:vertical;"></textarea>
       </div>
 
       <!-- Non-Serial Mode -->
@@ -10048,6 +10048,12 @@ function handleFileSelected(e) {
    normal pasting into inputs is never hijacked. */
 document.addEventListener('paste', e => {
   if (DB.activeTab !== 'stock-in') return;
+  // A paste aimed at a field belongs to that field — Excel puts a rendered
+  // bitmap of copied cells next to the text, which would otherwise swallow
+  // a serial-list paste and land in this scanner instead.
+  const t = e.target;
+  if (t && (t.isContentEditable ||
+      (t.closest && t.closest('input, textarea, select, [contenteditable]')))) return;
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   for (const item of items) {
@@ -15820,49 +15826,85 @@ function populateEditScanDescList() {
     .map(p => `<option value="${escapeHtml(p)}">`).join('');
 }
 
+/* Excel-aware serial parser. Each pasted line is either a two-column
+   "MODEL<TAB>SERIAL" row straight from a spreadsheet, or a bare serial
+   (comma/space/newline separated). Returns Map<model, serials[]> — the
+   '' key holds serials that still need the MODEL CODE field's model. */
+function parseManualSerials(raw) {
+  const groups = new Map();
+  const push = (model, serial) => {
+    const key = (model || '').trim().toUpperCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(serial);
+  };
+  for (const line of raw.split(/\r?\n/)) {
+    const cells = line.split('\t').map(c => c.trim()).filter(Boolean);
+    if (cells.length >= 2) {
+      push(cells[0], cells[1].toUpperCase());
+    } else {
+      line.split(/[,;\s]+/).map(s => s.trim().toUpperCase())
+        .filter(Boolean).forEach(s => push('', s));
+    }
+  }
+  return groups;
+}
+
 function updateManualSerialsCount() {
   const textarea = document.getElementById('manual-serials-textarea');
   const hint = document.getElementById('manual-serial-count-hint');
   if (!textarea || !hint) return;
 
-  const raw = textarea.value;
-  const serials = raw.split(/[\r\n,;\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
-  hint.textContent = `${serials.length} serial${serials.length === 1 ? '' : 's'} entered`;
+  const groups = parseManualSerials(textarea.value);
+  let n = 0;
+  groups.forEach(v => { n += v.length; });
+  const modelCount = [...groups.keys()].filter(Boolean).length;
+  hint.textContent = `${n} serial${n === 1 ? '' : 's'} entered` +
+    (modelCount ? ` · ${modelCount} model${modelCount === 1 ? '' : 's'}` : '');
 }
 
 function submitManualStockIn() {
   const modelInput = document.getElementById('manual-model-input');
 
   const model = (modelInput?.value || '').trim().toUpperCase();
-  if (!model) {
-    showToast('Please enter equipment Model Code.', '&#9888;');
-    if (modelInput) modelInput.focus();
-    return;
-  }
+  let addedModels = [model];
 
   if (manualEntryMode === 'serial') {
     const textarea = document.getElementById('manual-serials-textarea');
     const raw = textarea ? textarea.value : '';
-    const serials = raw.split(/[\r\n,;\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+    const groups = parseManualSerials(raw);
+    const loose = groups.get('') || [];   // serials with no model column
+    groups.delete('');
 
-    if (!serials.length) {
+    if (!loose.length && !groups.size) {
       showToast('Please enter at least one serial number.', '&#9888;');
       if (textarea) textarea.focus();
       return;
     }
+    if (loose.length && !model) {
+      showToast('Enter a Model Code for the serials that have no model column.', '&#9888;');
+      if (modelInput) modelInput.focus();
+      return;
+    }
+    if (loose.length) groups.set(model, (groups.get(model) || []).concat(loose));
+    addedModels = [...groups.keys()];
 
-    // Add row to DB.scans
-    const newRow = {
-      no: DB.scans.length + 1,
-      model: model,
-      serials: serials,
-      qty: String(serials.length),
-      desc: '',
-      flag: '',
-      sev: ''
-    };
-    DB.scans.push(newRow);
+    for (const [m, serials] of groups) {
+      DB.scans.push({
+        no: DB.scans.length + 1,
+        model: m,
+        serials: serials,
+        qty: String(serials.length),
+        desc: '',
+        flag: '',
+        sev: ''
+      });
+    }
   } else {
+    if (!model) {
+      showToast('Please enter equipment Model Code.', '&#9888;');
+      if (modelInput) modelInput.focus();
+      return;
+    }
     const qtyInput = document.getElementById('manual-qty-input');
     const descInput = document.getElementById('manual-desc-input');
     const qtyNum = parseInt(qtyInput?.value || '1', 10) || 1;
@@ -15885,7 +15927,9 @@ function submitManualStockIn() {
   markDuplicateScans();
   renderScanResultsTable();
   closeManualStockInModal();
-  showToast(`Added ${model} to Scan Results!`, '&#10003;');
+  showToast(manualEntryMode === 'serial' && addedModels.length > 1
+    ? `Added ${addedModels.length} models to Scan Results!`
+    : `Added ${addedModels[0]} to Scan Results!`, '&#10003;');
 }
 
 /* Keyboard escape listener & modal backdrop click */
