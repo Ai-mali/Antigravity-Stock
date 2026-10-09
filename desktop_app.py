@@ -1196,6 +1196,14 @@ class DesktopApi:
         if self._window:
             self._window.minimize()
 
+    def open_url(self, url: str):
+        """Open an external link in the system browser (e.g. the license
+        modal's Telegram supplier contact) without navigating the app."""
+        import webbrowser
+        u = str(url or "").strip()
+        if u.startswith(("http://", "https://", "tg://")):
+            webbrowser.open(u)
+
     def save_file(self, filename: str, content_b64: str):
         """Native Save-As dialog then write file. Returns saved path or None."""
         try:

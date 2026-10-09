@@ -9097,6 +9097,18 @@ function closeLicenseModal() {
 }
 const licmCopyId = () => copyMachineId('licm-machine-id', 'licm-copy-btn');
 
+/* Purchase Renewal: copy the Machine ID then open the supplier's
+   Telegram so it can be pasted straight into the chat. */
+function licmRenew() {
+  copyMachineId('licm-machine-id', 'licm-renew-btn');
+  const url = 'https://t.me/chh_ck';
+  try {
+    const a = window.pywebview && window.pywebview.api;
+    if (a && a.open_url) { a.open_url(url); return; }
+  } catch (e) {}
+  window.open(url, '_blank');
+}
+
 async function refreshLicenseModal() {
   let s;
   try { s = await apiGet('/api/license/status'); }
@@ -17309,13 +17321,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     </div>
     <footer class="licm-foot">
       <div class="licm-foot-btns">
-        <button type="button" class="licm-btn2" id="licm-renew-btn" style="flex:1" onclick="copyMachineId('licm-machine-id','licm-renew-btn')" title="Copies your Machine ID — send it to your supplier to renew"><span class="copy-label">Purchase Renewal</span></button>
+        <button type="button" class="licm-btn2" id="licm-renew-btn" style="flex:1" onclick="licmRenew()" title="Copies your Machine ID and opens the supplier's Telegram"><span class="copy-label">Purchase Renewal</span></button>
         <button type="button" class="licm-btn-go" id="licm-activate-btn" style="flex:1" onclick="licmActivate()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
           <span id="licm-activate-txt">Activate New Key</span>
         </button>
       </div>
-      <div class="licm-support">Trouble activating? Copy your <b>Machine ID</b> and send it to your supplier to receive a key.</div>
+      <div class="licm-support">Trouble activating? Message <b>@chh_ck</b> on Telegram with your <b>Machine ID</b> to receive a key.</div>
     </footer>
   </div>
 </div>
@@ -17342,7 +17354,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     <label class="lic-label" for="lic-key-input">License Key</label>
     <textarea class="lic-key" id="lic-key-input" placeholder="VRE1.&#8230;" spellcheck="false" autocomplete="off"></textarea>
     <button type="button" class="lic-activate" id="lic-activate-btn" onclick="submitLicenseKey()">Activate License</button>
-    <div class="lic-foot">Keys are issued per computer &middot; contact your supplier to purchase or renew</div>
+    <div class="lic-foot">Keys are issued per computer &middot; <a href="#" onclick="licmRenew(); return false;" style="color:var(--green-bright); text-decoration:none; font-weight:700;">Telegram @chh_ck</a> to purchase or renew</div>
   </div>
 </div>
 </body>
