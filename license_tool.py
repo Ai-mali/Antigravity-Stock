@@ -73,6 +73,9 @@ def cmd_sign(args) -> int:
             return 1
 
     machine = args.machine.strip()
+    if not machine:
+        print("No Machine ID given — a key needs a machine to lock to.")
+        return 1
     if machine != "*":
         norm = "".join(c for c in machine.upper() if c.isalnum())
         machine = "-".join(norm[i:i + 4] for i in range(0, len(norm), 4))
@@ -99,11 +102,72 @@ def cmd_sign(args) -> int:
     return 0
 
 
+def _parse_expiry(text: str):
+    """DD/MM/YYYY (the app's display format), ISO, or blank = perpetual."""
+    t = text.strip()
+    if not t:
+        return ""
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"):
+        try:
+            return datetime.datetime.strptime(t, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return None
+
+
+def cmd_interactive() -> int:
+    """No-args mode: prompt for everything so the tool runs by
+    double-clicking it or a bare `python license_tool.py`."""
+    if not PRIVATE_KEY_PATH.exists():
+        print("No signing key yet — generating your keypair once now.\n")
+        if cmd_init():
+            return 1
+        print()
+    print("=" * 46)
+    print("  VRE License Tool")
+    print("=" * 46)
+    try:
+        import license_check
+        my_id = license_check.machine_id()
+    except Exception:
+        my_id = ""
+    if my_id:
+        print(f"  This PC's Machine ID: {my_id}\n")
+    while True:
+        try:
+            machine = input("Machine ID to license (Enter = this PC): ").strip()
+            customer = input("Customer / shop name: ").strip()
+            while True:
+                exp_in = input("Expiry date DD/MM/YYYY (Enter = never): ").strip()
+                expires = _parse_expiry(exp_in)
+                if expires is not None:
+                    break
+                print("  Not a date — try e.g. 31/12/2027.")
+            print()
+        except (EOFError, KeyboardInterrupt):
+            print("\nCancelled.")
+            return 1
+        rc = cmd_sign(argparse.Namespace(
+            customer=customer, machine=machine or my_id or "",
+            expires=expires, perpetual=not expires))
+        if rc:
+            return rc
+        try:
+            if input("\nIssue another key? [y/N]: ").strip().lower() != "y":
+                break
+        except (EOFError, KeyboardInterrupt):
+            break
+    return 0
+
+
 def main() -> int:
+    if len(sys.argv) == 1:
+        return cmd_interactive()
     ap = argparse.ArgumentParser(
         description="VRE AC Stock private license key tool (keep private!)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("init", help="generate the signing keypair once")
+    sub.add_parser("menu", help="interactive mode (same as no args)")
     s = sub.add_parser("sign", help="issue a machine-locked license key")
     s.add_argument("--customer", default="", help="customer / shop name")
     s.add_argument("--machine", required=True,
@@ -114,7 +178,11 @@ def main() -> int:
     g.add_argument("--perpetual", action="store_true",
                    help="key never expires")
     args = ap.parse_args()
-    return cmd_init() if args.cmd == "init" else cmd_sign(args)
+    if args.cmd == "init":
+        return cmd_init()
+    if args.cmd == "menu":
+        return cmd_interactive()
+    return cmd_sign(args)
 
 
 if __name__ == "__main__":
