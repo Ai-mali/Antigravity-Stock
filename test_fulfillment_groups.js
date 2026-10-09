@@ -36,6 +36,8 @@ eval(extractConst('TL_COLS').replace('const ', 'var '));
 eval(extractFn('escapeHtml'));
 eval(extractFn('parseDateAny'));
 eval(extractFn('parseDateTimeAny'));
+eval(extractFn('fmtDMY'));
+eval(extractFn('fmtDMYTime'));
 eval(extractFn('isTrackBooked'));
 eval(extractFn('naturalCompareSerials'));
 eval(extractFn('buildTrackGroups'));
@@ -134,9 +136,9 @@ check('asc: newest last', asc[asc.length - 1].dateOut === '2020-06-01');
 
 /* ---- Date in range rule (calendar day only, never 'Various') ---- */
 const sameDay = [rec('M', 's1', 'c', PAST, '2025-10-05'), rec('M', 's2', 'c', PAST, '2025-10-05T14:30')];
-check('same calendar day -> single date', tlDateInLabel(sameDay) === 'Oct 5, 2025');
+check('same calendar day -> single date', tlDateInLabel(sameDay) === '05/10/2025');
 const diffDay = [rec('M', 's1', 'c', PAST, '2025-10-05'), rec('M', 's2', 'c', PAST, '2025-10-07')];
-check('different days -> range', tlDateInLabel(diffDay) === 'Oct 5, 2025 \u2013 Oct 7, 2025');
+check('different days -> range', tlDateInLabel(diffDay) === '05/10/2025 \u2013 07/10/2025');
 check('never Various', tlDateInLabel(diffDay).indexOf('Various') < 0);
 
 /* ---- warranty: shared value or Mixed ---- */
@@ -184,9 +186,9 @@ check('timed bookings: earlier planned time first in asc',
   buildTrackGroups(timed, 'asc')[0].model === 'BBB');
 
 /* ---- dispatched cells show 'Oct 8, 2026 · 07:00' when a time is stored ---- */
-check('datetime formats with time', tlFmtDateTime('2026-10-08 07:00') === 'Oct 8, 2026 \u00b7 07:00');
-check('datetime formats T-separator', tlFmtDateTime('2026-10-08T07:00') === 'Oct 8, 2026 \u00b7 07:00');
-check('date-only stays date-only', tlFmtDateTime('2026-10-08') === 'Oct 8, 2026');
+check('datetime formats with time', tlFmtDateTime('2026-10-08 07:00') === '08/10/2026 \u00b7 07:00');
+check('datetime formats T-separator', tlFmtDateTime('2026-10-08T07:00') === '08/10/2026 \u00b7 07:00');
+check('date-only stays date-only', tlFmtDateTime('2026-10-08') === '08/10/2026');
 
 /* ---- empty input ---- */
 check('empty list -> no groups', buildTrackGroups([], 'desc').length === 0);
@@ -240,7 +242,7 @@ check('unchanged -> idle',
   rsChangeLine(orig, { date: '2026-10-07', time: '07:00' }, TODAY).msg === 'No change yet. Pick a new date or time.');
 check('+2 days line',
   rsChangeLine(orig, { date: '2026-10-09', time: '07:00' }, TODAY).msg
-    === 'Delivery moves Oct 7, 07:00 → Oct 9, 07:00 (+2 days)');
+    === 'Delivery moves 07/10/2026, 07:00 → 09/10/2026, 07:00 (+2 days)');
 check('same day, new time',
   rsChangeLine(orig, { date: '2026-10-07', time: '09:00' }, TODAY).msg.includes('(same day, new time)'));
 check('earlier day wording',
@@ -260,9 +262,9 @@ check('sale key: legacy fallback customer|date',
 
 const stampRec = rec('M', 'S', 'Neath', '2026-10-09 15:07', null, null, 'SALE-20261009-150723-ab12');
 check('sale stamp: customer-date-time',
-  tlSaleStamp(stampRec) === 'Neath-Oct 9, 2026 15_07');
+  tlSaleStamp(stampRec) === 'Neath-09-10-2026 15_07');
 check('sale stamp: legacy row has no time',
-  tlSaleStamp({ customer: 'Neath', dateOut: '2026-10-09' }) === 'Neath-Oct 9, 2026');
+  tlSaleStamp({ customer: 'Neath', dateOut: '2026-10-09' }) === 'Neath-09-10-2026');
 check('filesafe: strips invalid chars, keeps - , _',
   tlFileSafe('Ne/ath: <Oct> 9, 2026 15_07?*') === 'Neath Oct 9, 2026 15_07');
 check('filesafe: empty -> sell_record', tlFileSafe('<>') === 'sell_record');
@@ -299,7 +301,7 @@ DB.trackList = [
     __fetchJobs.length === 1 && __fetchJobs[0].body.rows.length === 2
     && new Set(__fetchJobs[0].body.rows.map(r => r.model)).size === 2);
   check('ticked save filename follows stamp',
-    __saves.length === 1 && __saves[0] === 'Neath-Oct 9, 2026 15_07.xlsx');
+    __saves.length === 1 && __saves[0] === 'Neath-09-10-2026 15_07.xlsx');
 
   /* two ticked sales -> two jobs, two files */
   DB.trackSelBatches = new Set([bA, bB]);
@@ -307,7 +309,7 @@ DB.trackList = [
   await exportTrackSales();
   check('two ticked sales -> two workbook jobs', __fetchJobs.length === 2 && __saves.length === 2);
   check('second sale file uses its own stamp',
-    __saves.includes('GCNP-Oct 9, 2026 16_15.xlsx'));
+    __saves.includes('GCNP-09-10-2026 16_15.xlsx'));
 
   /* no selection -> single merged job from the filtered view */
   DB.trackSelBatches = new Set();

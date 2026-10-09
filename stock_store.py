@@ -1208,7 +1208,10 @@ class StockStore:
             self._pair_set.add(new_pair)
 
         b_str = brand.strip() or self.brand_for(m_str) or str(rec.get("Brand", ""))
-        d_str = date_in.strip() or str(rec.get("Date In", ""))
+        # Canonicalize to the workbook's MM/DD/YYYY — the UI may send ISO.
+        _pd = parse_date_safe(date_in.strip()) if date_in.strip() else None
+        d_str = (_pd.strftime("%m/%d/%Y") if _pd
+                 else (date_in.strip() or str(rec.get("Date In", ""))))
 
         rec["Serial"] = new_s
         rec["Model"] = m_str

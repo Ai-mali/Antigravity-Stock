@@ -6954,7 +6954,7 @@ body.theme-light .autocomplete-dropdown {
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                       </svg>
                     </span>
-                    <span class="dp-date-text" id="scan-date-in-display">09/18/2026</span>
+                    <span class="dp-date-text" id="scan-date-in-display">18/09/2026</span>
                     <span class="dp-badge-relative" id="scan-date-in-relative"></span>
                     <span class="dp-icon-chevron">&#9662;</span>
                   </button>
@@ -8010,7 +8010,7 @@ body.theme-light .autocomplete-dropdown {
 
       <div style="margin-bottom:8px;">
         <label class="form-label" for="edit-unit-datein">Date In</label>
-        <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="MM/DD/YYYY or YYYY-MM-DD" autocomplete="off">
+        <input type="text" class="form-input mono" id="edit-unit-datein" placeholder="DD/MM/YYYY or YYYY-MM-DD" autocomplete="off">
       </div>
     </div>
     <div class="modal-footer">
@@ -9379,7 +9379,7 @@ function locateSerialInSystem(serial) {
         dateIn: rec.dateIn || '—',
         customer: rec.customer || '—',
         dateOut: rec.dateOut || '—',
-        locationDesc: `Sold to customer "${rec.customer || 'Unknown'}" on ${rec.dateOut || '—'}.`
+        locationDesc: `Sold to customer "${rec.customer || 'Unknown'}" on ${fmtDMY(rec.dateOut) || '—'}.`
       };
     }
   }
@@ -9400,7 +9400,7 @@ function locateSerialInSystem(serial) {
         dateOut: ret.date || ret.Date || '—',
         reason: ret.reason || ret.Reason || '—',
         action: action,
-        locationDesc: `Logged under Returns & RMA (${action}) on ${ret.date || ret.Date || '—'}.`
+        locationDesc: `Logged under Returns & RMA (${action}) on ${fmtDMY(ret.date || ret.Date) || '—'}.`
       };
     }
   }
@@ -9468,7 +9468,7 @@ function showDuplicateLocation(serial, modelHint) {
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date Received (In)</div>
-          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${loc.dateIn}</div>
+          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${fmtDMY(loc.dateIn)}</div>
         </div>
       </div>
       <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4; padding:0 2px;">
@@ -9500,15 +9500,15 @@ function showDuplicateLocation(serial, modelHint) {
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date Out (Dispatched)</div>
-          <div class="mono" style="font-size:12px; font-weight:600; color:var(--text); margin-top:2px;">${loc.dateOut}</div>
+          <div class="mono" style="font-size:12px; font-weight:600; color:var(--text); margin-top:2px;">${fmtDMY(loc.dateOut)}</div>
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Date In (Original)</div>
-          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${loc.dateIn}</div>
+          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${fmtDMY(loc.dateIn)}</div>
         </div>
       </div>
       <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4; padding:0 2px;">
-        &#128205; This serial was previously sold and dispatched to <b>${loc.customer}</b> on <b>${loc.dateOut}</b>.
+        &#128205; This serial was previously sold and dispatched to <b>${loc.customer}</b> on <b>${fmtDMY(loc.dateOut)}</b>.
       </div>
     `;
 
@@ -9540,7 +9540,7 @@ function showDuplicateLocation(serial, modelHint) {
         </div>
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-sub); font-weight:700; letter-spacing:0.04em;">Return Date</div>
-          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${loc.dateOut}</div>
+          <div class="mono" style="font-size:12px; color:var(--text-sub); margin-top:2px;">${fmtDMY(loc.dateOut)}</div>
         </div>
       </div>
       <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4; padding:0 2px;">
@@ -11051,6 +11051,42 @@ function parseDateTimeAny(str) {
   return parseDateAny(str);
 }
 
+/* Display format for every date in the app: DD/MM/YYYY.
+   Accepts ISO, MM/DD/YYYY (workbook), DD/MM/YYYY — via parseDateAny.
+   Unparseable strings pass through untouched. */
+function fmtDMY(s) {
+  const d = parseDateAny(s);
+  if (!d) return String(s || '');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+/* Same, keeping a trailing HH:MM[:SS] — for timestamps like
+   '2026-10-08 14:30:22' -> '08/10/2026 14:30:22'. */
+function fmtDMYTime(s) {
+  const str = String(s || '').trim();
+  const m = str.match(/[T ](\d{1,2}:\d{2}(?::\d{2})?)\s*$/);
+  return fmtDMY(m ? str.slice(0, m.index) : str) + (m ? ' ' + m[1] : '');
+}
+
+/* Day-first parser for the edit-unit Date In field, matching what the
+   field displays: DD/MM/YYYY. ISO is still accepted; MM/DD only wins
+   when day-first is impossible (10/25). Returns a Date or null. */
+function parseDateDMY(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  if (!m) return null;
+  const a = +m[1], b = +m[2], y = +m[3];
+  const mo = (b > 12 && a <= 12) ? a : b;
+  const dy = (b > 12 && a <= 12) ? b : a;
+  if (mo < 1 || mo > 12 || dy < 1 || dy > 31) return null;
+  return new Date(y, mo - 1, dy);
+}
+
 /* Matches a workbook date string against the search query in common formats:
    raw text, 2026-09-18, 09/18/2026, 18/09/2026, "sep 18", "sep 18, 2026". */
 function dateMatchesQ(dateStr, q) {
@@ -11111,7 +11147,7 @@ function batchNoFor(iso) {
 }
 
 function shortDateLabel(iso) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return fmtDMY(new Date(iso + 'T00:00:00'));
 }
 
 /* Header badge + MODE pill + search-group ring + contextual placeholder */
@@ -11382,7 +11418,8 @@ function renderAvailable(searchTerm) {
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const highlightClass = (isSerialMatch || isDateMatch) ? 'avail-unit-card-highlighted' : '';
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
-        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
+        const unitDisp = fmtDMY(unitDateIn);
+        const dateDisplay = isDateMatch ? markMatchedText(unitDisp, dq) : escapeHtml(unitDisp);
         return `
           <div class="avail-unit-card group relative overflow-hidden ${staged ? 'staged' : ''} ${highlightClass}" data-serial="${escapeHtml(s)}" data-model="${escapeHtml(mKey)}" onclick="copySerial('${escapeHtml(escapeJs(s))}')" title="Click to copy serial">
             <span class="card-glow-bar-left"></span>
@@ -11508,7 +11545,7 @@ function renderAvailable(searchTerm) {
               <span>ℹ️</span> Found in Sell Record (Dispatched / Sold)
             </div>
             <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">
-              Serial <strong class="mono" style="color:var(--text);">${otherLoc.serial}</strong> (${otherLoc.model}) was sold to <strong>${otherLoc.customer}</strong> on ${otherLoc.dateOut}.
+              Serial <strong class="mono" style="color:var(--text);">${otherLoc.serial}</strong> (${otherLoc.model}) was sold to <strong>${otherLoc.customer}</strong> on ${fmtDMY(otherLoc.dateOut)}.
             </div>
             <div style="margin-top:10px;">
               <button type="button" class="btn btn-ghost btn-sm" onclick="jumpToDuplicateInTrack('${escapeHtml(escapeJs(otherLoc.serial))}')">View in Sell Record &rarr;</button>
@@ -11621,7 +11658,7 @@ function renderAvailBrandSidebar() {
             onclick="selectAvailBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
       <span class="tl-cust-avatar tl-cust-avatar-solid" style="--brand-c:${o.color}; width:36px; height:36px; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(fmtDMY(o.date))}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
           <span class="tl-cust-status" style="font-size:10px; color:${o.statusColor};">${o.status}</span>
@@ -11803,7 +11840,7 @@ function soShortDate(d) {
   if (!d) return '';
   const t = parseDateAny(d);
   if (!t) return d;
-  return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return fmtDMY(t);
 }
 
 function renderSOBrandSidebar() {
@@ -11856,7 +11893,7 @@ function renderSOBrandSidebar() {
             onclick="selectSOBrand('${escapeJs(key)}')"${dblAttr} title="${escapeHtml(o.name)} — show models${dblHint}">
       <span class="tl-cust-avatar tl-cust-avatar-solid" style="--brand-c:${o.color}; width:36px; height:36px; border:none; font-size:11px;">${escapeHtml(o.initials)}</span>
       <span class="tl-cust-meta">
-        <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(o.date || '')}</span>${delBtn}</span></span>
+        <span class="tl-cust-line1"><span class="tl-cust-name">${markSearchHit(o.name, nameHit ? hitQ : '')}</span><span style="display:flex; align-items:center; gap:6px; flex-shrink:0;"><span class="tl-cust-date">${escapeHtml(fmtDMY(o.date))}</span>${delBtn}</span></span>
         ${o.desc ? `<span class="tl-cust-line2"><span class="tl-cust-sub">${o.desc}</span></span>` : ''}
         <span class="tl-cust-line2">
           <span class="tl-cust-status" style="font-size:10px; color:${o.statusColor};">${o.status}</span>
@@ -12045,7 +12082,8 @@ function renderStockOut(searchTerm) {
         const isSerialMatch = q && s.toLowerCase().includes(q);
         const isDateMatch = dq && dateMatchesQ(unitDateIn, dq);
         const serialDisplay = isSerialMatch ? markMatchedText(s, q) : escapeHtml(s);
-        const dateDisplay = isDateMatch ? markMatchedText(unitDateIn, dq) : escapeHtml(unitDateIn);
+        const unitDisp = fmtDMY(unitDateIn);
+        const dateDisplay = isDateMatch ? markMatchedText(unitDisp, dq) : escapeHtml(unitDisp);
         return `
           <div class="so-serial-card group relative overflow-hidden ${staged ? 'staged' : ''} ${(isSerialMatch || isDateMatch) ? 'so-highlighted' : ''}" onclick="toggleSerialInCart('${escapeHtml(escapeJs(s))}', '${escapeHtml(escapeJs(mKey))}', '${escapeHtml(escapeJs(brandKey))}', this)">
             <span class="card-glow-bar-left"></span>
@@ -12680,7 +12718,7 @@ function renderTrackBreakdown(list, modelColors) {
   }
   const chipHtml = r => {
     const c = modelColors[r.model] || 'var(--green-bright)';
-    return `<span class="track-breakdown-chip" title="${escapeHtml(r.model)} \u2014 ${escapeHtml(r.customer)} \u00b7 dispatched ${escapeHtml(r.dateOut)}" onclick="trackChipSearch('${escapeHtml(escapeJs(r.serial))}')" style="cursor:pointer;"><span class="chip-serial" style="--brand-c:${c};">${escapeHtml(r.serial)}</span> <span class="chip-model">(${escapeHtml(r.model)})</span></span>`;
+    return `<span class="track-breakdown-chip" title="${escapeHtml(r.model)} \u2014 ${escapeHtml(r.customer)} \u00b7 dispatched ${escapeHtml(fmtDMY(r.dateOut))}" onclick="trackChipSearch('${escapeHtml(escapeJs(r.serial))}')" style="cursor:pointer;"><span class="chip-serial" style="--brand-c:${c};">${escapeHtml(r.serial)}</span> <span class="chip-model">(${escapeHtml(r.model)})</span></span>`;
   };
   if (DB.trackViewMode === 'grouped') {
     const groups = {};
@@ -12755,11 +12793,13 @@ function tlCellMovesToUnits(key, isOpen) {
   return !!(isOpen && col && col.moves);
 }
 
-/* 'YYYY-MM-DD' -> 'Oct 5, 2026' (parsed by hand to dodge timezone shifts). */
+/* 'YYYY-MM-DD' -> '05/10/2026' (parsed by hand to dodge timezone shifts). */
 function tlFmtDate(s) {
   const p = String(s || '').slice(0, 10).split('-');
   const y = +p[0], m = +p[1], d = +p[2];
-  return (y && m && d) ? `${TL_MONTHS[m - 1]} ${d}, ${y}` : String(s || '\u2014');
+  return (y && m && d)
+    ? `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
+    : String(s || '\u2014');
 }
 
 /* 'YYYY-MM-DD HH:MM' -> 'Oct 7, 2026 · 07:00'; date-only -> 'Oct 7, 2026'. */
@@ -12768,7 +12808,7 @@ function tlFmtDateTime(s) {
   return tlFmtDate(s) + (m ? ` \u00b7 ${m[1]}:${m[2]}` : '');
 }
 
-/* Date in compares by calendar day only: one day -> 'Oct 5, 2026',
+/* Date in compares by calendar day only: one day -> '05/10/2026',
    different days -> a range 'Oct 5, 2026 – Oct 7, 2026'. Never 'Various'. */
 function tlDateInLabel(items) {
   const days = [...new Set(items.map(r => String(r.dateIn || '').slice(0, 10)))].sort();
@@ -12796,7 +12836,7 @@ function tlWarrantyCell(items) {
     return '<span class="tl-warr w-mixed"><i></i>Mixed</span>';
   }
   const w = items[0].warranty || {};
-  const title = w.expiry ? ` title="Warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(w.expiry)}"` : '';
+  const title = w.expiry ? ` title="Warranty ${w.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(fmtDMY(w.expiry))}"` : '';
   return `<span class="tl-warr ${tlWarrantyCls(w)}"${title}>${escapeHtml(tlWarrantyLabel(w))}</span>`;
 }
 
@@ -13129,7 +13169,7 @@ function rsAddDays(iso, n) {
 
 function rsFmtShort(iso) {
   const p = iso.split('-').map(Number);
-  return `${TL_MONTHS[p[1] - 1]} ${p[2]}`;
+  return `${String(p[2]).padStart(2, '0')}/${String(p[1]).padStart(2, '0')}/${p[0]}`;
 }
 
 function rsPillFor(iso, todayIso) {
@@ -13188,8 +13228,8 @@ function openRescheduleModal(gi) {
   const del = document.getElementById('rs-deliver');
   const d = orig.date ? parseDateAny(orig.date) : null;
   if (del) del.textContent = d
-    ? `${TL_MONTHS[d.getMonth()]} ${d.getDate()} \u00b7 ${orig.time}`
-    : (g.dateOut || '—');
+    ? `${fmtDMY(d)} \u00b7 ${orig.time}`
+    : fmtDMY(g.dateOut || '—');
   document.getElementById('rs-time').value = orig.time;
   document.getElementById('reschedule-modal').classList.add('open');
   renderReschedule();
@@ -13630,11 +13670,12 @@ function updateTrackSelBadge() {
   if (lbl) lbl.textContent = n ? `Export ${n} sale${n === 1 ? '' : 's'}` : 'Export Excel';
 }
 
-/* Per-sale filename stamp: '<Customer>-<Mon D, YYYY> <HH_MM>' —
-   dispatch date + the checkout time packed in the batch id. */
+/* Per-sale filename stamp: '<Customer>-<DD-MM-YYYY> <HH_MM>' —
+   dispatch date + the checkout time packed in the batch id
+   (slashes are illegal in filenames, so dashes here). */
 function tlSaleStamp(r) {
   const d = parseDateAny(r.dateOut);
-  const dateStr = d ? `${TL_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : String(r.dateOut || 'nodate');
+  const dateStr = d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : String(r.dateOut || 'nodate');
   const m = (r.batch || '').match(/SALE-\d{8}-(\d{2})(\d{2})(\d{2})-/);
   return `${r.customer || 'Sale'}-${dateStr}${m ? ` ${m[1]}_${m[2]}` : ''}`;
 }
@@ -13646,10 +13687,10 @@ function tlFileSafe(s) {
 async function exportTrackSales() {
   const sel = DB.trackSelBatches;
   const rowOf = r => ({
-    model: r.model, serial: r.serial, dateIn: r.dateIn, dateOut: r.dateOut,
+    model: r.model, serial: r.serial, dateIn: fmtDMY(r.dateIn), dateOut: fmtDMYTime(r.dateOut),
     customer: r.customer,
     wstatus: tlWarrantyLabel(r.warranty),
-    wexpiry: (r.warranty || {}).expiry || '',
+    wexpiry: fmtDMY((r.warranty || {}).expiry),
     status: 'Dispatched',
   });
   const jobs = [];
@@ -13755,7 +13796,7 @@ function renderRmaSuggest(q) {
       const serialHtml = ql && (r.serial || '').toLowerCase().includes(ql) ? markMatchedText(r.serial, q.trim()) : escapeHtml(r.serial);
       return `<button type="button" class="rma-suggest-item" onmousedown="pickRmaSerial('${escapeHtml(escapeJs(r.serial))}', '${escapeHtml(escapeJs(r.model))}')">
         <span class="rsi-serial">${serialHtml}</span>
-        <span class="rsi-meta">${escapeHtml(r.model)} \u00b7 ${escapeHtml(r.customer)} \u00b7 Out ${escapeHtml(r.dateOut || '\u2014')}</span>
+        <span class="rsi-meta">${escapeHtml(r.model)} \u00b7 ${escapeHtml(r.customer)} \u00b7 Out ${escapeHtml(fmtDMY(r.dateOut) || '\u2014')}</span>
         ${wTag}
       </button>`;
     }).join('');
@@ -13808,8 +13849,8 @@ function updateRmaWarrantyCard() {
   if (strip) {
     if (rec) {
       strip.style.display = 'grid';
-      document.getElementById('rma-meta-in').textContent = rec.dateIn || '—';
-      document.getElementById('rma-meta-out').textContent = rec.dateOut || '—';
+      document.getElementById('rma-meta-in').textContent = fmtDMY(rec.dateIn) || '—';
+      document.getElementById('rma-meta-out').textContent = fmtDMY(rec.dateOut) || '—';
       document.getElementById('rma-meta-cust').textContent = rec.customer || '—';
     } else {
       strip.style.display = 'none';
@@ -13823,13 +13864,13 @@ function updateRmaWarrantyCard() {
   card.style.display = 'flex';
   if (w.status === 'active') {
     card.className = 'warranty-alert-card active';
-    card.innerHTML = `<span>\ud83d\udee1\ufe0f</span><div><strong>Under Active Warranty</strong> &middot; Valid until ${w.expiry} (${w.daysRemaining} days left)</div>`;
+    card.innerHTML = `<span>\ud83d\udee1\ufe0f</span><div><strong>Under Active Warranty</strong> &middot; Valid until ${fmtDMY(w.expiry)} (${w.daysRemaining} days left)</div>`;
   } else if (w.status === 'expiring') {
     card.className = 'warranty-alert-card expiring';
-    card.innerHTML = `<span>\u26a0\ufe0f</span><div><strong>Warranty Expiring Soon</strong> &middot; ${w.daysRemaining} days remaining (Expires ${w.expiry})</div>`;
+    card.innerHTML = `<span>\u26a0\ufe0f</span><div><strong>Warranty Expiring Soon</strong> &middot; ${w.daysRemaining} days remaining (Expires ${fmtDMY(w.expiry)})</div>`;
   } else if (w.status === 'expired') {
     card.className = 'warranty-alert-card expired';
-    card.innerHTML = `<span>\u274c</span><div><strong>Warranty Expired</strong> &middot; Expired on ${w.expiry} (${Math.abs(w.daysRemaining)} days ago)</div>`;
+    card.innerHTML = `<span>\u274c</span><div><strong>Warranty Expired</strong> &middot; Expired on ${fmtDMY(w.expiry)} (${Math.abs(w.daysRemaining)} days ago)</div>`;
   }
 }
 
@@ -13908,7 +13949,7 @@ function renderRmaDateOutOptions() {
   const cur = DB.rmaDateOut;
   const dates = [...new Set(DB.returns.map(r => r.dateOut).filter(Boolean))].sort().reverse();
   sel.innerHTML = '<option value="">📦 All Dates Out</option>' +
-    dates.map((d, i) => `<option value="${escapeHtml(d)}"${d === cur ? ' selected' : ''}>📦 Date Out: ${escapeHtml(d)}${i === 0 ? ' (Latest)' : ''}</option>`).join('');
+    dates.map((d, i) => `<option value="${escapeHtml(d)}"${d === cur ? ' selected' : ''}>📦 Date Out: ${escapeHtml(fmtDMY(d))}${i === 0 ? ' (Latest)' : ''}</option>`).join('');
 }
 
 function renderReturnTable() {
@@ -13955,9 +13996,9 @@ function renderReturnTable() {
       <td class="mono" style="font-weight:700; color:var(--green-bright);"><span class="tl-copy" title="Click to copy serial" onclick="copySerial('${escapeHtml(escapeJs(r.serial))}')">${sHit ? markMatchedText(r.serial, q) : escapeHtml(r.serial)}</span></td>
       <td style="font-weight:600;"><span class="tl-copy" title="Click to copy model" onclick="copySerial('${escapeHtml(escapeJs(r.model))}')">${mHit ? markMatchedText(r.model, q) : escapeHtml(r.model)}</span></td>
       <td><span class="rma-cust-pill"><span class="tl-copy" title="Click to copy customer" onclick="copySerial('${escapeHtml(escapeJs(r.customer))}')">${cHit ? markMatchedText(r.customer, q) : escapeHtml(r.customer)}</span></span></td>
-      <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateIn || '—')}</td>
-      <td class="mono" style="color:var(--text-sub);">${escapeHtml(r.dateOut || '—')}</td>
-      <td class="mono">${escapeHtml(r.date)}</td>
+      <td class="mono" style="color:var(--text-sub);">${escapeHtml(fmtDMY(r.dateIn) || '—')}</td>
+      <td class="mono" style="color:var(--text-sub);">${escapeHtml(fmtDMY(r.dateOut) || '—')}</td>
+      <td class="mono">${escapeHtml(fmtDMY(r.date))}</td>
       <td style="color:var(--text-muted);">${escapeHtml(r.reason)}</td>
       <td class="rma-note-cell" title="${escapeHtml(r.notes || '')}">${r.notes ? `<span class="rma-note-link" onclick="openReturnDetail(${rIdx})">${escapeHtml(r.notes)}</span>` : '<span style="opacity:.35;">—</span>'}</td>
       <td style="text-align:center;">${badge}</td>
@@ -14035,9 +14076,9 @@ function openReturnDetail(idx) {
   const dot = document.getElementById('rma-detail-action-dot');
   if (dot) dot.style.display = isRestock ? 'none' : 'inline-block';
 
-  document.getElementById('rma-detail-datein').textContent = r.dateIn || '—';
-  document.getElementById('rma-detail-dateout').textContent = r.dateOut || '—';
-  document.getElementById('rma-detail-dateret').textContent = r.date || '—';
+  document.getElementById('rma-detail-datein').textContent = fmtDMY(r.dateIn) || '—';
+  document.getElementById('rma-detail-dateout').textContent = fmtDMY(r.dateOut) || '—';
+  document.getElementById('rma-detail-dateret').textContent = fmtDMY(r.date) || '—';
 
   const w = r.warranty || {};
   const wTxt = { active: 'Active', expiring: 'Expiring Soon', expired: 'Expired' }[w.status];
@@ -14048,7 +14089,7 @@ function openReturnDetail(idx) {
   if (wTxt) {
     wEl.innerHTML =
       `<span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:2px 10px; border-radius:99px; color:${wColor}; background:rgba(38,208,124,0.08); border:1px solid var(--border-light);">● ${wTxt}</span>` +
-      `<span class="mono" style="font-size:11px; color:var(--text-sub);">Expires ${escapeHtml(w.expiry || '')}</span>` +
+      `<span class="mono" style="font-size:11px; color:var(--text-sub);">Expires ${escapeHtml(fmtDMY(w.expiry))}</span>` +
       `<span class="mono" style="font-size:11px; font-weight:700; color:${wColor};">• ${w.daysRemaining}d left</span>`;
     if (track && fill) {
       track.style.display = '';
@@ -14085,9 +14126,9 @@ function exportReturnDetail() {
   if (!r) return;
   const w = r.warranty || {};
   const wTxt = w.status && w.status !== 'none'
-    ? `${w.status} (expires ${w.expiry}, ${w.daysRemaining}d left)` : 'none';
+    ? `${w.status} (expires ${fmtDMY(w.expiry)}, ${w.daysRemaining}d left)` : 'none';
   const csv = 'NO,SERIAL/DESC,MODEL,CUSTOMER,DATE IN,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION,WARRANTY\n'
-    + [1, r.serial, r.model, r.customer, r.dateIn || '', r.dateOut || '', r.date, r.reason, r.notes, r.action, wTxt]
+    + [1, r.serial, r.model, r.customer, fmtDMY(r.dateIn), fmtDMY(r.dateOut), fmtDMY(r.date), r.reason, r.notes, r.action, wTxt]
         .map(csvCell).join(',') + '\n';
   const fname = `return_${String(r.serial || 'record').replace(/[^\w-]+/g, '_')}.csv`;
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), fname);
@@ -14160,12 +14201,12 @@ function confirmRevertSale(idx) {
 
   const batchLabel = r.batch
     ? r.batch.replace(/^SALE-/, 'DSP-')
-    : `DSP-${(r.dateOut || '????').replace(/[-: ]/g, '')}-LEGACY`;
+    : `DSP-${fmtDMY(r.dateOut || '????').replace(/\D/g, '')}-LEGACY`;
   document.getElementById('undo-batch-id').textContent = batchLabel;
   document.getElementById('undo-avatar').textContent = (r.customer || '?').trim().charAt(0).toUpperCase() || '?';
   document.getElementById('undo-customer').textContent = r.customer || '—';
   document.getElementById('undo-verified').style.display = r.customer ? '' : 'none';
-  document.getElementById('undo-date').textContent = r.dateOut || '—';
+  document.getElementById('undo-date').textContent = fmtDMY(r.dateOut) || '—';
   document.getElementById('undo-count').textContent = group.length;
   document.getElementById('undo-items-pill').textContent = `${group.length} items`;
   document.getElementById('undo-safe-cust').textContent = r.customer || 'this customer';
@@ -14259,7 +14300,7 @@ function reprintRmaTag(rIdx) {
   if (!sheet) return;
   sheet.innerHTML = `<div class="tl-print-label">
     <div class="pl-serial">RMA: ${escapeHtml(r.serial)}</div>
-    <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.action)} &middot; ${escapeHtml(r.date)}</div>
+    <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.action)} &middot; ${escapeHtml(fmtDMY(r.date))}</div>
   </div>`;
   setTimeout(() => window.print(), 60);
 }
@@ -14271,7 +14312,7 @@ function exportReturnsCsv() {
   const list = [...DB.returns].sort((a, b) => dval(b.date) - dval(a.date));
   let csv = 'NO,SERIAL/DESC,MODEL,CUSTOMER,DATE OUT,DATE RETURNED,REASON,NOTES,ACTION\n';
   list.forEach((r, i) => {
-    csv += [i + 1, r.serial, r.model, r.customer, r.dateOut || '', r.date, r.reason, r.notes, r.action].map(csvCell).join(',') + '\n';
+    csv += [i + 1, r.serial, r.model, r.customer, fmtDMY(r.dateOut), fmtDMY(r.date), r.reason, r.notes, r.action].map(csvCell).join(',') + '\n';
   });
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'returns_registry_export.csv');
 }
@@ -14284,7 +14325,7 @@ function printRmaTags() {
   sheet.innerHTML = rows.map(r => `
     <div class="tl-print-label">
       <div class="pl-serial">RMA: ${escapeHtml(r.serial)}</div>
-      <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.action)} &middot; ${escapeHtml(r.date)}</div>
+      <div class="pl-meta">${escapeHtml(r.model)}<br>${escapeHtml(r.action)} &middot; ${escapeHtml(fmtDMY(r.date))}</div>
     </div>`).join('');
   showToast(`Printing ${rows.length} RMA tag${rows.length === 1 ? '' : 's'}…`);
   setTimeout(() => window.print(), 60);
@@ -14317,7 +14358,7 @@ async function submitRmaAction(isRestock) {
       : `Quarantined ${serial} for audit`);
     document.getElementById('rma-notes').value = '';
     // Back to today for the next return
-    initDatePicker('rma-return-date-picker', formatDateISO(new Date()), null, { inputId: 'rma-return-date', displayIso: true });
+    initDatePicker('rma-return-date-picker', formatDateISO(new Date()), null, { inputId: 'rma-return-date' });
     await refreshData();
   } catch (e) {
     showToast('Return failed: ' + e.message);
@@ -15014,7 +15055,7 @@ function renderActivityTable() {
     const ts = String(a.Timestamp || '—');
     const sp = ts.indexOf(' ');
     const tsHtml = sp > 0
-      ? `${escapeHtml(ts.slice(0, sp))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
+      ? `${escapeHtml(fmtDMY(ts.slice(0, sp)))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
       : escapeHtml(ts);
     const ok = (a.Status || 'OK') === 'OK';
     return `<tr class="act-row">
@@ -15032,7 +15073,7 @@ function exportActivityCsv() {
   const list = getFilteredActivities();
   if (!list.length) { showToast('Nothing to export'); return; }
   const csv = 'NO,TIMESTAMP,ACTION,MODEL,UNITS,DETAILS,STATUS\n'
-    + list.map((a, i) => [i + 1, a.Timestamp, a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(csvCell).join(',')).join('\n') + '\n';
+    + list.map((a, i) => [i + 1, fmtDMYTime(a.Timestamp), a.Action, a.Model, a['Serials Count'], a.Details, a.Status].map(csvCell).join(',')).join('\n') + '\n';
   saveBlobWithPicker(new Blob([CSV_BOM + csv], { type: 'text/csv;charset=utf-8' }), 'activity_audit.csv');
 }
 
@@ -15066,7 +15107,7 @@ function renderBackupsTable() {
     const ts = String(b.modified || '—');
     const sp = ts.indexOf(' ');
     const tsHtml = sp > 0
-      ? `${escapeHtml(ts.slice(0, sp))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
+      ? `${escapeHtml(fmtDMY(ts.slice(0, sp)))} <span style="color:var(--text-muted);">${escapeHtml(ts.slice(sp + 1))}</span>`
       : escapeHtml(ts);
     const kindBadge = { before: '<span class="bk-kind bk-kind-before">BEFORE</span>', after: '<span class="bk-kind bk-kind-after">AFTER</span>', manual: '<span class="bk-kind bk-kind-manual">MANUAL</span>' }[b.kind] || '';
     return `<tr class="act-row">
@@ -15185,7 +15226,7 @@ function openEditUnitModal(serial, model, brand, dateIn) {
       dIn = unitObj.dateIn;
     }
   } catch (e) {}
-  document.getElementById('edit-unit-datein').value = dIn;
+  document.getElementById('edit-unit-datein').value = fmtDMY(dIn);
 
   modal.classList.add('open');
   setTimeout(() => {
@@ -15205,7 +15246,9 @@ async function saveEditUnitModal() {
   const newSerial = (document.getElementById('edit-unit-serial').value || '').trim();
   const model = (document.getElementById('edit-unit-model').value || '').trim();
   const brand = (document.getElementById('edit-unit-brand').value || '').trim();
-  const dateIn = (document.getElementById('edit-unit-datein').value || '').trim();
+  const dateInRaw = (document.getElementById('edit-unit-datein').value || '').trim();
+  const _dObj = parseDateDMY(dateInRaw);
+  const dateIn = _dObj ? formatDateISO(_dObj) : dateInRaw;
 
   if (!newSerial) {
     showToast('Serial number cannot be empty.');
@@ -15588,12 +15631,12 @@ function renderDoPhotosGrid() {
       <div class="do-photo-info">
         <div class="do-photo-name" title="${escapeHtml(p.filename)}">${escapeHtml(p.filename)}</div>
         <div class="do-photo-meta">
-          <span>${escapeHtml(p.timestamp)}</span>
+          <span>${escapeHtml(fmtDMYTime(p.timestamp))}</span>
           <span>${sizeStr}</span>
         </div>
       </div>
     `;
-    card.onclick = () => openPhotoViewer(p.filename, p.timestamp, sizeStr);
+    card.onclick = () => openPhotoViewer(p.filename, fmtDMYTime(p.timestamp), sizeStr);
     grid.appendChild(card);
   });
 }
@@ -15660,7 +15703,6 @@ function initDatePicker(id, initialDateStr = null, onChange = null, opts = {}) {
     onChange,
     picked: !!initialDateStr,
     minDate: md,
-    displayIso: !!opts.displayIso,   // show YYYY-MM-DD in the trigger instead of "Mon d, yyyy"
     presets: Array.isArray(opts.presets) && opts.presets.length ? opts.presets : null
   };
 
@@ -15688,10 +15730,10 @@ function getRelativeDateLabel(targetDate) {
 
 function formatDateDisplay(d) {
   if (!d || isNaN(d.getTime())) return '';
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function formatDateISO(d) {
@@ -15742,9 +15784,7 @@ function updateDatePickerDisplay(id) {
     if (container) container.classList.toggle('picked', !!state.picked);
     if (cap) cap.style.display = state.picked ? 'flex' : 'none';
     if (disp) disp.textContent = state.picked
-      ? (state.displayIso
-          ? isoText
-          : state.selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }))
+      ? formatDateDisplay(state.selectedDate)
       : (state.placeholder || 'Date In');
     if (batch) batch.textContent = (state.picked && state.batchNo) ? `(Batch #${state.batchNo})` : '';
     if (rel) {
