@@ -8857,7 +8857,7 @@ async function licenseGateCheck() {
     s = await apiGet('/api/license/status');
   } catch (e) {
     s = { ok: false, state: 'unreachable',
-          error: 'The license service did not respond.' };
+          detail: 'The license service did not respond — close the app fully and reopen it.' };
   }
   _licState = s;
   if (s && s.ok) {
@@ -8879,7 +8879,7 @@ function showLicenseGate(s) {
   }
   _licState = s || _licState;
   const mid = document.getElementById('lic-machine-id');
-  if (mid) mid.textContent = (s && s.machine) || '—';
+  if (mid) mid.textContent = (s && s.machine) || 'unavailable';
   const cust = document.getElementById('lic-customer-line');
   if (cust) {
     cust.style.display = (s && s.customer) ? '' : 'none';
@@ -8923,7 +8923,7 @@ async function copyMachineId() {
   const mid = document.getElementById('lic-machine-id');
   const btn = document.getElementById('lic-copy-btn');
   const txt = mid ? mid.textContent.trim() : '';
-  if (!txt || txt === '—') return;
+  if (!txt || txt === 'unavailable') return;
   try { await navigator.clipboard.writeText(txt); }
   catch (e) {
     const r = document.createRange(); r.selectNodeContents(mid);
