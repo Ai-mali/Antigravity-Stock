@@ -22,7 +22,9 @@ bk.t("desktop_app imported")
 
 APP_URL = 'http://127.0.0.1:8000/?app_mode=desktop'
 BACKEND_PORT = 8000
-HEALTH_URL = 'http://127.0.0.1:%d/api/ui-prefs' % BACKEND_PORT
+# /api/license/status is always 200 even with no license — gated endpoints
+# return 403, which must NOT read as "backend down" or the gate can't show.
+HEALTH_URL = 'http://127.0.0.1:%d/api/license/status' % BACKEND_PORT
 _APP_DIR = (os.path.dirname(sys.executable) if getattr(sys, 'frozen', False)
             else os.path.dirname(os.path.abspath(__file__)))
 PID_FILE = os.path.join(_APP_DIR, '.vre_app.pid')
@@ -1342,9 +1344,11 @@ def backend_healthy(timeout: float = 1.5) -> bool:
     """True only if the backend answers HTTP — a zombie process can hold the
     port open (accepts TCP, never responds) while it is dying."""
     try:
-        import urllib.request
+        import urllib.request, urllib.error
         urllib.request.urlopen(HEALTH_URL, timeout=timeout).read(8)
         return True
+    except urllib.error.HTTPError:
+        return True  # got an HTTP response (403/404/500) — server is alive
     except Exception:
         return False
 
