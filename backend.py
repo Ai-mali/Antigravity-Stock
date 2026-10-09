@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 from typing import Literal
 
 import scanner
+import license_check
 from stock_store import StockStore
 
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
@@ -51,6 +52,17 @@ async def _serialize_api(request, call_next):
         if host not in ("localhost", "127.0.0.1", "::1"):
             return JSONResponse({"ok": False, "error": "local access only"},
                                 status_code=403)
+        # Hard license gate: nothing under /api/ works without a valid
+        # license except the license endpoints themselves. Blocking here
+        # (not just in the UI) means removing the activation overlay from
+        # the HTML still leaves a dead app.
+        if not request.url.path.startswith("/api/license/"):
+            lic = license_check.status()
+            if not lic.get("ok"):
+                return JSONResponse(
+                    {**lic, "ok": False, "error": "license_required",
+                     "detail": lic.get("error", "")},
+                    status_code=403)
         async with _store_lock:
             return await call_next(request)
     return await call_next(request)
@@ -189,6 +201,24 @@ def get_delivery_order_photo(filename: str):
                   else "image/webp" if ext == ".webp"
                   else "application/octet-stream")
     return FileResponse(target, media_type=media_type)
+
+
+# ------------------------------------------------------------------ license
+@app.get("/api/license/status")
+def license_status():
+    return license_check.status(force=True)
+
+
+class LicenseBody(BaseModel):
+    key: str = Field(min_length=1)
+
+
+@app.post("/api/license/activate")
+def license_activate(body: LicenseBody):
+    verdict = license_check.activate(body.key)
+    if not verdict.get("ok"):
+        return JSONResponse(verdict, status_code=403)
+    return verdict
 
 
 # ------------------------------------------------------------------ reads

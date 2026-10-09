@@ -24,6 +24,8 @@ pyinstaller --noconfirm --clean --onefile --windowed ^
   --add-data "VRE.ico;." ^
   --hidden-import backend ^
   --hidden-import stock_store ^
+  --hidden-import license_check ^
+  --collect-all cryptography ^
   --hidden-import scanner ^
   --hidden-import excel_exports ^
   --hidden-import comet_layer ^

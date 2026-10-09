@@ -22,3 +22,9 @@ bf_*/
 _*.png
 _*.log
 BOOT-BLACKSCREEN-DIAGNOSIS.md
+
+# License material — the signing key can mint licenses for every install;
+# it must NEVER enter the repo. *.lic files are per-machine installs.
+license_private.pem
+license_state.json
+*.lic

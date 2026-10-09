@@ -6636,6 +6636,87 @@ body.theme-light .autocomplete-dropdown {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ---- License gate (hard lockout) + expiry warning banner ---- */
+.lic-gate {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-page);
+  user-select: none; -webkit-user-select: none;
+}
+.lic-card {
+  width: 430px; max-width: 92vw;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid var(--border-light); border-radius: 18px;
+  padding: 32px 34px 26px; text-align: center;
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.lic-lock {
+  width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--green) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
+  color: var(--green-bright);
+}
+.lic-title { font-size: 19px; font-weight: 800; letter-spacing: -0.2px; color: var(--text); }
+.lic-sub { font-size: 12px; color: var(--text-sub); margin: 8px 0 0; line-height: 1.55; }
+.lic-error {
+  min-height: 18px; margin: 14px 0 6px;
+  font-size: 11.5px; font-weight: 600; color: var(--red-ink);
+}
+.lic-label {
+  display: block; text-align: left; margin: 12px 0 6px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--text-sub);
+}
+.lic-mid-row { display: flex; gap: 8px; }
+.lic-mid {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 10px 12px; border-radius: 9px;
+  background: var(--surface3); border: 1px dashed var(--border-light);
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; color: var(--green-bright);
+  user-select: all; -webkit-user-select: all;
+}
+.lic-copy {
+  padding: 0 14px; border-radius: 9px; border: 1px solid var(--border-light);
+  background: var(--surface3); color: var(--text);
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.lic-copy:hover { border-color: var(--green); color: var(--green-bright); }
+.lic-key {
+  width: 100%; min-height: 74px; resize: vertical;
+  padding: 10px 12px; border-radius: 9px;
+  background: var(--surface3); border: 1px solid var(--border-light);
+  color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; line-height: 1.5; outline: none;
+}
+.lic-key:focus { border-color: var(--green); }
+.lic-activate {
+  width: 100%; margin-top: 14px; padding: 12px;
+  border: none; border-radius: 10px; cursor: pointer;
+  background: var(--green); color: #fff;
+  font-size: 13px; font-weight: 800; letter-spacing: .02em;
+  transition: all .15s;
+}
+.lic-activate:hover:not(:disabled) { background: var(--green-hover); }
+.lic-activate:disabled { opacity: .55; cursor: default; }
+.lic-foot { margin-top: 16px; font-size: 10.5px; color: var(--text-muted); }
+.lic-foot b { color: var(--text-sub); }
+#lic-banner {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+  z-index: 99998; display: flex; align-items: center; gap: 14px;
+  padding: 8px 14px 8px 18px; border-radius: 99px;
+  background: var(--surface2); border: 1px solid var(--gold-ink);
+  color: var(--gold-ink); font-size: 11.5px; font-weight: 600;
+  box-shadow: 0 10px 30px -8px rgba(0,0,0,.5);
+}
+#lic-banner b { font-family: 'JetBrains Mono', monospace; }
+#lic-banner button {
+  border: none; background: none; color: inherit; font-size: 15px;
+  cursor: pointer; line-height: 1; padding: 0 2px; opacity: .7;
+}
+#lic-banner button:hover { opacity: 1; }
 </style>
 </head>
 <body class="free-scroll-mode">
@@ -8750,6 +8831,9 @@ const DB = {
 async function api(path, opts = {}) {
   const res = await fetch(path, opts);
   const data = await res.json().catch(() => ({}));
+  if (data && data.error === 'license_required') {
+    showLicenseGate(data);           // backend hard-lock: surface the gate
+  }
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
 }
@@ -8762,6 +8846,112 @@ const apiDel = (p, body) => api(p, {
   method: 'DELETE', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(body || {})
 });
+
+/* ---------------- License gate (hard lockout) ---------------- */
+let _licState = null;
+
+/* Returns true when the app may boot; otherwise the gate stays up. */
+async function licenseGateCheck() {
+  let s;
+  try {
+    s = await apiGet('/api/license/status');
+  } catch (e) {
+    s = { ok: false, state: 'unreachable',
+          error: 'The license service did not respond.' };
+  }
+  _licState = s;
+  if (s && s.ok) {
+    if (typeof s.days_left === 'number' && s.days_left <= 30) {
+      showLicenseBanner(s);
+    }
+    return true;
+  }
+  showLicenseGate(s);
+  return false;
+}
+
+function showLicenseGate(s) {
+  const gate = document.getElementById('license-gate');
+  if (!gate || gate.style.display === 'flex') {
+    const err = document.getElementById('lic-error');
+    if (err && s && (s.detail || s.error)) err.textContent = s.detail || s.error;
+    return;
+  }
+  _licState = s || _licState;
+  const mid = document.getElementById('lic-machine-id');
+  if (mid) mid.textContent = (s && s.machine) || '—';
+  const cust = document.getElementById('lic-customer-line');
+  if (cust) {
+    cust.style.display = (s && s.customer) ? '' : 'none';
+    const c = document.getElementById('lic-customer');
+    if (c) c.textContent = s.customer || '';
+  }
+  const err = document.getElementById('lic-error');
+  if (err) err.textContent = (s && (s.detail || s.error)) || 'A valid license key is required to use this app.';
+  const banner = document.getElementById('lic-banner');
+  if (banner) banner.remove();
+  gate.style.display = 'flex';
+  setTimeout(() => {
+    const t = document.getElementById('lic-key-input');
+    if (t) t.focus();
+  }, 80);
+}
+
+async function submitLicenseKey() {
+  const inp = document.getElementById('lic-key-input');
+  const btn = document.getElementById('lic-activate-btn');
+  const err = document.getElementById('lic-error');
+  const key = (inp && inp.value || '').trim();
+  if (!key) {
+    if (err) err.textContent = 'Paste the license key first.';
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  try {
+    const res = await apiPost('/api/license/activate', { key });
+    if (res.ok) location.reload();
+    else if (err) err.textContent = res.error || 'Activation failed.';
+  } catch (e) {
+    if (err) err.textContent = (e.message === 'license_required')
+      ? 'That key was rejected.' : (e.message || 'Activation failed.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Activate License'; }
+  }
+}
+
+async function copyMachineId() {
+  const mid = document.getElementById('lic-machine-id');
+  const btn = document.getElementById('lic-copy-btn');
+  const txt = mid ? mid.textContent.trim() : '';
+  if (!txt || txt === '—') return;
+  try { await navigator.clipboard.writeText(txt); }
+  catch (e) {
+    const r = document.createRange(); r.selectNodeContents(mid);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    try { document.execCommand('copy'); } catch (e2) {}
+    sel.removeAllRanges();
+  }
+  if (btn) {
+    const t = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = t; }, 1500);
+  }
+}
+
+/* 30-day countdown: a dismissible warning so an expiry never surprises. */
+function showLicenseBanner(s) {
+  const today = formatDateISO(new Date());
+  if (localStorage.getItem('lic_warn_hide') === today) return;
+  if (document.getElementById('lic-banner')) return;
+  const el = document.createElement('div');
+  el.id = 'lic-banner';
+  el.innerHTML = `<span>License expires in <b>${s.days_left} day${s.days_left === 1 ? '' : 's'}</b>${s.expires ? ` (${fmtDMY(s.expires)})` : ''} — contact your supplier to renew.</span><button type="button" aria-label="Dismiss">&times;</button>`;
+  el.querySelector('button').onclick = () => {
+    localStorage.setItem('lic_warn_hide', today);
+    el.remove();
+  };
+  document.body.appendChild(el);
+}
 
 async function refreshData() {
   const [inv, trk, ret, cust, doRes, uiPrefs] = await Promise.all([
@@ -16823,6 +17013,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e){}
 
+  // License first: the gate swallows all init when no valid key exists —
+  // the API is locked server-side too, so refreshData() would only fail.
+  if (!(await licenseGateCheck())) return;
+
   await refreshData();
   await loadConfig();
   logEntry('info', { text: 'App initialized. Scan Engine ready.' });
@@ -16836,7 +17030,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const todayStr = formatDateISO(new Date());
   initDatePicker('scan-date-in-picker', todayStr);
   initDatePicker('dispatch-date-out-picker', todayStr);
-  initDatePicker('rma-return-date-picker', todayStr, null, { inputId: 'rma-return-date', displayIso: true });
+  initDatePicker('rma-return-date-picker', todayStr, null, { inputId: 'rma-return-date' });
   initDatePicker('avail-datein-picker', null, setAvailDateFilter);
   initDatePicker('so-datein-picker', null, setSODateFilter);
   initDatePicker('track-datein-picker', null, setTrackDateInFilter);
@@ -16847,5 +17041,31 @@ window.addEventListener('DOMContentLoaded', async () => {
   switchTab('stock-in');
 });
 </script>
+
+<!-- License gate — hard lockout; shown by licenseGateCheck() when no valid
+     license is installed. The backend blocks /api/ independently of this UI. -->
+<div id="license-gate" class="lic-gate" style="display:none;">
+  <div class="lic-card">
+    <div class="lic-lock">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <div class="lic-title">License Required</div>
+    <p class="lic-sub">Send your Machine ID to your supplier to receive a license key for this computer.</p>
+    <div class="lic-error" id="lic-error"></div>
+    <div class="lic-customer-line" id="lic-customer-line" style="display:none; font-size:11px; color:var(--text-sub);">Licensed to: <b id="lic-customer" style="color:var(--text);"></b></div>
+    <label class="lic-label" for="lic-machine-id">Machine ID</label>
+    <div class="lic-mid-row">
+      <code class="lic-mid" id="lic-machine-id">—</code>
+      <button type="button" class="lic-copy" id="lic-copy-btn" onclick="copyMachineId()">Copy</button>
+    </div>
+    <label class="lic-label" for="lic-key-input">License Key</label>
+    <textarea class="lic-key" id="lic-key-input" placeholder="VRE1.&#8230;" spellcheck="false" autocomplete="off"></textarea>
+    <button type="button" class="lic-activate" id="lic-activate-btn" onclick="submitLicenseKey()">Activate License</button>
+    <div class="lic-foot">Keys are issued per computer &middot; contact your supplier to purchase or renew</div>
+  </div>
+</div>
 </body>
 </html>
