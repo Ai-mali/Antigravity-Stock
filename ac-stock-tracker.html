@@ -7307,7 +7307,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   <button type="button" id="avail-search-clear" class="search-clear-btn" onclick="clearAvailSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
-              <button type="button" class="filters-toggle-btn on" id="avail-filters-toggle" onclick="toggleFiltersBar('avail')" title="Show / hide Quick Date &amp; brand filters">
+              <button type="button" class="filters-toggle-btn" id="avail-filters-toggle" onclick="toggleFiltersBar('avail')" title="Show / hide Quick Date &amp; brand filters">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
               </button>
@@ -7390,7 +7390,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
                   <button type="button" id="so-search-clear" class="search-clear-btn" onclick="clearSOSearch()" style="display:none;" title="Clear search">&times;</button>
                 </div>
               </div>
-              <button type="button" class="filters-toggle-btn on" id="so-filters-toggle" onclick="toggleFiltersBar('so')" title="Show / hide Quick Date &amp; brand filters">
+              <button type="button" class="filters-toggle-btn" id="so-filters-toggle" onclick="toggleFiltersBar('so')" title="Show / hide Quick Date &amp; brand filters">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
               </button>
@@ -7433,7 +7433,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               <div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
                   <label class="form-label" style="margin-bottom:0; font-size:11px; font-weight:600;">Customer / Client Name *</label>
-                  <button type="button" class="filters-toggle-btn on" id="so-recent-toggle" onclick="toggleRecentCustomers()" title="Show / hide recent customer chips" style="padding:2px 7px; gap:4px;">
+                  <button type="button" class="filters-toggle-btn" id="so-recent-toggle" onclick="toggleRecentCustomers()" title="Show / hide recent customer chips" style="padding:2px 7px; gap:4px;">
                     <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
                   </button>
                 </div>
@@ -7605,7 +7605,7 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               <button type="button" id="track-search-clear" class="search-clear-btn" onclick="clearTrackSearch()" style="display:none;" title="Clear search">&times;</button>
             </div>
           </div>
-          <button type="button" class="filters-toggle-btn on" id="tl-breakdown-toggle" onclick="toggleTrackBreakdown()" title="Show / hide Sold Serial Breakdown">
+          <button type="button" class="filters-toggle-btn" id="tl-breakdown-toggle" onclick="toggleTrackBreakdown()" title="Show / hide Sold Serial Breakdown">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
             <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
           </button>
@@ -8950,7 +8950,7 @@ const DB = {
   trackSelBatches: new Set(), // sale batch keys ticked for scoped export
   trackBookedOnly: false, // BOOKED pill: show only future-dated dispatches
   trackViewMode: 'cloud', // serial breakdown: 'cloud' | 'grouped'
-  trackBreakdownCollapsed: false, // hydrated from /api/ui-prefs
+  trackBreakdownCollapsed: true, // hydrated from /api/ui-prefs
 
   trackCols: { customer: true, dateIn: true, dateOut: true, warranty: true, qty: true, status: true },
   soRecentHidden: false, // hide the Recent customer chips row (ui_pref soRecent)
@@ -9208,16 +9208,16 @@ async function refreshData() {
   DB.returns = ret.records;
   DB.customers = cust.customers || [];
   DB.doPhotos = (doRes && doRes.photos) || [];
-  DB.trackBreakdownCollapsed = !!(uiPrefs && uiPrefs.tlCollapsed);
+  DB.trackBreakdownCollapsed = (uiPrefs && uiPrefs.tlCollapsed !== undefined) ? uiPrefs.tlCollapsed : true;
   DB.trackSidebarMini = !!(uiPrefs && uiPrefs.tlMini);
   DB.soSidebarMini = !!(uiPrefs && uiPrefs.soMini);
   DB.availSidebarMini = !!(uiPrefs && uiPrefs.availMini);
   DB.soSidebarW = (uiPrefs && uiPrefs.soW) || 0;
   DB.availSidebarW = (uiPrefs && uiPrefs.availW) || 0;
   DB.trackSidebarW = (uiPrefs && uiPrefs.tlW) || 0;
-  DB.availBarHidden = !!(uiPrefs && uiPrefs.availBar);
-  DB.soBarHidden = !!(uiPrefs && uiPrefs.soBar);
-  DB.soRecentHidden = !!(uiPrefs && uiPrefs.soRecent);
+  DB.availBarHidden = (uiPrefs && uiPrefs.availBar !== undefined) ? uiPrefs.availBar : true;
+  DB.soBarHidden = (uiPrefs && uiPrefs.soBar !== undefined) ? uiPrefs.soBar : true;
+  DB.soRecentHidden = (uiPrefs && uiPrefs.soRecent !== undefined) ? uiPrefs.soRecent : true;
   DB.bgCustom = (uiPrefs && uiPrefs.bgCustom) || '';
   const picker = document.getElementById('bg-color-picker');
   if (picker && DB.bgCustom) picker.value = DB.bgCustom;
