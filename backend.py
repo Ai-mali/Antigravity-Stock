@@ -40,7 +40,19 @@ _mtime = store.path.stat().st_mtime if store.path.exists() else 0
 # can interleave a load/mutate/save and one of them reads a half-written file.
 # Serialize every /api/ request — calls take milliseconds and this app is
 # single-operator, so a simple global lock is the correct model here.
+# EXEMPTIONS: paths that don't touch the workbook (/api/scan AI calls,
+# /api/config* for ui_prefs.json, /api/delivery-orders for photos) are
+# exempt because holding the lock during long-running operations (e.g. AI
+# scan) blocks the entire UI.
 _store_lock = asyncio.Lock()
+_LOCK_EXEMPT_PATHS = {
+    "/api/scan",
+    "/api/config",
+    "/api/config/models",
+    "/api/config/keys",
+    "/api/config/keys/reorder",
+    "/api/delivery-orders",
+}
 
 
 @app.middleware("http")
@@ -63,7 +75,13 @@ async def _serialize_api(request, call_next):
                     {**lic, "ok": False, "error": "license_required",
                      "detail": lic.get("error", "")},
                     status_code=403)
-        async with _store_lock:
+        # Only acquire _store_lock for paths that touch the workbook.
+        # Exempted paths (scan, config, delivery-orders) run concurrently.
+        use_lock = not any(request.url.path.startswith(p) for p in _LOCK_EXEMPT_PATHS)
+        if use_lock:
+            async with _store_lock:
+                return await call_next(request)
+        else:
             return await call_next(request)
     return await call_next(request)
 
