@@ -1063,7 +1063,13 @@ body.is-desktop-shell .desktop-window-controls {
   gap: 2px;
   flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.nav-tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
