@@ -1343,15 +1343,16 @@ class StockStore:
 
     # ---------------------------------------------------------- brands
     def _forget_brand_if_gone(self, model: str):
-        """Drop the Model -> Brand mapping once a model has NO records left
-        at all — deleting every unit means the model starts over, so the
+        """Drop the Model -> Brand mapping once a model has NO IN-STOCK records.
+        Deleting every in-stock unit means the model starts over, so the
         next stock-in must ask for a brand again instead of silently
-        filing it under the old one. Mappings survive while sold or
-        returned records still reference the model."""
+        filing it under the old one. Sold or returned records are ignored
+        for this check — only current stock matters for the decision."""
         key = model.strip().upper()
         if not key or key not in self.model_to_brand:
             return
         if any(str(r.get("Model", "")).strip().upper() == key
+               and str(r.get("Status", "")).strip() == IN_STOCK
                for r in self.records):
             return
         del self.model_to_brand[key]
