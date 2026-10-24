@@ -1016,17 +1016,16 @@ class StockStore:
 
     def reschedule_sale(self, batch: str = "", customer: str = "",
                         date_out: str = "", new_date: str = "") -> tuple[list[str], str]:
-        """Move a booked (future-dated) dispatch to a new delivery date.
+        """Move a booked dispatch to a new delivery date.
         Matches the whole Batch like revert_sale does — a booking is one
-        checkout, so its delivery date moves as a unit. Past-dated sales
-        are history and cannot be edited. Returns (serials, error)."""
-        now = datetime.datetime.now()
+        checkout, so its delivery date moves as a unit. No date restrictions —
+        past and future dates are both allowed. Returns (serials, error)."""
         new_date = (new_date or "").strip()
         if not new_date:
             return [], "No new date given"
         new_dt = parse_datetime_safe(new_date)
-        if new_dt is None or new_dt <= now:
-            return [], "New delivery date/time cannot be in the past"
+        if new_dt is None:
+            return [], "Invalid date/time format"
         batch = (batch or "").strip()
         cust = (customer or "").strip().lower()
         dout = (date_out or "").strip()
@@ -1041,8 +1040,6 @@ class StockStore:
         if not targets:
             return [], "No sold units found for this dispatch"
         old_dates = {str(r.get("Date Out") or "").strip() for r in targets}
-        if any((parse_datetime_safe(d) or now) <= now for d in old_dates):
-            return [], "Only booked (future-dated) dispatches can be rescheduled"
         done = []
         for rec in targets:
             row = rec["_row"]

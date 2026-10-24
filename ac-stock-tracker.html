@@ -2295,10 +2295,41 @@ body.theme-light .scan-serial-badge-dupe {
 }
 .stock-in-left-col {
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.stock-in-left-col > .card:not(.status-log-card) {
+  flex: 0 0 auto;
+}
+.stock-in-resize-handle {
+  flex: 0 0 auto;
+  height: 6px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: background 0.2s;
+}
+.stock-in-resize-handle:hover {
+  background: rgba(38, 208, 124, 0.1);
+}
+.stock-in-resize-handle::before {
+  content: '';
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+.stock-in-resize-handle:hover::before {
+  background: var(--green-bright);
+  opacity: 0.8;
 }
 .status-log-card {
   flex: 1 1 0;
-  min-height: 0;
+  min-height: 100px;
   display: flex;
   flex-direction: column;
 }
@@ -7125,6 +7156,9 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
               </div>
             </div>
           </div>
+
+          <!-- Resizable split handle -->
+          <div class="stock-in-resize-handle" id="stock-in-resize-handle" title="Drag to resize"></div>
 
           <!-- Status Log card -->
           <div class="card status-log-card">
@@ -13649,7 +13683,6 @@ function openRescheduleModal(gi) {
   };
   const todayIso = rsIsoToday();
   initDatePicker('reschedule-date-picker', orig.date || todayIso, renderReschedule, {
-    minDate: todayIso,          // a booking can only move forward
     presets: RS_PRESETS         // Today / Tomorrow / +7 Days
   });
   document.getElementById('rs-model').textContent = g.model;
@@ -17215,6 +17248,8 @@ function onDesktopResizePointerUp(event) {
   _resizeRafPending = false;
 }
 
+
+
 function enableDesktopShellMode() {
   document.body.classList.add('is-desktop-shell');
 }
@@ -17280,6 +17315,62 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   switchTab('stock-in');
 });
+
+/* Stock In left column resize — drag between Image Preview and Status Log */
+let _stockInResizeState = null;
+
+(function initStockInResize() {
+  const handle = document.getElementById('stock-in-resize-handle');
+  if (!handle) return;
+
+  handle.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const leftCol = document.querySelector('.stock-in-left-col');
+    if (!leftCol) return;
+
+    const previewCard = leftCol.querySelector('.card:not(.status-log-card)');
+    const logCard = leftCol.querySelector('.status-log-card');
+
+    if (!previewCard || !logCard) return;
+
+    const startY = e.clientY;
+    const previewHeight = previewCard.offsetHeight;
+    const logHeight = logCard.offsetHeight;
+    const totalHeight = previewHeight + 6 + logHeight; // 6px is handle height
+
+    _stockInResizeState = {
+      startY,
+      previewHeight,
+      logHeight,
+      totalHeight,
+      previewCard,
+      logCard,
+      leftCol
+    };
+
+    document.body.classList.add('no-select-drag');
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (!_stockInResizeState) return;
+    e.preventDefault();
+
+    const dy = e.clientY - _stockInResizeState.startY;
+    const newPreviewHeight = Math.max(150, Math.min(_stockInResizeState.totalHeight - 150, _stockInResizeState.previewHeight + dy));
+    const newLogHeight = _stockInResizeState.totalHeight - 6 - newPreviewHeight;
+
+    _stockInResizeState.previewCard.style.flex = '0 0 ' + newPreviewHeight + 'px';
+    _stockInResizeState.logCard.style.flex = '0 0 ' + newLogHeight + 'px';
+  });
+
+  window.addEventListener('pointerup', e => {
+    if (!_stockInResizeState) return;
+
+    document.body.classList.remove('no-select-drag');
+    _stockInResizeState = null;
+  });
+})();
 </script>
 
 <!-- License admin — view status & renew/replace the key while licensed.
