@@ -8942,6 +8942,10 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
     </div>
     <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn btn-ghost" onclick="closeReschedule()">Cancel</button>
+      <button class="btn btn-primary" id="rs-release-btn" onclick="doReleaseNow()" style="background:var(--green); border-color:var(--green);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+        Release Now
+      </button>
       <button class="btn btn-primary" id="rs-save-btn" onclick="doReschedule()" style="background:#f59e0b; border-color:#f59e0b; color:#111;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
         Save New Date
@@ -13842,6 +13846,28 @@ async function doReschedule() {
     await refreshData();
   } catch (e) {
     showToast('Reschedule failed: ' + e.message);
+  }
+}
+
+async function doReleaseNow() {
+  if (!_rescheduleCtx) return;
+  const now = new Date();
+  const nowIso = formatDateISO(now);
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const newDate = `${nowIso} ${hours}:${minutes}`;
+  try {
+    const res = await apiPost('/api/sales/reschedule', {
+      batch: _rescheduleCtx.batch,
+      customer: _rescheduleCtx.customer,
+      date_out: _rescheduleCtx.date_out,
+      new_date: newDate
+    });
+    closeReschedule();
+    showToast(`Booking released and dispatched now (${tlFmtDateTime(newDate)}) — ${(res.serials || []).length} unit(s) updated.`);
+    await refreshData();
+  } catch (e) {
+    showToast('Release failed: ' + e.message);
   }
 }
 
