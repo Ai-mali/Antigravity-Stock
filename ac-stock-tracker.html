@@ -8940,16 +8940,18 @@ body:not(.theme-light) .licm-banner-chip { background: rgba(255,255,255,.08); }
         <p style="margin:0;">The whole booking moves together. <b>Warranty dates follow the new delivery date</b> automatically.</p>
       </div>
     </div>
-    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+    <div class="modal-footer" style="display:flex; justify-content:space-between; gap:8px;">
       <button class="btn btn-ghost" onclick="closeReschedule()">Cancel</button>
-      <button class="btn btn-primary" id="rs-release-btn" onclick="doReleaseNow()" style="background:var(--green); border-color:var(--green);">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
-        Release Now
-      </button>
-      <button class="btn btn-primary" id="rs-save-btn" onclick="doReschedule()" style="background:#f59e0b; border-color:#f59e0b; color:#111;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
-        Save New Date
-      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" id="rs-release-btn" onclick="doReleaseNow()" style="background:var(--green); border-color:var(--green);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+          Release Now
+        </button>
+        <button class="btn btn-primary" id="rs-save-btn" onclick="doReschedule()" style="background:#f59e0b; border-color:#f59e0b; color:#111;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+          Save New Date
+        </button>
+      </div>
     </div>
   </div>
 </div>
