@@ -4852,6 +4852,7 @@ body.theme-light .rs-time-pop {
 .rs-line { margin: 10px 0 0; font-size: 12px; font-weight: 600; min-height: 15px; }
 .rs-line-idle { color: var(--text-sub); }
 .rs-line-bad { color: var(--red-ink); }
+.rs-line-warn { color: var(--amber-ink); }
 .rs-line-good { color: var(--text); }
 .rs-banner {
   display: flex; gap: 9px; align-items: flex-start; margin-top: 12px;
@@ -13647,7 +13648,7 @@ function rsPillFor(iso, todayIso) {
 function rsSaveDisabled(orig, cur, todayIso) {
   // orig/cur: { date: 'YYYY-MM-DD', time: 'HH:MM' }
   if (!cur.date || !cur.time) return true;                 // incomplete
-  if (rsDayDiff(todayIso, cur.date) < 0) return true;      // in the past
+  // Past dates are now allowed — removed the past-date check
   return cur.date === orig.date && cur.time === orig.time; // nothing changed
 }
 
@@ -13655,7 +13656,7 @@ function rsChangeLine(orig, cur, todayIso) {
   if (!cur.date || !cur.time)
     return { msg: 'Choose both a date and a time.', tone: 'rs-line-bad' };
   if (rsDayDiff(todayIso, cur.date) < 0)
-    return { msg: 'That date has already passed. Pick today or a later date.', tone: 'rs-line-bad' };
+    return { msg: 'That date has already passed. Do you still want to proceed?', tone: 'rs-line-warn' };
   if (cur.date === orig.date && cur.time === orig.time)
     return { msg: 'No change yet. Pick a new date or time.', tone: 'rs-line-idle' };
   const n = rsDayDiff(orig.date, cur.date);
